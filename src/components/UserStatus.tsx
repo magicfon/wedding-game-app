@@ -29,7 +29,7 @@ export default function UserStatus() {
           } else {
             setSyncStatus('error')
           }
-        } catch (error) {
+        } catch {
           setSyncStatus('error')
         }
       }

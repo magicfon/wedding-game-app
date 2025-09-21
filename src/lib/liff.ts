@@ -1,6 +1,15 @@
 declare global {
   interface Window {
-    liff: any;
+    liff: {
+      init: (config: { liffId: string }) => Promise<void>
+      isInClient: () => boolean
+      isLoggedIn: () => boolean
+      getProfile: () => Promise<LiffProfile>
+      login: () => void
+      logout: () => void
+      closeWindow: () => void
+      sendMessages: (messages: Array<{ type: string; text: string }>) => void
+    }
   }
 }
 

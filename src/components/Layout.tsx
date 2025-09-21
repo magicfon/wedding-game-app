@@ -24,7 +24,14 @@ interface LayoutProps {
 
 export default function Layout({ children, title, showNavigation = true }: LayoutProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<{
+    id: string
+    email?: string
+    user_metadata?: {
+      full_name?: string
+      avatar_url?: string
+    }
+  } | null>(null)
   const router = useRouter()
   const pathname = usePathname()
   const supabase = createSupabaseBrowser()

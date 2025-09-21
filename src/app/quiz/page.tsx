@@ -21,7 +21,13 @@ export default function QuizPage() {
   const [timeLeft, setTimeLeft] = useState<number>(0)
   const [hasAnswered, setHasAnswered] = useState(false)
   const [answerResult, setAnswerResult] = useState<{ isCorrect: boolean; score: number } | null>(null)
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<{
+    id: string
+    email?: string
+    user_metadata?: {
+      full_name?: string
+    }
+  } | null>(null)
   const [loading, setLoading] = useState(true)
   
   const router = useRouter()
@@ -104,27 +110,7 @@ export default function QuizPage() {
     }
   }, [user, fetchGameState, supabase])
 
-  // 倒數計時器
-  useEffect(() => {
-    if (!gameState?.is_game_active || gameState.is_paused || timeLeft <= 0 || hasAnswered) {
-      return
-    }
-
-    const timer = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) {
-          // 時間到，自動提交空答案
-          handleTimeUp()
-          return 0
-        }
-        return prev - 1
-      })
-    }, 1000)
-
-    return () => clearInterval(timer)
-  }, [timeLeft, gameState, hasAnswered])
-
-  const handleTimeUp = async () => {
+  const handleTimeUp = useCallback(async () => {
     if (!user || !currentQuestion || hasAnswered) return
 
     setHasAnswered(true)
@@ -150,7 +136,27 @@ export default function QuizPage() {
     } catch (error) {
       console.error('Error recording timeout:', error)
     }
-  }
+  }, [user, currentQuestion, hasAnswered, supabase])
+
+  // 倒數計時器
+  useEffect(() => {
+    if (!gameState?.is_game_active || gameState.is_paused || timeLeft <= 0 || hasAnswered) {
+      return
+    }
+
+    const timer = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          // 時間到，自動提交空答案
+          handleTimeUp()
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+
+    return () => clearInterval(timer)
+  }, [timeLeft, gameState, hasAnswered, handleTimeUp])
 
   const handleAnswerSubmit = async (answer: 'A' | 'B' | 'C' | 'D') => {
     if (!user || !currentQuestion || hasAnswered || timeLeft <= 0) return

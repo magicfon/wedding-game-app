@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import Link from 'next/link'
 import { useLiff } from '@/hooks/useLiff'
 import { CheckCircle, XCircle, Database, User, AlertCircle } from 'lucide-react'
 
@@ -8,9 +9,15 @@ export default function TestDBPage() {
   const { isLoggedIn, profile } = useLiff()
   const [dbStatus, setDbStatus] = useState<'testing' | 'success' | 'error' | null>(null)
   const [dbError, setDbError] = useState<string | null>(null)
-  const [userInDb, setUserInDb] = useState<any>(null)
+  const [userInDb, setUserInDb] = useState<{
+    line_id: string
+    display_name: string
+    total_score: number
+    created_at: string
+    isNewUser: boolean
+  } | null>(null)
 
-  const testDatabase = async () => {
+  const testDatabase = useCallback(async () => {
     if (!profile) return
 
     setDbStatus('testing')
@@ -38,13 +45,13 @@ export default function TestDBPage() {
       setDbStatus('error')
       setDbError(error instanceof Error ? error.message : '網路錯誤')
     }
-  }
+  }, [profile])
 
   useEffect(() => {
     if (isLoggedIn && profile) {
       testDatabase()
     }
-  }, [isLoggedIn, profile])
+  }, [isLoggedIn, profile, testDatabase])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 to-purple-100 p-4">
@@ -163,12 +170,12 @@ export default function TestDBPage() {
             <div className="text-center py-8">
               <AlertCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-600">請先通過 LIFF 登入才能測試資料庫連接</p>
-              <a 
+              <Link 
                 href="/"
                 className="inline-block mt-4 bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg transition-colors"
               >
                 回到首頁登入
-              </a>
+              </Link>
             </div>
           )}
         </div>
