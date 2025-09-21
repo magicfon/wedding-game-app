@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createSupabaseBrowser } from '@/lib/supabase'
 import { useLiff } from '@/hooks/useLiff'
+import UserStatus from '@/components/UserStatus'
 import { Heart, Users, Trophy, Camera, HelpCircle, Play } from 'lucide-react'
 
 export default function Home() {
@@ -116,6 +117,9 @@ export default function Home() {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
+        {/* 用戶狀態顯示 */}
+        <UserStatus />
+        
         {!user ? (
           <div className="text-center py-16">
             <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md mx-auto">

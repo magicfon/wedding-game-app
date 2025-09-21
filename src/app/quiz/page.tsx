@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createSupabaseBrowser, Question } from '@/lib/supabase'
 import Layout from '@/components/Layout'
+import SimpleUserStatus from '@/components/SimpleUserStatus'
 import { Clock, Users, Trophy, CheckCircle, XCircle } from 'lucide-react'
 
 interface GameState {
@@ -253,6 +254,9 @@ export default function QuizPage() {
   return (
     <Layout title="快問快答">
       <div className="max-w-4xl mx-auto">
+        {/* 用戶狀態 */}
+        <SimpleUserStatus />
+        
         {/* 計時器和狀態 */}
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
           <div className="flex items-center justify-between">
