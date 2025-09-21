@@ -33,29 +33,38 @@ export default function AdminDashboard() {
     totalPhotos: 0,
     gameActive: false
   })
-  const { isLoggedIn, profile, isAdmin, adminInfo: liffAdminInfo } = useLiff()
+  const { isLoggedIn, profile, isAdmin, adminInfo: liffAdminInfo, loading: liffLoading, adminLoading } = useLiff()
   const router = useRouter()
 
-  // 簡化的管理員檢查 - 直接使用 useLiff 的結果
+  // 簡化的管理員檢查 - 等待所有載入完成後再檢查
   const checkAdminStatus = useCallback(async () => {
+    // 如果還在載入中，不做任何操作
+    if (liffLoading || adminLoading) {
+      return
+    }
+
+    // 如果沒有登入，跳轉首頁
     if (!isLoggedIn || !profile?.userId) {
+      console.log('Not logged in, redirecting to home')
       router.push('/')
       return
     }
 
+    // 如果不是管理員，跳轉回首頁
     if (!isAdmin) {
-      // 不是管理員，跳轉回首頁
+      console.log('Not admin, redirecting to home')
       router.push('/')
       return
     }
 
     // 是管理員，設置管理員資料並載入統計
+    console.log('User is admin, loading dashboard')
     if (liffAdminInfo) {
       setAdminInfo(liffAdminInfo)
     }
     loadStats()
     setLoading(false)
-  }, [isLoggedIn, profile, isAdmin, liffAdminInfo, router])
+  }, [liffLoading, adminLoading, isLoggedIn, profile, isAdmin, liffAdminInfo, router])
 
   // 載入統計數據
   const loadStats = async () => {
@@ -74,11 +83,8 @@ export default function AdminDashboard() {
   }
 
   useEffect(() => {
-    // 等待 LIFF 完全載入後再檢查
-    if (isLoggedIn !== undefined && profile !== undefined) {
-      checkAdminStatus()
-    }
-  }, [isLoggedIn, profile, isAdmin, liffAdminInfo, checkAdminStatus])
+    checkAdminStatus()
+  }, [checkAdminStatus])
 
   const menuItems = [
     {
@@ -139,7 +145,7 @@ export default function AdminDashboard() {
     }
   ]
 
-  if (loading) {
+  if (loading || liffLoading || adminLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <div className="text-center">
