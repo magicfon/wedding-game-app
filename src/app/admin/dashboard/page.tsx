@@ -29,9 +29,11 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState({
     totalUsers: 0,
-    activeQuestions: 0,
+    totalQuestions: 0,
     totalPhotos: 0,
-    gameActive: false
+    gameActive: false,
+    totalAnswers: 0,
+    activeAdmins: 0
   })
   const { isLoggedIn, profile, isAdmin, adminInfo: liffAdminInfo, loading: liffLoading, adminLoading } = useLiff()
   const router = useRouter()
@@ -69,16 +71,40 @@ export default function AdminDashboard() {
   // 載入統計數據
   const loadStats = async () => {
     try {
-      // 這裡可以添加實際的統計 API 調用
-      // 目前使用模擬數據
-      setStats({
-        totalUsers: 25,
-        activeQuestions: 5,
-        totalPhotos: 12,
-        gameActive: false
-      })
+      console.log('Loading real stats from API...')
+      const response = await fetch('/api/admin/stats')
+      const data = await response.json()
+      
+      if (data.success) {
+        console.log('Stats loaded:', data.stats)
+        setStats(data.stats)
+        
+        if (data.errors && data.errors.length > 0) {
+          console.warn('Stats loaded with some errors:', data.errors)
+        }
+      } else {
+        console.error('Failed to load stats:', data.error)
+        // 使用預設值
+        setStats({
+          totalUsers: 0,
+          totalQuestions: 0,
+          totalPhotos: 0,
+          gameActive: false,
+          totalAnswers: 0,
+          activeAdmins: 0
+        })
+      }
     } catch (error) {
       console.error('Load stats error:', error)
+      // 使用預設值
+      setStats({
+        totalUsers: 0,
+        totalQuestions: 0,
+        totalPhotos: 0,
+        gameActive: false,
+        totalAnswers: 0,
+        activeAdmins: 0
+      })
     }
   }
 
@@ -221,8 +247,8 @@ export default function AdminDashboard() {
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">活躍問題</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.activeQuestions}</p>
+                <p className="text-sm text-gray-600">題目總數</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.totalQuestions}</p>
               </div>
               <HelpCircle className="w-8 h-8 text-green-500" />
             </div>
@@ -241,8 +267,28 @@ export default function AdminDashboard() {
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center justify-between">
               <div>
+                <p className="text-sm text-gray-600">答題次數</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.totalAnswers}</p>
+              </div>
+              <Trophy className="w-8 h-8 text-yellow-500" />
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">活躍管理員</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.activeAdmins}</p>
+              </div>
+              <Shield className="w-8 h-8 text-indigo-500" />
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center justify-between">
+              <div>
                 <p className="text-sm text-gray-600">遊戲狀態</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className={`text-2xl font-bold ${stats.gameActive ? 'text-green-600' : 'text-red-600'}`}>
                   {stats.gameActive ? '進行中' : '已暫停'}
                 </p>
               </div>
