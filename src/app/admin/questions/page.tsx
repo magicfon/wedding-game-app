@@ -314,6 +314,38 @@ export default function QuestionsManagePage() {
             <div className="flex items-center space-x-2">
               <button
                 onClick={async () => {
+                  console.log('Checking environment variables...')
+                  try {
+                    const response = await fetch('/api/debug/env-check')
+                    const data = await response.json()
+                    console.log('Environment check result:', data)
+                    
+                    // 顯示關鍵信息
+                    const supabaseStatus = data.supabase
+                    let message = '環境變數檢查結果：\n\n'
+                    message += `Supabase URL: ${supabaseStatus?.url?.valid ? '✅ 正常' : '❌ 有問題'}\n`
+                    message += `Supabase Key: ${supabaseStatus?.key?.valid ? '✅ 正常' : '❌ 有問題'}\n\n`
+                    
+                    if (supabaseStatus?.url?.issues?.length > 0) {
+                      message += 'URL 問題：' + supabaseStatus.url.issues.join(', ') + '\n'
+                    }
+                    if (supabaseStatus?.key?.issues?.length > 0) {
+                      message += 'Key 問題：' + supabaseStatus.key.issues.join(', ') + '\n'
+                    }
+                    
+                    message += '\n詳細信息請查看控制台'
+                    alert(message)
+                  } catch (error) {
+                    console.error('Environment check failed:', error)
+                    alert('環境變數檢查失敗：' + error)
+                  }
+                }}
+                className="flex items-center space-x-1 bg-orange-500 hover:bg-orange-600 text-white px-2 py-1 rounded text-xs"
+              >
+                <span>環境變數</span>
+              </button>
+              <button
+                onClick={async () => {
                   console.log('Testing basic API...')
                   try {
                     const response = await fetch('/api/debug/basic-test')
@@ -327,7 +359,7 @@ export default function QuestionsManagePage() {
                 }}
                 className="flex items-center space-x-1 bg-gray-500 hover:bg-gray-600 text-white px-2 py-1 rounded text-xs"
               >
-                <span>基本測試</span>
+                <span>基本</span>
               </button>
               <button
                 onClick={async () => {
@@ -345,7 +377,7 @@ export default function QuestionsManagePage() {
                 className="flex items-center space-x-1 bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs"
               >
                 <AlertCircle className="w-3 h-3" />
-                <span>Supabase</span>
+                <span>DB</span>
               </button>
               <button
                 onClick={() => setShowForm(true)}
