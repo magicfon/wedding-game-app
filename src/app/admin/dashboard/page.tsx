@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLiff } from '@/hooks/useLiff'
 import { 
@@ -37,7 +37,7 @@ export default function AdminDashboard() {
   const router = useRouter()
 
   // 檢查管理員身份
-  const checkAdminStatus = async () => {
+  const checkAdminStatus = useCallback(async () => {
     if (!profile?.userId) {
       router.push('/admin/line-auth')
       return
@@ -104,7 +104,7 @@ export default function AdminDashboard() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [profile, router])
 
   // 載入統計數據
   const loadStats = async () => {

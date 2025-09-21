@@ -25,6 +25,7 @@ const eslintConfig = [
       "@next/next/no-img-element": "warn",
       "react-hooks/exhaustive-deps": "warn",
       "@next/next/no-html-link-for-pages": "warn",
+      "react/no-unescaped-entities": "warn",
     },
   },
 ];

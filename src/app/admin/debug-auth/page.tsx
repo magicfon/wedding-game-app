@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useLiff } from '@/hooks/useLiff'
 import { RefreshCw, CheckCircle, XCircle, AlertTriangle, Eye } from 'lucide-react'
 
@@ -8,7 +8,7 @@ interface DebugStep {
   step: string
   status: 'pending' | 'success' | 'error' | 'info'
   message: string
-  data?: any
+  data?: unknown
   timestamp: string
 }
 
@@ -17,7 +17,7 @@ export default function DebugAuthPage() {
   const [isRunning, setIsRunning] = useState(false)
   const { isReady, isInLiff, isLoggedIn, profile, error, loading } = useLiff()
 
-  const addStep = (step: string, status: DebugStep['status'], message: string, data?: any) => {
+  const addStep = (step: string, status: DebugStep['status'], message: string, data?: unknown) => {
     const newStep: DebugStep = {
       step,
       status,
@@ -246,7 +246,7 @@ export default function DebugAuthPage() {
           <h2 className="text-xl font-semibold text-gray-800 mb-4">測試步驟日誌</h2>
           
           {steps.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">點擊 "開始完整測試" 來診斷認證問題</p>
+            <p className="text-gray-500 text-center py-8">點擊 &quot;開始完整測試&quot; 來診斷認證問題</p>
           ) : (
             <div className="space-y-4">
               {steps.map((step, index) => (
