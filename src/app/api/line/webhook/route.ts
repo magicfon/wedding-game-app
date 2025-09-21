@@ -34,14 +34,26 @@ const getMainMenuMessage = () => {
 
 請點擊以下連結參與各種精彩活動：
 
-🎮 遊戲實況：${appUrl}/game-live
-❓ 快問快答：${appUrl}/quiz  
-📸 照片上傳：${appUrl}/photo-upload
-🖼️ 照片牆：${appUrl}/photo-wall
-❤️ 快門傳情：${appUrl}/photo-slideshow
-🏆 排行榜：${appUrl}/leaderboard
+🎮 遊戲實況：
+${appUrl}/game-live
 
-🚀 首次使用請先登入：${appUrl}/auth/line
+❓ 快問快答：
+${appUrl}/quiz
+
+📸 照片上傳：
+${appUrl}/photo-upload
+
+🖼️ 照片牆：
+${appUrl}/photo-wall
+
+❤️ 快門傳情：
+${appUrl}/photo-slideshow
+
+🏆 排行榜：
+${appUrl}/leaderboard
+
+🚀 首次使用請先登入：
+${appUrl}/auth/line
 
 輸入「選單」可重新顯示此訊息
 輸入「幫助」查看詳細說明`
