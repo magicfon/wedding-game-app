@@ -8,7 +8,13 @@ import UserStatus from '@/components/UserStatus'
 import { Heart, Users, Trophy, Camera, HelpCircle, Play } from 'lucide-react'
 
 export default function Home() {
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<{
+    id: string
+    user_metadata?: {
+      full_name?: string
+      avatar_url?: string
+    }
+  } | null>(null)
   const router = useRouter()
   const supabase = createSupabaseBrowser()
   const { isReady, isInLiff, isLoggedIn, profile, login, loading: liffLoading } = useLiff()

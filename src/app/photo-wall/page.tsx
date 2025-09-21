@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createSupabaseBrowser, Photo } from '@/lib/supabase'
 import Layout from '@/components/Layout'
@@ -47,7 +47,7 @@ export default function PhotoWallPage() {
   }, [supabase.auth, router])
 
   // 獲取投票設定
-  const fetchVotingSettings = async () => {
+  const fetchVotingSettings = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('game_state')
@@ -61,10 +61,10 @@ export default function PhotoWallPage() {
     } catch (error) {
       console.error('Error fetching voting settings:', error)
     }
-  }
+  }, [supabase])
 
   // 獲取用戶投票記錄
-  const fetchUserVotes = async () => {
+  const fetchUserVotes = useCallback(async () => {
     if (!user) return
 
     try {
@@ -85,10 +85,10 @@ export default function PhotoWallPage() {
     } catch (error) {
       console.error('Error fetching user votes:', error)
     }
-  }
+  }, [user, supabase])
 
   // 獲取照片列表
-  const fetchPhotos = async () => {
+  const fetchPhotos = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('photos')
@@ -108,7 +108,7 @@ export default function PhotoWallPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [sortBy, supabase])
 
   useEffect(() => {
     if (!user) return

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { createSupabaseBrowser } from '@/lib/supabase'
 import Layout from '@/components/Layout'
-import { Trophy, Medal, Crown, User, Star } from 'lucide-react'
+import { Trophy, Medal, Crown, Star } from 'lucide-react'
 
 interface UserScore {
   line_id: string
@@ -16,7 +16,10 @@ interface UserScore {
 export default function LeaderboardPage() {
   const [users, setUsers] = useState<UserScore[]>([])
   const [loading, setLoading] = useState(true)
-  const [currentUser, setCurrentUser] = useState<any>(null)
+  const [currentUser, setCurrentUser] = useState<{
+    id: string
+    email?: string
+  } | null>(null)
   const supabase = createSupabaseBrowser()
 
   useEffect(() => {

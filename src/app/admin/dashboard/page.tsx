@@ -8,9 +8,7 @@ import {
   HelpCircle, 
   Camera, 
   Settings, 
-  Play, 
-  Pause, 
-  SkipForward,
+  Play,
   Trophy,
   BarChart3,
   Shield,
@@ -18,8 +16,7 @@ import {
   LogOut,
   UserCheck,
   Activity,
-  Clock,
-  Star
+  Clock
 } from 'lucide-react'
 
 interface AdminInfo {
@@ -131,7 +128,7 @@ export default function AdminDashboard() {
     } else if (!isLoggedIn) {
       router.push('/admin/line-auth')
     }
-  }, [isLoggedIn, profile])
+  }, [isLoggedIn, profile, checkAdminStatus, router])
 
   const menuItems = [
     {
