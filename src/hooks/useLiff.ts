@@ -11,6 +11,9 @@ interface UseLiffReturn {
   login: () => void
   error: string | null
   loading: boolean
+  isAdmin: boolean
+  adminInfo: { lineId: string; displayName: string } | null
+  adminLoading: boolean
 }
 
 export const useLiff = (): UseLiffReturn => {
@@ -18,6 +21,9 @@ export const useLiff = (): UseLiffReturn => {
   const [profile, setProfile] = useState<LiffProfile | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [isAdmin, setIsAdmin] = useState(false)
+  const [adminInfo, setAdminInfo] = useState<{ lineId: string; displayName: string } | null>(null)
+  const [adminLoading, setAdminLoading] = useState(false)
 
   useEffect(() => {
     const init = async () => {
@@ -53,6 +59,33 @@ export const useLiff = (): UseLiffReturn => {
               } catch (error) {
                 console.error('Error syncing user:', error)
               }
+
+              // 檢查管理員身份
+              try {
+                setAdminLoading(true)
+                const adminResponse = await fetch('/api/admin/check-line-admin', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({ lineId: userProfile.userId }),
+                })
+                
+                if (adminResponse.ok) {
+                  const adminData = await adminResponse.json()
+                  if (adminData.isAdmin) {
+                    setIsAdmin(true)
+                    setAdminInfo(adminData.adminInfo)
+                    console.log('User is admin:', adminData.adminInfo)
+                  }
+                } else {
+                  console.error('Failed to check admin status')
+                }
+              } catch (error) {
+                console.error('Error checking admin status:', error)
+              } finally {
+                setAdminLoading(false)
+              }
             }
           }
         } else {
@@ -81,6 +114,9 @@ export const useLiff = (): UseLiffReturn => {
     profile,
     login,
     error,
-    loading
+    loading,
+    isAdmin,
+    adminInfo,
+    adminLoading
   }
 }

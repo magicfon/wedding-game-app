@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createSupabaseBrowser } from '@/lib/supabase'
 import { useLiff } from '@/hooks/useLiff'
 import UserStatus from '@/components/UserStatus'
-import { Heart, Users, Trophy, Camera, HelpCircle, Play } from 'lucide-react'
+import { Heart, Users, Trophy, Camera, HelpCircle, Play, Shield } from 'lucide-react'
 
 export default function Home() {
   const [user, setUser] = useState<{
@@ -17,7 +17,7 @@ export default function Home() {
   } | null>(null)
   const router = useRouter()
   const supabase = createSupabaseBrowser()
-  const { isReady, isInLiff, isLoggedIn, profile, login, loading: liffLoading } = useLiff()
+  const { isReady, isInLiff, isLoggedIn, profile, login, loading: liffLoading, isAdmin, adminInfo } = useLiff()
 
   useEffect(() => {
     const getUser = async () => {
@@ -189,15 +189,23 @@ export default function Home() {
               ))}
             </div>
 
-                    {/* Admin Access */}
-                    <div className="mt-8 text-center">
-                      <button
-                        onClick={() => router.push('/admin/line-auth')}
-                        className="text-sm text-blue-600 hover:text-blue-700 underline font-medium"
-                      >
-                        管理員入口
-                      </button>
-                    </div>
+                    {/* Admin Access - 只對管理員顯示 */}
+                    {isAdmin && (
+                      <div className="mt-8 text-center">
+                        <button
+                          onClick={() => router.push('/admin/dashboard')}
+                          className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all duration-200 shadow-lg font-medium"
+                        >
+                          <Shield className="w-4 h-4 mr-2" />
+                          管理員控制台
+                          {adminInfo && (
+                            <span className="ml-2 text-xs bg-white/20 px-2 py-1 rounded">
+                              {adminInfo.displayName}
+                            </span>
+                          )}
+                        </button>
+                      </div>
+                    )}
           </div>
         )}
       </main>
