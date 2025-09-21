@@ -21,144 +21,27 @@ function validateSignature(body: string, signature: string): boolean {
   return hash === signature
 }
 
-// 主選單 Rich Menu
-const mainMenu = {
-  type: 'flex',
-  altText: '婚禮互動遊戲選單',
-  contents: {
-    type: 'bubble',
-    hero: {
-      type: 'image',
-      url: 'https://via.placeholder.com/1040x585/ff69b4/ffffff?text=%E5%A9%9A%E7%A6%AE%E4%BA%92%E5%8B%95%E9%81%8A%E6%88%B2',
-      size: 'full',
-      aspectRatio: '20:11',
-      aspectMode: 'cover'
-    },
-    body: {
-      type: 'box',
-      layout: 'vertical',
-      contents: [
-        {
-          type: 'text',
-          text: '🎉 婚禮互動遊戲',
-          weight: 'bold',
-          size: 'xl',
-          color: '#ff69b4',
-          align: 'center'
-        },
-        {
-          type: 'text',
-          text: '選擇您想要的功能',
-          size: 'sm',
-          color: '#666666',
-          margin: 'md',
-          align: 'center'
-        }
-      ]
-    },
-    footer: {
-      type: 'box',
-      layout: 'vertical',
-      spacing: 'sm',
-      contents: [
-        {
-          type: 'box',
-          layout: 'horizontal',
-          spacing: 'sm',
-          contents: [
-            {
-              type: 'button',
-              style: 'primary',
-              height: 'sm',
-              action: {
-                type: 'uri',
-                label: '🎮 遊戲實況',
-                uri: `${process.env.NEXT_PUBLIC_APP_URL}/game-live`
-              },
-              color: '#3b82f6'
-            },
-            {
-              type: 'button',
-              style: 'primary',
-              height: 'sm',
-              action: {
-                type: 'uri',
-                label: '❓ 快問快答',
-                uri: `${process.env.NEXT_PUBLIC_APP_URL}/quiz`
-              },
-              color: '#10b981'
-            }
-          ]
-        },
-        {
-          type: 'box',
-          layout: 'horizontal',
-          spacing: 'sm',
-          contents: [
-            {
-              type: 'button',
-              style: 'primary',
-              height: 'sm',
-              action: {
-                type: 'uri',
-                label: '📸 照片上傳',
-                uri: `${process.env.NEXT_PUBLIC_APP_URL}/photo-upload`
-              },
-              color: '#8b5cf6'
-            },
-            {
-              type: 'button',
-              style: 'primary',
-              height: 'sm',
-              action: {
-                type: 'uri',
-                label: '🖼️ 照片牆',
-                uri: `${process.env.NEXT_PUBLIC_APP_URL}/photo-wall`
-              },
-              color: '#ec4899'
-            }
-          ]
-        },
-        {
-          type: 'box',
-          layout: 'horizontal',
-          spacing: 'sm',
-          contents: [
-            {
-              type: 'button',
-              style: 'primary',
-              height: 'sm',
-              action: {
-                type: 'uri',
-                label: '❤️ 快門傳情',
-                uri: `${process.env.NEXT_PUBLIC_APP_URL}/photo-slideshow`
-              },
-              color: '#ef4444'
-            },
-            {
-              type: 'button',
-              style: 'primary',
-              height: 'sm',
-              action: {
-                type: 'uri',
-                label: '🏆 排行榜',
-                uri: `${process.env.NEXT_PUBLIC_APP_URL}/leaderboard`
-              },
-              color: '#f59e0b'
-            }
-          ]
-        },
-        {
-          type: 'button',
-          style: 'secondary',
-          action: {
-            type: 'uri',
-            label: '🚀 開始遊戲（需登入）',
-            uri: `${process.env.NEXT_PUBLIC_APP_URL}/auth/line`
-          }
-        }
-      ]
-    }
+// 主選單訊息
+const getMainMenuMessage = () => {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://wedding-game-app.vercel.app'
+  
+  return {
+    type: 'text' as const,
+    text: `🎉 歡迎來到婚禮互動遊戲！
+
+請點擊以下連結參與各種精彩活動：
+
+🎮 遊戲實況：${appUrl}/game-live
+❓ 快問快答：${appUrl}/quiz  
+📸 照片上傳：${appUrl}/photo-upload
+🖼️ 照片牆：${appUrl}/photo-wall
+❤️ 快門傳情：${appUrl}/photo-slideshow
+🏆 排行榜：${appUrl}/leaderboard
+
+🚀 首次使用請先登入：${appUrl}/auth/line
+
+輸入「選單」可重新顯示此訊息
+輸入「幫助」查看詳細說明`
   }
 }
 
@@ -169,7 +52,7 @@ async function handleMessage(event: MessageEvent) {
   const text = event.message.text.toLowerCase()
   
   if (text.includes('選單') || text.includes('menu') || text.includes('開始')) {
-    await client.replyMessage(event.replyToken, mainMenu)
+    await client.replyMessage(event.replyToken, getMainMenuMessage())
   } else if (text.includes('help') || text.includes('幫助')) {
     await client.replyMessage(event.replyToken, {
       type: 'text',
@@ -203,7 +86,7 @@ async function handlePostback(event: PostbackEvent) {
   
   switch (data) {
     case 'show_menu':
-      await client.replyMessage(event.replyToken, mainMenu)
+      await client.replyMessage(event.replyToken, getMainMenuMessage())
       break
     default:
       await client.replyMessage(event.replyToken, {
