@@ -47,8 +47,11 @@ export default function AdminLineAuthPage() {
         // 儲存管理員狀態
         localStorage.setItem('admin_line_id', lineId)
         localStorage.setItem('admin_info', JSON.stringify(data.adminInfo))
+        localStorage.setItem('admin_verified', 'true')
+        localStorage.setItem('admin_verified_time', Date.now().toString())
         
-        // 3 秒後自動跳轉到管理後台
+        // 清除認證標誌並跳轉到管理後台
+        sessionStorage.removeItem('admin_authenticating')
         setTimeout(() => {
           router.push('/admin/dashboard')
         }, 3000)
@@ -59,11 +62,19 @@ export default function AdminLineAuthPage() {
       setError('檢查權限時發生錯誤')
     } finally {
       setLoading(false)
+      sessionStorage.removeItem('admin_authenticating')
     }
   }
 
   useEffect(() => {
     if (isReady && isLoggedIn && profile?.userId) {
+      // 防止重複檢查：如果已經在認證過程中，不要重複執行
+      const isAuthenticating = sessionStorage.getItem('admin_authenticating')
+      if (isAuthenticating === 'true') {
+        return
+      }
+      
+      sessionStorage.setItem('admin_authenticating', 'true')
       checkAdminStatus(profile.userId)
     } else if (isReady && !isLoggedIn) {
       setLoading(false)

@@ -46,6 +46,32 @@ export default function AdminDashboard() {
       return
     }
 
+    // 檢查本地存儲的驗證狀態
+    const adminVerified = localStorage.getItem('admin_verified')
+    const adminVerifiedTime = localStorage.getItem('admin_verified_time')
+    const adminLineId = localStorage.getItem('admin_line_id')
+    const adminInfoStr = localStorage.getItem('admin_info')
+
+    // 如果本地有有效的驗證狀態且是同一個用戶
+    if (adminVerified === 'true' && adminLineId === profile.userId && adminInfoStr) {
+      const verifiedTime = parseInt(adminVerifiedTime || '0')
+      const now = Date.now()
+      
+      // 驗證狀態有效期為 1 小時
+      if (now - verifiedTime < 60 * 60 * 1000) {
+        try {
+          const adminInfo = JSON.parse(adminInfoStr)
+          setAdminInfo(adminInfo)
+          loadStats()
+          setLoading(false)
+          return
+        } catch (error) {
+          console.error('Parse admin info error:', error)
+        }
+      }
+    }
+
+    // 如果本地驗證已過期或無效，重新驗證
     try {
       const response = await fetch('/api/admin/check-line-admin', {
         method: 'POST',
@@ -59,9 +85,20 @@ export default function AdminDashboard() {
       
       if (data.isAdmin) {
         setAdminInfo(data.adminInfo)
-        // 載入統計數據
+        
+        // 更新本地存儲
+        localStorage.setItem('admin_verified', 'true')
+        localStorage.setItem('admin_verified_time', Date.now().toString())
+        localStorage.setItem('admin_line_id', profile.userId)
+        localStorage.setItem('admin_info', JSON.stringify(data.adminInfo))
+        
         loadStats()
       } else {
+        // 清除本地存儲並跳轉
+        localStorage.removeItem('admin_verified')
+        localStorage.removeItem('admin_verified_time')
+        localStorage.removeItem('admin_line_id')
+        localStorage.removeItem('admin_info')
         router.push('/admin/line-auth')
       }
     } catch (error) {
@@ -202,8 +239,11 @@ export default function AdminDashboard() {
               
               <button
                 onClick={() => {
+                  // 清除所有管理員相關的本地存儲
                   localStorage.removeItem('admin_line_id')
                   localStorage.removeItem('admin_info')
+                  localStorage.removeItem('admin_verified')
+                  localStorage.removeItem('admin_verified_time')
                   router.push('/')
                 }}
                 className="flex items-center space-x-2 text-red-600 hover:text-red-700 px-3 py-2 rounded-lg hover:bg-red-50 transition-colors"
