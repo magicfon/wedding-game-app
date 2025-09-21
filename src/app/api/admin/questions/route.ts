@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     let query = supabase
       .from('questions')
       .select('*')
-      .order('created_at', { ascending: false })
+      .order('created_at', { ascending: true })
 
     if (activeOnly) {
       query = query.eq('is_active', true)
