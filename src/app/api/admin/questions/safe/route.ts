@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createSupabaseServer } from '@/lib/supabase-server'
+import { createSupabaseAdmin } from '@/lib/supabase-admin'
 
 // POST - 創建新問題（安全版本，只使用基本欄位）
 export async function POST(request: NextRequest) {
@@ -30,8 +30,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid correct answer' }, { status: 400 })
     }
 
-    console.log('🔌 Creating Supabase client...')
-    const supabase = await createSupabaseServer()
+    console.log('🔌 Creating Supabase admin client...')
+    const supabase = createSupabaseAdmin()
 
     // 只插入基本欄位，避免欄位不存在的錯誤
     const basicData = {
@@ -64,22 +64,22 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ Question created successfully:', question)
 
-    // 嘗試記錄管理員操作（如果表格存在）
-    try {
-      await supabase
-        .from('admin_actions')
-        .insert({
-          admin_line_id: created_by || 'unknown',
-          action_type: 'create_question',
-          target_type: 'question',
-          target_id: question.id.toString(),
-          details: { question_text }
-        })
-      console.log('✅ Admin action logged')
-    } catch (logError) {
-      console.warn('⚠️ Failed to log admin action:', logError)
-      // 不影響主要功能
-    }
+    // 記錄管理員操作（暫時註解，等 admin_actions 表格創建後再啟用）
+    // try {
+    //   await supabase
+    //     .from('admin_actions')
+    //     .insert({
+    //       admin_line_id: created_by || 'unknown',
+    //       action_type: 'create_question',
+    //       target_type: 'question',
+    //       target_id: question.id.toString(),
+    //       details: { question_text }
+    //     })
+    //   console.log('✅ Admin action logged')
+    // } catch (logError) {
+    //   console.warn('⚠️ Failed to log admin action:', logError)
+    //   // 不影響主要功能
+    // }
 
     return NextResponse.json({ success: true, question })
 
@@ -98,7 +98,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const activeOnly = searchParams.get('active') === 'true'
     
-    const supabase = await createSupabaseServer()
+    const supabase = createSupabaseAdmin()
 
     let query = supabase
       .from('questions')

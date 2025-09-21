@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createSupabaseServer } from '@/lib/supabase-server'
+import { createSupabaseAdmin } from '@/lib/supabase-admin'
 
 export async function POST(request: NextRequest) {
   try {
@@ -8,14 +8,13 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     console.log('Received body:', body)
 
-    const supabase = await createSupabaseServer()
+    const supabase = createSupabaseAdmin()
 
     // 1. 測試基本連接
     console.log('Testing basic connection...')
     const { data: testConnection, error: connectionError } = await supabase
       .from('questions')
-      .select('count(*)')
-      .limit(1)
+      .select('*', { count: 'exact', head: true })
 
     if (connectionError) {
       console.error('Connection error:', connectionError)
