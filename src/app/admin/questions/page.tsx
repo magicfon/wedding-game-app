@@ -311,24 +311,41 @@ export default function QuestionsManagePage() {
                 <span className="text-sm text-gray-600">只顯示啟用的問題</span>
               </label>
             </div>
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2">
               <button
                 onClick={async () => {
-                  console.log('Testing Supabase connection...')
+                  console.log('Testing basic API...')
                   try {
-                    const response = await fetch('/api/debug/supabase-test')
+                    const response = await fetch('/api/debug/basic-test')
                     const data = await response.json()
-                    console.log('Supabase test result:', data)
-                    alert('測試結果已記錄在控制台，請按 F12 查看')
+                    console.log('Basic API test result:', data)
+                    alert('基本 API 測試結果已記錄在控制台')
                   } catch (error) {
-                    console.error('Test failed:', error)
-                    alert('測試失敗：' + error)
+                    console.error('Basic test failed:', error)
+                    alert('基本測試失敗：' + error)
                   }
                 }}
-                className="flex items-center space-x-2 bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg transition-colors text-sm"
+                className="flex items-center space-x-1 bg-gray-500 hover:bg-gray-600 text-white px-2 py-1 rounded text-xs"
               >
-                <AlertCircle className="w-4 h-4" />
-                <span>測試連接</span>
+                <span>基本測試</span>
+              </button>
+              <button
+                onClick={async () => {
+                  console.log('Testing direct Supabase...')
+                  try {
+                    const response = await fetch('/api/debug/direct-supabase')
+                    const data = await response.json()
+                    console.log('Direct Supabase test result:', data)
+                    alert('直接 Supabase 測試結果已記錄在控制台')
+                  } catch (error) {
+                    console.error('Direct Supabase test failed:', error)
+                    alert('Supabase 測試失敗：' + error)
+                  }
+                }}
+                className="flex items-center space-x-1 bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs"
+              >
+                <AlertCircle className="w-3 h-3" />
+                <span>Supabase</span>
               </button>
               <button
                 onClick={() => setShowForm(true)}
