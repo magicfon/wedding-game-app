@@ -7,9 +7,29 @@ export async function POST(request: NextRequest) {
     
     if (!profile || !profile.userId || !profile.displayName) {
       return NextResponse.json(
-        { error: 'Invalid profile data' },
+        { error: 'Invalid profile data', details: 'Missing userId or displayName' },
         { status: 400 }
       )
+    }
+
+    // 檢查環境變數
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    
+    if (!supabaseUrl || supabaseUrl === 'https://placeholder.supabase.co') {
+      return NextResponse.json({
+        error: 'Database not configured',
+        details: 'NEXT_PUBLIC_SUPABASE_URL not set',
+        hint: 'Please set Supabase environment variables in Vercel'
+      }, { status: 500 })
+    }
+    
+    if (!supabaseAnonKey || supabaseAnonKey === 'placeholder-key') {
+      return NextResponse.json({
+        error: 'Database not configured', 
+        details: 'NEXT_PUBLIC_SUPABASE_ANON_KEY not set',
+        hint: 'Please set Supabase environment variables in Vercel'
+      }, { status: 500 })
     }
 
     const supabase = await createSupabaseServer()
@@ -23,10 +43,13 @@ export async function POST(request: NextRequest) {
 
     if (fetchError && fetchError.code !== 'PGRST116') {
       console.error('Error fetching user:', fetchError)
-      return NextResponse.json(
-        { error: 'Database error' },
-        { status: 500 }
-      )
+      return NextResponse.json({
+        error: 'Database connection failed',
+        details: fetchError.message,
+        hint: fetchError.message.includes('relation "users" does not exist') 
+          ? 'Please run database/setup.sql in Supabase SQL Editor'
+          : 'Check your database configuration'
+      }, { status: 500 })
     }
 
     let userData

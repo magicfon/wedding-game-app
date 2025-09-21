@@ -7,6 +7,7 @@ import { User, CheckCircle, XCircle, Smartphone, Globe, Info } from 'lucide-reac
 export default function UserStatus() {
   const { isReady, isInLiff, isLoggedIn, profile, error, loading } = useLiff()
   const [syncStatus, setSyncStatus] = useState<'pending' | 'success' | 'error' | null>(null)
+  const [syncError, setSyncError] = useState<string | null>(null)
 
   // 監聽用戶同步狀態
   useEffect(() => {
@@ -26,11 +27,15 @@ export default function UserStatus() {
           
           if (response.ok) {
             setSyncStatus('success')
+            setSyncError(null)
           } else {
             setSyncStatus('error')
+            const errorData = await response.json()
+            setSyncError(errorData.details || errorData.error || '同步失敗')
           }
-        } catch {
+        } catch (err) {
           setSyncStatus('error')
+          setSyncError(err instanceof Error ? err.message : '網路錯誤')
         }
       }
       
@@ -152,6 +157,14 @@ export default function UserStatus() {
             )}
           </div>
         </div>
+
+        {/* 同步錯誤詳情 */}
+        {syncStatus === 'error' && syncError && (
+          <div className="mt-2 p-2 bg-red-50 rounded-md">
+            <p className="text-xs text-red-700">錯誤詳情:</p>
+            <p className="text-xs text-red-600 mt-1">{syncError}</p>
+          </div>
+        )}
 
         {/* 用戶資料 */}
         {profile && (
