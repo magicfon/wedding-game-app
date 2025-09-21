@@ -154,8 +154,29 @@ export default function QuestionsManagePage() {
         setFormData(initialFormData)
         fetchQuestions()
       } else {
-        console.error('Failed to save question:', data.error)
-        alert('儲存失敗：' + data.error)
+        console.error('Failed to save question:', data)
+        
+        // 如果是新增問題失敗，嘗試測試 API
+        if (!editingQuestion) {
+          console.log('Testing with diagnostic API...')
+          try {
+            const testResponse = await fetch('/api/admin/questions/test', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(payload),
+            })
+            const testData = await testResponse.json()
+            console.log('Test API result:', testData)
+            alert('儲存失敗：' + data.error + '\n\n請查看瀏覽器控制台的詳細錯誤信息')
+          } catch (testError) {
+            console.error('Test API also failed:', testError)
+            alert('儲存失敗：' + data.error)
+          }
+        } else {
+          alert('儲存失敗：' + data.error)
+        }
       }
     } catch (error) {
       console.error('Error saving question:', error)
