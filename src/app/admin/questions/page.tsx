@@ -312,38 +312,75 @@ export default function QuestionsManagePage() {
               </label>
             </div>
             <div className="flex items-center space-x-2">
-              <button
-                onClick={async () => {
-                  console.log('Checking environment variables...')
-                  try {
-                    const response = await fetch('/api/debug/env-check')
-                    const data = await response.json()
-                    console.log('Environment check result:', data)
-                    
-                    // 顯示關鍵信息
-                    const supabaseStatus = data.supabase
-                    let message = '環境變數檢查結果：\n\n'
-                    message += `Supabase URL: ${supabaseStatus?.url?.valid ? '✅ 正常' : '❌ 有問題'}\n`
-                    message += `Supabase Key: ${supabaseStatus?.key?.valid ? '✅ 正常' : '❌ 有問題'}\n\n`
-                    
-                    if (supabaseStatus?.url?.issues?.length > 0) {
-                      message += 'URL 問題：' + supabaseStatus.url.issues.join(', ') + '\n'
+                <button
+                  onClick={async () => {
+                    console.log('Checking environment variables...')
+                    try {
+                      const response = await fetch('/api/debug/env-check')
+                      const data = await response.json()
+                      console.log('Environment check result:', data)
+                      
+                      // 顯示關鍵信息
+                      const supabaseStatus = data.supabase
+                      let message = '環境變數檢查結果：\n\n'
+                      message += `Supabase URL: ${supabaseStatus?.url?.valid ? '✅ 正常' : '❌ 有問題'}\n`
+                      message += `Supabase Key: ${supabaseStatus?.key?.valid ? '✅ 正常' : '❌ 有問題'}\n`
+                      message += `Line Channel ID: ${data.otherVars?.lineChannelId ? '✅ 正常' : '❌ 缺失'}\n\n`
+                      
+                      if (supabaseStatus?.url?.issues?.length > 0) {
+                        message += 'URL 問題：' + supabaseStatus.url.issues.join(', ') + '\n'
+                      }
+                      if (supabaseStatus?.key?.issues?.length > 0) {
+                        message += 'Key 問題：' + supabaseStatus.key.issues.join(', ') + '\n'
+                      }
+                      
+                      message += '\n完整結果：\n' + JSON.stringify(data, null, 2)
+                      alert(message)
+                    } catch (error) {
+                      console.error('Environment check failed:', error)
+                      alert('環境變數檢查失敗：' + error)
                     }
-                    if (supabaseStatus?.key?.issues?.length > 0) {
-                      message += 'Key 問題：' + supabaseStatus.key.issues.join(', ') + '\n'
+                  }}
+                  className="flex items-center space-x-1 bg-orange-500 hover:bg-orange-600 text-white px-2 py-1 rounded text-xs"
+                >
+                  <span>環境變數</span>
+                </button>
+                <button
+                  onClick={async () => {
+                    console.log('Testing write permissions...')
+                    try {
+                      const response = await fetch('/api/debug/write-test', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
+                      })
+                      const data = await response.json()
+                      console.log('Write test result:', data)
+                      
+                      let message = '寫入權限測試結果：\n\n'
+                      message += `總測試數: ${data.summary?.totalTests || 0}\n`
+                      message += `通過測試: ${data.summary?.passedTests || 0}\n`
+                      message += `失敗測試: ${data.summary?.failedTests || 0}\n\n`
+                      
+                      if (data.testResults) {
+                        data.testResults.forEach((result: any, index: number) => {
+                          message += `${index + 1}. ${result.test}: ${result.success ? '✅' : '❌'}\n`
+                          if (!result.success && result.error) {
+                            message += `   錯誤: ${result.error}\n`
+                          }
+                        })
+                      }
+                      
+                      message += '\n詳細結果請查看控制台'
+                      alert(message)
+                    } catch (error) {
+                      console.error('Write test failed:', error)
+                      alert('寫入測試失敗：' + error)
                     }
-                    
-                    message += '\n詳細信息請查看控制台'
-                    alert(message)
-                  } catch (error) {
-                    console.error('Environment check failed:', error)
-                    alert('環境變數檢查失敗：' + error)
-                  }
-                }}
-                className="flex items-center space-x-1 bg-orange-500 hover:bg-orange-600 text-white px-2 py-1 rounded text-xs"
-              >
-                <span>環境變數</span>
-              </button>
+                  }}
+                  className="flex items-center space-x-1 bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs"
+                >
+                  <span>寫入測試</span>
+                </button>
               <button
                 onClick={async () => {
                   console.log('Testing basic API...')
