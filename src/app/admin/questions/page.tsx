@@ -490,7 +490,7 @@ export default function QuestionsManagePage() {
                       onChange={(e) => setFormData({ ...formData, question_text: e.target.value })}
                       required
                       rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                       placeholder="請輸入問題內容..."
                     />
                   </div>
@@ -510,7 +510,7 @@ export default function QuestionsManagePage() {
                             [`option_${option.toLowerCase()}`]: e.target.value 
                           })}
                           required
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                           placeholder={`選項 ${option}`}
                         />
                       </div>
@@ -525,7 +525,7 @@ export default function QuestionsManagePage() {
                     <select
                       value={formData.correct_answer}
                       onChange={(e) => setFormData({ ...formData, correct_answer: e.target.value as 'A' | 'B' | 'C' | 'D' })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                     >
                       <option value="A">A</option>
                       <option value="B">B</option>
@@ -546,7 +546,7 @@ export default function QuestionsManagePage() {
                         value={formData.points}
                         onChange={(e) => setFormData({ ...formData, points: parseInt(e.target.value) || 0 })}
                         min="0"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                       />
                     </div>
                     <div>
@@ -560,7 +560,7 @@ export default function QuestionsManagePage() {
                         onChange={(e) => setFormData({ ...formData, time_limit: parseInt(e.target.value) || 30 })}
                         min="5"
                         max="300"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                       />
                     </div>
                     <div>
@@ -572,7 +572,7 @@ export default function QuestionsManagePage() {
                         value={formData.max_bonus_points}
                         onChange={(e) => setFormData({ ...formData, max_bonus_points: parseInt(e.target.value) || 0 })}
                         min="0"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                       />
                     </div>
                   </div>
@@ -596,7 +596,7 @@ export default function QuestionsManagePage() {
                             value={formData.penalty_score}
                             onChange={(e) => setFormData({ ...formData, penalty_score: parseInt(e.target.value) || 0 })}
                             min="0"
-                            className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
+                            className="w-20 px-2 py-1 border border-gray-300 rounded text-sm text-gray-900"
                             placeholder="分數"
                           />
                         )}
@@ -616,7 +616,7 @@ export default function QuestionsManagePage() {
                             value={formData.timeout_penalty_score}
                             onChange={(e) => setFormData({ ...formData, timeout_penalty_score: parseInt(e.target.value) || 0 })}
                             min="0"
-                            className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
+                            className="w-20 px-2 py-1 border border-gray-300 rounded text-sm text-gray-900"
                             placeholder="分數"
                           />
                         )}
@@ -639,7 +639,7 @@ export default function QuestionsManagePage() {
                     <button
                       type="button"
                       onClick={handleCancel}
-                      className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                      className="px-4 py-2 border border-gray-300 text-gray-900 rounded-lg hover:bg-gray-50 transition-colors"
                     >
                       取消
                     </button>
