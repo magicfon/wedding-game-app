@@ -2,286 +2,335 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { createSupabaseBrowser } from '@/lib/supabase'
+import { useLiff } from '@/hooks/useLiff'
 import { 
   Users, 
   HelpCircle, 
   Camera, 
-  Trophy, 
   Settings, 
   Play, 
   Pause, 
   SkipForward,
-  Eye,
-  EyeOff,
-  Shield
+  Trophy,
+  BarChart3,
+  Shield,
+  Home,
+  LogOut,
+  UserCheck,
+  Activity,
+  Clock,
+  Star
 } from 'lucide-react'
 
-interface Stats {
-  totalUsers: number
-  totalQuestions: number
-  totalPhotos: number
-  activeGame: boolean
+interface AdminInfo {
+  lineId: string
+  displayName: string
 }
 
 export default function AdminDashboard() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [adminInfo, setAdminInfo] = useState<AdminInfo | null>(null)
   const [loading, setLoading] = useState(true)
-  const [stats, setStats] = useState<Stats>({
+  const [stats, setStats] = useState({
     totalUsers: 0,
-    totalQuestions: 0,
+    activeQuestions: 0,
     totalPhotos: 0,
-    activeGame: false
+    gameActive: false
   })
-  const [gameState, setGameState] = useState<any>(null)
+  const { isLoggedIn, profile } = useLiff()
   const router = useRouter()
-  const supabase = createSupabaseBrowser()
 
-  // 檢查管理員認證
-  useEffect(() => {
-    const token = localStorage.getItem('admin_token')
-    if (!token) {
-      router.push('/admin')
+  // 檢查管理員身份
+  const checkAdminStatus = async () => {
+    if (!profile?.userId) {
+      router.push('/admin/line-auth')
       return
     }
 
-    // 這裡應該驗證 token 的有效性
-    setIsAuthenticated(true)
-    setLoading(false)
-    fetchStats()
-    fetchGameState()
-  }, [router])
-
-  const fetchStats = async () => {
     try {
-      // 獲取用戶總數
-      const { count: userCount } = await supabase
-        .from('users')
-        .select('*', { count: 'exact', head: true })
+      const response = await fetch('/api/admin/check-line-admin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ lineId: profile.userId }),
+      })
 
-      // 獲取題目總數
-      const { count: questionCount } = await supabase
-        .from('questions')
-        .select('*', { count: 'exact', head: true })
+      const data = await response.json()
+      
+      if (data.isAdmin) {
+        setAdminInfo(data.adminInfo)
+        // 載入統計數據
+        loadStats()
+      } else {
+        router.push('/admin/line-auth')
+      }
+    } catch (error) {
+      console.error('Admin check error:', error)
+      router.push('/admin/line-auth')
+    } finally {
+      setLoading(false)
+    }
+  }
 
-      // 獲取照片總數
-      const { count: photoCount } = await supabase
-        .from('photos')
-        .select('*', { count: 'exact', head: true })
-
-      // 獲取遊戲狀態
-      const { data: gameData } = await supabase
-        .from('game_state')
-        .select('is_game_active')
-        .single()
-
+  // 載入統計數據
+  const loadStats = async () => {
+    try {
+      // 這裡可以添加實際的統計 API 調用
+      // 目前使用模擬數據
       setStats({
-        totalUsers: userCount || 0,
-        totalQuestions: questionCount || 0,
-        totalPhotos: photoCount || 0,
-        activeGame: gameData?.is_game_active || false
+        totalUsers: 25,
+        activeQuestions: 5,
+        totalPhotos: 12,
+        gameActive: false
       })
     } catch (error) {
-      console.error('Error fetching stats:', error)
+      console.error('Load stats error:', error)
     }
   }
 
-  const fetchGameState = async () => {
-    try {
-      const { data } = await supabase
-        .from('game_state')
-        .select('*')
-        .single()
-      
-      setGameState(data)
-    } catch (error) {
-      console.error('Error fetching game state:', error)
+  useEffect(() => {
+    if (isLoggedIn && profile) {
+      checkAdminStatus()
+    } else if (!isLoggedIn) {
+      router.push('/admin/line-auth')
     }
-  }
+  }, [isLoggedIn, profile])
 
-  const handleLogout = () => {
-    localStorage.removeItem('admin_token')
-    router.push('/admin')
-  }
-
-  const toggleGame = async () => {
-    try {
-      const { error } = await supabase
-        .from('game_state')
-        .update({ is_game_active: !stats.activeGame })
-        .eq('id', gameState.id)
-
-      if (error) throw error
-      
-      setStats(prev => ({ ...prev, activeGame: !prev.activeGame }))
-    } catch (error) {
-      console.error('Error toggling game:', error)
-      alert('操作失敗')
+  const menuItems = [
+    {
+      title: '用戶管理',
+      description: '查看和管理註冊用戶',
+      icon: Users,
+      href: '/admin/users',
+      color: 'bg-blue-500'
+    },
+    {
+      title: '問題管理',
+      description: '管理快問快答題目',
+      icon: HelpCircle,
+      href: '/admin/questions',
+      color: 'bg-green-500'
+    },
+    {
+      title: '遊戲控制',
+      description: '開始/暫停遊戲',
+      icon: Play,
+      href: '/admin/game-control',
+      color: 'bg-purple-500'
+    },
+    {
+      title: '照片管理',
+      description: '管理上傳的照片',
+      icon: Camera,
+      href: '/admin/photos',
+      color: 'bg-pink-500'
+    },
+    {
+      title: '排行榜',
+      description: '查看分數排行',
+      icon: Trophy,
+      href: '/admin/leaderboard',
+      color: 'bg-yellow-500'
+    },
+    {
+      title: '統計報告',
+      description: '查看詳細統計',
+      icon: BarChart3,
+      href: '/admin/analytics',
+      color: 'bg-indigo-500'
+    },
+    {
+      title: '管理員設置',
+      description: '管理管理員權限',
+      icon: Shield,
+      href: '/admin/settings',
+      color: 'bg-red-500'
+    },
+    {
+      title: '系統設置',
+      description: '系統配置和設置',
+      icon: Settings,
+      href: '/admin/system',
+      color: 'bg-gray-500'
     }
-  }
-
-  const toggleVoting = async () => {
-    try {
-      const { error } = await supabase
-        .from('game_state')
-        .update({ voting_enabled: !gameState.voting_enabled })
-        .eq('id', gameState.id)
-
-      if (error) throw error
-      
-      setGameState((prev: any) => ({ ...prev, voting_enabled: !prev.voting_enabled }))
-    } catch (error) {
-      console.error('Error toggling voting:', error)
-      alert('操作失敗')
-    }
-  }
+  ]
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">載入管理控制台...</p>
+        </div>
       </div>
     )
   }
-
-  if (!isAuthenticated) {
-    return null
-  }
-
-  const menuItems = [
-    { name: '快問快答管理', href: '/admin/quiz', icon: HelpCircle, color: 'bg-green-500' },
-    { name: '照片管理', href: '/admin/photos', icon: Camera, color: 'bg-purple-500' },
-    { name: '用戶管理', href: '/admin/users', icon: Users, color: 'bg-blue-500' },
-    { name: '系統設定', href: '/admin/settings', icon: Settings, color: 'bg-gray-500' },
-  ]
 
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <div className="flex items-center space-x-4">
               <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
                 <Shield className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-800">管理後台</h1>
+                <h1 className="text-xl font-bold text-gray-900">管理控制台</h1>
                 <p className="text-sm text-gray-600">婚禮互動遊戲管理系統</p>
               </div>
             </div>
-            <button
-              onClick={handleLogout}
-              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors"
-            >
-              登出
-            </button>
+            
+            <div className="flex items-center space-x-4">
+              {adminInfo && (
+                <div className="flex items-center space-x-2">
+                  <UserCheck className="w-5 h-5 text-green-500" />
+                  <span className="text-sm text-gray-700">
+                    {adminInfo.displayName || '管理員'}
+                  </span>
+                </div>
+              )}
+              
+              <button
+                onClick={() => router.push('/')}
+                className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <Home className="w-4 h-4" />
+                <span className="text-sm">返回首頁</span>
+              </button>
+              
+              <button
+                onClick={() => {
+                  localStorage.removeItem('admin_line_id')
+                  localStorage.removeItem('admin_info')
+                  router.push('/')
+                }}
+                className="flex items-center space-x-2 text-red-600 hover:text-red-700 px-3 py-2 rounded-lg hover:bg-red-50 transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
+                <span className="text-sm">登出</span>
+              </button>
+            </div>
           </div>
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* 統計卡片 */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-lg p-6">
+          <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">總用戶數</p>
-                <p className="text-2xl font-bold text-gray-800">{stats.totalUsers}</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.totalUsers}</p>
               </div>
-              <Users className="w-12 h-12 text-blue-500" />
+              <Users className="w-8 h-8 text-blue-500" />
             </div>
           </div>
-
-          <div className="bg-white rounded-xl shadow-lg p-6">
+          
+          <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">題目數量</p>
-                <p className="text-2xl font-bold text-gray-800">{stats.totalQuestions}</p>
+                <p className="text-sm text-gray-600">活躍問題</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.activeQuestions}</p>
               </div>
-              <HelpCircle className="w-12 h-12 text-green-500" />
+              <HelpCircle className="w-8 h-8 text-green-500" />
             </div>
           </div>
-
-          <div className="bg-white rounded-xl shadow-lg p-6">
+          
+          <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">照片數量</p>
-                <p className="text-2xl font-bold text-gray-800">{stats.totalPhotos}</p>
+                <p className="text-sm text-gray-600">上傳照片</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.totalPhotos}</p>
               </div>
-              <Camera className="w-12 h-12 text-purple-500" />
+              <Camera className="w-8 h-8 text-pink-500" />
             </div>
           </div>
-
-          <div className="bg-white rounded-xl shadow-lg p-6">
+          
+          <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">遊戲狀態</p>
-                <p className={`text-2xl font-bold ${stats.activeGame ? 'text-green-600' : 'text-red-600'}`}>
-                  {stats.activeGame ? '進行中' : '已停止'}
+                <p className="text-2xl font-bold text-gray-900">
+                  {stats.gameActive ? '進行中' : '已暫停'}
                 </p>
               </div>
-              <Trophy className="w-12 h-12 text-yellow-500" />
+              {stats.gameActive ? (
+                <Activity className="w-8 h-8 text-green-500" />
+              ) : (
+                <Clock className="w-8 h-8 text-gray-500" />
+              )}
             </div>
           </div>
         </div>
 
-        {/* 快速控制 */}
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-          <h2 className="text-xl font-bold text-gray-800 mb-6">快速控制</h2>
+        {/* 快速操作 */}
+        <div className="bg-white rounded-lg shadow mb-8 p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">快速操作</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <button
-              onClick={toggleGame}
-              className={`flex items-center justify-center space-x-2 py-3 px-6 rounded-lg font-semibold transition-colors ${
-                stats.activeGame
-                  ? 'bg-red-500 hover:bg-red-600 text-white'
-                  : 'bg-green-500 hover:bg-green-600 text-white'
-              }`}
+              onClick={() => router.push('/admin/game-control')}
+              className="flex items-center space-x-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
             >
-              {stats.activeGame ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
-              <span>{stats.activeGame ? '停止遊戲' : '開始遊戲'}</span>
+              <Play className="w-6 h-6 text-green-500" />
+              <div className="text-left">
+                <p className="font-medium text-gray-900">開始遊戲</p>
+                <p className="text-sm text-gray-600">啟動快問快答</p>
+              </div>
             </button>
-
+            
             <button
-              onClick={toggleVoting}
-              className={`flex items-center justify-center space-x-2 py-3 px-6 rounded-lg font-semibold transition-colors ${
-                gameState?.voting_enabled
-                  ? 'bg-orange-500 hover:bg-orange-600 text-white'
-                  : 'bg-blue-500 hover:bg-blue-600 text-white'
-              }`}
+              onClick={() => router.push('/admin/questions')}
+              className="flex items-center space-x-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
             >
-              {gameState?.voting_enabled ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-              <span>{gameState?.voting_enabled ? '關閉投票' : '開啟投票'}</span>
+              <HelpCircle className="w-6 h-6 text-blue-500" />
+              <div className="text-left">
+                <p className="font-medium text-gray-900">管理問題</p>
+                <p className="text-sm text-gray-600">編輯題目內容</p>
+              </div>
             </button>
-
+            
             <button
-              onClick={() => router.push('/game-live')}
-              className="flex items-center justify-center space-x-2 py-3 px-6 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-semibold transition-colors"
+              onClick={() => router.push('/admin/leaderboard')}
+              className="flex items-center space-x-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
             >
-              <SkipForward className="w-5 h-5" />
-              <span>查看實況</span>
+              <Trophy className="w-6 h-6 text-yellow-500" />
+              <div className="text-left">
+                <p className="font-medium text-gray-900">查看排行</p>
+                <p className="text-sm text-gray-600">即時分數統計</p>
+              </div>
             </button>
           </div>
         </div>
 
-        {/* 管理選單 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {menuItems.map((item, index) => (
-            <div
-              key={index}
-              onClick={() => router.push(item.href)}
-              className="bg-white rounded-xl shadow-lg p-6 cursor-pointer transform transition-all duration-200 hover:scale-105 hover:shadow-xl"
-            >
-              <div className="flex items-center space-x-4">
-                <div className={`w-12 h-12 ${item.color} rounded-xl flex items-center justify-center`}>
-                  <item.icon className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800">{item.name}</h3>
+        {/* 功能選單 */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-6">管理功能</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {menuItems.map((item, index) => (
+              <div
+                key={index}
+                onClick={() => router.push(item.href)}
+                className="cursor-pointer group"
+              >
+                <div className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-all duration-200 group-hover:border-gray-300">
+                  <div className="flex items-center space-x-4 mb-4">
+                    <div className={`w-12 h-12 ${item.color} rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-200`}>
+                      <item.icon className="w-6 h-6 text-white" />
+                    </div>
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
+                    {item.title}
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    {item.description}
+                  </p>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
     </div>

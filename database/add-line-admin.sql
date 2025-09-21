@@ -62,7 +62,7 @@ CREATE TRIGGER trigger_update_admin_status
 -- 注意：請將 'YOUR_LINE_ID_HERE' 替換為實際的管理員 Line ID
 INSERT INTO admin_line_ids (line_id, display_name, notes, created_by) 
 VALUES 
-  ('YOUR_LINE_ID_HERE', '主管理員', '系統初始管理員', 'system')
+  ('U58514ae2d8f54fecb2b2ff92245ce1e1', '主管理員', '系統初始管理員', 'system')
 ON CONFLICT (line_id) DO NOTHING;
 
 -- 8. 更新現有用戶的管理員狀態
