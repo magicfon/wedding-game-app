@@ -381,6 +381,41 @@ export default function QuestionsManagePage() {
                 >
                   <span>寫入測試</span>
                 </button>
+                <button
+                  onClick={async () => {
+                    console.log('Testing service key...')
+                    try {
+                      const response = await fetch('/api/debug/service-key-test', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
+                      })
+                      const data = await response.json()
+                      console.log('Service key test result:', data)
+                      
+                      let message = '服務密鑰測試結果：\n\n'
+                      if (data.success) {
+                        message += '✅ 服務密鑰測試成功！\n'
+                        message += '✅ 可以正常插入資料\n'
+                        message += '✅ 新增題目功能應該可以正常使用了\n'
+                      } else {
+                        message += '❌ 服務密鑰測試失敗\n'
+                        message += `錯誤: ${data.error}\n`
+                        if (data.details) {
+                          message += `詳細: ${JSON.stringify(data.details)}\n`
+                        }
+                      }
+                      
+                      message += '\n詳細結果請查看控制台'
+                      alert(message)
+                    } catch (error) {
+                      console.error('Service key test failed:', error)
+                      alert('服務密鑰測試失敗：' + error)
+                    }
+                  }}
+                  className="flex items-center space-x-1 bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs"
+                >
+                  <span>服務密鑰測試</span>
+                </button>
               <button
                 onClick={async () => {
                   console.log('Testing basic API...')
