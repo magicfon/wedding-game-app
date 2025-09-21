@@ -1,10 +1,42 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { useLiff } from '@/hooks/useLiff'
 import { User, CheckCircle, XCircle, Smartphone, Globe, Info } from 'lucide-react'
 
 export default function UserStatus() {
   const { isReady, isInLiff, isLoggedIn, profile, error, loading } = useLiff()
+  const [syncStatus, setSyncStatus] = useState<'pending' | 'success' | 'error' | null>(null)
+
+  // 監聽用戶同步狀態
+  useEffect(() => {
+    if (isLoggedIn && profile) {
+      setSyncStatus('pending')
+      
+      // 模擬檢查同步狀態
+      const checkSync = async () => {
+        try {
+          const response = await fetch('/api/auth/liff-sync', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ profile }),
+          })
+          
+          if (response.ok) {
+            setSyncStatus('success')
+          } else {
+            setSyncStatus('error')
+          }
+        } catch (error) {
+          setSyncStatus('error')
+        }
+      }
+      
+      checkSync()
+    }
+  }, [isLoggedIn, profile])
 
   if (loading) {
     return (
@@ -85,6 +117,37 @@ export default function UserStatus() {
               <>
                 <XCircle className="w-4 h-4 text-red-500" />
                 <span className="text-red-600">未登入</span>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* 資料庫同步狀態 */}
+        <div className="flex items-center justify-between">
+          <span className="text-gray-600">資料庫同步:</span>
+          <div className="flex items-center space-x-1">
+            {syncStatus === 'pending' && (
+              <>
+                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-500"></div>
+                <span className="text-xs text-blue-600">同步中</span>
+              </>
+            )}
+            {syncStatus === 'success' && (
+              <>
+                <CheckCircle className="w-4 h-4 text-green-500" />
+                <span className="text-xs text-green-600">已同步</span>
+              </>
+            )}
+            {syncStatus === 'error' && (
+              <>
+                <XCircle className="w-4 h-4 text-red-500" />
+                <span className="text-xs text-red-600">同步失敗</span>
+              </>
+            )}
+            {syncStatus === null && (
+              <>
+                <span className="w-4 h-4 text-gray-400">-</span>
+                <span className="text-xs text-gray-400">未開始</span>
               </>
             )}
           </div>
