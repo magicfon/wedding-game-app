@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createSupabaseServer } from '@/lib/supabase-server'
+import { createSupabaseAdmin } from '@/lib/supabase-admin'
 
 // GET - 獲取所有問題
 export async function GET(request: NextRequest) {
@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const activeOnly = searchParams.get('active') === 'true'
     
-    const supabase = await createSupabaseServer()
+    const supabase = createSupabaseAdmin()
 
     let query = supabase
       .from('questions')
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid correct answer' }, { status: 400 })
     }
 
-    const supabase = await createSupabaseServer()
+    const supabase = createSupabaseAdmin()
 
     const { data: question, error } = await supabase
       .from('questions')
@@ -123,7 +123,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Question ID is required' }, { status: 400 })
     }
 
-    const supabase = await createSupabaseServer()
+    const supabase = createSupabaseAdmin()
 
     const { data: question, error } = await supabase
       .from('questions')
@@ -167,7 +167,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Question ID is required' }, { status: 400 })
     }
 
-    const supabase = await createSupabaseServer()
+    const supabase = createSupabaseAdmin()
 
     const { data: question, error } = await supabase
       .from('questions')
