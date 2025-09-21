@@ -28,10 +28,32 @@ export const useLiff = (): UseLiffReturn => {
         if (success) {
           setIsReady(true)
           
-          // 如果已經登入，獲取用戶資料
+          // 如果已經登入，獲取用戶資料並同步到資料庫
           if (isLoggedIn()) {
             const userProfile = await getProfile()
             setProfile(userProfile)
+            
+            // 同步用戶資料到資料庫
+            if (userProfile) {
+              try {
+                const response = await fetch('/api/auth/liff-sync', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({ profile: userProfile }),
+                })
+                
+                if (response.ok) {
+                  const data = await response.json()
+                  console.log('User synced to database:', data)
+                } else {
+                  console.error('Failed to sync user to database')
+                }
+              } catch (error) {
+                console.error('Error syncing user:', error)
+              }
+            }
           }
         } else {
           setError('LIFF 初始化失敗')
