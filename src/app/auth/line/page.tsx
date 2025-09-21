@@ -24,24 +24,31 @@ function LineAuthContent() {
 
       if (code && state) {
         try {
-          // 這裡應該實作 Line Login 的 token 交換邏輯
-          // 暫時模擬登入成功
-          console.log('Line auth code:', code)
-          
-          // 模擬用戶資料
-          const mockUser = {
-            line_id: `line_${Date.now()}`,
-            display_name: '測試用戶',
-            avatar_url: 'https://via.placeholder.com/150',
+          // 呼叫我們的 API 來處理 Line Login
+          const response = await fetch('/api/auth/line-callback', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ code, state }),
+          })
+
+          if (response.ok) {
+            const data = await response.json()
+            console.log('Line auth success:', data)
+            
+            // 如果有 Supabase，可以在這裡設定 session
+            // const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+            //   email: data.user.line_id + '@line.local',
+            //   password: data.user.line_id
+            // })
+
+            router.push('/?login=success')
+          } else {
+            const errorData = await response.json()
+            console.error('Line auth API error:', errorData)
+            router.push('/?error=auth_failed')
           }
-
-          // 在實際實作中，這裡應該：
-          // 1. 用 code 向 Line API 交換 access token
-          // 2. 用 access token 獲取用戶資料
-          // 3. 在 Supabase 中創建或更新用戶
-          // 4. 設定 Supabase 認證 session
-
-          router.push('/')
         } catch (error) {
           console.error('Error during Line auth:', error)
           router.push('/?error=auth_failed')
