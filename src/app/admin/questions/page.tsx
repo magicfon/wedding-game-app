@@ -132,7 +132,8 @@ export default function QuestionsManagePage() {
     setSubmitting(true)
 
     try {
-      const url = '/api/admin/questions'
+      // 使用安全 API 進行新增，原始 API 進行編輯
+      const url = editingQuestion ? '/api/admin/questions' : '/api/admin/questions/safe'
       const method = editingQuestion ? 'PUT' : 'POST'
       const payload = editingQuestion 
         ? { ...formData, id: editingQuestion.id, updated_by: profile?.userId }
@@ -310,13 +311,33 @@ export default function QuestionsManagePage() {
                 <span className="text-sm text-gray-600">只顯示啟用的問題</span>
               </label>
             </div>
-            <button
-              onClick={() => setShowForm(true)}
-              className="flex items-center space-x-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              <span>新增問題</span>
-            </button>
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={async () => {
+                  console.log('Testing Supabase connection...')
+                  try {
+                    const response = await fetch('/api/debug/supabase-test')
+                    const data = await response.json()
+                    console.log('Supabase test result:', data)
+                    alert('測試結果已記錄在控制台，請按 F12 查看')
+                  } catch (error) {
+                    console.error('Test failed:', error)
+                    alert('測試失敗：' + error)
+                  }
+                }}
+                className="flex items-center space-x-2 bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg transition-colors text-sm"
+              >
+                <AlertCircle className="w-4 h-4" />
+                <span>測試連接</span>
+              </button>
+              <button
+                onClick={() => setShowForm(true)}
+                className="flex items-center space-x-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                <span>新增問題</span>
+              </button>
+            </div>
           </div>
         </div>
 
