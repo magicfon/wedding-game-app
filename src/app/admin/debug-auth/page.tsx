@@ -75,7 +75,7 @@ export default function DebugAuthPage() {
     try {
       addStep('API_CALL', 'pending', '調用管理員檢查 API...')
       
-      const response = await fetch('/api/admin/check-line-admin-debug', {
+      const response = await fetch('/api/admin/check-line-admin', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

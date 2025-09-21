@@ -12,9 +12,27 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // 檢查環境變數
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    
+    if (!supabaseUrl || supabaseUrl === 'https://placeholder.supabase.co') {
+      return NextResponse.json({
+        error: 'Supabase URL not configured',
+        isAdmin: false
+      }, { status: 500 })
+    }
+
+    if (!supabaseKey || supabaseKey === 'placeholder-key') {
+      return NextResponse.json({
+        error: 'Supabase key not configured', 
+        isAdmin: false
+      }, { status: 500 })
+    }
+
     const supabase = await createSupabaseServer()
 
-    // 檢查是否為管理員
+    // 只檢查是否為管理員，不做其他操作
     const { data: adminCheck, error: adminError } = await supabase
       .from('admin_line_ids')
       .select('line_id, display_name, is_active')
@@ -31,9 +49,6 @@ export async function POST(request: NextRequest) {
     }
 
     const isAdmin = !!adminCheck
-
-    // 簡化版本：只返回管理員狀態，不做額外的資料庫操作
-    // 這可以避免因為 users 表格或 admin_actions 表格問題導致的超時
 
     return NextResponse.json({
       isAdmin,
