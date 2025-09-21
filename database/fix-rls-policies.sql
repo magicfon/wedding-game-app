@@ -52,12 +52,12 @@ CREATE POLICY "允許插入照片" ON photos FOR INSERT WITH CHECK (true);
 CREATE POLICY "允許查詢照片" ON photos FOR SELECT USING (true);
 CREATE POLICY "允許更新照片" ON photos FOR UPDATE USING (true);
 
--- votes 表格
-ALTER TABLE votes ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "允許插入投票" ON votes;
-DROP POLICY IF EXISTS "允許查詢投票" ON votes;
-CREATE POLICY "允許插入投票" ON votes FOR INSERT WITH CHECK (true);
-CREATE POLICY "允許查詢投票" ON votes FOR SELECT USING (true);
+-- photo_votes 表格
+ALTER TABLE photo_votes ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "允許插入投票" ON photo_votes;
+DROP POLICY IF EXISTS "允許查詢投票" ON photo_votes;
+CREATE POLICY "允許插入投票" ON photo_votes FOR INSERT WITH CHECK (true);
+CREATE POLICY "允許查詢投票" ON photo_votes FOR SELECT USING (true);
 
 -- game_state 表格 
 ALTER TABLE game_state ENABLE ROW LEVEL SECURITY;
