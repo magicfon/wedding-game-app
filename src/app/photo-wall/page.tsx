@@ -17,7 +17,13 @@ interface PhotoWithUser extends Photo {
 export default function PhotoWallPage() {
   const [photos, setPhotos] = useState<PhotoWithUser[]>([])
   const [loading, setLoading] = useState(true)
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<{
+    id: string
+    email?: string
+    user_metadata?: {
+      full_name?: string
+    }
+  } | null>(null)
   const [sortBy, setSortBy] = useState<'votes' | 'time'>('votes')
   const [userVotes, setUserVotes] = useState<Record<number, number>>({})
   const [availableVotes, setAvailableVotes] = useState(3)
@@ -134,13 +140,16 @@ export default function PhotoWallPage() {
     return () => {
       photosSubscription.unsubscribe()
     }
-  }, [user, sortBy])
+  }, [user, sortBy, fetchPhotos, fetchUserVotes, fetchVotingSettings, supabase])
 
   const handleVote = async (photoId: number) => {
     if (!user || !votingEnabled) return
 
     const currentVotes = userVotes[photoId] || 0
     const totalUsedVotes = Object.values(userVotes).reduce((sum, count) => sum + count, 0)
+    
+    // 使用 currentVotes 變數
+    console.log('Current votes for photo:', photoId, currentVotes)
 
     if (totalUsedVotes >= availableVotes) {
       alert('您的投票額度已用完！')

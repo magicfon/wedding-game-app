@@ -12,7 +12,14 @@ export default function PhotoUploadPage() {
   const [blessingMessage, setBlessingMessage] = useState('')
   const [isPublic, setIsPublic] = useState(true)
   const [uploading, setUploading] = useState(false)
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<{
+    id: string
+    email?: string
+    user_metadata?: {
+      full_name?: string
+      avatar_url?: string
+    }
+  } | null>(null)
   const [uploadSuccess, setUploadSuccess] = useState(false)
   
   const fileInputRef = useRef<HTMLInputElement>(null)
