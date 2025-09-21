@@ -264,7 +264,7 @@ export default function DebugAuthPage() {
                   
                   <p className="text-gray-700 mb-2">{step.message}</p>
                   
-                  {step.data && (
+                  {step.data != null && (
                     <details className="mt-2">
                       <summary className="cursor-pointer text-sm text-gray-600 hover:text-gray-800">
                         查看詳細資料
