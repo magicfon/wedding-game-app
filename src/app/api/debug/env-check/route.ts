@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     // 檢查 Supabase URL 格式
     const supabaseUrl = envVars.NEXT_PUBLIC_SUPABASE_URL
     let urlValid = false
-    let urlIssues = []
+    const urlIssues = []
 
     if (supabaseUrl) {
       if (supabaseUrl === 'https://placeholder.supabase.co') {
@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
     // 檢查 Supabase Key 格式
     const supabaseKey = envVars.NEXT_PUBLIC_SUPABASE_ANON_KEY
     let keyValid = false
-    let keyIssues = []
+    const keyIssues = []
 
     if (supabaseKey) {
       if (supabaseKey === 'placeholder-key') {

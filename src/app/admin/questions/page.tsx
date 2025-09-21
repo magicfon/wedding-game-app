@@ -82,7 +82,7 @@ export default function QuestionsManagePage() {
   const [submitting, setSubmitting] = useState(false)
   const [showActiveOnly, setShowActiveOnly] = useState(true)
   
-  const { isLoggedIn, profile, isAdmin, adminInfo, loading: liffLoading, adminLoading } = useLiff()
+  const { isLoggedIn, profile, isAdmin, loading: liffLoading, adminLoading } = useLiff()
   const router = useRouter()
 
   // 檢查管理員權限 - 等待載入完成後再檢查
