@@ -82,15 +82,22 @@ export default function QuestionsManagePage() {
   const [submitting, setSubmitting] = useState(false)
   const [showActiveOnly, setShowActiveOnly] = useState(true)
   
-  const { isLoggedIn, profile, isAdmin, adminInfo } = useLiff()
+  const { isLoggedIn, profile, isAdmin, adminInfo, loading: liffLoading, adminLoading } = useLiff()
   const router = useRouter()
 
-  // 檢查管理員權限
+  // 檢查管理員權限 - 等待載入完成後再檢查
   useEffect(() => {
+    // 如果還在載入中，不做任何操作
+    if (liffLoading || adminLoading) {
+      return
+    }
+
+    // 如果沒有登入或不是管理員，跳轉首頁
     if (!isLoggedIn || !isAdmin) {
+      console.log('Not logged in or not admin, redirecting to home')
       router.push('/')
     }
-  }, [isLoggedIn, isAdmin, router])
+  }, [liffLoading, adminLoading, isLoggedIn, isAdmin, router])
 
   // 載入問題列表
   const fetchQuestions = useCallback(async () => {
@@ -113,10 +120,11 @@ export default function QuestionsManagePage() {
   }, [showActiveOnly])
 
   useEffect(() => {
-    if (isAdmin) {
+    // 等待載入完成且確認是管理員後才載入問題
+    if (!liffLoading && !adminLoading && isAdmin) {
       fetchQuestions()
     }
-  }, [isAdmin, fetchQuestions])
+  }, [liffLoading, adminLoading, isAdmin, fetchQuestions])
 
   // 處理表單提交
   const handleSubmit = async (e: React.FormEvent) => {
@@ -209,6 +217,20 @@ export default function QuestionsManagePage() {
     setFormData(initialFormData)
   }
 
+  // 顯示載入狀態
+  if (liffLoading || adminLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
+        <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md mx-auto text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <h2 className="text-xl font-bold text-gray-800 mb-2">載入問題管理</h2>
+          <p className="text-gray-600">正在驗證管理員權限...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // 如果不是管理員，不顯示任何內容（會被 useEffect 重定向）
   if (!isAdmin) {
     return null
   }
