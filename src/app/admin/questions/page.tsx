@@ -245,8 +245,8 @@ export default function QuestionsManagePage() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
         <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md mx-auto text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <h2 className="text-xl font-bold text-gray-800 mb-2">載入問題管理</h2>
-          <p className="text-gray-600">正在驗證管理員權限...</p>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">載入問題管理</h2>
+          <p className="text-gray-900">正在驗證管理員權限...</p>
         </div>
       </div>
     )
@@ -275,8 +275,8 @@ export default function QuestionsManagePage() {
                 <HelpCircle className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-800">問題管理</h1>
-                <p className="text-sm text-gray-600">管理快問快答題目</p>
+                <h1 className="text-xl font-bold text-gray-900">問題管理</h1>
+                <p className="text-sm text-gray-900">管理快問快答題目</p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
@@ -298,7 +298,7 @@ export default function QuestionsManagePage() {
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <h2 className="text-lg font-semibold text-gray-800">
+              <h2 className="text-lg font-semibold text-gray-900">
                 問題列表 ({questions.length} 個問題)
               </h2>
               <label className="flex items-center space-x-2">
@@ -308,7 +308,7 @@ export default function QuestionsManagePage() {
                   onChange={(e) => setShowActiveOnly(e.target.checked)}
                   className="rounded border-gray-300"
                 />
-                <span className="text-sm text-gray-600">只顯示啟用的問題</span>
+                <span className="text-sm text-gray-900">只顯示啟用的問題</span>
               </label>
             </div>
             <div className="flex items-center space-x-2">
@@ -468,7 +468,7 @@ export default function QuestionsManagePage() {
             <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6">
                 <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-xl font-bold text-gray-800">
+                  <h3 className="text-xl font-bold text-gray-900">
                     {editingQuestion ? '編輯問題' : '新增問題'}
                   </h3>
                   <button
@@ -482,7 +482,7 @@ export default function QuestionsManagePage() {
                 <form onSubmit={handleSubmit} className="space-y-6">
                   {/* 問題內容 */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-900 mb-2">
                       問題內容 *
                     </label>
                     <textarea
@@ -499,7 +499,7 @@ export default function QuestionsManagePage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {(['A', 'B', 'C', 'D'] as const).map((option) => (
                       <div key={option}>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-gray-900 mb-2">
                           選項 {option} *
                         </label>
                         <input
@@ -519,7 +519,7 @@ export default function QuestionsManagePage() {
 
                   {/* 正確答案 */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-900 mb-2">
                       正確答案 *
                     </label>
                     <select
@@ -537,7 +537,7 @@ export default function QuestionsManagePage() {
                   {/* 分數設定 */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gray-900 mb-2">
                         <Award className="w-4 h-4 inline mr-1" />
                         基礎分數
                       </label>
@@ -550,7 +550,7 @@ export default function QuestionsManagePage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gray-900 mb-2">
                         <Clock className="w-4 h-4 inline mr-1" />
                         答題時間 (秒)
                       </label>
@@ -564,7 +564,7 @@ export default function QuestionsManagePage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gray-900 mb-2">
                         最大加成分數
                       </label>
                       <input
@@ -579,7 +579,7 @@ export default function QuestionsManagePage() {
 
                   {/* 扣分設定 */}
                   <div className="border border-gray-200 rounded-lg p-4">
-                    <h4 className="font-medium text-gray-800 mb-3">扣分設定</h4>
+                    <h4 className="font-medium text-gray-900 mb-3">扣分設定</h4>
                     
                     <div className="space-y-3">
                       <label className="flex items-center space-x-3">
@@ -589,7 +589,7 @@ export default function QuestionsManagePage() {
                           onChange={(e) => setFormData({ ...formData, penalty_enabled: e.target.checked })}
                           className="rounded border-gray-300"
                         />
-                        <span className="text-sm text-gray-700">答錯扣分</span>
+                        <span className="text-sm text-gray-900">答錯扣分</span>
                         {formData.penalty_enabled && (
                           <input
                             type="number"
@@ -609,7 +609,7 @@ export default function QuestionsManagePage() {
                           onChange={(e) => setFormData({ ...formData, timeout_penalty_enabled: e.target.checked })}
                           className="rounded border-gray-300"
                         />
-                        <span className="text-sm text-gray-700">超時扣分</span>
+                        <span className="text-sm text-gray-900">超時扣分</span>
                         {formData.timeout_penalty_enabled && (
                           <input
                             type="number"
@@ -629,7 +629,7 @@ export default function QuestionsManagePage() {
                           onChange={(e) => setFormData({ ...formData, speed_bonus_enabled: e.target.checked })}
                           className="rounded border-gray-300"
                         />
-                        <span className="text-sm text-gray-700">啟用速度加成</span>
+                        <span className="text-sm text-gray-900">啟用速度加成</span>
                       </label>
                     </div>
                   </div>
@@ -663,12 +663,12 @@ export default function QuestionsManagePage() {
           {loading ? (
             <div className="text-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
-              <p className="text-gray-600 mt-2">載入問題中...</p>
+              <p className="text-gray-900 mt-2">載入問題中...</p>
             </div>
           ) : questions.length === 0 ? (
             <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
               <HelpCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600">還沒有任何問題</p>
+              <p className="text-gray-900">還沒有任何問題</p>
               <button
                 onClick={() => setShowForm(true)}
                 className="mt-4 bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition-colors"
@@ -708,7 +708,7 @@ export default function QuestionsManagePage() {
                       </div>
                     </div>
                     
-                    <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
                       {question.question_text}
                     </h3>
                     
@@ -724,7 +724,7 @@ export default function QuestionsManagePage() {
                           className={`p-3 rounded-lg border ${
                             option.key === question.correct_answer 
                               ? 'bg-green-50 border-green-200 text-green-800' 
-                              : 'bg-gray-50 border-gray-200'
+                              : 'bg-gray-50 border-gray-200 text-gray-900'
                           }`}
                         >
                           <span className="font-medium">{option.key}.</span> {option.value}
