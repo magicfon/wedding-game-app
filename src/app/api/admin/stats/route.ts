@@ -47,22 +47,22 @@ export async function GET(request: NextRequest) {
       adminsResult
     ] = await Promise.all([
       // 總用戶數
-      supabase.from('users').select('count(*)', { count: 'exact' }),
+      supabase.from('users').select('*', { count: 'exact', head: true }),
       
       // 總問題數
-      supabase.from('questions').select('count(*)', { count: 'exact' }),
+      supabase.from('questions').select('*', { count: 'exact', head: true }),
       
       // 總照片數
-      supabase.from('photos').select('count(*)', { count: 'exact' }),
+      supabase.from('photos').select('*', { count: 'exact', head: true }),
       
       // 遊戲狀態
       supabase.from('game_state').select('is_game_active').single(),
       
       // 總答題數
-      supabase.from('user_answers').select('count(*)', { count: 'exact' }),
+      supabase.from('user_answers').select('*', { count: 'exact', head: true }),
       
       // 活躍管理員數
-      supabase.from('admin_line_ids').select('count(*)', { count: 'exact' }).eq('is_active', true)
+      supabase.from('admin_line_ids').select('*', { count: 'exact', head: true }).eq('is_active', true)
     ])
 
     // 處理結果

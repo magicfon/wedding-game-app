@@ -94,16 +94,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to create question' }, { status: 500 })
     }
 
-    // 記錄管理員操作
-    await supabase
-      .from('admin_actions')
-      .insert({
-        admin_line_id: created_by || 'unknown',
-        action_type: 'create_question',
-        target_type: 'question',
-        target_id: question.id.toString(),
-        details: { question_text }
-      })
+    // 記錄管理員操作（暫時註解，等 admin_actions 表格創建後再啟用）
+    // await supabase
+    //   .from('admin_actions')
+    //   .insert({
+    //     admin_line_id: created_by || 'unknown',
+    //     action_type: 'create_question',
+    //     target_type: 'question',
+    //     target_id: question.id.toString(),
+    //     details: { question_text }
+    //   })
 
     return NextResponse.json({ success: true, question })
 
@@ -137,16 +137,16 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to update question' }, { status: 500 })
     }
 
-    // 記錄管理員操作
-    await supabase
-      .from('admin_actions')
-      .insert({
-        admin_line_id: updated_by || 'unknown',
-        action_type: 'update_question',
-        target_type: 'question',
-        target_id: id.toString(),
-        details: updateData
-      })
+    // 記錄管理員操作（暫時註解，等 admin_actions 表格創建後再啟用）
+    // await supabase
+    //   .from('admin_actions')
+    //   .insert({
+    //     admin_line_id: updated_by || 'unknown',
+    //     action_type: 'update_question',
+    //     target_type: 'question',
+    //     target_id: id.toString(),
+    //     details: updateData
+    //   })
 
     return NextResponse.json({ success: true, question })
 
@@ -181,16 +181,16 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to delete question' }, { status: 500 })
     }
 
-    // 記錄管理員操作
-    await supabase
-      .from('admin_actions')
-      .insert({
-        admin_line_id: deleted_by || 'unknown',
-        action_type: 'delete_question',
-        target_type: 'question',
-        target_id: id,
-        details: { question_text: question.question_text }
-      })
+    // 記錄管理員操作（暫時註解，等 admin_actions 表格創建後再啟用）
+    // await supabase
+    //   .from('admin_actions')
+    //   .insert({
+    //     admin_line_id: deleted_by || 'unknown',
+    //     action_type: 'delete_question',
+    //     target_type: 'question',
+    //     target_id: id,
+    //     details: { question_text: question.question_text }
+    //   })
 
     return NextResponse.json({ success: true, message: 'Question deleted successfully' })
 
