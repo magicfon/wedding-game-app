@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { createSupabaseBrowser } from '@/lib/supabase'
+import { useRealtimeGameState } from '@/hooks/useRealtimeGameState'
 import Layout from '@/components/Layout'
 import { Play, Pause, Users, Clock, HelpCircle, Zap } from 'lucide-react'
 
@@ -20,13 +21,14 @@ interface TopPlayer {
 }
 
 export default function GameLivePage() {
-  const [gameState, setGameState] = useState<any>(null)
-  const [currentQuestion, setCurrentQuestion] = useState<any>(null)
   const [answerDistribution, setAnswerDistribution] = useState<AnswerDistribution[]>([])
   const [topPlayers, setTopPlayers] = useState<TopPlayer[]>([])
   const [timeLeft, setTimeLeft] = useState<number>(0)
-  const [loading, setLoading] = useState(true)
+  
   const supabase = createSupabaseBrowser()
+  
+  // 使用統一的即時遊戲狀態
+  const { gameState, currentQuestion, loading, calculateTimeLeft } = useRealtimeGameState()
 
   // 獲取答題分佈
   const fetchAnswerDistribution = useCallback(async () => {
@@ -97,59 +99,12 @@ export default function GameLivePage() {
     }
   }, [currentQuestion, supabase])
 
+  // 當遊戲狀態改變時更新計時器
   useEffect(() => {
-    const fetchGameState = async () => {
-      try {
-        const { data: gameData } = await supabase
-          .from('game_state')
-          .select('*')
-          .single()
-
-        setGameState(gameData)
-
-        if (gameData?.current_question_id) {
-          const { data: questionData } = await supabase
-            .from('questions')
-            .select('*')
-            .eq('id', gameData.current_question_id)
-            .single()
-
-          setCurrentQuestion(questionData)
-
-          // 計算倒數時間
-          if (gameData.question_start_time && questionData) {
-            const startTime = new Date(gameData.question_start_time).getTime()
-            const now = Date.now()
-            const elapsed = Math.floor((now - startTime) / 1000)
-            const remaining = Math.max(0, questionData.time_limit - elapsed)
-            setTimeLeft(remaining)
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching game state:', error)
-      } finally {
-        setLoading(false)
-      }
+    if (gameState && currentQuestion) {
+      setTimeLeft(calculateTimeLeft())
     }
-
-    fetchGameState()
-
-    // 訂閱即時更新
-    const gameSubscription = supabase
-      .channel('game_live')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'game_state'
-      }, () => {
-        fetchGameState()
-      })
-      .subscribe()
-
-    return () => {
-      gameSubscription.unsubscribe()
-    }
-  }, [supabase])
+  }, [gameState, currentQuestion, calculateTimeLeft])
 
   // 當題目改變時獲取答題資料
   useEffect(() => {

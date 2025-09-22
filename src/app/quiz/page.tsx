@@ -2,22 +2,14 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { createSupabaseBrowser, Question } from '@/lib/supabase'
+import { createSupabaseBrowser } from '@/lib/supabase'
 import { useLiff } from '@/hooks/useLiff'
+import { useRealtimeGameState } from '@/hooks/useRealtimeGameState'
 import Layout from '@/components/Layout'
 import UserStatus from '@/components/UserStatus'
 import { Clock, Users, Trophy, CheckCircle, XCircle, Heart } from 'lucide-react'
 
-interface GameState {
-  current_question_id: number | null
-  is_game_active: boolean
-  is_paused: boolean
-  question_start_time: string | null
-}
-
 export default function QuizPage() {
-  const [gameState, setGameState] = useState<GameState | null>(null)
-  const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null)
   const [selectedAnswer, setSelectedAnswer] = useState<'A' | 'B' | 'C' | 'D' | null>(null)
   const [timeLeft, setTimeLeft] = useState<number>(0)
   const [hasAnswered, setHasAnswered] = useState(false)
@@ -29,42 +21,10 @@ export default function QuizPage() {
   
   // 使用 LIFF 登入系統
   const { isReady, isLoggedIn, profile, login, loading: liffLoading } = useLiff()
+  
+  // 使用統一的即時遊戲狀態
+  const { gameState, currentQuestion, loading: gameLoading, calculateTimeLeft } = useRealtimeGameState()
 
-  // 獲取遊戲狀態
-  const fetchGameState = useCallback(async () => {
-    try {
-      const { data, error } = await supabase
-        .from('game_state')
-        .select('*')
-        .single()
-
-      if (error) throw error
-      setGameState(data)
-
-      // 如果有當前題目，獲取題目詳情
-      if (data.current_question_id) {
-        const { data: questionData, error: questionError } = await supabase
-          .from('questions')
-          .select('*')
-          .eq('id', data.current_question_id)
-          .single()
-
-        if (questionError) throw questionError
-        setCurrentQuestion(questionData)
-
-        // 計算剩餘時間
-        if (data.question_start_time && !data.is_paused) {
-          const startTime = new Date(data.question_start_time).getTime()
-          const now = Date.now()
-          const elapsed = Math.floor((now - startTime) / 1000)
-          const remaining = Math.max(0, questionData.time_limit - elapsed)
-          setTimeLeft(remaining)
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching game state:', error)
-    }
-  }, [supabase])
 
   // 獲取當前題目答題人數
   const fetchAnsweredCount = useCallback(async () => {
@@ -83,31 +43,16 @@ export default function QuizPage() {
     }
   }, [currentQuestion, supabase])
 
-  // 初始載入和訂閱即時更新
+  // 當遊戲狀態或題目改變時重置答題狀態
   useEffect(() => {
-    if (!profile) return
-
-    fetchGameState()
-
-    // 訂閱遊戲狀態變化
-    const gameStateSubscription = supabase
-      .channel('game_state_changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'game_state'
-      }, () => {
-        fetchGameState()
-        setHasAnswered(false)
-        setSelectedAnswer(null)
-        setAnswerResult(null)
-      })
-      .subscribe()
-
-    return () => {
-      gameStateSubscription.unsubscribe()
+    if (gameState && currentQuestion) {
+      setHasAnswered(false)
+      setSelectedAnswer(null)
+      setAnswerResult(null)
+      // 計算初始時間
+      setTimeLeft(calculateTimeLeft())
     }
-  }, [profile, fetchGameState, supabase])
+  }, [gameState?.current_question_id, currentQuestion?.id, calculateTimeLeft])
 
   // 當題目改變時獲取答題人數並訂閱答題記錄變化
   useEffect(() => {
@@ -221,7 +166,7 @@ export default function QuizPage() {
   }
 
   // 載入狀態
-  if (liffLoading) {
+  if (liffLoading || gameLoading) {
     return (
       <Layout title="快問快答">
         <div className="flex items-center justify-center py-16">
