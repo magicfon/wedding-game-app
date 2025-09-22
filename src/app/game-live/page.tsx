@@ -292,14 +292,29 @@ export default function GameLivePage() {
                           {distribution && distribution.users.length > 0 && (
                             <div className="mt-4">
                               <div className="flex flex-wrap gap-2">
-                                {distribution.users.slice(0, 6).map((user, index) => (
-                                  <div key={index} className="flex items-center space-x-1 bg-gray-100 rounded-full px-2 py-1">
-                                    {user.avatar_url && (
-                                      <img src={user.avatar_url} alt="" className="w-4 h-4 rounded-full" />
-                                    )}
-                                    <span className="text-xs">{user.display_name}</span>
-                                  </div>
-                                ))}
+                                {distribution.users.slice(0, 6).map((user, index) => {
+                                  console.log('User data:', user); // 調試信息
+                                  return (
+                                    <div key={index} className="flex items-center space-x-1 bg-gray-100 rounded-full px-2 py-1">
+                                      {user.avatar_url ? (
+                                        <img 
+                                          src={user.avatar_url} 
+                                          alt={user.display_name || 'User'} 
+                                          className="w-4 h-4 rounded-full"
+                                          onError={(e) => {
+                                            console.log('Image load error:', user.avatar_url);
+                                            e.currentTarget.style.display = 'none';
+                                          }}
+                                        />
+                                      ) : (
+                                        <div className="w-4 h-4 rounded-full bg-gray-400 flex items-center justify-center text-xs text-white">
+                                          {user.display_name?.charAt(0) || '?'}
+                                        </div>
+                                      )}
+                                      <span className="text-xs">{user.display_name}</span>
+                                    </div>
+                                  );
+                                })}
                                 {distribution.users.length > 6 && (
                                   <div className="text-xs text-gray-500">+{distribution.users.length - 6}人</div>
                                 )}

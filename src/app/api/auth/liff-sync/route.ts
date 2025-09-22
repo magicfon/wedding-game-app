@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
         .from('users')
         .update({
           display_name: profile.displayName,
-          picture_url: profile.pictureUrl || null,
+          avatar_url: profile.pictureUrl || null,
           updated_at: new Date().toISOString()
         })
         .eq('line_id', profile.userId)
@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
         .insert({
           line_id: profile.userId,
           display_name: profile.displayName,
-          picture_url: profile.pictureUrl || null
+          avatar_url: profile.pictureUrl || null
         })
         .select()
         .single()
