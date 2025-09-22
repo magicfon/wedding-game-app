@@ -21,6 +21,8 @@ interface TopPlayer {
 }
 
 export default function GameLivePage() {
+  console.log('🎮 GameLivePage 組件已載入');
+  
   const [answerDistribution, setAnswerDistribution] = useState<AnswerDistribution[]>([])
   const [topPlayers, setTopPlayers] = useState<TopPlayer[]>([])
   const [timeLeft, setTimeLeft] = useState<number>(0)
@@ -93,6 +95,7 @@ export default function GameLivePage() {
 
   // 獲取答題速度前十名
   const fetchTopPlayers = useCallback(async () => {
+    console.log('🏃 fetchTopPlayers 被調用，currentQuestion:', currentQuestion?.id);
     if (!currentQuestion) return
 
     try {
@@ -121,6 +124,8 @@ export default function GameLivePage() {
         is_correct: record.is_correct
       })) || []
 
+      console.log('📊 fetchTopPlayers 結果:', players.length, '個玩家');
+      console.log('📋 玩家詳情:', players.map(p => ({ name: p.display_name, correct: p.is_correct })));
       setTopPlayers(players)
     } catch (error) {
       console.error('Error fetching top players:', error)
@@ -149,6 +154,7 @@ export default function GameLivePage() {
 
   // 處理答案公布後的淡出和移除邏輯
   useEffect(() => {
+    console.log('🚀 速度排行榜 useEffect 執行中...');
     // 總是輸出狀態信息用於調試
     console.log('🔍 檢查移除條件:', { 
       timeLeft, 
