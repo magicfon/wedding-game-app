@@ -257,8 +257,7 @@ export default function GameLivePage() {
 
               {/* 答題分佈 */}
               {timeLeft === 0 && answerDistribution.length > 0 && (
-                <div className="bg-white rounded-2xl shadow-lg p-8">
-                  <h4 className="text-xl font-bold text-gray-800 mb-6 text-center">📊 答題分佈</h4>
+                <div className="bg-white rounded-2xl shadow-lg p-6">
                   <div className="grid grid-cols-2 gap-6">
                     {[
                       { key: 'A', text: currentQuestion.option_a, color: 'bg-red-500', lightColor: 'bg-red-100 text-red-700' },
@@ -296,34 +295,34 @@ export default function GameLivePage() {
 
                           {/* 顯示選擇此答案的用戶 */}
                           {distribution && distribution.users.length > 0 && (
-                            <div className="mt-4">
-                              <div className="flex flex-wrap gap-3">
-                                {distribution.users.slice(0, 8).map((user, index) => {
+                            <div className="mt-6">
+                              <div className="flex flex-wrap gap-4">
+                                {distribution.users.slice(0, 6).map((user, index) => {
                                   console.log('User data:', user); // 調試信息
                                   return (
-                                    <div key={index} className="flex items-center space-x-2 bg-white rounded-full px-3 py-2 shadow-sm border border-gray-200">
+                                    <div key={index} className="flex items-center space-x-3 bg-white rounded-xl px-4 py-3 shadow-md border border-gray-200">
                                       {user.avatar_url ? (
                                         <img 
                                           src={user.avatar_url} 
                                           alt={user.display_name || 'User'} 
-                                          className="w-8 h-8 rounded-full border-2 border-gray-100"
+                                          className="w-12 h-12 rounded-full border-2 border-gray-100"
                                           onError={(e) => {
                                             console.log('Image load error:', user.avatar_url);
                                             e.currentTarget.style.display = 'none';
                                           }}
                                         />
                                       ) : (
-                                        <div className="w-8 h-8 rounded-full bg-gray-400 flex items-center justify-center text-sm font-semibold text-white">
+                                        <div className="w-12 h-12 rounded-full bg-gray-400 flex items-center justify-center text-lg font-semibold text-white">
                                           {user.display_name?.charAt(0) || '?'}
                                         </div>
                                       )}
-                                      <span className="text-sm font-medium text-gray-800">{user.display_name}</span>
+                                      <span className="text-base font-semibold text-gray-800">{user.display_name}</span>
                                     </div>
                                   );
                                 })}
-                                {distribution.users.length > 8 && (
-                                  <div className="flex items-center px-3 py-2 text-sm text-gray-600 bg-gray-100 rounded-full">
-                                    +{distribution.users.length - 8}人
+                                {distribution.users.length > 6 && (
+                                  <div className="flex items-center px-4 py-3 text-base font-medium text-gray-600 bg-gray-100 rounded-xl">
+                                    +{distribution.users.length - 6}人
                                   </div>
                                 )}
                               </div>
@@ -370,19 +369,19 @@ export default function GameLivePage() {
                           <img 
                             src={player.avatar_url} 
                             alt={player.display_name} 
-                            className="w-10 h-10 rounded-full border-2 border-white shadow-sm" 
+                            className="w-14 h-14 rounded-full border-2 border-white shadow-md" 
                           />
                         ) : (
-                          <div className="w-10 h-10 rounded-full bg-gray-400 flex items-center justify-center text-sm font-semibold text-white">
+                          <div className="w-14 h-14 rounded-full bg-gray-400 flex items-center justify-center text-lg font-bold text-white">
                             {player.display_name?.charAt(0) || '?'}
                           </div>
                         )}
                         
                         <div className="flex-1 min-w-0">
-                          <div className="text-base font-semibold text-gray-800 truncate">
+                          <div className="text-lg font-bold text-gray-800 truncate">
                             {player.display_name}
                           </div>
-                          <div className="text-sm text-gray-700 font-medium">
+                          <div className="text-base text-gray-700 font-medium">
                             ⏱️ {(player.answer_time / 1000).toFixed(1)}秒 | 選擇 {player.selected_answer}
                             {player.is_correct && <span className="text-green-600 ml-1">✅</span>}
                           </div>
