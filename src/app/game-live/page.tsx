@@ -134,28 +134,41 @@ export default function GameLivePage() {
     }
   }, [gameState, currentQuestion, calculateTimeLeft])
 
+  // 移除答錯者的函數
+  const removeWrongPlayers = useCallback(() => {
+    setTopPlayers(prevPlayers => {
+      const correctPlayers = prevPlayers.filter(player => player.is_correct);
+      console.log('移除答錯者，剩餘', correctPlayers.length, '個答對者');
+      return correctPlayers;
+    });
+    setShowingCorrectOnly(true);
+  }, []);
+
   // 處理答案公布後的淡出和移除邏輯
   useEffect(() => {
     if (timeLeft === 0 && topPlayers.length > 0 && !showingCorrectOnly) {
+      console.log('答案公布，準備移除答錯者...', topPlayers.length, '個玩家');
       // 答案公布後，延遲2秒後只顯示答對的玩家
-      const timer = setTimeout(() => {
-        const correctPlayers = topPlayers.filter(player => player.is_correct);
-        setTopPlayers(correctPlayers);
-        setShowingCorrectOnly(true);
-      }, 2000); // 2秒後移除答錯者
+      const timer = setTimeout(removeWrongPlayers, 2000);
 
       return () => clearTimeout(timer);
     }
-    
-    // 當題目改變時重置狀態
+  }, [timeLeft, showingCorrectOnly, topPlayers.length, removeWrongPlayers])
+
+  // 當題目改變時重置狀態
+  useEffect(() => {
     if (timeLeft > 0 && showingCorrectOnly) {
+      console.log('題目改變，重置狀態');
       setShowingCorrectOnly(false);
     }
-  }, [timeLeft, topPlayers, showingCorrectOnly])
+  }, [timeLeft, showingCorrectOnly])
 
   // 當題目改變時獲取答題資料
   useEffect(() => {
     if (currentQuestion) {
+      // 重置狀態
+      setShowingCorrectOnly(false)
+      
       fetchAnswerDistribution()
       fetchTopPlayers()
       fetchCurrentQuestionAnswerCount()
@@ -410,7 +423,7 @@ export default function GameLivePage() {
                               {player.display_name}
                             </div>
                             <div className="text-base text-gray-700 font-medium">
-                              ⏱️ {(player.answer_time / 1000).toFixed(1)}秒
+                              ⏱️ {(player.answer_time / 1000).toFixed(3)}秒
                               {timeLeft === 0 && (
                                 <span className={`ml-2 ${player.is_correct ? 'text-green-600' : 'text-red-500'}`}>
                                   {player.is_correct ? '✅ 答對了' : '❌ 答錯了'}
