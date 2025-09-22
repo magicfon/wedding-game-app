@@ -206,6 +206,26 @@ export default function Home() {
                         </button>
                       </div>
                     )}
+
+                    {/* LIFF 配置檢查按鈕 - 調試用 */}
+                    <div className="mt-4 text-center">
+                      <button
+                        onClick={async () => {
+                          try {
+                            const response = await fetch('/api/debug/liff-config');
+                            const data = await response.json();
+                            console.log('LIFF 配置檢查結果:', data);
+                            alert('LIFF 配置檢查結果已輸出到控制台，請按 F12 查看');
+                          } catch (err) {
+                            console.error('LIFF 配置檢查失敗:', err);
+                            alert('LIFF 配置檢查失敗，請檢查控制台');
+                          }
+                        }}
+                        className="inline-flex items-center px-3 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors text-sm"
+                      >
+                        🔧 LIFF 配置檢查
+                      </button>
+                    </div>
           </div>
         )}
       </main>
