@@ -113,13 +113,26 @@ ALTER TABLE votes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE admin_line_ids ENABLE ROW LEVEL SECURITY;
 
 -- 允許所有人查看和操作（簡化的政策，可以後續加強）
-CREATE POLICY IF NOT EXISTS "允許所有操作_users" ON users FOR ALL USING (true);
-CREATE POLICY IF NOT EXISTS "允許所有操作_questions" ON questions FOR ALL USING (true);
-CREATE POLICY IF NOT EXISTS "允許所有操作_answer_records" ON answer_records FOR ALL USING (true);
-CREATE POLICY IF NOT EXISTS "允許所有操作_game_state" ON game_state FOR ALL USING (true);
-CREATE POLICY IF NOT EXISTS "允許所有操作_photos" ON photos FOR ALL USING (true);
-CREATE POLICY IF NOT EXISTS "允許所有操作_votes" ON votes FOR ALL USING (true);
-CREATE POLICY IF NOT EXISTS "允許所有操作_admin_line_ids" ON admin_line_ids FOR ALL USING (true);
+DROP POLICY IF EXISTS "允許所有操作_users" ON users;
+CREATE POLICY "允許所有操作_users" ON users FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "允許所有操作_questions" ON questions;
+CREATE POLICY "允許所有操作_questions" ON questions FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "允許所有操作_answer_records" ON answer_records;
+CREATE POLICY "允許所有操作_answer_records" ON answer_records FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "允許所有操作_game_state" ON game_state;
+CREATE POLICY "允許所有操作_game_state" ON game_state FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "允許所有操作_photos" ON photos;
+CREATE POLICY "允許所有操作_photos" ON photos FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "允許所有操作_votes" ON votes;
+CREATE POLICY "允許所有操作_votes" ON votes FOR ALL USING (true);
+
+DROP POLICY IF EXISTS "允許所有操作_admin_line_ids" ON admin_line_ids;
+CREATE POLICY "允許所有操作_admin_line_ids" ON admin_line_ids FOR ALL USING (true);
 
 -- 11. 插入一些示例問題（如果不存在）
 INSERT INTO questions (question_text, option_a, option_b, option_c, option_d, correct_answer, base_score, time_limit) VALUES
