@@ -13,7 +13,6 @@ export default function QuizPage() {
   const [selectedAnswer, setSelectedAnswer] = useState<'A' | 'B' | 'C' | 'D' | null>(null)
   const [timeLeft, setTimeLeft] = useState<number>(0)
   const [hasAnswered, setHasAnswered] = useState(false)
-  const [answeredCount, setAnsweredCount] = useState<number>(0)
   
   const router = useRouter()
   const supabase = createSupabaseBrowser()
@@ -25,22 +24,6 @@ export default function QuizPage() {
   const { gameState, currentQuestion, loading: gameLoading, calculateTimeLeft } = useRealtimeGameState()
 
 
-  // 獲取當前題目答題人數
-  const fetchAnsweredCount = useCallback(async () => {
-    if (!currentQuestion) return
-
-    try {
-      const { count, error } = await supabase
-        .from('answer_records')
-        .select('*', { count: 'exact', head: true })
-        .eq('question_id', currentQuestion.id)
-
-      if (error) throw error
-      setAnsweredCount(count || 0)
-    } catch (error) {
-      console.error('Error fetching answered count:', error)
-    }
-  }, [currentQuestion, supabase])
 
   // 當遊戲狀態或題目改變時重置答題狀態
   useEffect(() => {
@@ -52,27 +35,6 @@ export default function QuizPage() {
     }
   }, [gameState?.current_question_id, currentQuestion?.id, calculateTimeLeft])
 
-  // 當題目改變時獲取答題人數並訂閱答題記錄變化
-  useEffect(() => {
-    if (!currentQuestion) return
-
-    fetchAnsweredCount()
-
-    // 訂閱答題記錄變化
-    const answerSubscription = supabase
-      .channel('answer_records_changes')
-      .on('postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'answer_records', filter: `question_id=eq.${currentQuestion.id}` },
-        () => {
-          fetchAnsweredCount()
-        }
-      )
-      .subscribe()
-
-    return () => {
-      answerSubscription.unsubscribe()
-    }
-  }, [currentQuestion, fetchAnsweredCount, supabase])
 
   const handleTimeUp = useCallback(async () => {
     if (!profile || !currentQuestion || hasAnswered) return
@@ -270,12 +232,22 @@ export default function QuizPage() {
               </div>
             </div>
             
-            {/* 答題人數統計 */}
+            {/* 遊戲進度 */}
             <div className="flex items-center space-x-4">
               <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">{answeredCount}</div>
-                <div className="text-sm text-gray-600">已答題</div>
+                <div className="text-2xl font-bold text-purple-600">
+                  {gameState?.completed_questions ? gameState.completed_questions + 1 : 1}
+                </div>
+                <div className="text-sm text-gray-600">第幾題</div>
               </div>
+              {gameState?.total_questions && (
+                <div className="text-center">
+                  <div className="text-lg font-semibold text-gray-600">
+                    / {gameState.total_questions}
+                  </div>
+                  <div className="text-xs text-gray-500">總題數</div>
+                </div>
+              )}
             </div>
             
           </div>
