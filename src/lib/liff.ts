@@ -111,12 +111,28 @@ export const getProfile = async (): Promise<LiffProfile | null> => {
 
 // LIFF 登入 - 支援外部瀏覽器
 export const liffLogin = (): void => {
+  console.log('liffLogin called');
+  console.log('window:', typeof window);
+  console.log('window.liff:', typeof window !== 'undefined' ? !!window.liff : 'undefined');
+  
   if (typeof window !== 'undefined' && window.liff) {
-    // 在外部瀏覽器中，LIFF 的 login() 方法會自動重定向到 LINE Login 頁面
-    // 然後返回到當前頁面，這是 LIFF 的標準行為
-    window.liff.login();
+    try {
+      console.log('Attempting LIFF login...');
+      console.log('LIFF isInClient:', window.liff.isInClient());
+      console.log('LIFF isLoggedIn:', window.liff.isLoggedIn());
+      
+      // 在外部瀏覽器中，LIFF 的 login() 方法會自動重定向到 LINE Login 頁面
+      // 然後返回到當前頁面，這是 LIFF 的標準行為
+      window.liff.login();
+      console.log('LIFF login() called successfully');
+    } catch (error) {
+      console.error('LIFF login error:', error);
+      alert(`登入失敗: ${error}`);
+    }
   } else {
     console.error('LIFF not initialized');
+    console.error('window exists:', typeof window !== 'undefined');
+    console.error('window.liff exists:', typeof window !== 'undefined' && !!window.liff);
     alert('登入系統未初始化，請重新載入頁面');
   }
 };

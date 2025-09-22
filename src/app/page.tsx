@@ -132,21 +132,13 @@ export default function Home() {
               <Heart className="w-16 h-16 text-pink-500 mx-auto mb-6" />
               <h2 className="text-2xl font-bold text-gray-800 mb-4">歡迎參加婚禮</h2>
               <p className="text-gray-600 mb-6">請透過 Line 登入來參與互動遊戲</p>
-              {isInLiff ? (
-                <button
-                  onClick={login}
-                  className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
-                >
-                  Line 登入
-                </button>
-              ) : (
-                <button
-                  onClick={() => router.push('/auth/line')}
-                  className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
-                >
-                  Line 登入
-                </button>
-              )}
+              <button
+                onClick={login}
+                disabled={!isReady}
+                className="w-full bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
+              >
+                {!isReady ? '載入中...' : 'Line 登入'}
+              </button>
             </div>
           </div>
         ) : (

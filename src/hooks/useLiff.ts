@@ -102,8 +102,13 @@ export const useLiff = (): UseLiffReturn => {
   }, [])
 
   const login = () => {
+    console.log('Login clicked, isReady:', isReady)
     if (isReady) {
+      console.log('Calling liffLogin()...')
       liffLogin()
+    } else {
+      console.log('LIFF not ready yet')
+      setError('LIFF 尚未初始化完成，請稍後再試')
     }
   }
 
