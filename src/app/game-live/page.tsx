@@ -34,9 +34,12 @@ export default function GameLivePage() {
   // 獲取當前題目答題人數
   const fetchCurrentQuestionAnswerCount = useCallback(async () => {
     if (!currentQuestion) {
+      console.log('fetchCurrentQuestionAnswerCount: No current question')
       setCurrentQuestionAnswerCount(0)
       return
     }
+
+    console.log('fetchCurrentQuestionAnswerCount: Fetching for question ID:', currentQuestion.id)
 
     try {
       const { count, error } = await supabase
@@ -45,6 +48,8 @@ export default function GameLivePage() {
         .eq('question_id', currentQuestion.id)
 
       if (error) throw error
+      
+      console.log('fetchCurrentQuestionAnswerCount: Count result:', count)
       setCurrentQuestionAnswerCount(count || 0)
     } catch (error) {
       console.error('Error fetching current question answer count:', error)
@@ -207,18 +212,24 @@ export default function GameLivePage() {
               )}
             </div>
             
-            {currentQuestion && gameState?.is_game_active && !gameState?.is_paused && (
+            {currentQuestion && (
               <div className="flex items-center space-x-4">
-                <div className={`w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold ${
-                  timeLeft > 10 ? 'bg-green-100 text-green-700' :
-                  timeLeft > 5 ? 'bg-yellow-100 text-yellow-700' :
-                  'bg-red-100 text-red-700'
-                }`}>
-                  {timeLeft}
-                </div>
+                {gameState?.is_game_active && !gameState?.is_paused && (
+                  <div className={`w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold ${
+                    timeLeft > 10 ? 'bg-green-100 text-green-700' :
+                    timeLeft > 5 ? 'bg-yellow-100 text-yellow-700' :
+                    'bg-red-100 text-red-700'
+                  }`}>
+                    {timeLeft}
+                  </div>
+                )}
                 <div className="text-center">
                   <div className="text-2xl font-bold text-blue-600">{currentQuestionAnswerCount}</div>
                   <div className="text-sm text-gray-600">已答題</div>
+                  {/* 調試信息 */}
+                  <div className="text-xs text-gray-400 mt-1">
+                    Q:{currentQuestion?.id} | Active:{gameState?.is_game_active ? 'Y' : 'N'}
+                  </div>
                 </div>
               </div>
             )}
