@@ -2,11 +2,7 @@
 
 import { useEffect, useState } from 'react'
 
-declare global {
-  interface Window {
-    liff: any;
-  }
-}
+// 使用已定義的 LIFF 類型，不需要重複定義
 
 export default function LiffInitTest() {
   const [logs, setLogs] = useState<string[]>([])
