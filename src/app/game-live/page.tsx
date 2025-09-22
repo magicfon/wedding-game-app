@@ -20,19 +20,40 @@ interface TopPlayer {
   is_correct: boolean
 }
 
+// 添加一個全局計數器來追蹤組件重載次數
+let componentLoadCount = 0;
+
 export default function GameLivePage() {
-  console.log('🎮 GameLivePage 組件已載入');
+  componentLoadCount++;
+  console.log(`🎮 GameLivePage 組件已載入 (第 ${componentLoadCount} 次)`);
   
   const [answerDistribution, setAnswerDistribution] = useState<AnswerDistribution[]>([])
   const [topPlayers, setTopPlayers] = useState<TopPlayer[]>([])
   const [timeLeft, setTimeLeft] = useState<number>(0)
   const [currentQuestionAnswerCount, setCurrentQuestionAnswerCount] = useState<number>(0)
-  const [showingCorrectOnly, setShowingCorrectOnly] = useState<boolean>(false)
+  // 從 localStorage 初始化狀態，以防組件重新載入
+  const [showingCorrectOnly, setShowingCorrectOnly] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('game-live-showing-correct-only');
+      const result = saved === 'true';
+      console.log('💾 從 localStorage 恢復 showingCorrectOnly 狀態:', result);
+      return result;
+    }
+    return false;
+  })
   
   const supabase = createSupabaseBrowser()
   
   // 使用統一的即時遊戲狀態
   const { gameState, currentQuestion, loading, calculateTimeLeft } = useRealtimeGameState()
+
+  // 同步 showingCorrectOnly 狀態到 localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('game-live-showing-correct-only', showingCorrectOnly.toString());
+      console.log('💾 showingCorrectOnly 狀態已保存:', showingCorrectOnly);
+    }
+  }, [showingCorrectOnly])
 
   // 獲取當前題目答題人數
   const fetchCurrentQuestionAnswerCount = useCallback(async () => {
@@ -210,8 +231,11 @@ export default function GameLivePage() {
         previousShowingCorrectOnly: showingCorrectOnly 
       });
       
-      // 強制重置狀態
+      // 強制重置狀態並清除 localStorage
       setShowingCorrectOnly(false)
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('game-live-showing-correct-only', 'false');
+      }
       console.log('✅ showingCorrectOnly 已重置為 false');
       
       fetchAnswerDistribution()
