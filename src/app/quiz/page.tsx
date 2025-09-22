@@ -22,6 +22,7 @@ export default function QuizPage() {
   const [timeLeft, setTimeLeft] = useState<number>(0)
   const [hasAnswered, setHasAnswered] = useState(false)
   const [answerResult, setAnswerResult] = useState<{ isCorrect: boolean; score: number } | null>(null)
+  const [answeredCount, setAnsweredCount] = useState<number>(0)
   
   const router = useRouter()
   const supabase = createSupabaseBrowser()
@@ -65,6 +66,23 @@ export default function QuizPage() {
     }
   }, [supabase])
 
+  // 獲取當前題目答題人數
+  const fetchAnsweredCount = useCallback(async () => {
+    if (!currentQuestion) return
+
+    try {
+      const { count, error } = await supabase
+        .from('answer_records')
+        .select('*', { count: 'exact', head: true })
+        .eq('question_id', currentQuestion.id)
+
+      if (error) throw error
+      setAnsweredCount(count || 0)
+    } catch (error) {
+      console.error('Error fetching answered count:', error)
+    }
+  }, [currentQuestion, supabase])
+
   // 初始載入和訂閱即時更新
   useEffect(() => {
     if (!profile) return
@@ -90,6 +108,28 @@ export default function QuizPage() {
       gameStateSubscription.unsubscribe()
     }
   }, [profile, fetchGameState, supabase])
+
+  // 當題目改變時獲取答題人數並訂閱答題記錄變化
+  useEffect(() => {
+    if (!currentQuestion) return
+
+    fetchAnsweredCount()
+
+    // 訂閱答題記錄變化
+    const answerSubscription = supabase
+      .channel('answer_records_changes')
+      .on('postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'answer_records', filter: `question_id=eq.${currentQuestion.id}` },
+        () => {
+          fetchAnsweredCount()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      answerSubscription.unsubscribe()
+    }
+  }, [currentQuestion, fetchAnsweredCount, supabase])
 
   const handleTimeUp = useCallback(async () => {
     if (!profile || !currentQuestion || hasAnswered) return
@@ -294,6 +334,14 @@ export default function QuizPage() {
               </div>
             </div>
             
+            {/* 答題人數統計 */}
+            <div className="flex items-center space-x-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-blue-600">{answeredCount}</div>
+                <div className="text-sm text-gray-600">已答題</div>
+              </div>
+            </div>
+            
             {answerResult && (
               <div className={`flex items-center space-x-2 px-4 py-2 rounded-lg ${
                 answerResult.isCorrect ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
@@ -319,45 +367,31 @@ export default function QuizPage() {
             {currentQuestion.question_text}
           </h2>
 
-          {/* 選項 */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* 簡化選項按鈕 - 四個不同顏色的大按鈕 */}
+          <div className="grid grid-cols-2 gap-6">
             {[
-              { key: 'A' as const, text: currentQuestion.option_a },
-              { key: 'B' as const, text: currentQuestion.option_b },
-              { key: 'C' as const, text: currentQuestion.option_c },
-              { key: 'D' as const, text: currentQuestion.option_d },
+              { key: 'A' as const, text: currentQuestion.option_a, color: 'bg-red-500 hover:bg-red-600', selectedColor: 'bg-red-600' },
+              { key: 'B' as const, text: currentQuestion.option_b, color: 'bg-blue-500 hover:bg-blue-600', selectedColor: 'bg-blue-600' },
+              { key: 'C' as const, text: currentQuestion.option_c, color: 'bg-green-500 hover:bg-green-600', selectedColor: 'bg-green-600' },
+              { key: 'D' as const, text: currentQuestion.option_d, color: 'bg-yellow-500 hover:bg-yellow-600', selectedColor: 'bg-yellow-600' }
             ].map((option) => (
               <button
                 key={option.key}
                 onClick={() => handleAnswerSubmit(option.key)}
                 disabled={hasAnswered || timeLeft <= 0}
-                className={`p-4 rounded-xl border-2 text-left transition-all duration-200 ${
-                  hasAnswered
-                    ? selectedAnswer === option.key
-                      ? answerResult?.isCorrect
-                        ? 'border-green-500 bg-green-50 text-green-700'
-                        : 'border-red-500 bg-red-50 text-red-700'
-                      : currentQuestion.correct_answer === option.key
-                        ? 'border-green-500 bg-green-50 text-green-700'
-                        : 'border-gray-200 bg-gray-50 text-gray-500'
-                    : 'border-gray-200 hover:border-pink-300 hover:bg-pink-50 cursor-pointer'
-                } ${timeLeft <= 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`p-8 rounded-2xl text-white font-bold text-2xl transition-all duration-200 shadow-lg ${
+                  hasAnswered && selectedAnswer === option.key
+                    ? option.selectedColor
+                    : hasAnswered
+                      ? 'bg-gray-400 opacity-50'
+                      : timeLeft <= 0
+                        ? 'bg-gray-400 opacity-50 cursor-not-allowed'
+                        : `${option.color} cursor-pointer transform hover:scale-105`
+                }`}
               >
-                <div className="flex items-center space-x-3">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
-                    hasAnswered
-                      ? selectedAnswer === option.key
-                        ? answerResult?.isCorrect
-                          ? 'bg-green-500 text-white'
-                          : 'bg-red-500 text-white'
-                        : currentQuestion.correct_answer === option.key
-                          ? 'bg-green-500 text-white'
-                          : 'bg-gray-300 text-gray-600'
-                      : 'bg-pink-100 text-pink-700'
-                  }`}>
-                    {option.key}
-                  </div>
-                  <span className="flex-1 text-lg">{option.text}</span>
+                <div className="text-center">
+                  <div className="text-4xl font-black mb-2">{option.key}</div>
+                  <div className="text-lg font-medium leading-tight">{option.text}</div>
                 </div>
               </button>
             ))}
