@@ -52,8 +52,6 @@ CREATE TABLE IF NOT EXISTS game_state (
     is_game_active BOOLEAN DEFAULT FALSE,
     is_paused BOOLEAN DEFAULT FALSE,
     question_start_time TIMESTAMP WITH TIME ZONE,
-    voting_enabled BOOLEAN DEFAULT FALSE,
-    votes_per_user INTEGER DEFAULT 3,
     total_questions INTEGER DEFAULT 0,
     completed_questions INTEGER DEFAULT 0,
     game_session_id TEXT DEFAULT gen_random_uuid()::text,
@@ -91,19 +89,33 @@ CREATE TABLE IF NOT EXISTS admin_line_ids (
     is_active BOOLEAN DEFAULT TRUE
 );
 
--- 8. 插入初始遊戲狀態（如果不存在）
-INSERT INTO game_state (is_game_active, is_paused, voting_enabled, votes_per_user) 
-VALUES (FALSE, FALSE, FALSE, 3) 
+-- 8. 創建 voting_settings 表格（投票設置）
+CREATE TABLE IF NOT EXISTS voting_settings (
+    id SERIAL PRIMARY KEY,
+    voting_enabled BOOLEAN DEFAULT FALSE,
+    votes_per_user INTEGER DEFAULT 3,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 9. 插入初始遊戲狀態（如果不存在）
+INSERT INTO game_state (is_game_active, is_paused, total_questions, completed_questions) 
+VALUES (FALSE, FALSE, 0, 0) 
 ON CONFLICT DO NOTHING;
 
--- 9. 創建索引以提升查詢效能
+-- 10. 插入初始投票設置（如果不存在）
+INSERT INTO voting_settings (voting_enabled, votes_per_user) 
+VALUES (FALSE, 3) 
+ON CONFLICT DO NOTHING;
+
+-- 11. 創建索引以提升查詢效能
 CREATE INDEX IF NOT EXISTS idx_answer_records_user_question ON answer_records(user_line_id, question_id);
 CREATE INDEX IF NOT EXISTS idx_answer_records_question_time ON answer_records(question_id, answer_time);
 CREATE INDEX IF NOT EXISTS idx_photos_public_upload_time ON photos(is_public, upload_time DESC) WHERE is_public = TRUE;
 CREATE INDEX IF NOT EXISTS idx_votes_photo_id ON votes(photo_id);
 CREATE INDEX IF NOT EXISTS idx_users_total_score ON users(total_score DESC);
 
--- 10. 設置 RLS 政策
+-- 12. 設置 RLS 政策
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE questions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE answer_records ENABLE ROW LEVEL SECURITY;
@@ -111,6 +123,7 @@ ALTER TABLE game_state ENABLE ROW LEVEL SECURITY;
 ALTER TABLE photos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE votes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE admin_line_ids ENABLE ROW LEVEL SECURITY;
+ALTER TABLE voting_settings ENABLE ROW LEVEL SECURITY;
 
 -- 允許所有人查看和操作（簡化的政策，可以後續加強）
 DROP POLICY IF EXISTS "允許所有操作_users" ON users;
@@ -134,7 +147,10 @@ CREATE POLICY "允許所有操作_votes" ON votes FOR ALL USING (true);
 DROP POLICY IF EXISTS "允許所有操作_admin_line_ids" ON admin_line_ids;
 CREATE POLICY "允許所有操作_admin_line_ids" ON admin_line_ids FOR ALL USING (true);
 
--- 11. 插入一些示例問題（如果不存在）
+DROP POLICY IF EXISTS "允許所有操作_voting_settings" ON voting_settings;
+CREATE POLICY "允許所有操作_voting_settings" ON voting_settings FOR ALL USING (true);
+
+-- 13. 插入一些示例問題（如果不存在）
 INSERT INTO questions (question_text, option_a, option_b, option_c, option_d, correct_answer, base_score, time_limit) VALUES
 ('新郎新娘第一次見面是在哪裡？', '咖啡廳', '學校', '公園', '朋友聚會', 'D', 100, 30),
 ('新郎的興趣是什麼？', '攝影', '音樂', '運動', '旅行', 'B', 100, 30),
