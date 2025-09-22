@@ -67,7 +67,7 @@ export default function QuizPage() {
 
   // 初始載入和訂閱即時更新
   useEffect(() => {
-    if (!user) return
+    if (!profile) return
 
     fetchGameState()
 
