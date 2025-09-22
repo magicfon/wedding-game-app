@@ -176,7 +176,7 @@ export async function POST(request: Request) {
       case 'reset_game':
         // 重置遊戲 - 清空所有答題記錄
         await supabase
-          .from('user_answers')
+          .from('answer_records')
           .delete()
           .neq('id', 0); // 刪除所有記錄
 
@@ -184,8 +184,7 @@ export async function POST(request: Request) {
         await supabase
           .from('users')
           .update({ 
-            total_score: 0,
-            quiz_score: 0 
+            total_score: 0
           })
           .neq('line_id', '');
 
