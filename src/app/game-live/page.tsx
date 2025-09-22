@@ -94,12 +94,12 @@ export default function GameLivePage() {
   }, [currentQuestion, supabase])
 
   // 獲取答題速度前十名
-  const fetchTopPlayers = useCallback(async () => {
-    console.log('🏃 fetchTopPlayers 被調用，currentQuestion:', currentQuestion?.id);
+  const fetchTopPlayers = useCallback(async (onlyCorrect = false) => {
+    console.log('🏃 fetchTopPlayers 被調用，currentQuestion:', currentQuestion?.id, 'onlyCorrect:', onlyCorrect);
     if (!currentQuestion) return
 
     try {
-      const { data: topAnswers, error } = await supabase
+      let query = supabase
         .from('answer_records')
         .select(`
           answer_time,
@@ -113,6 +113,14 @@ export default function GameLivePage() {
         .eq('question_id', currentQuestion.id)
         .order('answer_time', { ascending: true })
         .limit(10)
+
+      // 如果只要正確答案，添加過濾條件
+      if (onlyCorrect) {
+        console.log('🎯 只獲取答對的玩家');
+        query = query.eq('is_correct', true)
+      }
+
+      const { data: topAnswers, error } = await query
 
       if (error) throw error
 
@@ -140,17 +148,15 @@ export default function GameLivePage() {
   }, [gameState, currentQuestion, calculateTimeLeft])
 
   // 移除答錯者的函數
-  const removeWrongPlayers = useCallback(() => {
+  const removeWrongPlayers = useCallback(async () => {
     console.log('removeWrongPlayers 函數被調用');
-    setTopPlayers(prevPlayers => {
-      console.log('移除前的玩家:', prevPlayers.map(p => ({ name: p.display_name, correct: p.is_correct })));
-      const correctPlayers = prevPlayers.filter(player => player.is_correct);
-      console.log('移除後剩餘', correctPlayers.length, '個答對者:', correctPlayers.map(p => p.display_name));
-      return correctPlayers;
-    });
     console.log('設置 showingCorrectOnly = true');
     setShowingCorrectOnly(true);
-  }, []);
+    
+    // 直接從數據庫重新獲取只有正確答案的玩家
+    console.log('🔄 從數據庫重新獲取只有正確答案的玩家');
+    await fetchTopPlayers(true); // 傳入 true 表示只要正確答案
+  }, [fetchTopPlayers]);
 
   // 處理答案公布後的淡出和移除邏輯
   useEffect(() => {
@@ -209,7 +215,7 @@ export default function GameLivePage() {
       console.log('✅ showingCorrectOnly 已重置為 false');
       
       fetchAnswerDistribution()
-      fetchTopPlayers()
+      fetchTopPlayers(false) // 新題目開始時獲取所有玩家
       fetchCurrentQuestionAnswerCount()
 
       // 訂閱答題記錄變化
@@ -219,7 +225,7 @@ export default function GameLivePage() {
           { event: 'INSERT', schema: 'public', table: 'answer_records', filter: `question_id=eq.${currentQuestion.id}` },
           () => {
             fetchAnswerDistribution()
-            fetchTopPlayers()
+            fetchTopPlayers(showingCorrectOnly) // 根據當前狀態決定是否只獲取正確答案
             fetchCurrentQuestionAnswerCount()
           }
         )
@@ -245,7 +251,7 @@ export default function GameLivePage() {
       // 當時間到達0時，立即獲取最新的答題分佈和排行榜
       if (newTimeLeft === 0) {
         fetchAnswerDistribution()
-        fetchTopPlayers()
+        fetchTopPlayers(false) // 倒數結束時先獲取所有玩家
         fetchCurrentQuestionAnswerCount()
       }
     }, 1000)
