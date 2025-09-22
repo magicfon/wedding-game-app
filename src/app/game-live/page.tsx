@@ -132,14 +132,21 @@ export default function GameLivePage() {
 
   // 倒數計時器
   useEffect(() => {
-    if (timeLeft <= 0 || !gameState?.is_game_active || gameState?.is_paused) return
+    if (!gameState?.is_game_active || gameState?.is_paused) return
 
     const timer = setInterval(() => {
-      setTimeLeft(prev => Math.max(0, prev - 1))
+      const newTimeLeft = calculateTimeLeft()
+      setTimeLeft(newTimeLeft)
+      
+      // 當時間到達0時，立即獲取最新的答題分佈和排行榜
+      if (newTimeLeft === 0) {
+        fetchAnswerDistribution()
+        fetchTopPlayers()
+      }
     }, 1000)
 
     return () => clearInterval(timer)
-  }, [timeLeft, gameState])
+  }, [gameState, calculateTimeLeft, fetchAnswerDistribution, fetchTopPlayers])
 
   if (loading) {
     return (

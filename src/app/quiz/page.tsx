@@ -101,23 +101,22 @@ export default function QuizPage() {
 
   // 倒數計時器
   useEffect(() => {
-    if (!gameState?.is_game_active || gameState.is_paused || timeLeft <= 0 || hasAnswered) {
+    if (!gameState?.is_game_active || gameState.is_paused) {
       return
     }
 
     const timer = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) {
-          // 時間到，自動提交空答案
-          handleTimeUp()
-          return 0
-        }
-        return prev - 1
-      })
+      const newTimeLeft = calculateTimeLeft()
+      setTimeLeft(newTimeLeft)
+      
+      // 時間到且尚未答題，自動提交空答案
+      if (newTimeLeft === 0 && !hasAnswered) {
+        handleTimeUp()
+      }
     }, 1000)
 
     return () => clearInterval(timer)
-  }, [timeLeft, gameState, hasAnswered, handleTimeUp])
+  }, [gameState, calculateTimeLeft, hasAnswered, handleTimeUp])
 
   const handleAnswerSubmit = async (answer: 'A' | 'B' | 'C' | 'D') => {
     if (!profile || !currentQuestion || hasAnswered || timeLeft <= 0) return
