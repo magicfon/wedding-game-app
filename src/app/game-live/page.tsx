@@ -275,48 +275,56 @@ export default function GameLivePage() {
                             isCorrect ? 'border-green-400 bg-green-50' : 'border-gray-200'
                           }`}
                         >
-                          <div className="flex items-center justify-between mb-4">
-                            <div className={`w-12 h-12 ${option.color} text-white rounded-full flex items-center justify-center text-xl font-bold`}>
-                              {option.key}
+                          {/* 選項標題和統計 */}
+                          <div className="flex items-start justify-between mb-4">
+                            <div className="flex items-center space-x-4 flex-1">
+                              <div className={`w-16 h-16 ${option.color} text-white rounded-full flex items-center justify-center text-2xl font-bold shadow-lg`}>
+                                {option.key}
+                              </div>
+                              <div className="flex-1">
+                                <div className="text-3xl font-bold text-gray-800">{distribution?.count || 0}</div>
+                                <div className="text-sm text-gray-600">人選擇</div>
+                                {isCorrect && (
+                                  <div className="text-green-600 font-semibold text-sm mt-1">✅ 正確答案</div>
+                                )}
+                              </div>
                             </div>
-                            <div className="text-right">
-                              <div className="text-2xl font-bold">{distribution?.count || 0}</div>
-                              <div className="text-sm text-gray-600">人選擇</div>
+                            <div className="text-right flex-shrink-0 max-w-xs">
+                              <div className="text-lg font-medium text-gray-700 leading-tight">{option.text}</div>
                             </div>
                           </div>
-                          <div className="text-lg font-medium mb-2">{option.text}</div>
-                          {isCorrect && (
-                            <div className="text-green-600 font-semibold text-sm">✅ 正確答案</div>
-                          )}
+
                           {/* 顯示選擇此答案的用戶 */}
                           {distribution && distribution.users.length > 0 && (
                             <div className="mt-4">
-                              <div className="flex flex-wrap gap-2">
-                                {distribution.users.slice(0, 6).map((user, index) => {
+                              <div className="flex flex-wrap gap-3">
+                                {distribution.users.slice(0, 8).map((user, index) => {
                                   console.log('User data:', user); // 調試信息
                                   return (
-                                    <div key={index} className="flex items-center space-x-1 bg-gray-100 rounded-full px-2 py-1">
+                                    <div key={index} className="flex items-center space-x-2 bg-white rounded-full px-3 py-2 shadow-sm border border-gray-200">
                                       {user.avatar_url ? (
                                         <img 
                                           src={user.avatar_url} 
                                           alt={user.display_name || 'User'} 
-                                          className="w-4 h-4 rounded-full"
+                                          className="w-8 h-8 rounded-full border-2 border-gray-100"
                                           onError={(e) => {
                                             console.log('Image load error:', user.avatar_url);
                                             e.currentTarget.style.display = 'none';
                                           }}
                                         />
                                       ) : (
-                                        <div className="w-4 h-4 rounded-full bg-gray-400 flex items-center justify-center text-xs text-white">
+                                        <div className="w-8 h-8 rounded-full bg-gray-400 flex items-center justify-center text-sm font-semibold text-white">
                                           {user.display_name?.charAt(0) || '?'}
                                         </div>
                                       )}
-                                      <span className="text-xs">{user.display_name}</span>
+                                      <span className="text-sm font-medium text-gray-800">{user.display_name}</span>
                                     </div>
                                   );
                                 })}
-                                {distribution.users.length > 6 && (
-                                  <div className="text-xs text-gray-500">+{distribution.users.length - 6}人</div>
+                                {distribution.users.length > 8 && (
+                                  <div className="flex items-center px-3 py-2 text-sm text-gray-600 bg-gray-100 rounded-full">
+                                    +{distribution.users.length - 8}人
+                                  </div>
                                 )}
                               </div>
                             </div>
@@ -342,14 +350,14 @@ export default function GameLivePage() {
                     {topPlayers.map((player, index) => (
                       <div
                         key={index}
-                        className={`flex items-center space-x-3 p-3 rounded-lg ${
+                        className={`flex items-center space-x-3 p-4 rounded-xl ${
                           index === 0 ? 'bg-yellow-100 border-2 border-yellow-300' :
                           index === 1 ? 'bg-gray-100 border-2 border-gray-300' :
                           index === 2 ? 'bg-orange-100 border-2 border-orange-300' :
                           'bg-gray-50'
                         }`}
                       >
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold ${
                           index === 0 ? 'bg-yellow-500 text-white' :
                           index === 1 ? 'bg-gray-500 text-white' :
                           index === 2 ? 'bg-orange-500 text-white' :
@@ -358,16 +366,24 @@ export default function GameLivePage() {
                           {index + 1}
                         </div>
                         
-                        {player.avatar_url && (
-                          <img src={player.avatar_url} alt="" className="w-8 h-8 rounded-full" />
+                        {player.avatar_url ? (
+                          <img 
+                            src={player.avatar_url} 
+                            alt={player.display_name} 
+                            className="w-10 h-10 rounded-full border-2 border-white shadow-sm" 
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-gray-400 flex items-center justify-center text-sm font-semibold text-white">
+                            {player.display_name?.charAt(0) || '?'}
+                          </div>
                         )}
                         
                         <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium text-gray-800 truncate">
+                          <div className="text-base font-semibold text-gray-800 truncate">
                             {player.display_name}
                           </div>
-                          <div className="text-xs text-gray-600">
-                            {(player.answer_time / 1000).toFixed(1)}秒 | {player.selected_answer}
+                          <div className="text-sm text-gray-700 font-medium">
+                            ⏱️ {(player.answer_time / 1000).toFixed(1)}秒 | 選擇 {player.selected_answer}
                             {player.is_correct && <span className="text-green-600 ml-1">✅</span>}
                           </div>
                         </div>
