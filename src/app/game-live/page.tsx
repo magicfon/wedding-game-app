@@ -149,22 +149,39 @@ export default function GameLivePage() {
 
   // 處理答案公布後的淡出和移除邏輯
   useEffect(() => {
-    console.log('檢查移除條件:', { timeLeft, playersCount: topPlayers.length, showingCorrectOnly });
+    // 總是輸出狀態信息用於調試
+    console.log('🔍 檢查移除條件:', { 
+      timeLeft, 
+      playersCount: topPlayers.length, 
+      showingCorrectOnly,
+      hasPlayers: topPlayers.length > 0,
+      timeIsZero: timeLeft === 0,
+      notShowingCorrectOnly: !showingCorrectOnly
+    });
+    
+    if (topPlayers.length > 0) {
+      console.log('📋 當前玩家列表:', topPlayers.map(p => ({ 
+        name: p.display_name, 
+        correct: p.is_correct,
+        time: p.answer_time 
+      })));
+    }
     
     if (timeLeft === 0 && topPlayers.length > 0 && !showingCorrectOnly) {
-      console.log('答案公布，準備移除答錯者...', topPlayers.length, '個玩家');
-      console.log('玩家列表:', topPlayers.map(p => ({ name: p.display_name, correct: p.is_correct })));
+      console.log('✅ 條件滿足！答案公布，準備移除答錯者...', topPlayers.length, '個玩家');
       
       // 答案公布後，延遲2秒後只顯示答對的玩家
       const timer = setTimeout(() => {
-        console.log('執行移除邏輯...');
+        console.log('⏰ 執行移除邏輯...');
         removeWrongPlayers();
       }, 2000);
 
       return () => {
-        console.log('清理計時器');
+        console.log('🧹 清理計時器');
         clearTimeout(timer);
       };
+    } else {
+      console.log('❌ 條件不滿足，不執行移除邏輯');
     }
   }, [timeLeft, showingCorrectOnly, topPlayers.length, removeWrongPlayers])
 
