@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { createSupabaseBrowser } from '@/lib/supabase'
 import Layout from '@/components/Layout'
-import { Play, Pause, Users, Trophy, Clock, HelpCircle, Award, Zap } from 'lucide-react'
+import { Play, Pause, Users, Clock, HelpCircle, Zap } from 'lucide-react'
 
 interface AnswerDistribution {
   answer: 'A' | 'B' | 'C' | 'D'
@@ -50,8 +50,8 @@ export default function GameLivePage() {
         answer: answer as 'A' | 'B' | 'C' | 'D',
         count: answers?.filter(a => a.selected_answer === answer).length || 0,
         users: answers?.filter(a => a.selected_answer === answer).map(a => ({
-          display_name: a.users.display_name,
-          avatar_url: a.users.avatar_url
+          display_name: (a.users as any).display_name,
+          avatar_url: (a.users as any).avatar_url
         })) || []
       }))
 
@@ -84,8 +84,8 @@ export default function GameLivePage() {
       if (error) throw error
 
       const players: TopPlayer[] = topAnswers?.map(record => ({
-        display_name: record.users.display_name,
-        avatar_url: record.users.avatar_url,
+        display_name: (record.users as any).display_name,
+        avatar_url: (record.users as any).avatar_url,
         answer_time: record.answer_time,
         selected_answer: record.selected_answer,
         is_correct: record.is_correct
