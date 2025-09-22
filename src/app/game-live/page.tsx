@@ -162,7 +162,12 @@ export default function GameLivePage() {
       showingCorrectOnly,
       hasPlayers: topPlayers.length > 0,
       timeIsZero: timeLeft === 0,
-      notShowingCorrectOnly: !showingCorrectOnly
+      notShowingCorrectOnly: !showingCorrectOnly,
+      // 新增：詳細的條件檢查
+      condition1_timeLeft: `timeLeft === 0: ${timeLeft === 0}`,
+      condition2_hasPlayers: `topPlayers.length > 0: ${topPlayers.length > 0}`,
+      condition3_notShowing: `!showingCorrectOnly: ${!showingCorrectOnly}`,
+      allConditionsMet: timeLeft === 0 && topPlayers.length > 0 && !showingCorrectOnly
     });
     
     if (topPlayers.length > 0) {
@@ -413,6 +418,20 @@ export default function GameLivePage() {
                 
                 {/* 調試：總是顯示排行榜區域 */}
                 <div className="space-y-3">
+                  {/* 調試按鈕 */}
+                  <div className="text-center mb-4">
+                    <button 
+                      onClick={() => {
+                        console.log('🧪 手動觸發移除邏輯測試');
+                        console.log('當前狀態:', { timeLeft, topPlayers: topPlayers.length, showingCorrectOnly });
+                        removeWrongPlayers();
+                      }}
+                      className="bg-red-500 text-white px-4 py-2 rounded text-sm"
+                    >
+                      🧪 測試移除邏輯
+                    </button>
+                  </div>
+                  
                   {topPlayers.length === 0 ? (
                     <div className="text-center py-8 text-gray-500">
                       <p>🔍 調試模式：等待玩家數據...</p>
