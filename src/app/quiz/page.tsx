@@ -3,9 +3,10 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createSupabaseBrowser, Question } from '@/lib/supabase'
+import { useLiff } from '@/hooks/useLiff'
 import Layout from '@/components/Layout'
-import SimpleUserStatus from '@/components/SimpleUserStatus'
-import { Clock, Users, Trophy, CheckCircle, XCircle } from 'lucide-react'
+import UserStatus from '@/components/UserStatus'
+import { Clock, Users, Trophy, CheckCircle, XCircle, Heart } from 'lucide-react'
 
 interface GameState {
   current_question_id: number | null
@@ -21,32 +22,12 @@ export default function QuizPage() {
   const [timeLeft, setTimeLeft] = useState<number>(0)
   const [hasAnswered, setHasAnswered] = useState(false)
   const [answerResult, setAnswerResult] = useState<{ isCorrect: boolean; score: number } | null>(null)
-  const [user, setUser] = useState<{
-    id: string
-    email?: string
-    user_metadata?: {
-      full_name?: string
-    }
-  } | null>(null)
-  const [loading, setLoading] = useState(true)
   
   const router = useRouter()
   const supabase = createSupabaseBrowser()
-
-  // 獲取用戶資訊
-  useEffect(() => {
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        router.push('/auth/line')
-        return
-      }
-      setUser(user)
-      setLoading(false)
-    }
-
-    getUser()
-  }, [supabase.auth, router])
+  
+  // 使用 LIFF 登入系統
+  const { isReady, isLoggedIn, profile, login, loading: liffLoading } = useLiff()
 
   // 獲取遊戲狀態
   const fetchGameState = useCallback(async () => {
@@ -108,10 +89,10 @@ export default function QuizPage() {
     return () => {
       gameStateSubscription.unsubscribe()
     }
-  }, [user, fetchGameState, supabase])
+  }, [profile, fetchGameState, supabase])
 
   const handleTimeUp = useCallback(async () => {
-    if (!user || !currentQuestion || hasAnswered) return
+    if (!profile || !currentQuestion || hasAnswered) return
 
     setHasAnswered(true)
     
@@ -119,7 +100,7 @@ export default function QuizPage() {
       const { error } = await supabase
         .from('answer_records')
         .insert({
-          user_line_id: user.id,
+          user_line_id: profile.userId,
           question_id: currentQuestion.id,
           selected_answer: null,
           answer_time: currentQuestion.time_limit * 1000,
@@ -136,7 +117,7 @@ export default function QuizPage() {
     } catch (error) {
       console.error('Error recording timeout:', error)
     }
-  }, [user, currentQuestion, hasAnswered, supabase])
+  }, [profile, currentQuestion, hasAnswered, supabase])
 
   // 倒數計時器
   useEffect(() => {
@@ -159,7 +140,7 @@ export default function QuizPage() {
   }, [timeLeft, gameState, hasAnswered, handleTimeUp])
 
   const handleAnswerSubmit = async (answer: 'A' | 'B' | 'C' | 'D') => {
-    if (!user || !currentQuestion || hasAnswered || timeLeft <= 0) return
+    if (!profile || !currentQuestion || hasAnswered || timeLeft <= 0) return
 
     setSelectedAnswer(answer)
     setHasAnswered(true)
@@ -180,7 +161,7 @@ export default function QuizPage() {
       const { error } = await supabase
         .from('answer_records')
         .insert({
-          user_line_id: user.id,
+          user_line_id: profile.userId,
           question_id: currentQuestion.id,
           selected_answer: answer,
           answer_time: answerTime,
@@ -199,12 +180,45 @@ export default function QuizPage() {
     }
   }
 
-  if (loading) {
+  // 載入狀態
+  if (liffLoading) {
     return (
       <Layout title="快問快答">
         <div className="flex items-center justify-center py-16">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500"></div>
+          <p className="ml-4 text-gray-600">載入中...</p>
         </div>
+      </Layout>
+    )
+  }
+
+  // 未登入狀態
+  if (!isLoggedIn || !profile) {
+    return (
+      <Layout title="快問快答">
+        <div className="text-center py-16">
+          <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md mx-auto">
+            <Heart className="w-16 h-16 text-pink-500 mx-auto mb-6" />
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">請先登入</h2>
+            <p className="text-gray-600 mb-6">需要登入才能參與快問快答</p>
+            <div className="space-y-4">
+              <button
+                onClick={login}
+                disabled={!isReady}
+                className="w-full bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
+              >
+                {!isReady ? '載入中...' : 'Line 登入'}
+              </button>
+              <button
+                onClick={() => router.push('/')}
+                className="w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
+              >
+                返回首頁
+              </button>
+            </div>
+          </div>
+        </div>
+        <UserStatus />
       </Layout>
     )
   }
