@@ -54,6 +54,27 @@ export default function UserStatus() {
     )
   }
 
+  // 外部瀏覽器提示
+  if (isReady && !isInLiff && !isLoggedIn) {
+    return (
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+        <div className="flex items-start space-x-3">
+          <Info className="w-5 h-5 text-yellow-600 mt-0.5" />
+          <div className="flex-1">
+            <h3 className="text-sm font-medium text-yellow-800">外部瀏覽器登入</h3>
+            <p className="text-sm text-yellow-700 mt-1">
+              您正在使用外部瀏覽器（Chrome/Safari 等）。點擊登入按鈕將會跳轉到 LINE Login 頁面。
+            </p>
+            <p className="text-xs text-yellow-600 mt-2">
+              💡 建議使用 LINE 應用內瀏覽器以獲得最佳體驗
+            </p>
+          </div>
+          <Globe className="w-5 h-5 text-yellow-600" />
+        </div>
+      </div>
+    )
+  }
+
   if (error) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
