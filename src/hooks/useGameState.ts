@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { createSupabaseBrowser } from '@/lib/supabase';
 
 export interface GameQuestion {
@@ -48,6 +48,9 @@ export function useGameState(adminLineId?: string) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [timeRemaining, setTimeRemaining] = useState(0);
+  
+  // 用於追蹤是否已經處理過時間到達事件
+  const timeUpHandled = useRef(false);
 
   const supabase = createSupabaseBrowser();
 
@@ -113,8 +116,13 @@ export function useGameState(adminLineId?: string) {
   // 倒數計時器
   useEffect(() => {
     if (!gameState?.is_game_active || gameState?.is_paused || !gameState?.questions) {
+      setTimeRemaining(0);
+      timeUpHandled.current = false;
       return;
     }
+
+    // 重置時間到達處理標記
+    timeUpHandled.current = false;
 
     const timer = setInterval(() => {
       if (gameState.question_start_time && gameState.questions) {
@@ -125,9 +133,14 @@ export function useGameState(adminLineId?: string) {
         
         setTimeRemaining(remaining);
 
-        // 時間到了，自動刷新狀態
-        if (remaining === 0) {
-          refreshGameState();
+        // 只在第一次到達 0 時處理，避免重複調用
+        if (remaining === 0 && !timeUpHandled.current) {
+          timeUpHandled.current = true;
+          console.log('時間到！自動刷新遊戲狀態');
+          // 延遲一點時間再刷新，避免過於頻繁
+          setTimeout(() => {
+            refreshGameState();
+          }, 1000);
         }
       }
     }, 1000);
