@@ -117,7 +117,7 @@ export function useGameState(adminLineId?: string) {
     }
 
     const timer = setInterval(() => {
-      if (gameState.question_start_time) {
+      if (gameState.question_start_time && gameState.questions) {
         const startTime = new Date(gameState.question_start_time).getTime();
         const currentTime = new Date().getTime();
         const elapsed = Math.floor((currentTime - startTime) / 1000);
