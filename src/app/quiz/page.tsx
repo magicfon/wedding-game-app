@@ -7,13 +7,12 @@ import { useLiff } from '@/hooks/useLiff'
 import { useRealtimeGameState } from '@/hooks/useRealtimeGameState'
 import Layout from '@/components/Layout'
 import UserStatus from '@/components/UserStatus'
-import { Clock, Users, Trophy, CheckCircle, XCircle, Heart } from 'lucide-react'
+import { Clock, Users, Trophy, Heart } from 'lucide-react'
 
 export default function QuizPage() {
   const [selectedAnswer, setSelectedAnswer] = useState<'A' | 'B' | 'C' | 'D' | null>(null)
   const [timeLeft, setTimeLeft] = useState<number>(0)
   const [hasAnswered, setHasAnswered] = useState(false)
-  const [answerResult, setAnswerResult] = useState<{ isCorrect: boolean; score: number } | null>(null)
   const [answeredCount, setAnsweredCount] = useState<number>(0)
   
   const router = useRouter()
@@ -48,7 +47,6 @@ export default function QuizPage() {
     if (gameState && currentQuestion) {
       setHasAnswered(false)
       setSelectedAnswer(null)
-      setAnswerResult(null)
       // 計算初始時間
       setTimeLeft(calculateTimeLeft())
     }
@@ -95,10 +93,7 @@ export default function QuizPage() {
 
       if (error) throw error
 
-      setAnswerResult({
-        isCorrect: false,
-        score: currentQuestion.timeout_penalty_enabled ? -currentQuestion.timeout_penalty_score : 0
-      })
+      // 超時記錄，不顯示結果
     } catch (error) {
       console.error('Error recording timeout:', error)
     }
@@ -156,10 +151,7 @@ export default function QuizPage() {
 
       if (error) throw error
 
-      setAnswerResult({
-        isCorrect,
-        score: earnedScore
-      })
+      // 答題成功，不顯示結果，只記錄選擇
     } catch (error) {
       console.error('Error submitting answer:', error)
     }
@@ -287,22 +279,6 @@ export default function QuizPage() {
               </div>
             </div>
             
-            {answerResult && (
-              <div className={`flex items-center space-x-2 px-4 py-2 rounded-lg ${
-                answerResult.isCorrect ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-              }`}>
-                {answerResult.isCorrect ? (
-                  <CheckCircle className="w-5 h-5" />
-                ) : (
-                  <XCircle className="w-5 h-5" />
-                )}
-                <span className="font-semibold">
-                  {answerResult.isCorrect ? '答對了！' : '答錯了！'}
-                  {answerResult.score > 0 && `+${answerResult.score}分`}
-                  {answerResult.score < 0 && `${answerResult.score}分`}
-                </span>
-              </div>
-            )}
           </div>
         </div>
 
@@ -325,10 +301,10 @@ export default function QuizPage() {
                 onClick={() => handleAnswerSubmit(option.key)}
                 disabled={hasAnswered || timeLeft <= 0}
                 className={`p-8 rounded-2xl text-white font-bold text-2xl transition-all duration-200 shadow-lg ${
-                  hasAnswered && selectedAnswer === option.key
-                    ? option.selectedColor
+                  selectedAnswer === option.key
+                    ? `${option.selectedColor} ring-4 ring-white`
                     : hasAnswered
-                      ? 'bg-gray-400 opacity-50'
+                      ? 'bg-gray-400 opacity-70'
                       : timeLeft <= 0
                         ? 'bg-gray-400 opacity-50 cursor-not-allowed'
                         : `${option.color} cursor-pointer transform hover:scale-105`
@@ -346,7 +322,7 @@ export default function QuizPage() {
         {/* 遊戲說明 */}
         <div className="bg-blue-50 rounded-xl p-4 text-center">
           <p className="text-blue-700 text-sm">
-            💡 答對得分 = 基礎分數 + 速度加成 | 越快答對，得分越高！
+            💡 選擇答案後請耐心等待，正確答案將在遊戲實況中公布！
           </p>
         </div>
       </div>
