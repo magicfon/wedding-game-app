@@ -33,6 +33,15 @@ CREATE TABLE IF NOT EXISTS questions (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- 2a. 確保 questions 表格有所有必要的欄位
+ALTER TABLE questions ADD COLUMN IF NOT EXISTS base_score INTEGER DEFAULT 100;
+ALTER TABLE questions ADD COLUMN IF NOT EXISTS penalty_enabled BOOLEAN DEFAULT FALSE;
+ALTER TABLE questions ADD COLUMN IF NOT EXISTS penalty_score INTEGER DEFAULT 0;
+ALTER TABLE questions ADD COLUMN IF NOT EXISTS timeout_penalty_enabled BOOLEAN DEFAULT FALSE;
+ALTER TABLE questions ADD COLUMN IF NOT EXISTS timeout_penalty_score INTEGER DEFAULT 0;
+ALTER TABLE questions ADD COLUMN IF NOT EXISTS time_limit INTEGER DEFAULT 30;
+ALTER TABLE questions ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
+
 -- 3. 創建 answer_records 表格（應用程式碼中使用的表格）
 CREATE TABLE IF NOT EXISTS answer_records (
     id SERIAL PRIMARY KEY,
@@ -59,6 +68,12 @@ CREATE TABLE IF NOT EXISTS game_state (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- 4a. 確保 game_state 表格有所有必要的欄位
+ALTER TABLE game_state ADD COLUMN IF NOT EXISTS total_questions INTEGER DEFAULT 0;
+ALTER TABLE game_state ADD COLUMN IF NOT EXISTS completed_questions INTEGER DEFAULT 0;
+ALTER TABLE game_state ADD COLUMN IF NOT EXISTS game_session_id TEXT DEFAULT gen_random_uuid()::text;
+ALTER TABLE game_state ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
+
 -- 5. 創建 photos 表格
 CREATE TABLE IF NOT EXISTS photos (
     id SERIAL PRIMARY KEY,
@@ -70,6 +85,11 @@ CREATE TABLE IF NOT EXISTS photos (
     vote_count INTEGER DEFAULT 0,
     upload_time TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- 5a. 確保 photos 表格有所有必要的欄位
+ALTER TABLE photos ADD COLUMN IF NOT EXISTS upload_time TIMESTAMP WITH TIME ZONE DEFAULT NOW();
+ALTER TABLE photos ADD COLUMN IF NOT EXISTS vote_count INTEGER DEFAULT 0;
+ALTER TABLE photos ADD COLUMN IF NOT EXISTS is_public BOOLEAN DEFAULT FALSE;
 
 -- 6. 創建 votes 表格
 CREATE TABLE IF NOT EXISTS votes (
