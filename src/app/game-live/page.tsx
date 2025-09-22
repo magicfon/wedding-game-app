@@ -25,6 +25,7 @@ export default function GameLivePage() {
   const [topPlayers, setTopPlayers] = useState<TopPlayer[]>([])
   const [timeLeft, setTimeLeft] = useState<number>(0)
   const [currentQuestionAnswerCount, setCurrentQuestionAnswerCount] = useState<number>(0)
+  const [showingCorrectOnly, setShowingCorrectOnly] = useState<boolean>(false)
   
   const supabase = createSupabaseBrowser()
   
@@ -132,6 +133,25 @@ export default function GameLivePage() {
       setTimeLeft(calculateTimeLeft())
     }
   }, [gameState, currentQuestion, calculateTimeLeft])
+
+  // 處理答案公布後的淡出和移除邏輯
+  useEffect(() => {
+    if (timeLeft === 0 && topPlayers.length > 0 && !showingCorrectOnly) {
+      // 答案公布後，延遲2秒後只顯示答對的玩家
+      const timer = setTimeout(() => {
+        const correctPlayers = topPlayers.filter(player => player.is_correct);
+        setTopPlayers(correctPlayers);
+        setShowingCorrectOnly(true);
+      }, 2000); // 2秒後移除答錯者
+
+      return () => clearTimeout(timer);
+    }
+    
+    // 當題目改變時重置狀態
+    if (timeLeft > 0 && showingCorrectOnly) {
+      setShowingCorrectOnly(false);
+    }
+  }, [timeLeft, topPlayers, showingCorrectOnly])
 
   // 當題目改變時獲取答題資料
   useEffect(() => {
@@ -347,12 +367,12 @@ export default function GameLivePage() {
                 {topPlayers.length > 0 ? (
                   <div className="space-y-3">
                     {topPlayers.map((player, index) => {
-                      // 答案公布後，答錯的玩家要淡出
-                      const shouldFadeOut = timeLeft === 0 && !player.is_correct;
+                      // 答案公布後，答錯的玩家要淡出（但還沒移除時）
+                      const shouldFadeOut = timeLeft === 0 && !player.is_correct && !showingCorrectOnly;
                       
                       return (
                         <div
-                          key={index}
+                          key={`${player.display_name}-${player.answer_time}`}
                           className={`flex items-center space-x-3 p-4 rounded-xl transition-all duration-1000 ${
                             shouldFadeOut 
                               ? 'opacity-30 scale-95 blur-sm' 
