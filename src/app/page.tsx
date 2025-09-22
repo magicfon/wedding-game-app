@@ -200,7 +200,7 @@ export default function Home() {
                     )}
 
                     {/* LIFF 配置檢查按鈕 - 調試用 */}
-                    <div className="mt-4 text-center">
+                    <div className="mt-4 text-center space-x-2">
                       <button
                         onClick={async () => {
                           try {
@@ -216,6 +216,28 @@ export default function Home() {
                         className="inline-flex items-center px-3 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors text-sm"
                       >
                         🔧 LIFF 配置檢查
+                      </button>
+                      
+                      {/* 登出按鈕 - 測試用 */}
+                      <button
+                        onClick={() => {
+                          if (typeof window !== 'undefined') {
+                            // 清除所有存儲
+                            localStorage.clear();
+                            sessionStorage.clear();
+                            
+                            // LIFF 登出
+                            if (window.liff && window.liff.isLoggedIn()) {
+                              window.liff.logout();
+                            }
+                            
+                            // 重新載入頁面
+                            window.location.reload();
+                          }
+                        }}
+                        className="inline-flex items-center px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm"
+                      >
+                        🚪 登出重測
                       </button>
                     </div>
           </div>
