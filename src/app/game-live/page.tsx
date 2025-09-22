@@ -90,7 +90,7 @@ export default function GameLivePage() {
     }
   }, [currentQuestion, supabase])
 
-  // 獲取答題速度前十名（只顯示答對的人）
+  // 獲取答題速度前十名
   const fetchTopPlayers = useCallback(async () => {
     if (!currentQuestion) return
 
@@ -107,7 +107,6 @@ export default function GameLivePage() {
           )
         `)
         .eq('question_id', currentQuestion.id)
-        .eq('is_correct', true) // 只取答對的記錄
         .order('answer_time', { ascending: true })
         .limit(10)
 
@@ -342,53 +341,66 @@ export default function GameLivePage() {
               <div className="bg-white rounded-2xl shadow-lg p-6 sticky top-6">
                 <div className="flex items-center justify-center space-x-2 mb-6">
                   <Zap className="w-6 h-6 text-yellow-500" />
-                  <h4 className="text-xl font-bold text-gray-800">🏆 答對速度榜</h4>
+                  <h4 className="text-xl font-bold text-gray-800">⚡ 速度排行榜</h4>
                 </div>
                 
                 {topPlayers.length > 0 ? (
                   <div className="space-y-3">
-                    {topPlayers.map((player, index) => (
-                      <div
-                        key={index}
-                        className={`flex items-center space-x-3 p-4 rounded-xl ${
-                          index === 0 ? 'bg-yellow-100 border-2 border-yellow-300' :
-                          index === 1 ? 'bg-gray-100 border-2 border-gray-300' :
-                          index === 2 ? 'bg-orange-100 border-2 border-orange-300' :
-                          'bg-gray-50'
-                        }`}
-                      >
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold ${
-                          index === 0 ? 'bg-yellow-500 text-white' :
-                          index === 1 ? 'bg-gray-500 text-white' :
-                          index === 2 ? 'bg-orange-500 text-white' :
-                          'bg-gray-300 text-gray-700'
-                        }`}>
-                          {index + 1}
+                    {topPlayers.map((player, index) => {
+                      // 答案公布後，答錯的玩家要淡出
+                      const shouldFadeOut = timeLeft === 0 && !player.is_correct;
+                      
+                      return (
+                        <div
+                          key={index}
+                          className={`flex items-center space-x-3 p-4 rounded-xl transition-all duration-1000 ${
+                            shouldFadeOut 
+                              ? 'opacity-30 scale-95 blur-sm' 
+                              : 'opacity-100 scale-100'
+                          } ${
+                            index === 0 ? 'bg-yellow-100 border-2 border-yellow-300' :
+                            index === 1 ? 'bg-gray-100 border-2 border-gray-300' :
+                            index === 2 ? 'bg-orange-100 border-2 border-orange-300' :
+                            'bg-gray-50'
+                          }`}
+                        >
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold ${
+                            index === 0 ? 'bg-yellow-500 text-white' :
+                            index === 1 ? 'bg-gray-500 text-white' :
+                            index === 2 ? 'bg-orange-500 text-white' :
+                            'bg-gray-300 text-gray-700'
+                          }`}>
+                            {index + 1}
+                          </div>
+                          
+                          {player.avatar_url ? (
+                            <img 
+                              src={player.avatar_url} 
+                              alt={player.display_name} 
+                              className="w-14 h-14 rounded-full border-2 border-white shadow-md" 
+                            />
+                          ) : (
+                            <div className="w-14 h-14 rounded-full bg-gray-400 flex items-center justify-center text-lg font-bold text-white">
+                              {player.display_name?.charAt(0) || '?'}
+                            </div>
+                          )}
+                          
+                          <div className="flex-1 min-w-0">
+                            <div className="text-lg font-bold text-gray-800 truncate">
+                              {player.display_name}
+                            </div>
+                            <div className="text-base text-gray-700 font-medium">
+                              ⏱️ {(player.answer_time / 1000).toFixed(1)}秒
+                              {timeLeft === 0 && (
+                                <span className={`ml-2 ${player.is_correct ? 'text-green-600' : 'text-red-500'}`}>
+                                  {player.is_correct ? '✅ 答對了' : '❌ 答錯了'}
+                                </span>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                        
-                        {player.avatar_url ? (
-                          <img 
-                            src={player.avatar_url} 
-                            alt={player.display_name} 
-                            className="w-14 h-14 rounded-full border-2 border-white shadow-md" 
-                          />
-                        ) : (
-                          <div className="w-14 h-14 rounded-full bg-gray-400 flex items-center justify-center text-lg font-bold text-white">
-                            {player.display_name?.charAt(0) || '?'}
-                          </div>
-                        )}
-                        
-                        <div className="flex-1 min-w-0">
-                          <div className="text-lg font-bold text-gray-800 truncate">
-                            {player.display_name}
-                          </div>
-                          <div className="text-base text-gray-700 font-medium">
-                            ⏱️ {(player.answer_time / 1000).toFixed(1)}秒
-                            <span className="text-green-600 ml-2">✅ 答對了</span>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
                   <div className="text-center text-gray-500 py-8">
