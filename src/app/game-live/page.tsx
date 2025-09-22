@@ -413,9 +413,17 @@ export default function GameLivePage() {
                   <h4 className="text-xl font-bold text-gray-800">⚡ 速度排行榜</h4>
                 </div>
                 
-                {topPlayers.length > 0 ? (
-                  <div className="space-y-3">
-                    {topPlayers.map((player, index) => {
+                {/* 調試：總是顯示排行榜區域 */}
+                <div className="space-y-3">
+                  {topPlayers.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      <p>🔍 調試模式：等待玩家數據...</p>
+                      <p>topPlayers.length: {topPlayers.length}</p>
+                      <p>timeLeft: {timeLeft}</p>
+                      <p>showingCorrectOnly: {showingCorrectOnly.toString()}</p>
+                    </div>
+                  ) : (
+                    topPlayers.map((player, index) => {
                       // 答案公布後，答錯的玩家要淡出（但還沒移除時）
                       const shouldFadeOut = timeLeft === 0 && !player.is_correct && !showingCorrectOnly;
                       
@@ -469,14 +477,9 @@ export default function GameLivePage() {
                           </div>
                         </div>
                       );
-                    })}
-                  </div>
-                ) : (
-                  <div className="text-center text-gray-500 py-8">
-                    <Clock className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                    <p>等待玩家答題...</p>
-                  </div>
-                )}
+                    })
+                  )}
+                </div>
               </div>
             </div>
           </div>
