@@ -191,19 +191,17 @@ export default function GameLivePage() {
     }
   }, [timeLeft, showingCorrectOnly, topPlayers.length, removeWrongPlayers])
 
-  // 當題目改變時重置狀態
-  useEffect(() => {
-    if (timeLeft > 0 && showingCorrectOnly) {
-      console.log('題目改變，重置狀態');
-      setShowingCorrectOnly(false);
-    }
-  }, [timeLeft, showingCorrectOnly])
-
-  // 當題目改變時獲取答題資料
+  // 當題目改變時重置狀態和獲取答題資料
   useEffect(() => {
     if (currentQuestion) {
-      // 重置狀態
+      console.log('🔄 題目改變，重置狀態:', { 
+        questionId: currentQuestion.id, 
+        previousShowingCorrectOnly: showingCorrectOnly 
+      });
+      
+      // 強制重置狀態
       setShowingCorrectOnly(false)
+      console.log('✅ showingCorrectOnly 已重置為 false');
       
       fetchAnswerDistribution()
       fetchTopPlayers()
