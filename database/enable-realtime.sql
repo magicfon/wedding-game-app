@@ -1,23 +1,90 @@
 -- 啟用 Supabase Realtime 功能
 -- 在 Supabase SQL Editor 中執行此腳本
+-- 注意：請先執行 create-missing-tables.sql 確保所有表格存在
 
--- 1. 啟用 game_state 表格的 Realtime
-ALTER PUBLICATION supabase_realtime ADD TABLE game_state;
+-- 1. 檢查並啟用 game_state 表格的 Realtime
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'game_state') THEN
+        ALTER PUBLICATION supabase_realtime ADD TABLE game_state;
+        RAISE NOTICE 'game_state 表格已啟用 Realtime';
+    ELSE
+        RAISE NOTICE 'game_state 表格不存在，跳過';
+    END IF;
+EXCEPTION
+    WHEN duplicate_object THEN
+        RAISE NOTICE 'game_state 已經在 Realtime 中';
+END $$;
 
--- 2. 啟用 answer_records 表格的 Realtime
-ALTER PUBLICATION supabase_realtime ADD TABLE answer_records;
+-- 2. 檢查並啟用 answer_records 表格的 Realtime
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'answer_records') THEN
+        ALTER PUBLICATION supabase_realtime ADD TABLE answer_records;
+        RAISE NOTICE 'answer_records 表格已啟用 Realtime';
+    ELSE
+        RAISE NOTICE 'answer_records 表格不存在，跳過';
+    END IF;
+EXCEPTION
+    WHEN duplicate_object THEN
+        RAISE NOTICE 'answer_records 已經在 Realtime 中';
+END $$;
 
--- 3. 啟用 questions 表格的 Realtime
-ALTER PUBLICATION supabase_realtime ADD TABLE questions;
+-- 3. 檢查並啟用 questions 表格的 Realtime
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'questions') THEN
+        ALTER PUBLICATION supabase_realtime ADD TABLE questions;
+        RAISE NOTICE 'questions 表格已啟用 Realtime';
+    ELSE
+        RAISE NOTICE 'questions 表格不存在，跳過';
+    END IF;
+EXCEPTION
+    WHEN duplicate_object THEN
+        RAISE NOTICE 'questions 已經在 Realtime 中';
+END $$;
 
--- 4. 啟用 users 表格的 Realtime
-ALTER PUBLICATION supabase_realtime ADD TABLE users;
+-- 4. 檢查並啟用 users 表格的 Realtime
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'users') THEN
+        ALTER PUBLICATION supabase_realtime ADD TABLE users;
+        RAISE NOTICE 'users 表格已啟用 Realtime';
+    ELSE
+        RAISE NOTICE 'users 表格不存在，跳過';
+    END IF;
+EXCEPTION
+    WHEN duplicate_object THEN
+        RAISE NOTICE 'users 已經在 Realtime 中';
+END $$;
 
--- 5. 啟用 photos 表格的 Realtime
-ALTER PUBLICATION supabase_realtime ADD TABLE photos;
+-- 5. 檢查並啟用 photos 表格的 Realtime
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'photos') THEN
+        ALTER PUBLICATION supabase_realtime ADD TABLE photos;
+        RAISE NOTICE 'photos 表格已啟用 Realtime';
+    ELSE
+        RAISE NOTICE 'photos 表格不存在，跳過';
+    END IF;
+EXCEPTION
+    WHEN duplicate_object THEN
+        RAISE NOTICE 'photos 已經在 Realtime 中';
+END $$;
 
--- 6. 啟用 votes 表格的 Realtime
-ALTER PUBLICATION supabase_realtime ADD TABLE votes;
+-- 6. 檢查並啟用 votes 表格的 Realtime
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'votes') THEN
+        ALTER PUBLICATION supabase_realtime ADD TABLE votes;
+        RAISE NOTICE 'votes 表格已啟用 Realtime';
+    ELSE
+        RAISE NOTICE 'votes 表格不存在，跳過';
+    END IF;
+EXCEPTION
+    WHEN duplicate_object THEN
+        RAISE NOTICE 'votes 已經在 Realtime 中';
+END $$;
 
 -- 7. 確保 RLS 政策允許 Realtime 訂閱
 -- game_state 表格
