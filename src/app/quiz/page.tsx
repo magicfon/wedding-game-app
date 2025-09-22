@@ -275,7 +275,7 @@ export default function QuizPage() {
     <Layout title="快問快答">
       <div className="max-w-4xl mx-auto">
         {/* 用戶狀態 */}
-        <SimpleUserStatus />
+        <UserStatus />
         
         {/* 計時器和狀態 */}
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
