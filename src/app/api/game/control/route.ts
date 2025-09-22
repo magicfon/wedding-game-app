@@ -36,6 +36,8 @@ export async function POST(request: Request) {
           return NextResponse.json({ error: '沒有可用的題目' }, { status: 400 });
         }
 
+        const sessionId = `game_${Date.now()}_${Math.random().toString(36).substring(2)}`;
+        
         result = await supabase
           .from('game_state')
           .upsert({
@@ -45,7 +47,7 @@ export async function POST(request: Request) {
             is_paused: false,
             question_start_time: new Date().toISOString(),
             completed_questions: 0,
-            game_session_id: crypto.randomUUID()
+            game_session_id: sessionId
           });
 
         actionDetails = { question_id: firstQuestion.id };
@@ -194,7 +196,7 @@ export async function POST(request: Request) {
             is_paused: false,
             current_question_id: null,
             completed_questions: 0,
-            game_session_id: crypto.randomUUID(),
+            game_session_id: `reset_${Date.now()}_${Math.random().toString(36).substring(2)}`,
             updated_at: new Date().toISOString()
           })
           .eq('id', 1);

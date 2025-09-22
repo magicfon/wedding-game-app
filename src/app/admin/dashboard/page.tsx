@@ -446,11 +446,36 @@ export default function AdminDashboard() {
               <RotateCcw className="w-4 h-4" />
               <span>重置遊戲</span>
             </button>
+
+            {/* 調試按鈕 */}
+            <button
+              onClick={async () => {
+                try {
+                  const response = await fetch('/api/debug/game-control-test');
+                  const data = await response.json();
+                  console.log('遊戲控制調試結果:', data);
+                  alert('調試結果已輸出到控制台，請按 F12 查看');
+                } catch (err) {
+                  console.error('調試測試失敗:', err);
+                  alert('調試測試失敗，請檢查控制台');
+                }
+              }}
+              className="flex items-center space-x-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition-colors"
+            >
+              <Activity className="w-4 h-4" />
+              <span>調試測試</span>
+            </button>
           </div>
 
           {gameError && (
             <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-sm text-red-600">{gameError}</p>
+              <details className="mt-2">
+                <summary className="cursor-pointer text-xs text-red-500">查看詳細錯誤</summary>
+                <pre className="mt-2 text-xs bg-red-100 p-2 rounded overflow-auto">
+                  {JSON.stringify(gameError, null, 2)}
+                </pre>
+              </details>
             </div>
           )}
         </div>
