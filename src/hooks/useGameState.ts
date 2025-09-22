@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { createSupabaseBrowser } from '@/lib/supabase';
 
 export interface GameQuestion {
@@ -48,9 +48,6 @@ export function useGameState(adminLineId?: string) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [timeRemaining, setTimeRemaining] = useState(0);
-  
-  // 用於追蹤是否已經處理過時間到達事件
-  const timeUpHandled = useRef(false);
 
   const supabase = createSupabaseBrowser();
 
@@ -117,36 +114,43 @@ export function useGameState(adminLineId?: string) {
   useEffect(() => {
     if (!gameState?.is_game_active || gameState?.is_paused || !gameState?.questions) {
       setTimeRemaining(0);
-      timeUpHandled.current = false;
       return;
     }
 
-    // 重置時間到達處理標記
-    timeUpHandled.current = false;
+    // 計算初始剩餘時間
+    const calculateTimeRemaining = () => {
+      if (!gameState.question_start_time || !gameState.questions) return 0;
+      
+      const startTime = new Date(gameState.question_start_time).getTime();
+      const currentTime = new Date().getTime();
+      const elapsed = Math.floor((currentTime - startTime) / 1000);
+      return Math.max(0, (gameState.questions.time_limit || 30) - elapsed);
+    };
+
+    // 設定初始時間
+    const initialTime = calculateTimeRemaining();
+    setTimeRemaining(initialTime);
+
+    // 如果時間已經結束，不啟動計時器
+    if (initialTime <= 0) {
+      console.log('時間已結束，不啟動計時器');
+      return;
+    }
 
     const timer = setInterval(() => {
-      if (gameState.question_start_time && gameState.questions) {
-        const startTime = new Date(gameState.question_start_time).getTime();
-        const currentTime = new Date().getTime();
-        const elapsed = Math.floor((currentTime - startTime) / 1000);
-        const remaining = Math.max(0, (gameState.questions.time_limit || 30) - elapsed);
-        
-        setTimeRemaining(remaining);
+      const remaining = calculateTimeRemaining();
+      setTimeRemaining(remaining);
 
-        // 只在第一次到達 0 時處理，避免重複調用
-        if (remaining === 0 && !timeUpHandled.current) {
-          timeUpHandled.current = true;
-          console.log('時間到！自動刷新遊戲狀態');
-          // 延遲一點時間再刷新，避免過於頻繁
-          setTimeout(() => {
-            refreshGameState();
-          }, 1000);
-        }
+      // 時間到達時停止計時器，不自動刷新狀態
+      if (remaining <= 0) {
+        console.log('倒數結束');
+        clearInterval(timer);
+        return;
       }
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [gameState, refreshGameState]);
+  }, [gameState?.is_game_active, gameState?.is_paused, gameState?.questions, gameState?.question_start_time]);
 
   // 設置 Supabase 即時監聽
   useEffect(() => {
