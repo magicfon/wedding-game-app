@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLiff } from '@/hooks/useLiff'
+import { useGameState } from '@/hooks/useGameState'
 import { 
   Users, 
   HelpCircle, 
@@ -16,7 +17,12 @@ import {
   LogOut,
   UserCheck,
   Activity,
-  Clock
+  Clock,
+  Pause,
+  SkipForward,
+  Square,
+  RotateCcw,
+  PlayCircle
 } from 'lucide-react'
 
 interface AdminInfo {
@@ -37,6 +43,18 @@ export default function AdminDashboard() {
   })
   const { isLoggedIn, profile, isAdmin, adminInfo: liffAdminInfo, loading: liffLoading, adminLoading } = useLiff()
   const router = useRouter()
+  
+  // 遊戲控制 Hook
+  const { 
+    gameState, 
+    loading: gameLoading, 
+    error: gameError, 
+    controlGame, 
+    timeRemaining, 
+    isGameActive, 
+    isPaused, 
+    currentQuestion 
+  } = useGameState(profile?.userId)
 
   // 簡化的管理員檢查 - 等待所有載入完成後再檢查
   const checkAdminStatus = useCallback(async () => {
@@ -301,43 +319,140 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* 快速操作 */}
-        <div className="bg-white rounded-lg shadow mb-8 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">快速操作</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <button
-              onClick={() => router.push('/admin/game-control')}
-              className="flex items-center space-x-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <Play className="w-6 h-6 text-green-500" />
-              <div className="text-left">
-                <p className="font-medium text-gray-900">開始遊戲</p>
-                <p className="text-sm text-gray-600">啟動快問快答</p>
+        {/* 遊戲控制面板 */}
+        <div className="bg-white rounded-lg shadow p-6 mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">遊戲控制</h2>
+              <p className="text-sm text-gray-600">控制快問快答遊戲流程</p>
+            </div>
+            <div className={`px-3 py-1 rounded-full text-sm font-medium ${
+              isGameActive 
+                ? isPaused 
+                  ? 'bg-yellow-100 text-yellow-800' 
+                  : 'bg-green-100 text-green-800'
+                : 'bg-gray-100 text-gray-800'
+            }`}>
+              {isGameActive 
+                ? isPaused 
+                  ? '遊戲暫停中' 
+                  : '遊戲進行中'
+                : '遊戲未開始'
+              }
+            </div>
+          </div>
+
+          {/* 當前題目資訊 */}
+          {currentQuestion && (
+            <div className="bg-blue-50 rounded-lg p-4 mb-4">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-medium text-blue-900">當前題目</h3>
+                <div className="flex items-center space-x-2">
+                  <Clock className="w-4 h-4 text-blue-600" />
+                  <span className="text-sm font-mono text-blue-600">
+                    {timeRemaining}s
+                  </span>
+                </div>
               </div>
-            </button>
-            
-            <button
-              onClick={() => router.push('/admin/questions')}
-              className="flex items-center space-x-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <HelpCircle className="w-6 h-6 text-blue-500" />
-              <div className="text-left">
-                <p className="font-medium text-gray-900">管理問題</p>
-                <p className="text-sm text-gray-600">編輯題目內容</p>
+              <p className="text-sm text-blue-800 mb-2">{currentQuestion.question_text}</p>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <span>A. {currentQuestion.option_a}</span>
+                <span>B. {currentQuestion.option_b}</span>
+                <span>C. {currentQuestion.option_c}</span>
+                <span>D. {currentQuestion.option_d}</span>
               </div>
-            </button>
-            
-            <button
-              onClick={() => router.push('/admin/leaderboard')}
-              className="flex items-center space-x-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <Trophy className="w-6 h-6 text-yellow-500" />
-              <div className="text-left">
-                <p className="font-medium text-gray-900">查看排行</p>
-                <p className="text-sm text-gray-600">即時分數統計</p>
+              <div className="mt-2 text-xs text-blue-600">
+                正確答案: {currentQuestion.correct_answer} | 分數: {currentQuestion.points}
               </div>
+            </div>
+          )}
+
+          {/* 遊戲狀態資訊 */}
+          <div className="grid grid-cols-3 gap-4 mb-4 text-sm">
+            <div className="text-center p-2 bg-gray-50 rounded">
+              <div className="font-medium text-gray-900">{gameState?.completed_questions || 0}</div>
+              <div className="text-gray-600">已完成題目</div>
+            </div>
+            <div className="text-center p-2 bg-gray-50 rounded">
+              <div className="font-medium text-gray-900">{gameState?.total_questions || 0}</div>
+              <div className="text-gray-600">題目總數</div>
+            </div>
+            <div className="text-center p-2 bg-gray-50 rounded">
+              <div className="font-medium text-gray-900">
+                {gameState?.game_session_id ? '已建立' : '未建立'}
+              </div>
+              <div className="text-gray-600">遊戲會話</div>
+            </div>
+          </div>
+
+          {/* 控制按鈕 */}
+          <div className="flex flex-wrap gap-3">
+            {!isGameActive ? (
+              <button
+                onClick={() => controlGame('start_game')}
+                disabled={gameLoading}
+                className="flex items-center space-x-2 bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg transition-colors"
+              >
+                <PlayCircle className="w-4 h-4" />
+                <span>開始遊戲</span>
+              </button>
+            ) : (
+              <>
+                {isPaused ? (
+                  <button
+                    onClick={() => controlGame('resume_game')}
+                    disabled={gameLoading}
+                    className="flex items-center space-x-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg transition-colors"
+                  >
+                    <Play className="w-4 h-4" />
+                    <span>繼續遊戲</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => controlGame('pause_game')}
+                    disabled={gameLoading}
+                    className="flex items-center space-x-2 bg-yellow-500 hover:bg-yellow-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg transition-colors"
+                  >
+                    <Pause className="w-4 h-4" />
+                    <span>暫停遊戲</span>
+                  </button>
+                )}
+
+                <button
+                  onClick={() => controlGame('next_question')}
+                  disabled={gameLoading}
+                  className="flex items-center space-x-2 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg transition-colors"
+                >
+                  <SkipForward className="w-4 h-4" />
+                  <span>下一題</span>
+                </button>
+
+                <button
+                  onClick={() => controlGame('end_game')}
+                  disabled={gameLoading}
+                  className="flex items-center space-x-2 bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg transition-colors"
+                >
+                  <Square className="w-4 h-4" />
+                  <span>結束遊戲</span>
+                </button>
+              </>
+            )}
+
+            <button
+              onClick={() => controlGame('reset_game')}
+              disabled={gameLoading}
+              className="flex items-center space-x-2 bg-gray-500 hover:bg-gray-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg transition-colors"
+            >
+              <RotateCcw className="w-4 h-4" />
+              <span>重置遊戲</span>
             </button>
           </div>
+
+          {gameError && (
+            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-600">{gameError}</p>
+            </div>
+          )}
         </div>
 
         {/* 功能選單 */}
@@ -370,4 +485,5 @@ export default function AdminDashboard() {
       </div>
     </div>
   )
+}
 }
