@@ -90,7 +90,7 @@ export default function GameLivePage() {
     }
   }, [currentQuestion, supabase])
 
-  // 獲取答題速度前十名
+  // 獲取答題速度前十名（只顯示答對的人）
   const fetchTopPlayers = useCallback(async () => {
     if (!currentQuestion) return
 
@@ -107,6 +107,7 @@ export default function GameLivePage() {
           )
         `)
         .eq('question_id', currentQuestion.id)
+        .eq('is_correct', true) // 只取答對的記錄
         .order('answer_time', { ascending: true })
         .limit(10)
 
@@ -341,7 +342,7 @@ export default function GameLivePage() {
               <div className="bg-white rounded-2xl shadow-lg p-6 sticky top-6">
                 <div className="flex items-center justify-center space-x-2 mb-6">
                   <Zap className="w-6 h-6 text-yellow-500" />
-                  <h4 className="text-xl font-bold text-gray-800">⚡ 速度排行榜</h4>
+                  <h4 className="text-xl font-bold text-gray-800">🏆 答對速度榜</h4>
                 </div>
                 
                 {topPlayers.length > 0 ? (
@@ -382,8 +383,8 @@ export default function GameLivePage() {
                             {player.display_name}
                           </div>
                           <div className="text-base text-gray-700 font-medium">
-                            ⏱️ {(player.answer_time / 1000).toFixed(1)}秒 | 選擇 {player.selected_answer}
-                            {player.is_correct && <span className="text-green-600 ml-1">✅</span>}
+                            ⏱️ {(player.answer_time / 1000).toFixed(1)}秒
+                            <span className="text-green-600 ml-2">✅ 答對了</span>
                           </div>
                         </div>
                       </div>
