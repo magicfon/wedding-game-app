@@ -24,11 +24,33 @@ export default function GameLivePage() {
   const [answerDistribution, setAnswerDistribution] = useState<AnswerDistribution[]>([])
   const [topPlayers, setTopPlayers] = useState<TopPlayer[]>([])
   const [timeLeft, setTimeLeft] = useState<number>(0)
+  const [currentQuestionAnswerCount, setCurrentQuestionAnswerCount] = useState<number>(0)
   
   const supabase = createSupabaseBrowser()
   
   // 使用統一的即時遊戲狀態
   const { gameState, currentQuestion, loading, calculateTimeLeft } = useRealtimeGameState()
+
+  // 獲取當前題目答題人數
+  const fetchCurrentQuestionAnswerCount = useCallback(async () => {
+    if (!currentQuestion) {
+      setCurrentQuestionAnswerCount(0)
+      return
+    }
+
+    try {
+      const { count, error } = await supabase
+        .from('answer_records')
+        .select('*', { count: 'exact', head: true })
+        .eq('question_id', currentQuestion.id)
+
+      if (error) throw error
+      setCurrentQuestionAnswerCount(count || 0)
+    } catch (error) {
+      console.error('Error fetching current question answer count:', error)
+      setCurrentQuestionAnswerCount(0)
+    }
+  }, [currentQuestion, supabase])
 
   // 獲取答題分佈
   const fetchAnswerDistribution = useCallback(async () => {
@@ -111,6 +133,7 @@ export default function GameLivePage() {
     if (currentQuestion) {
       fetchAnswerDistribution()
       fetchTopPlayers()
+      fetchCurrentQuestionAnswerCount()
 
       // 訂閱答題記錄變化
       const answerSubscription = supabase
@@ -120,6 +143,7 @@ export default function GameLivePage() {
           () => {
             fetchAnswerDistribution()
             fetchTopPlayers()
+            fetchCurrentQuestionAnswerCount()
           }
         )
         .subscribe()
@@ -127,8 +151,11 @@ export default function GameLivePage() {
       return () => {
         answerSubscription.unsubscribe()
       }
+    } else {
+      // 如果沒有當前題目，重置答題人數
+      setCurrentQuestionAnswerCount(0)
     }
-  }, [currentQuestion, fetchAnswerDistribution, fetchTopPlayers, supabase])
+  }, [currentQuestion, fetchAnswerDistribution, fetchTopPlayers, fetchCurrentQuestionAnswerCount, supabase])
 
   // 倒數計時器
   useEffect(() => {
@@ -142,11 +169,12 @@ export default function GameLivePage() {
       if (newTimeLeft === 0) {
         fetchAnswerDistribution()
         fetchTopPlayers()
+        fetchCurrentQuestionAnswerCount()
       }
     }, 1000)
 
     return () => clearInterval(timer)
-  }, [gameState, calculateTimeLeft, fetchAnswerDistribution, fetchTopPlayers])
+  }, [gameState, calculateTimeLeft, fetchAnswerDistribution, fetchTopPlayers, fetchCurrentQuestionAnswerCount])
 
   if (loading) {
     return (
@@ -189,7 +217,7 @@ export default function GameLivePage() {
                   {timeLeft}
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">{answerDistribution.reduce((sum, dist) => sum + dist.count, 0)}</div>
+                  <div className="text-2xl font-bold text-blue-600">{currentQuestionAnswerCount}</div>
                   <div className="text-sm text-gray-600">已答題</div>
                 </div>
               </div>
