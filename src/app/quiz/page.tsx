@@ -80,18 +80,20 @@ export default function QuizPage() {
   }, [gameState, calculateTimeLeft, hasAnswered, handleTimeUp])
 
   const handleAnswerSubmit = async (answer: 'A' | 'B' | 'C' | 'D') => {
-    if (!profile || !currentQuestion || hasAnswered || timeLeft <= 0) return
+    if (!profile || !currentQuestion || hasAnswered) return
 
     setSelectedAnswer(answer)
     setHasAnswered(true)
 
-    const answerTime = (currentQuestion.time_limit - timeLeft) * 1000
+    // 計算答題時間（從題目開始到現在的時間）
+    const answerTime = calculateTimeLeft() > 0 ? (currentQuestion.time_limit - calculateTimeLeft()) * 1000 : currentQuestion.time_limit * 1000
     const isCorrect = answer === currentQuestion.correct_answer
     
     let earnedScore = 0
     if (isCorrect) {
       // 計算得分：基礎分數 + 速度加成
-      const speedBonus = Math.floor((timeLeft / currentQuestion.time_limit) * currentQuestion.base_score * 0.5)
+      const remainingTime = calculateTimeLeft()
+      const speedBonus = remainingTime > 0 ? Math.floor((remainingTime / currentQuestion.time_limit) * currentQuestion.base_score * 0.5) : 0
       earnedScore = currentQuestion.base_score + speedBonus
     } else if (currentQuestion.penalty_enabled) {
       earnedScore = -currentQuestion.penalty_score
@@ -212,86 +214,54 @@ export default function QuizPage() {
       <div className="max-w-4xl mx-auto">
         {/* 用戶狀態 */}
         
-        {/* 計時器和狀態 */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className={`w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold ${
-                timeLeft > 10 ? 'bg-green-100 text-green-700' :
-                timeLeft > 5 ? 'bg-yellow-100 text-yellow-700' :
-                'bg-red-100 text-red-700'
-              }`}>
-                {timeLeft}
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-800">剩餘時間</h3>
-                <p className="text-sm text-gray-600">第 {currentQuestion.id} 題</p>
-              </div>
-            </div>
-            
-            {/* 遊戲進度 */}
-            <div className="flex items-center space-x-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-purple-600">
-                  {gameState?.completed_questions ? gameState.completed_questions + 1 : 1}
-                </div>
-                <div className="text-sm text-gray-600">第幾題</div>
-              </div>
-              {gameState?.total_questions && (
-                <div className="text-center">
-                  <div className="text-lg font-semibold text-gray-600">
-                    / {gameState.total_questions}
-                  </div>
-                  <div className="text-xs text-gray-500">總題數</div>
-                </div>
-              )}
-            </div>
-            
-          </div>
-        </div>
-
-        {/* 題目 */}
+        {/* 純粹的答題按鈕 - 只有ABCD四個按鈕 */}
         <div className="bg-white rounded-2xl shadow-lg p-8 mb-6">
-          <h2 className="text-2xl font-bold text-gray-800 mb-8 text-center leading-relaxed">
-            {currentQuestion.question_text}
+          <h2 className="text-2xl font-bold text-gray-800 mb-8 text-center">
+            🎯 快問快答
           </h2>
-
-          {/* 簡化選項按鈕 - 四個不同顏色的大按鈕 */}
+          
           <div className="grid grid-cols-2 gap-6">
             {[
-              { key: 'A' as const, text: currentQuestion.option_a, color: 'bg-red-500 hover:bg-red-600', selectedColor: 'bg-red-600' },
-              { key: 'B' as const, text: currentQuestion.option_b, color: 'bg-blue-500 hover:bg-blue-600', selectedColor: 'bg-blue-600' },
-              { key: 'C' as const, text: currentQuestion.option_c, color: 'bg-green-500 hover:bg-green-600', selectedColor: 'bg-green-600' },
-              { key: 'D' as const, text: currentQuestion.option_d, color: 'bg-yellow-500 hover:bg-yellow-600', selectedColor: 'bg-yellow-600' }
+              { key: 'A' as const, color: 'bg-red-500 hover:bg-red-600', selectedColor: 'bg-red-600' },
+              { key: 'B' as const, color: 'bg-blue-500 hover:bg-blue-600', selectedColor: 'bg-blue-600' },
+              { key: 'C' as const, color: 'bg-green-500 hover:bg-green-600', selectedColor: 'bg-green-600' },
+              { key: 'D' as const, color: 'bg-yellow-500 hover:bg-yellow-600', selectedColor: 'bg-yellow-600' }
             ].map((option) => (
               <button
                 key={option.key}
                 onClick={() => handleAnswerSubmit(option.key)}
-                disabled={hasAnswered || timeLeft <= 0}
-                className={`p-8 rounded-2xl text-white font-bold text-2xl transition-all duration-200 shadow-lg ${
+                disabled={hasAnswered}
+                className={`p-12 rounded-2xl text-white font-bold transition-all duration-200 shadow-lg ${
                   selectedAnswer === option.key
-                    ? `${option.selectedColor} ring-4 ring-white`
+                    ? `${option.selectedColor} ring-4 ring-white scale-95`
                     : hasAnswered
                       ? 'bg-gray-400 opacity-70'
-                      : timeLeft <= 0
-                        ? 'bg-gray-400 opacity-50 cursor-not-allowed'
-                        : `${option.color} cursor-pointer transform hover:scale-105`
+                      : `${option.color} cursor-pointer transform hover:scale-105`
                 }`}
               >
-                <div className="text-center">
-                  <div className="text-4xl font-black mb-2">{option.key}</div>
-                  <div className="text-lg font-medium leading-tight">{option.text}</div>
-                </div>
+                <div className="text-6xl font-black">{option.key}</div>
               </button>
             ))}
           </div>
         </div>
 
         {/* 遊戲說明 */}
-        <div className="bg-blue-50 rounded-xl p-4 text-center">
-          <p className="text-blue-700 text-sm">
-            💡 選擇答案後請耐心等待，正確答案將在遊戲實況中公布！
-          </p>
+        <div className="bg-blue-50 rounded-xl p-6 text-center">
+          <h3 className="text-lg font-semibold text-blue-800 mb-2">📋 使用說明</h3>
+          <div className="space-y-2 text-blue-700 text-sm">
+            <p>• 遊戲開始時，請選擇您的答案 (A/B/C/D)</p>
+            <p>• 選擇後無法更改，請仔細考慮</p>
+            <p>• 答案結果將在遊戲實況中公布</p>
+            <p>• 越快答題，分數加成越高！</p>
+          </div>
+          {hasAnswered && (
+            <div className="mt-4 p-3 bg-green-100 rounded-lg">
+              <p className="text-green-700 font-medium">
+                ✅ 已提交答案：{selectedAnswer}
+              </p>
+              <p className="text-green-600 text-xs mt-1">請等待下一題或查看遊戲實況</p>
+            </div>
+          )}
         </div>
       </div>
     </Layout>
