@@ -362,7 +362,7 @@ export default function GameLivePage() {
                                       )}
                                       <span className="text-base font-semibold text-gray-800">{user.display_name}</span>
                                     </div>
-                                ))}}
+                                ))}
                                 {distribution.users.length > 6 && (
                                   <div className="flex items-center px-4 py-3 text-base font-medium text-gray-600 bg-gray-100 rounded-xl">
                                     +{distribution.users.length - 6}人
