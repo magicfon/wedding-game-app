@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createSupabaseBrowser } from '@/lib/supabase'
 import { useLiff } from '@/hooks/useLiff'
-import UserStatus from '@/components/UserStatus'
 import { Heart, Users, Trophy, Camera, HelpCircle, Play, Shield } from 'lucide-react'
 
 export default function Home() {
@@ -123,9 +122,6 @@ export default function Home() {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
-        {/* 用戶狀態顯示 */}
-        <UserStatus />
-        
         {!user ? (
           <div className="text-center py-16">
             <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md mx-auto">
@@ -199,47 +195,6 @@ export default function Home() {
                       </div>
                     )}
 
-                    {/* LIFF 配置檢查按鈕 - 調試用 */}
-                    <div className="mt-4 text-center space-x-2">
-                      <button
-                        onClick={async () => {
-                          try {
-                            const response = await fetch('/api/debug/liff-config');
-                            const data = await response.json();
-                            console.log('LIFF 配置檢查結果:', data);
-                            alert('LIFF 配置檢查結果已輸出到控制台，請按 F12 查看');
-                          } catch (err) {
-                            console.error('LIFF 配置檢查失敗:', err);
-                            alert('LIFF 配置檢查失敗，請檢查控制台');
-                          }
-                        }}
-                        className="inline-flex items-center px-3 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors text-sm"
-                      >
-                        🔧 LIFF 配置檢查
-                      </button>
-                      
-                      {/* 登出按鈕 - 測試用 */}
-                      <button
-                        onClick={() => {
-                          if (typeof window !== 'undefined') {
-                            // 清除所有存儲
-                            localStorage.clear();
-                            sessionStorage.clear();
-                            
-                            // LIFF 登出
-                            if (window.liff && window.liff.isLoggedIn()) {
-                              window.liff.logout();
-                            }
-                            
-                            // 重新載入頁面
-                            window.location.reload();
-                          }
-                        }}
-                        className="inline-flex items-center px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm"
-                      >
-                        🚪 登出重測
-                      </button>
-                    </div>
           </div>
         )}
       </main>
