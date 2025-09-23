@@ -216,10 +216,6 @@ export default function QuizPage() {
         
         {/* 純粹的答題按鈕 - 只有ABCD四個按鈕 */}
         <div className="bg-white rounded-2xl shadow-lg p-8 mb-6">
-          <h2 className="text-2xl font-bold text-gray-800 mb-8 text-center">
-            🎯 快問快答
-          </h2>
-          
           <div className="grid grid-cols-2 gap-6">
             {[
               { key: 'A' as const, color: 'bg-red-500 hover:bg-red-600', selectedColor: 'bg-red-600' },
@@ -245,14 +241,6 @@ export default function QuizPage() {
           </div>
         </div>
 
-        {/* 答題狀態 */}
-        {hasAnswered && (
-          <div className="bg-green-50 rounded-xl p-4 text-center">
-            <p className="text-green-700 font-medium text-lg">
-              ✅ 已提交答案：{selectedAnswer}
-            </p>
-          </div>
-        )}
       </div>
     </Layout>
   )
