@@ -67,14 +67,14 @@ export default function QuizPage() {
     }
 
     const timer = setInterval(() => {
-      const newTimeLeft = calculateTimeLeft()
+      const newTimeLeft = calculateTimeLeft() // 現在返回毫秒數
       setTimeLeft(newTimeLeft)
       
       // 時間到且尚未答題，自動提交空答案
-      if (newTimeLeft === 0 && !hasAnswered) {
+      if (newTimeLeft <= 0 && !hasAnswered) {
         handleTimeUp()
       }
-    }, 1000)
+    }, 100) // 100ms 檢查一次，確保超時檢測準確
 
     return () => clearInterval(timer)
   }, [gameState, calculateTimeLeft, hasAnswered, handleTimeUp])
@@ -85,15 +85,17 @@ export default function QuizPage() {
     setSelectedAnswer(answer)
     setHasAnswered(true)
 
-    // 計算答題時間（從題目開始到現在的時間）
-    const answerTime = calculateTimeLeft() > 0 ? (currentQuestion.time_limit - calculateTimeLeft()) * 1000 : currentQuestion.time_limit * 1000
+    // 計算答題時間（從題目開始到現在的時間，精確到毫秒）
+    const remainingTimeMs = calculateTimeLeft() // 剩餘毫秒數
+    const totalTimeMs = currentQuestion.time_limit * 1000 // 總時間毫秒數
+    const answerTime = Math.max(0, totalTimeMs - remainingTimeMs) // 已用時間毫秒數
     const isCorrect = answer === currentQuestion.correct_answer
     
     let earnedScore = 0
     if (isCorrect) {
-      // 計算得分：基礎分數 + 速度加成
-      const remainingTime = calculateTimeLeft()
-      const speedBonus = remainingTime > 0 ? Math.floor((remainingTime / currentQuestion.time_limit) * currentQuestion.base_score * 0.5) : 0
+      // 計算得分：基礎分數 + 速度加成（基於剩餘時間比例）
+      const timeRatio = remainingTimeMs > 0 ? remainingTimeMs / totalTimeMs : 0
+      const speedBonus = Math.floor(timeRatio * currentQuestion.base_score * 0.5)
       earnedScore = currentQuestion.base_score + speedBonus
     } else if (currentQuestion.penalty_enabled) {
       earnedScore = -currentQuestion.penalty_score

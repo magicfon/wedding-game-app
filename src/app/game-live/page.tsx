@@ -213,21 +213,21 @@ export default function GameLivePage() {
     }
   }, [currentQuestion, fetchAnswerDistribution, fetchTopPlayers, fetchCurrentQuestionAnswerCount, supabase])
 
-  // 倒數計時器
+  // 倒數計時器（100ms更新頻率，顯示毫秒精度）
   useEffect(() => {
     if (!gameState?.is_game_active || gameState?.is_paused) return
 
     const timer = setInterval(() => {
-      const newTimeLeft = calculateTimeLeft()
+      const newTimeLeft = calculateTimeLeft() // 現在返回毫秒數
       setTimeLeft(newTimeLeft)
       
       // 當時間到達0時，立即獲取最新的答題分佈和排行榜
-      if (newTimeLeft === 0) {
+      if (newTimeLeft <= 0) {
         fetchAnswerDistribution()
         fetchTopPlayers(false) // 倒數結束時先獲取所有玩家
         fetchCurrentQuestionAnswerCount()
       }
-    }, 1000)
+    }, 100) // 100ms 更新一次，平衡性能和精度
 
     return () => clearInterval(timer)
   }, [gameState, calculateTimeLeft, fetchAnswerDistribution, fetchTopPlayers, fetchCurrentQuestionAnswerCount])
@@ -266,12 +266,15 @@ export default function GameLivePage() {
             {currentQuestion && (
               <div className="flex items-center space-x-4">
                 {gameState?.is_game_active && !gameState?.is_paused && (
-                  <div className={`w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold ${
-                    timeLeft > 10 ? 'bg-green-100 text-green-700' :
-                    timeLeft > 5 ? 'bg-yellow-100 text-yellow-700' :
+                  <div className={`w-20 h-20 rounded-full flex items-center justify-center text-sm font-bold ${
+                    timeLeft > 10000 ? 'bg-green-100 text-green-700' :
+                    timeLeft > 5000 ? 'bg-yellow-100 text-yellow-700' :
                     'bg-red-100 text-red-700'
                   }`}>
-                    {timeLeft}
+                    <div className="text-center">
+                      <div className="text-lg">{Math.floor(timeLeft / 1000)}</div>
+                      <div className="text-xs">.{String(timeLeft % 1000).padStart(3, '0')}</div>
+                    </div>
                   </div>
                 )}
                 <div className="text-center">

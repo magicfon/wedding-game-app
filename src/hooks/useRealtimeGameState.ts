@@ -53,7 +53,7 @@ export function useRealtimeGameState() {
     }
   }, [supabase])
 
-  // 計算剩餘時間
+  // 計算剩餘時間（精確到毫秒）
   const calculateTimeLeft = useCallback((): number => {
     if (!gameState?.question_start_time || !currentQuestion || gameState.is_paused) {
       return 0
@@ -61,10 +61,12 @@ export function useRealtimeGameState() {
 
     const startTime = new Date(gameState.question_start_time).getTime()
     const now = Date.now()
-    const elapsed = Math.floor((now - startTime) / 1000)
-    const remaining = Math.max(0, currentQuestion.time_limit - elapsed)
+    const elapsedMs = now - startTime
+    const totalTimeMs = currentQuestion.time_limit * 1000
+    const remainingMs = Math.max(0, totalTimeMs - elapsedMs)
     
-    return remaining
+    // 返回毫秒數，讓調用者決定如何顯示
+    return remainingMs
   }, [gameState, currentQuestion])
 
   useEffect(() => {
