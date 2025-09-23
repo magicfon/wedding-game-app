@@ -6,7 +6,6 @@ import { createSupabaseBrowser } from '@/lib/supabase'
 import { useLiff } from '@/hooks/useLiff'
 import { useRealtimeGameState } from '@/hooks/useRealtimeGameState'
 import Layout from '@/components/Layout'
-import UserStatus from '@/components/UserStatus'
 import { Clock, Users, Trophy, Heart } from 'lucide-react'
 
 export default function QuizPage() {
@@ -156,7 +155,6 @@ export default function QuizPage() {
             </div>
           </div>
         </div>
-        <UserStatus />
       </Layout>
     )
   }
@@ -213,7 +211,6 @@ export default function QuizPage() {
     <Layout title="快問快答">
       <div className="max-w-4xl mx-auto">
         {/* 用戶狀態 */}
-        <UserStatus />
         
         {/* 計時器和狀態 */}
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
