@@ -25,6 +25,7 @@ export default function GameLivePage() {
   const [answerDistribution, setAnswerDistribution] = useState<AnswerDistribution[]>([])
   const [topPlayers, setTopPlayers] = useState<TopPlayer[]>([])
   const [timeLeft, setTimeLeft] = useState<number>(0)
+  const [displayTimeLeft, setDisplayTimeLeft] = useState<number>(0)
   const [currentQuestionAnswerCount, setCurrentQuestionAnswerCount] = useState<number>(0)
   // 從 localStorage 初始化狀態，以防組件重新載入
   const [showingCorrectOnly, setShowingCorrectOnly] = useState<boolean>(() => {
@@ -152,7 +153,9 @@ export default function GameLivePage() {
   // 當遊戲狀態改變時更新計時器
   useEffect(() => {
     if (gameState && currentQuestion) {
-      setTimeLeft(calculateTimeLeft())
+      const currentTime = calculateTimeLeft()
+      setTimeLeft(currentTime)
+      setDisplayTimeLeft(currentTime)
     }
   }, [gameState, currentQuestion, calculateTimeLeft])
 
@@ -213,13 +216,14 @@ export default function GameLivePage() {
     }
   }, [currentQuestion, fetchAnswerDistribution, fetchTopPlayers, fetchCurrentQuestionAnswerCount, supabase])
 
-  // 倒數計時器（100ms更新頻率，顯示毫秒精度）
+  // 伺服器同步計時器（每秒同步一次實際時間）
   useEffect(() => {
     if (!gameState?.is_game_active || gameState?.is_paused) return
 
-    const timer = setInterval(() => {
-      const newTimeLeft = calculateTimeLeft() // 現在返回毫秒數
+    const syncTimer = setInterval(() => {
+      const newTimeLeft = calculateTimeLeft() // 從伺服器獲取精確時間
       setTimeLeft(newTimeLeft)
+      setDisplayTimeLeft(newTimeLeft) // 重置顯示時間
       
       // 當時間到達0時，立即獲取最新的答題分佈和排行榜
       if (newTimeLeft <= 0) {
@@ -227,10 +231,21 @@ export default function GameLivePage() {
         fetchTopPlayers(false) // 倒數結束時先獲取所有玩家
         fetchCurrentQuestionAnswerCount()
       }
-    }, 100) // 100ms 更新一次，平衡性能和精度
+    }, 1000) // 每秒同步一次
 
-    return () => clearInterval(timer)
+    return () => clearInterval(syncTimer)
   }, [gameState, calculateTimeLeft, fetchAnswerDistribution, fetchTopPlayers, fetchCurrentQuestionAnswerCount])
+
+  // 本機顯示計時器（100ms更新顯示，模擬毫秒變化）
+  useEffect(() => {
+    if (!gameState?.is_game_active || gameState?.is_paused) return
+
+    const displayTimer = setInterval(() => {
+      setDisplayTimeLeft(prev => Math.max(0, prev - 100)) // 每100ms減少100ms
+    }, 100)
+
+    return () => clearInterval(displayTimer)
+  }, [gameState])
 
   if (loading) {
     return (
@@ -267,13 +282,13 @@ export default function GameLivePage() {
               <div className="flex items-center space-x-4">
                 {gameState?.is_game_active && !gameState?.is_paused && (
                   <div className={`w-20 h-20 rounded-full flex items-center justify-center text-sm font-bold ${
-                    timeLeft > 10000 ? 'bg-green-100 text-green-700' :
-                    timeLeft > 5000 ? 'bg-yellow-100 text-yellow-700' :
+                    displayTimeLeft > 10000 ? 'bg-green-100 text-green-700' :
+                    displayTimeLeft > 5000 ? 'bg-yellow-100 text-yellow-700' :
                     'bg-red-100 text-red-700'
                   }`}>
                     <div className="text-center">
-                      <div className="text-lg">{Math.floor(timeLeft / 1000)}</div>
-                      <div className="text-xs">.{String(timeLeft % 1000).padStart(3, '0')}</div>
+                      <div className="text-lg">{Math.floor(displayTimeLeft / 1000)}</div>
+                      <div className="text-xs">.{String(displayTimeLeft % 1000).padStart(3, '0')}</div>
                     </div>
                   </div>
                 )}
