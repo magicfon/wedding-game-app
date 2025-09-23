@@ -204,7 +204,8 @@ export default function GameLivePage() {
             setCurrentQuestionAnswerCount(prev => prev + 1)
             
             fetchAnswerDistribution()
-            fetchTopPlayers(showingCorrectOnly) // 根據當前狀態決定是否只獲取正確答案
+            // 答題過程中總是顯示所有玩家，不過濾正確性
+            fetchTopPlayers(false)
             // 移除 fetchCurrentQuestionAnswerCount() - 用本機計數取代
           }
         )
