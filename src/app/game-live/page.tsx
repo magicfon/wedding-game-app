@@ -328,7 +328,7 @@ export default function GameLivePage() {
               </div>
 
               {/* 答題分佈 */}
-              {timeLeft === 0 && answerDistribution.length > 0 && (
+              {currentQuestion && (
                 <div className="bg-white rounded-2xl shadow-lg p-6">
                   <div className="grid grid-cols-2 gap-6">
                     {[
@@ -343,7 +343,7 @@ export default function GameLivePage() {
                         <div
                           key={option.key}
                           className={`p-6 rounded-2xl border-4 ${
-                            isCorrect ? 'border-green-400 bg-green-50' : 'border-gray-200'
+                            timeLeft === 0 && isCorrect ? 'border-green-400 bg-green-50' : 'border-gray-200'
                           }`}
                         >
                           {/* 選項標題和統計 */}
@@ -355,7 +355,7 @@ export default function GameLivePage() {
                               <div className="flex-1">
                                 <div className="text-3xl font-bold text-gray-800">{distribution?.count || 0}</div>
                                 <div className="text-sm text-gray-600">人選擇</div>
-                                {isCorrect && (
+                                {timeLeft === 0 && isCorrect && (
                                   <div className="text-green-600 font-semibold text-sm mt-1">✅ 正確答案</div>
                                 )}
                               </div>
