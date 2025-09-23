@@ -211,36 +211,31 @@ export default function QuizPage() {
 
   return (
     <Layout title="快問快答">
-      <div className="max-w-4xl mx-auto">
-        {/* 用戶狀態 */}
-        
-        {/* 純粹的答題按鈕 - 只有ABCD四個按鈕 */}
-        <div className="bg-white rounded-2xl shadow-lg p-8 mb-6">
-          <div className="grid grid-cols-2 gap-6">
-            {[
-              { key: 'A' as const, color: 'bg-red-500 hover:bg-red-600', selectedColor: 'bg-red-600' },
-              { key: 'B' as const, color: 'bg-blue-500 hover:bg-blue-600', selectedColor: 'bg-blue-600' },
-              { key: 'C' as const, color: 'bg-green-500 hover:bg-green-600', selectedColor: 'bg-green-600' },
-              { key: 'D' as const, color: 'bg-yellow-500 hover:bg-yellow-600', selectedColor: 'bg-yellow-600' }
-            ].map((option) => (
-              <button
-                key={option.key}
-                onClick={() => handleAnswerSubmit(option.key)}
-                disabled={hasAnswered}
-                className={`p-12 rounded-2xl text-white font-bold transition-all duration-200 shadow-lg ${
-                  selectedAnswer === option.key
-                    ? `${option.selectedColor} ring-4 ring-white scale-95`
-                    : hasAnswered
-                      ? 'bg-gray-400 opacity-70'
-                      : `${option.color} cursor-pointer transform hover:scale-105`
-                }`}
-              >
-                <div className="text-6xl font-black">{option.key}</div>
-              </button>
-            ))}
-          </div>
+      <div className="h-screen w-full flex flex-col p-4">
+        {/* 填滿畫面的答題按鈕 */}
+        <div className="flex-1 grid grid-cols-2 gap-4">
+          {[
+            { key: 'A' as const, color: 'bg-red-500 hover:bg-red-600', selectedColor: 'bg-red-600' },
+            { key: 'B' as const, color: 'bg-blue-500 hover:bg-blue-600', selectedColor: 'bg-blue-600' },
+            { key: 'C' as const, color: 'bg-green-500 hover:bg-green-600', selectedColor: 'bg-green-600' },
+            { key: 'D' as const, color: 'bg-yellow-500 hover:bg-yellow-600', selectedColor: 'bg-yellow-600' }
+          ].map((option) => (
+            <button
+              key={option.key}
+              onClick={() => handleAnswerSubmit(option.key)}
+              disabled={hasAnswered}
+              className={`rounded-3xl text-white font-bold transition-all duration-200 shadow-2xl ${
+                selectedAnswer === option.key
+                  ? `${option.selectedColor} ring-8 ring-white scale-95`
+                  : hasAnswered
+                    ? 'bg-gray-400 opacity-70'
+                    : `${option.color} cursor-pointer transform hover:scale-105 active:scale-95`
+              }`}
+            >
+              <div className="text-9xl font-black">{option.key}</div>
+            </button>
+          ))}
         </div>
-
       </div>
     </Layout>
   )
