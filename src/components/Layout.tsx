@@ -76,10 +76,10 @@ export default function Layout({ children, title, showNavigation = true }: Layou
           <div className="container mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                {/* Menu Button */}
+                {/* Menu Button - 在所有螢幕尺寸都顯示 */}
                 <button
                   onClick={() => setIsMenuOpen(true)}
-                  className="p-2 rounded-lg hover:bg-pink-100 transition-colors lg:hidden"
+                  className="p-2 rounded-lg hover:bg-pink-100 transition-colors"
                 >
                   <Menu className="w-6 h-6 text-gray-700" />
                 </button>
@@ -119,10 +119,10 @@ export default function Layout({ children, title, showNavigation = true }: Layou
         </header>
       )}
 
-      {/* Side Menu Overlay */}
+      {/* Side Menu Overlay - 在所有螢幕尺寸都可用 */}
       {isMenuOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 z-50 lg:hidden"
+          className="fixed inset-0 bg-black/50 z-50"
           onClick={() => setIsMenuOpen(false)}
         >
           <div 
