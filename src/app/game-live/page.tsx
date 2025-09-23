@@ -204,8 +204,10 @@ export default function GameLivePage() {
             setCurrentQuestionAnswerCount(prev => prev + 1)
             
             fetchAnswerDistribution()
-            // 答題過程中總是顯示所有玩家，不過濾正確性
-            fetchTopPlayers(false)
+            // 只在答題過程中或答案公布初期更新排行榜，避免覆蓋移除邏輯
+            if (!showingCorrectOnly) {
+              fetchTopPlayers(false)
+            }
             // 移除 fetchCurrentQuestionAnswerCount() - 用本機計數取代
           }
         )
@@ -226,11 +228,12 @@ export default function GameLivePage() {
 
     const syncTimer = setInterval(() => {
       const newTimeLeft = calculateTimeLeft() // 從伺服器獲取精確時間
+      const prevTimeLeft = timeLeft
       setTimeLeft(newTimeLeft)
       setDisplayTimeLeft(newTimeLeft) // 重置顯示時間
       
-      // 當時間到達0時，立即獲取最新的答題分佈和排行榜
-      if (newTimeLeft <= 0) {
+      // 只在時間剛到達0時執行一次，避免重複覆蓋移除邏輯
+      if (newTimeLeft <= 0 && prevTimeLeft > 0) {
         fetchAnswerDistribution()
         fetchTopPlayers(false) // 倒數結束時先獲取所有玩家
         // 移除 fetchCurrentQuestionAnswerCount() - 時間結束後不會再有新答題
@@ -238,7 +241,7 @@ export default function GameLivePage() {
     }, 1000) // 每秒同步一次
 
     return () => clearInterval(syncTimer)
-  }, [gameState, calculateTimeLeft, fetchAnswerDistribution, fetchTopPlayers])
+  }, [gameState, calculateTimeLeft, fetchAnswerDistribution, fetchTopPlayers, timeLeft])
 
   // 本機顯示計時器（100ms更新顯示，模擬毫秒變化）
   useEffect(() => {
