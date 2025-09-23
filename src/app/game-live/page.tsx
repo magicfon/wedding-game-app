@@ -200,9 +200,12 @@ export default function GameLivePage() {
         .on('postgres_changes',
           { event: 'INSERT', schema: 'public', table: 'answer_records', filter: `question_id=eq.${currentQuestion.id}` },
           () => {
+            // 本機增加計數，避免頻繁查詢資料庫
+            setCurrentQuestionAnswerCount(prev => prev + 1)
+            
             fetchAnswerDistribution()
             fetchTopPlayers(showingCorrectOnly) // 根據當前狀態決定是否只獲取正確答案
-            fetchCurrentQuestionAnswerCount()
+            // 移除 fetchCurrentQuestionAnswerCount() - 用本機計數取代
           }
         )
         .subscribe()
@@ -214,7 +217,7 @@ export default function GameLivePage() {
       // 如果沒有當前題目，重置答題人數
       setCurrentQuestionAnswerCount(0)
     }
-  }, [currentQuestion, fetchAnswerDistribution, fetchTopPlayers, fetchCurrentQuestionAnswerCount, supabase])
+  }, [currentQuestion, fetchAnswerDistribution, fetchTopPlayers, supabase])
 
   // 伺服器同步計時器（每秒同步一次實際時間）
   useEffect(() => {
@@ -229,12 +232,12 @@ export default function GameLivePage() {
       if (newTimeLeft <= 0) {
         fetchAnswerDistribution()
         fetchTopPlayers(false) // 倒數結束時先獲取所有玩家
-        fetchCurrentQuestionAnswerCount()
+        // 移除 fetchCurrentQuestionAnswerCount() - 時間結束後不會再有新答題
       }
     }, 1000) // 每秒同步一次
 
     return () => clearInterval(syncTimer)
-  }, [gameState, calculateTimeLeft, fetchAnswerDistribution, fetchTopPlayers, fetchCurrentQuestionAnswerCount])
+  }, [gameState, calculateTimeLeft, fetchAnswerDistribution, fetchTopPlayers])
 
   // 本機顯示計時器（100ms更新顯示，模擬毫秒變化）
   useEffect(() => {
