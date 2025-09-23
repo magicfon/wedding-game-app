@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createSupabaseBrowser } from '@/lib/supabase'
 import { useLiff } from '@/hooks/useLiff'
 import { useRealtimeGameState } from '@/hooks/useRealtimeGameState'
+import Layout from '@/components/Layout'
 import { Clock, Users, Trophy, Heart } from 'lucide-react'
 
 export default function QuizPage() {
@@ -121,87 +122,97 @@ export default function QuizPage() {
   // 載入狀態
   if (liffLoading || gameLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-50 to-indigo-100 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500"></div>
-        <p className="ml-4 text-gray-600">載入中...</p>
-      </div>
+      <Layout title="快問快答">
+        <div className="flex items-center justify-center py-16">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500"></div>
+          <p className="ml-4 text-gray-600">載入中...</p>
+        </div>
+      </Layout>
     )
   }
 
   // 未登入狀態
   if (!isLoggedIn || !profile) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-50 to-indigo-100 flex items-center justify-center">
-        <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md mx-auto">
-          <Heart className="w-16 h-16 text-pink-500 mx-auto mb-6" />
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">請先登入</h2>
-          <p className="text-gray-600 mb-6">需要登入才能參與快問快答</p>
-          <div className="space-y-4">
-            <button
-              onClick={login}
-              disabled={!isReady}
-              className="w-full bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
-            >
-              {!isReady ? '載入中...' : 'Line 登入'}
-            </button>
-            <button
-              onClick={() => router.push('/')}
-              className="w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
-            >
-              返回首頁
-            </button>
+      <Layout title="快問快答">
+        <div className="text-center py-16">
+          <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md mx-auto">
+            <Heart className="w-16 h-16 text-pink-500 mx-auto mb-6" />
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">請先登入</h2>
+            <p className="text-gray-600 mb-6">需要登入才能參與快問快答</p>
+            <div className="space-y-4">
+              <button
+                onClick={login}
+                disabled={!isReady}
+                className="w-full bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
+              >
+                {!isReady ? '載入中...' : 'Line 登入'}
+              </button>
+              <button
+                onClick={() => router.push('/')}
+                className="w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
+              >
+                返回首頁
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      </Layout>
     )
   }
 
   if (!gameState?.is_game_active) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-50 to-indigo-100 flex items-center justify-center">
-        <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md mx-auto">
-          <Trophy className="w-16 h-16 text-gray-400 mx-auto mb-6" />
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">遊戲暫未開始</h2>
-          <p className="text-gray-600 mb-6">請等待主持人開始遊戲</p>
-          <button
-            onClick={() => router.push('/')}
-            className="bg-pink-500 hover:bg-pink-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
-          >
-            返回首頁
-          </button>
+      <Layout title="快問快答">
+        <div className="text-center py-16">
+          <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md mx-auto">
+            <Trophy className="w-16 h-16 text-gray-400 mx-auto mb-6" />
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">遊戲暫未開始</h2>
+            <p className="text-gray-600 mb-6">請等待主持人開始遊戲</p>
+            <button
+              onClick={() => router.push('/')}
+              className="bg-pink-500 hover:bg-pink-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
+            >
+              返回首頁
+            </button>
+          </div>
         </div>
-      </div>
+      </Layout>
     )
   }
 
   if (gameState.is_paused) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-50 to-indigo-100 flex items-center justify-center">
-        <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md mx-auto">
-          <Clock className="w-16 h-16 text-yellow-500 mx-auto mb-6" />
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">遊戲暫停中</h2>
-          <p className="text-gray-600">請等待主持人繼續遊戲</p>
+      <Layout title="快問快答">
+        <div className="text-center py-16">
+          <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md mx-auto">
+            <Clock className="w-16 h-16 text-yellow-500 mx-auto mb-6" />
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">遊戲暫停中</h2>
+            <p className="text-gray-600">請等待主持人繼續遊戲</p>
+          </div>
         </div>
-      </div>
+      </Layout>
     )
   }
 
   if (!currentQuestion) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-50 to-indigo-100 flex items-center justify-center">
-        <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md mx-auto">
-          <Users className="w-16 h-16 text-blue-500 mx-auto mb-6" />
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">準備中</h2>
-          <p className="text-gray-600">正在載入題目...</p>
+      <Layout title="快問快答">
+        <div className="text-center py-16">
+          <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md mx-auto">
+            <Users className="w-16 h-16 text-blue-500 mx-auto mb-6" />
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">準備中</h2>
+            <p className="text-gray-600">正在載入題目...</p>
+          </div>
         </div>
-      </div>
+      </Layout>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-50 to-indigo-100">
-      <div className="h-screen w-full flex flex-col p-4">
-        {/* 填滿畫面的答題按鈕 */}
+    <Layout title="快問快答">
+      <div className="h-full flex flex-col p-4" style={{ height: 'calc(100vh - 80px)' }}>
+        {/* 填滿剩餘空間的答題按鈕 */}
         <div className="flex-1 grid grid-cols-2 gap-4">
           {[
             { key: 'A' as const, color: 'bg-red-500 hover:bg-red-600', selectedColor: 'bg-red-600' },
@@ -226,6 +237,6 @@ export default function QuizPage() {
           ))}
         </div>
       </div>
-    </div>
+    </Layout>
   )
 }
