@@ -20,12 +20,7 @@ interface TopPlayer {
   is_correct: boolean
 }
 
-// 添加一個全局計數器來追蹤組件重載次數
-let componentLoadCount = 0;
-
 export default function GameLivePage() {
-  componentLoadCount++;
-  console.log(`🎮 GameLivePage 組件已載入 (第 ${componentLoadCount} 次)`);
   
   const [answerDistribution, setAnswerDistribution] = useState<AnswerDistribution[]>([])
   const [topPlayers, setTopPlayers] = useState<TopPlayer[]>([])
@@ -35,9 +30,7 @@ export default function GameLivePage() {
   const [showingCorrectOnly, setShowingCorrectOnly] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('game-live-showing-correct-only');
-      const result = saved === 'true';
-      console.log('💾 從 localStorage 恢復 showingCorrectOnly 狀態:', result);
-      return result;
+      return saved === 'true';
     }
     return false;
   })
@@ -51,7 +44,6 @@ export default function GameLivePage() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('game-live-showing-correct-only', showingCorrectOnly.toString());
-      console.log('💾 showingCorrectOnly 狀態已保存:', showingCorrectOnly);
     }
   }, [showingCorrectOnly])
 
@@ -116,7 +108,6 @@ export default function GameLivePage() {
 
   // 獲取答題速度前十名
   const fetchTopPlayers = useCallback(async (onlyCorrect = false) => {
-    console.log('🏃 fetchTopPlayers 被調用，currentQuestion:', currentQuestion?.id, 'onlyCorrect:', onlyCorrect);
     if (!currentQuestion) return
 
     try {
@@ -137,7 +128,6 @@ export default function GameLivePage() {
 
       // 如果只要正確答案，添加過濾條件
       if (onlyCorrect) {
-        console.log('🎯 只獲取答對的玩家');
         query = query.eq('is_correct', true)
       }
 
@@ -153,8 +143,6 @@ export default function GameLivePage() {
         is_correct: record.is_correct
       })) || []
 
-      console.log('📊 fetchTopPlayers 結果:', players.length, '個玩家');
-      console.log('📋 玩家詳情:', players.map(p => ({ name: p.display_name, correct: p.is_correct })));
       setTopPlayers(players)
     } catch (error) {
       console.error('Error fetching top players:', error)
@@ -170,73 +158,34 @@ export default function GameLivePage() {
 
   // 移除答錯者的函數
   const removeWrongPlayers = useCallback(async () => {
-    console.log('removeWrongPlayers 函數被調用');
-    console.log('設置 showingCorrectOnly = true');
     setShowingCorrectOnly(true);
     
     // 直接從數據庫重新獲取只有正確答案的玩家
-    console.log('🔄 從數據庫重新獲取只有正確答案的玩家');
     await fetchTopPlayers(true); // 傳入 true 表示只要正確答案
   }, [fetchTopPlayers]);
 
   // 處理答案公布後的淡出和移除邏輯
   useEffect(() => {
-    console.log('🚀 速度排行榜 useEffect 執行中...');
-    // 總是輸出狀態信息用於調試
-    console.log('🔍 檢查移除條件:', { 
-      timeLeft, 
-      playersCount: topPlayers.length, 
-      showingCorrectOnly,
-      hasPlayers: topPlayers.length > 0,
-      timeIsZero: timeLeft === 0,
-      notShowingCorrectOnly: !showingCorrectOnly,
-      // 新增：詳細的條件檢查
-      condition1_timeLeft: `timeLeft === 0: ${timeLeft === 0}`,
-      condition2_hasPlayers: `topPlayers.length > 0: ${topPlayers.length > 0}`,
-      condition3_notShowing: `!showingCorrectOnly: ${!showingCorrectOnly}`,
-      allConditionsMet: timeLeft === 0 && topPlayers.length > 0 && !showingCorrectOnly
-    });
-    
-    if (topPlayers.length > 0) {
-      console.log('📋 當前玩家列表:', topPlayers.map(p => ({ 
-        name: p.display_name, 
-        correct: p.is_correct,
-        time: p.answer_time 
-      })));
-    }
-    
     if (timeLeft === 0 && topPlayers.length > 0 && !showingCorrectOnly) {
-      console.log('✅ 條件滿足！答案公布，準備移除答錯者...', topPlayers.length, '個玩家');
-      
       // 答案公布後，延遲2秒後只顯示答對的玩家
       const timer = setTimeout(() => {
-        console.log('⏰ 執行移除邏輯...');
         removeWrongPlayers();
       }, 2000);
 
       return () => {
-        console.log('🧹 清理計時器');
         clearTimeout(timer);
       };
-    } else {
-      console.log('❌ 條件不滿足，不執行移除邏輯');
     }
   }, [timeLeft, showingCorrectOnly, topPlayers.length, removeWrongPlayers])
 
   // 當題目改變時重置狀態和獲取答題資料
   useEffect(() => {
     if (currentQuestion) {
-      console.log('🔄 題目改變，重置狀態:', { 
-        questionId: currentQuestion.id, 
-        previousShowingCorrectOnly: showingCorrectOnly 
-      });
-      
       // 強制重置狀態並清除 localStorage
       setShowingCorrectOnly(false)
       if (typeof window !== 'undefined') {
         localStorage.setItem('game-live-showing-correct-only', 'false');
       }
-      console.log('✅ showingCorrectOnly 已重置為 false');
       
       fetchAnswerDistribution()
       fetchTopPlayers(false) // 新題目開始時獲取所有玩家
@@ -328,10 +277,6 @@ export default function GameLivePage() {
                 <div className="text-center">
                   <div className="text-2xl font-bold text-blue-600">{currentQuestionAnswerCount}</div>
                   <div className="text-sm text-gray-600">已答題</div>
-                  {/* 調試信息 */}
-                  <div className="text-xs text-gray-400 mt-1">
-                    Q:{currentQuestion?.id} | Active:{gameState?.is_game_active ? 'Y' : 'N'}
-                  </div>
                 </div>
               </div>
             )}
@@ -399,9 +344,7 @@ export default function GameLivePage() {
                           {distribution && distribution.users.length > 0 && (
                             <div className="mt-6">
                               <div className="flex flex-wrap gap-4">
-                                {distribution.users.slice(0, 6).map((user, index) => {
-                                  console.log('User data:', user); // 調試信息
-                                  return (
+                                {distribution.users.slice(0, 6).map((user, index) => (
                                     <div key={index} className="flex items-center space-x-3 bg-white rounded-xl px-4 py-3 shadow-md border border-gray-200">
                                       {user.avatar_url ? (
                                         <img 
@@ -409,7 +352,6 @@ export default function GameLivePage() {
                                           alt={user.display_name || 'User'} 
                                           className="w-12 h-12 rounded-full border-2 border-gray-100"
                                           onError={(e) => {
-                                            console.log('Image load error:', user.avatar_url);
                                             e.currentTarget.style.display = 'none';
                                           }}
                                         />
@@ -420,8 +362,7 @@ export default function GameLivePage() {
                                       )}
                                       <span className="text-base font-semibold text-gray-800">{user.display_name}</span>
                                     </div>
-                                  );
-                                })}
+                                ))}}
                                 {distribution.users.length > 6 && (
                                   <div className="flex items-center px-4 py-3 text-base font-medium text-gray-600 bg-gray-100 rounded-xl">
                                     +{distribution.users.length - 6}人
@@ -446,28 +387,11 @@ export default function GameLivePage() {
                   <h4 className="text-xl font-bold text-gray-800">⚡ 速度排行榜</h4>
                 </div>
                 
-                {/* 調試：總是顯示排行榜區域 */}
                 <div className="space-y-3">
-                  {/* 調試按鈕 */}
-                  <div className="text-center mb-4">
-                    <button 
-                      onClick={() => {
-                        console.log('🧪 手動觸發移除邏輯測試');
-                        console.log('當前狀態:', { timeLeft, topPlayers: topPlayers.length, showingCorrectOnly });
-                        removeWrongPlayers();
-                      }}
-                      className="bg-red-500 text-white px-4 py-2 rounded text-sm"
-                    >
-                      🧪 測試移除邏輯
-                    </button>
-                  </div>
-                  
                   {topPlayers.length === 0 ? (
                     <div className="text-center py-8 text-gray-500">
-                      <p>🔍 調試模式：等待玩家數據...</p>
-                      <p>topPlayers.length: {topPlayers.length}</p>
-                      <p>timeLeft: {timeLeft}</p>
-                      <p>showingCorrectOnly: {showingCorrectOnly.toString()}</p>
+                      <HelpCircle className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                      <p>等待玩家答題...</p>
                     </div>
                   ) : (
                     topPlayers.map((player, index) => {
