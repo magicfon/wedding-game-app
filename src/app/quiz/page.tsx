@@ -211,9 +211,12 @@ export default function QuizPage() {
 
   return (
     <Layout title="快問快答">
-      <div className="h-full flex flex-col p-4" style={{ height: 'calc(100vh - 80px)' }}>
-        {/* 填滿剩餘空間的答題按鈕 */}
-        <div className="flex-1 grid grid-cols-2 gap-4">
+      <div className="h-full flex flex-col py-4 px-4" style={{ height: 'calc(100vh - 80px)' }}>
+        {/* 上方預留空間 5% */}
+        <div style={{ height: '5%' }}></div>
+        
+        {/* 填滿剩餘空間的答題按鈕 - 90% */}
+        <div className="grid grid-cols-2 gap-4" style={{ height: '90%' }}>
           {[
             { key: 'A' as const, color: 'bg-red-500 hover:bg-red-600', selectedColor: 'bg-red-600' },
             { key: 'B' as const, color: 'bg-blue-500 hover:bg-blue-600', selectedColor: 'bg-blue-600' },
@@ -236,6 +239,9 @@ export default function QuizPage() {
             </button>
           ))}
         </div>
+        
+        {/* 下方預留空間 5% */}
+        <div style={{ height: '5%' }}></div>
       </div>
     </Layout>
   )
