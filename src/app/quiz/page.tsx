@@ -245,24 +245,14 @@ export default function QuizPage() {
           </div>
         </div>
 
-        {/* 遊戲說明 */}
-        <div className="bg-blue-50 rounded-xl p-6 text-center">
-          <h3 className="text-lg font-semibold text-blue-800 mb-2">📋 使用說明</h3>
-          <div className="space-y-2 text-blue-700 text-sm">
-            <p>• 遊戲開始時，請選擇您的答案 (A/B/C/D)</p>
-            <p>• 選擇後無法更改，請仔細考慮</p>
-            <p>• 答案結果將在遊戲實況中公布</p>
-            <p>• 越快答題，分數加成越高！</p>
+        {/* 答題狀態 */}
+        {hasAnswered && (
+          <div className="bg-green-50 rounded-xl p-4 text-center">
+            <p className="text-green-700 font-medium text-lg">
+              ✅ 已提交答案：{selectedAnswer}
+            </p>
           </div>
-          {hasAnswered && (
-            <div className="mt-4 p-3 bg-green-100 rounded-lg">
-              <p className="text-green-700 font-medium">
-                ✅ 已提交答案：{selectedAnswer}
-              </p>
-              <p className="text-green-600 text-xs mt-1">請等待下一題或查看遊戲實況</p>
-            </div>
-          )}
-        </div>
+        )}
       </div>
     </Layout>
   )
