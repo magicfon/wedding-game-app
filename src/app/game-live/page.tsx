@@ -366,8 +366,8 @@ export default function GameLivePage() {
                             </div>
                           </div>
 
-                          {/* 顯示選擇此答案的用戶 */}
-                          {distribution && distribution.users.length > 0 && (
+                          {/* 只在倒數結束後顯示選擇此答案的用戶 */}
+                          {timeLeft === 0 && distribution && distribution.users.length > 0 && (
                             <div className="mt-6">
                               <div className="flex flex-wrap gap-4">
                                 {distribution.users.slice(0, 6).map((user, index) => (
