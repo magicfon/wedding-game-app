@@ -225,7 +225,11 @@ export async function POST(request: Request) {
 
     if (result?.error) {
       console.error('Database error:', result.error);
-      return NextResponse.json({ error: '資料庫操作失敗' }, { status: 500 });
+      return NextResponse.json({ 
+        error: '資料庫操作失敗', 
+        details: result.error,
+        action: action 
+      }, { status: 500 });
     }
 
     // 記錄管理員操作
