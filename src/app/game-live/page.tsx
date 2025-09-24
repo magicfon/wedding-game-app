@@ -499,14 +499,18 @@ function WaitingStage({ gameState }: { gameState: any }) {
   const [qrCodeDataURL, setQrCodeDataURL] = useState<string | null>(null)
   const supabase = createSupabaseBrowser()
 
-  // 獲取已加入的玩家
+  // 獲取目前在快問快答頁面的玩家
   const fetchJoinedPlayers = useCallback(async () => {
     try {
+      // 查詢在過去2分鐘內有心跳且標記為在快問快答頁面的用戶
+      const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString()
+      
       const { data: players, error } = await supabase
         .from('users')
-        .select('line_id, display_name, avatar_url, join_time')
-        .eq('is_active', true)
-        .order('join_time', { ascending: true })
+        .select('line_id, display_name, avatar_url, last_active_at, is_in_quiz_page')
+        .eq('is_in_quiz_page', true)
+        .gte('last_active_at', twoMinutesAgo)
+        .order('last_active_at', { ascending: false })
 
       if (error) throw error
       
@@ -514,6 +518,22 @@ function WaitingStage({ gameState }: { gameState: any }) {
       setPlayerCount(players?.length || 0)
     } catch (error) {
       console.error('Error fetching joined players:', error)
+      
+      // 如果新欄位不存在，回退到舊邏輯
+      try {
+        const { data: fallbackPlayers, error: fallbackError } = await supabase
+          .from('users')
+          .select('line_id, display_name, avatar_url, join_time')
+          .eq('is_active', true)
+          .order('join_time', { ascending: true })
+
+        if (!fallbackError) {
+          setJoinedPlayers(fallbackPlayers || [])
+          setPlayerCount(fallbackPlayers?.length || 0)
+        }
+      } catch (fallbackErr) {
+        console.error('Fallback query also failed:', fallbackErr)
+      }
     }
   }, [supabase])
 

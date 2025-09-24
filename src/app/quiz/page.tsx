@@ -22,6 +22,51 @@ export default function QuizPage() {
   // 使用統一的即時遊戲狀態
   const { gameState, currentQuestion, loading: gameLoading, calculateTimeLeft } = useRealtimeGameState()
 
+  // 心跳機制：定期告知服務器用戶還在快問快答頁面
+  useEffect(() => {
+    if (!profile?.userId) return
+
+    // 立即發送一次心跳
+    const sendHeartbeat = async () => {
+      try {
+        await fetch('/api/quiz/heartbeat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ lineId: profile.userId })
+        })
+      } catch (error) {
+        console.error('Heartbeat failed:', error)
+      }
+    }
+
+    sendHeartbeat()
+
+    // 每30秒發送一次心跳
+    const heartbeatInterval = setInterval(sendHeartbeat, 30000)
+
+    // 頁面卸載時通知服務器用戶離開
+    const handleBeforeUnload = async () => {
+      try {
+        await fetch('/api/quiz/heartbeat', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ lineId: profile.userId })
+        })
+      } catch (error) {
+        console.error('Leave notification failed:', error)
+      }
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+
+    return () => {
+      clearInterval(heartbeatInterval)
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+      // 組件卸載時也通知離開
+      handleBeforeUnload()
+    }
+  }, [profile?.userId])
+
 
 
   // 當遊戲狀態或題目改變時重置答題狀態
