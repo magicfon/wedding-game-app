@@ -169,7 +169,7 @@ export default function GameLivePage() {
 
   // 處理答案公布後的淡出和移除邏輯
   useEffect(() => {
-    if (timeLeft === 0 && topPlayers.length > 0 && !showingCorrectOnly) {
+    if (timeLeft <= 0 && topPlayers.length > 0 && !showingCorrectOnly) {
       // 答案公布後，延遲2秒後只顯示答對的玩家
       const timer = setTimeout(() => {
         removeWrongPlayers();
@@ -204,9 +204,8 @@ export default function GameLivePage() {
             setCurrentQuestionAnswerCount(prev => prev + 1)
             
             fetchAnswerDistribution()
-            // 在答題過程中（timeLeft > 0）或剛開始時總是更新排行榜
-            // 只有在答案公布後且已經設為只顯示正確答案時才不更新
-            if (timeLeft > 0 || !showingCorrectOnly) {
+            // 在答題進行中總是更新排行榜，只有在明確設為只顯示正確答案時才不更新
+            if (!showingCorrectOnly) {
               fetchTopPlayers(false)
             }
             // 移除 fetchCurrentQuestionAnswerCount() - 用本機計數取代
@@ -233,7 +232,7 @@ export default function GameLivePage() {
       setTimeLeft(newTimeLeft)
       setDisplayTimeLeft(newTimeLeft) // 重置顯示時間
       
-      // 只在時間剛到達0時執行一次，避免重複覆蓋移除邏輯
+      // 只在時間剛到達0或以下時執行一次，避免重複覆蓋移除邏輯
       if (newTimeLeft <= 0 && prevTimeLeft > 0) {
         fetchAnswerDistribution()
         fetchTopPlayers(false) // 倒數結束時先獲取所有玩家
@@ -344,7 +343,7 @@ export default function GameLivePage() {
                         <div
                           key={option.key}
                           className={`p-6 rounded-2xl border-4 ${
-                            timeLeft === 0 && isCorrect ? 'border-green-400 bg-green-50' : 'border-gray-200'
+                            timeLeft <= 0 && isCorrect ? 'border-green-400 bg-green-50' : 'border-gray-200'
                           }`}
                         >
                           {/* 選項標題和統計 */}
@@ -356,7 +355,7 @@ export default function GameLivePage() {
                               <div className="flex-1">
                                 <div className="text-3xl font-bold text-gray-800">{distribution?.count || 0}</div>
                                 <div className="text-sm text-gray-600">人選擇</div>
-                                {timeLeft === 0 && isCorrect && (
+                                {timeLeft <= 0 && isCorrect && (
                                   <div className="text-green-600 font-semibold text-sm mt-1">✅ 正確答案</div>
                                 )}
                               </div>
@@ -367,7 +366,7 @@ export default function GameLivePage() {
                           </div>
 
                           {/* 只在倒數結束後顯示選擇此答案的用戶 */}
-                          {timeLeft === 0 && distribution && distribution.users.length > 0 && (
+                          {timeLeft <= 0 && distribution && distribution.users.length > 0 && (
                             <div className="mt-6">
                               <div className="flex flex-wrap gap-4">
                                 {distribution.users.slice(0, 6).map((user, index) => (
@@ -422,7 +421,7 @@ export default function GameLivePage() {
                   ) : (
                     topPlayers.map((player, index) => {
                       // 答案公布後，答錯的玩家要淡出（但還沒移除時）
-                      const shouldFadeOut = timeLeft === 0 && !player.is_correct && !showingCorrectOnly;
+                      const shouldFadeOut = timeLeft <= 0 && !player.is_correct && !showingCorrectOnly;
                       
                       return (
                         <div
@@ -465,7 +464,7 @@ export default function GameLivePage() {
                             </div>
                             <div className="text-base text-gray-700 font-medium">
                               ⏱️ {(player.answer_time / 1000).toFixed(3)}秒
-                              {timeLeft === 0 && (
+                              {timeLeft <= 0 && (
                                 <span className={`ml-2 ${player.is_correct ? 'text-green-600' : 'text-red-500'}`}>
                                   {player.is_correct ? '✅ 答對了' : '❌ 答錯了'}
                                 </span>
