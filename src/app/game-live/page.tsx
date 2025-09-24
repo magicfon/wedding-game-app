@@ -181,6 +181,23 @@ export default function GameLivePage() {
     }
   }, [timeLeft, showingCorrectOnly, topPlayers.length, removeWrongPlayers])
 
+  // 處理新答題記錄的回調函數
+  const handleNewAnswer = useCallback(() => {
+    // 本機增加計數，避免頻繁查詢資料庫
+    setCurrentQuestionAnswerCount(prev => prev + 1)
+    
+    fetchAnswerDistribution()
+    
+    // 檢查當前時間，只有在答題期間才更新排行榜
+    // 這避免在答案公布後被新答題記錄干擾「只顯示正確答案」的狀態
+    const currentTimeLeft = calculateTimeLeft()
+    if (currentTimeLeft > 0) {
+      // 答題期間：總是更新排行榜以確保即時顯示
+      fetchTopPlayers(false)
+    }
+    // 如果答題時間已結束，不更新排行榜，保持當前的過濾狀態
+  }, [fetchAnswerDistribution, fetchTopPlayers, calculateTimeLeft])
+
   // 當題目改變時重置狀態和獲取答題資料
   useEffect(() => {
     if (currentQuestion) {
@@ -199,17 +216,7 @@ export default function GameLivePage() {
         .channel('answer_records_live')
         .on('postgres_changes',
           { event: 'INSERT', schema: 'public', table: 'answer_records', filter: `question_id=eq.${currentQuestion.id}` },
-          () => {
-            // 本機增加計數，避免頻繁查詢資料庫
-            setCurrentQuestionAnswerCount(prev => prev + 1)
-            
-            fetchAnswerDistribution()
-            // 在答題進行中總是更新排行榜，只有在明確設為只顯示正確答案時才不更新
-            if (!showingCorrectOnly) {
-              fetchTopPlayers(false)
-            }
-            // 移除 fetchCurrentQuestionAnswerCount() - 用本機計數取代
-          }
+          handleNewAnswer
         )
         .subscribe()
 
@@ -220,7 +227,7 @@ export default function GameLivePage() {
       // 如果沒有當前題目，重置答題人數
       setCurrentQuestionAnswerCount(0)
     }
-  }, [currentQuestion, fetchAnswerDistribution, fetchTopPlayers, supabase])
+  }, [currentQuestion, fetchAnswerDistribution, fetchTopPlayers, supabase, handleNewAnswer])
 
   // 伺服器同步計時器（每秒同步一次實際時間）
   useEffect(() => {
