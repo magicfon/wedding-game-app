@@ -265,7 +265,7 @@ export default function GameLivePage() {
   }
 
   return (
-    <Layout title="遊戲實況">
+    <Layout title="遊戲實況" showNavigation={false}>
       <div className="max-w-7xl mx-auto">
         {/* 遊戲暫停提示 */}
         {gameState?.is_paused && (
