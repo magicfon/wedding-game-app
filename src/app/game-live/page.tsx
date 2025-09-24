@@ -204,8 +204,9 @@ export default function GameLivePage() {
             setCurrentQuestionAnswerCount(prev => prev + 1)
             
             fetchAnswerDistribution()
-            // 只在答題過程中或答案公布初期更新排行榜，避免覆蓋移除邏輯
-            if (!showingCorrectOnly) {
+            // 在答題過程中（timeLeft > 0）或剛開始時總是更新排行榜
+            // 只有在答案公布後且已經設為只顯示正確答案時才不更新
+            if (timeLeft > 0 || !showingCorrectOnly) {
               fetchTopPlayers(false)
             }
             // 移除 fetchCurrentQuestionAnswerCount() - 用本機計數取代
