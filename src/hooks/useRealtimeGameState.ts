@@ -59,7 +59,12 @@ export function useRealtimeGameState() {
   // 計算剩餘時間（精確到毫秒）
   const calculateTimeLeft = useCallback((): number => {
     // 如果在等待階段或沒有當前題目，返回 0
-    if (gameState?.is_waiting_for_players || !gameState?.question_start_time || !currentQuestion || gameState.is_paused) {
+    // 兼容舊表格結構：如果沒有 is_waiting_for_players 欄位，檢查 current_question_id 是否為 null
+    const isWaitingForPlayers = gameState?.is_waiting_for_players !== undefined 
+      ? gameState.is_waiting_for_players 
+      : !gameState?.current_question_id;
+      
+    if (isWaitingForPlayers || !gameState?.question_start_time || !currentQuestion || gameState.is_paused) {
       return 0
     }
 

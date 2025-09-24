@@ -274,7 +274,7 @@ export default function GameLivePage() {
           </div>
         )}
 
-        {gameState?.is_game_active && gameState?.is_waiting_for_players ? (
+        {gameState?.is_game_active && (gameState?.is_waiting_for_players !== undefined ? gameState.is_waiting_for_players : !gameState?.current_question_id) ? (
           <WaitingStage gameState={gameState} />
         ) : currentQuestion && gameState?.is_game_active && !gameState?.is_paused ? (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

@@ -24,18 +24,36 @@ export async function POST(request: Request) {
     switch (action) {
       case 'start_game':
         // 開始遊戲 - 進入等待玩家階段
+        // 使用現有表格結構，先檢查是否有新欄位
+        const { data: currentGameState } = await supabase
+          .from('game_state')
+          .select('*')
+          .eq('id', 1)
+          .single();
+
+        // 準備更新資料，根據表格結構動態調整
+        const updateData: any = {
+          id: 1,
+          is_game_active: true,
+          is_paused: false,
+          current_question_id: null,
+          question_start_time: null,
+          updated_at: new Date().toISOString()
+        };
+
+        // 如果表格有新欄位，則加入
+        if (currentGameState && 'is_waiting_for_players' in currentGameState) {
+          updateData.is_waiting_for_players = true;
+        }
+        if (currentGameState && 'qr_code_url' in currentGameState) {
+          updateData.qr_code_url = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/quiz`;
+        }
+
+        console.log('🎮 開始遊戲，更新資料:', updateData);
+
         result = await supabase
           .from('game_state')
-          .upsert({
-            id: 1,
-            is_game_active: true,
-            is_waiting_for_players: true,
-            is_paused: false,
-            current_question_id: null,
-            question_start_time: null,
-            qr_code_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/quiz`,
-            updated_at: new Date().toISOString()
-          });
+          .upsert(updateData);
 
         actionDetails = { stage: 'waiting_for_players' };
         break;
@@ -54,14 +72,27 @@ export async function POST(request: Request) {
           return NextResponse.json({ error: '沒有可用的題目' }, { status: 400 });
         }
 
+        // 檢查表格結構
+        const { data: gameStateForQuestion } = await supabase
+          .from('game_state')
+          .select('*')
+          .eq('id', 1)
+          .single();
+
+        const questionUpdateData: any = {
+          current_question_id: firstQuestion.id,
+          question_start_time: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+
+        // 如果有新欄位，則設定
+        if (gameStateForQuestion && 'is_waiting_for_players' in gameStateForQuestion) {
+          questionUpdateData.is_waiting_for_players = false;
+        }
+
         result = await supabase
           .from('game_state')
-          .update({
-            is_waiting_for_players: false,
-            current_question_id: firstQuestion.id,
-            question_start_time: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          })
+          .update(questionUpdateData)
           .eq('id', 1);
 
         actionDetails = { question_id: firstQuestion.id, stage: 'first_question_started' };
@@ -202,18 +233,35 @@ export async function POST(request: Request) {
           })
           .neq('line_id', '');
 
+        // 檢查表格結構以準備重置資料
+        const { data: gameStateForReset } = await supabase
+          .from('game_state')
+          .select('*')
+          .eq('id', 1)
+          .single();
+
+        const resetUpdateData: any = {
+          is_game_active: true,
+          is_paused: false,
+          current_question_id: null,
+          question_start_time: null,
+          updated_at: new Date().toISOString()
+        };
+
+        // 如果有新欄位，則設定
+        if (gameStateForReset && 'is_waiting_for_players' in gameStateForReset) {
+          resetUpdateData.is_waiting_for_players = true;
+        }
+        if (gameStateForReset && 'qr_code_url' in gameStateForReset) {
+          resetUpdateData.qr_code_url = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/quiz`;
+        }
+        if (gameStateForReset && 'total_questions' in gameStateForReset) {
+          resetUpdateData.total_questions = 0;
+        }
+
         result = await supabase
           .from('game_state')
-          .update({
-            is_game_active: true,
-            is_waiting_for_players: true,
-            is_paused: false,
-            current_question_id: null,
-            question_start_time: null,
-            total_questions: 0,
-            qr_code_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/quiz`,
-            updated_at: new Date().toISOString()
-          })
+          .update(resetUpdateData)
           .eq('id', 1);
 
         actionDetails = { reset_complete: true, stage: 'waiting_for_players' };

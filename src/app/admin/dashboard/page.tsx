@@ -379,7 +379,7 @@ export default function AdminDashboard() {
             </div>
             <div className="text-center p-2 bg-gray-50 rounded">
               <div className="font-medium text-gray-900">
-                {gameState?.is_waiting_for_players ? '等待玩家' : gameState?.current_question_id ? '答題中' : '未開始'}
+{(gameState?.is_waiting_for_players !== undefined ? gameState.is_waiting_for_players : !gameState?.current_question_id) ? '等待玩家' : gameState?.current_question_id ? '答題中' : '未開始'}
               </div>
               <div className="text-gray-600">遊戲階段</div>
             </div>
@@ -396,7 +396,7 @@ export default function AdminDashboard() {
                 <PlayCircle className="w-4 h-4" />
                 <span>遊戲開始</span>
               </button>
-            ) : gameState?.is_waiting_for_players ? (
+            ) : (gameState?.is_waiting_for_players !== undefined ? gameState.is_waiting_for_players : !gameState?.current_question_id) ? (
               // 等待階段：顯示開始出題按鈕
               <button
                 onClick={() => controlGame('start_first_question')}
