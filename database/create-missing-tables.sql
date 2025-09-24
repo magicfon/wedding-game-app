@@ -178,7 +178,32 @@ CREATE POLICY "允許所有操作_admin_line_ids" ON admin_line_ids FOR ALL USIN
 DROP POLICY IF EXISTS "允許所有操作_voting_settings" ON voting_settings;
 CREATE POLICY "允許所有操作_voting_settings" ON voting_settings FOR ALL USING (true);
 
--- 13. 插入一些示例問題（如果不存在）
+DROP POLICY IF EXISTS "允許所有操作_game_state" ON game_state;
+CREATE POLICY "允許所有操作_game_state" ON game_state FOR ALL USING (true);
+
+-- 13. 創建 game_state 表格（遊戲狀態）
+CREATE TABLE IF NOT EXISTS game_state (
+    id SERIAL PRIMARY KEY,
+    is_game_active BOOLEAN DEFAULT FALSE,
+    is_waiting_for_players BOOLEAN DEFAULT TRUE,
+    current_question_id INTEGER REFERENCES questions(id),
+    question_start_time TIMESTAMP WITH TIME ZONE,
+    is_paused BOOLEAN DEFAULT FALSE,
+    total_questions INTEGER DEFAULT 0,
+    qr_code_url TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 啟用 RLS
+ALTER TABLE game_state ENABLE ROW LEVEL SECURITY;
+
+-- 插入初始遊戲狀態
+INSERT INTO game_state (is_game_active, is_waiting_for_players, is_paused, total_questions)
+VALUES (FALSE, TRUE, FALSE, 0)
+ON CONFLICT DO NOTHING;
+
+-- 14. 插入一些示例問題（如果不存在）
 INSERT INTO questions (question_text, option_a, option_b, option_c, option_d, correct_answer, base_score, time_limit) VALUES
 ('新郎新娘第一次見面是在哪裡？', '咖啡廳', '學校', '公園', '朋友聚會', 'D', 100, 30),
 ('新郎的興趣是什麼？', '攝影', '音樂', '運動', '旅行', 'B', 100, 30),

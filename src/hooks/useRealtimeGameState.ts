@@ -2,13 +2,16 @@ import { useState, useEffect, useCallback } from 'react'
 import { createSupabaseBrowser, Question } from '@/lib/supabase'
 
 interface GameState {
+  id: number
   current_question_id: number | null
   is_game_active: boolean
+  is_waiting_for_players: boolean
   is_paused: boolean
   question_start_time: string | null
   total_questions: number
-  completed_questions: number
-  game_session_id: string
+  qr_code_url: string | null
+  created_at: string
+  updated_at: string
 }
 
 export function useRealtimeGameState() {
@@ -55,7 +58,8 @@ export function useRealtimeGameState() {
 
   // 計算剩餘時間（精確到毫秒）
   const calculateTimeLeft = useCallback((): number => {
-    if (!gameState?.question_start_time || !currentQuestion || gameState.is_paused) {
+    // 如果在等待階段或沒有當前題目，返回 0
+    if (gameState?.is_waiting_for_players || !gameState?.question_start_time || !currentQuestion || gameState.is_paused) {
       return 0
     }
 

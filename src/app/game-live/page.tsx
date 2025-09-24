@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { createSupabaseBrowser } from '@/lib/supabase'
 import { useRealtimeGameState } from '@/hooks/useRealtimeGameState'
 import Layout from '@/components/Layout'
-import { Play, Pause, Users, Clock, HelpCircle, Zap } from 'lucide-react'
+import { Play, Pause, Users, Clock, HelpCircle, Zap, QrCode, UserPlus } from 'lucide-react'
 
 interface AnswerDistribution {
   answer: 'A' | 'B' | 'C' | 'D'
@@ -274,7 +274,9 @@ export default function GameLivePage() {
           </div>
         )}
 
-        {currentQuestion && gameState?.is_game_active && !gameState?.is_paused ? (
+        {gameState?.is_game_active && gameState?.is_waiting_for_players ? (
+          <WaitingStage gameState={gameState} />
+        ) : currentQuestion && gameState?.is_game_active && !gameState?.is_paused ? (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* 題目和答題分佈 */}
             <div className="lg:col-span-2">
@@ -473,5 +475,148 @@ export default function GameLivePage() {
         )}
       </div>
     </Layout>
+  )
+}
+
+// 等待階段組件
+function WaitingStage({ gameState }: { gameState: any }) {
+  const [joinedPlayers, setJoinedPlayers] = useState<any[]>([])
+  const [playerCount, setPlayerCount] = useState(0)
+  const supabase = createSupabaseBrowser()
+
+  // 獲取已加入的玩家
+  const fetchJoinedPlayers = useCallback(async () => {
+    try {
+      const { data: players, error } = await supabase
+        .from('users')
+        .select('line_id, display_name, avatar_url, join_time')
+        .eq('is_active', true)
+        .order('join_time', { ascending: true })
+
+      if (error) throw error
+      
+      setJoinedPlayers(players || [])
+      setPlayerCount(players?.length || 0)
+    } catch (error) {
+      console.error('Error fetching joined players:', error)
+    }
+  }, [supabase])
+
+  useEffect(() => {
+    fetchJoinedPlayers()
+
+    // 訂閱玩家加入
+    const playersSubscription = supabase
+      .channel('waiting_players')
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'users' },
+        () => {
+          fetchJoinedPlayers()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      playersSubscription.unsubscribe()
+    }
+  }, [fetchJoinedPlayers, supabase])
+
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="max-w-6xl mx-auto text-center">
+        {/* 主標題 */}
+        <div className="mb-12">
+          <h1 className="text-6xl font-bold text-gray-800 mb-4">
+            🎮 準備開始遊戲！
+          </h1>
+          <p className="text-2xl text-gray-600">
+            請賓客掃描 QR Code 加入遊戲
+          </p>
+        </div>
+
+        {/* 玩家統計和QR Code */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-12">
+          {/* 左側：玩家統計 */}
+          <div className="bg-white rounded-3xl shadow-xl p-8">
+            <div className="flex items-center justify-center mb-6">
+              <UserPlus className="w-12 h-12 text-blue-500 mr-4" />
+              <div>
+                <div className="text-5xl font-bold text-blue-600">{playerCount}</div>
+                <div className="text-xl text-gray-600">位賓客已加入</div>
+              </div>
+            </div>
+            
+            {/* 已加入玩家列表 */}
+            {joinedPlayers.length > 0 && (
+              <div className="mt-8">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">已加入的賓客：</h3>
+                <div className="grid grid-cols-2 gap-4 max-h-96 overflow-y-auto">
+                  {joinedPlayers.slice(0, 20).map((player, index) => (
+                    <div key={player.line_id} className="flex items-center space-x-3 bg-gray-50 rounded-xl p-3">
+                      {player.avatar_url ? (
+                        <img 
+                          src={player.avatar_url} 
+                          alt={player.display_name} 
+                          className="w-10 h-10 rounded-full border-2 border-gray-200"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-gray-400 flex items-center justify-center text-white font-semibold">
+                          {player.display_name?.charAt(0) || '?'}
+                        </div>
+                      )}
+                      <span className="font-medium text-gray-800 truncate">{player.display_name}</span>
+                    </div>
+                  ))}
+                  {joinedPlayers.length > 20 && (
+                    <div className="col-span-2 text-center text-gray-500 py-2">
+                      還有 {joinedPlayers.length - 20} 位賓客...
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 右側：QR Code */}
+          <div className="bg-white rounded-3xl shadow-xl p-8 flex flex-col items-center justify-center">
+            <QrCode className="w-16 h-16 text-gray-400 mb-4" />
+            <h3 className="text-2xl font-bold text-gray-800 mb-4">掃描加入遊戲</h3>
+            <div className="w-64 h-64 bg-gray-200 rounded-2xl flex items-center justify-center mb-4">
+              {gameState?.qr_code_url ? (
+                <img 
+                  src={gameState.qr_code_url} 
+                  alt="QR Code" 
+                  className="w-full h-full rounded-2xl"
+                />
+              ) : (
+                <div className="text-center text-gray-500">
+                  <QrCode className="w-24 h-24 mx-auto mb-2" />
+                  <p>QR Code 載入中...</p>
+                </div>
+              )}
+            </div>
+            <p className="text-gray-600 text-center">
+              使用 LINE 掃描 QR Code<br />
+              進入快問快答遊戲
+            </p>
+          </div>
+        </div>
+
+        {/* 等待提示 */}
+        <div className="bg-gradient-to-r from-pink-100 to-purple-100 rounded-3xl p-8">
+          <div className="flex items-center justify-center space-x-4">
+            <div className="animate-pulse">
+              <Users className="w-8 h-8 text-purple-600" />
+            </div>
+            <p className="text-xl text-purple-800 font-medium">
+              等待主持人開始出題...
+            </p>
+            <div className="animate-pulse">
+              <Clock className="w-8 h-8 text-purple-600" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }
