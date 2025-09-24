@@ -379,9 +379,9 @@ export default function AdminDashboard() {
             </div>
             <div className="text-center p-2 bg-gray-50 rounded">
               <div className="font-medium text-gray-900">
-                {gameState?.game_session_id ? '已建立' : '未建立'}
+                {gameState?.is_waiting_for_players ? '等待玩家' : gameState?.current_question_id ? '答題中' : '未開始'}
               </div>
-              <div className="text-gray-600">遊戲會話</div>
+              <div className="text-gray-600">遊戲階段</div>
             </div>
           </div>
 
