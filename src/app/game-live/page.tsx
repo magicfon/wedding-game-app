@@ -339,7 +339,7 @@ export default function GameLivePage() {
                               </div>
                             </div>
                             <div className="text-right flex-shrink-0 max-w-xs">
-                              <div className="text-lg font-medium text-gray-700 leading-tight">{option.text}</div>
+                              <div className="text-xl font-semibold text-gray-800 leading-tight">{option.text}</div>
                             </div>
                           </div>
 
