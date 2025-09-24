@@ -482,6 +482,7 @@ export default function GameLivePage() {
 function WaitingStage({ gameState }: { gameState: any }) {
   const [joinedPlayers, setJoinedPlayers] = useState<any[]>([])
   const [playerCount, setPlayerCount] = useState(0)
+  const [qrCodeDataURL, setQrCodeDataURL] = useState<string | null>(null)
   const supabase = createSupabaseBrowser()
 
   // 獲取已加入的玩家
@@ -502,8 +503,24 @@ function WaitingStage({ gameState }: { gameState: any }) {
     }
   }, [supabase])
 
+  // 生成 QR code
+  const generateQRCode = useCallback(async () => {
+    try {
+      const quizURL = `${window.location.origin}/quiz`
+      const response = await fetch(`/api/qr-code?url=${encodeURIComponent(quizURL)}`)
+      const data = await response.json()
+      
+      if (data.success) {
+        setQrCodeDataURL(data.qrCodeDataURL)
+      }
+    } catch (error) {
+      console.error('Error generating QR code:', error)
+    }
+  }, [])
+
   useEffect(() => {
     fetchJoinedPlayers()
+    generateQRCode()
 
     // 訂閱玩家加入
     const playersSubscription = supabase
@@ -519,7 +536,7 @@ function WaitingStage({ gameState }: { gameState: any }) {
     return () => {
       playersSubscription.unsubscribe()
     }
-  }, [fetchJoinedPlayers, supabase])
+  }, [fetchJoinedPlayers, generateQRCode, supabase])
 
   return (
     <div className="min-h-screen flex items-center justify-center">
@@ -582,9 +599,9 @@ function WaitingStage({ gameState }: { gameState: any }) {
             <QrCode className="w-16 h-16 text-gray-400 mb-4" />
             <h3 className="text-2xl font-bold text-gray-800 mb-4">掃描加入遊戲</h3>
             <div className="w-64 h-64 bg-gray-200 rounded-2xl flex items-center justify-center mb-4">
-              {gameState?.qr_code_url ? (
+              {qrCodeDataURL ? (
                 <img 
-                  src={gameState.qr_code_url} 
+                  src={qrCodeDataURL} 
                   alt="QR Code" 
                   className="w-full h-full rounded-2xl"
                 />
