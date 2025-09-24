@@ -267,52 +267,12 @@ export default function GameLivePage() {
   return (
     <Layout title="遊戲實況">
       <div className="max-w-7xl mx-auto">
-        {/* 遊戲狀態和計時器 */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <h2 className="text-2xl font-bold text-gray-800">🎮 遊戲實況</h2>
-              {gameState?.is_game_active ? (
-                <div className="flex items-center space-x-2 text-green-600">
-                  <Play className="w-5 h-5" />
-                  <span className="font-semibold">遊戲進行中</span>
-                </div>
-              ) : (
-                <div className="flex items-center space-x-2 text-gray-500">
-                  <Pause className="w-5 h-5" />
-                  <span className="font-semibold">遊戲暫停</span>
-                </div>
-              )}
-            </div>
-            
-            {currentQuestion && (
-              <div className="flex items-center space-x-4">
-                {gameState?.is_game_active && !gameState?.is_paused && (
-                  <div className={`w-20 h-20 rounded-full flex items-center justify-center text-sm font-bold ${
-                    displayTimeLeft > 10000 ? 'bg-green-100 text-green-700' :
-                    displayTimeLeft > 5000 ? 'bg-yellow-100 text-yellow-700' :
-                    'bg-red-100 text-red-700'
-                  }`}>
-                    <div className="text-center">
-                      <div className="text-lg">{Math.floor(displayTimeLeft / 1000)}</div>
-                      <div className="text-xs">.{String(displayTimeLeft % 1000).padStart(3, '0')}</div>
-                    </div>
-                  </div>
-                )}
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">{currentQuestionAnswerCount}</div>
-                  <div className="text-sm text-gray-600">已答題</div>
-                </div>
-              </div>
-            )}
+        {/* 遊戲暫停提示 */}
+        {gameState?.is_paused && (
+          <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded-lg mb-6">
+            ⏸️ 遊戲暫停中，請等待主持人繼續遊戲
           </div>
-
-          {gameState?.is_paused && (
-            <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded-lg mt-4">
-              ⏸️ 遊戲暫停中，請等待主持人繼續遊戲
-            </div>
-          )}
-        </div>
+        )}
 
         {currentQuestion && gameState?.is_game_active && !gameState?.is_paused ? (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -320,10 +280,28 @@ export default function GameLivePage() {
             <div className="lg:col-span-2">
               {/* 當前題目 */}
               <div className="bg-white rounded-2xl shadow-lg p-8 mb-6">
-                <div className="text-center mb-6">
-                  <h3 className="text-2xl font-bold text-gray-800 mb-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-2xl font-bold text-gray-800 flex-1">
                     {currentQuestion.question_text}
                   </h3>
+                  <div className="flex items-center space-x-4 ml-6">
+                    {gameState?.is_game_active && !gameState?.is_paused && (
+                      <div className={`w-16 h-16 rounded-full flex items-center justify-center text-sm font-bold ${
+                        displayTimeLeft > 10000 ? 'bg-green-100 text-green-700' :
+                        displayTimeLeft > 5000 ? 'bg-yellow-100 text-yellow-700' :
+                        'bg-red-100 text-red-700'
+                      }`}>
+                        <div className="text-center">
+                          <div className="text-base">{Math.floor(displayTimeLeft / 1000)}</div>
+                          <div className="text-xs">.{String(displayTimeLeft % 1000).padStart(3, '0')}</div>
+                        </div>
+                      </div>
+                    )}
+                    <div className="text-center">
+                      <div className="text-xl font-bold text-blue-600">{currentQuestionAnswerCount}</div>
+                      <div className="text-xs text-gray-600">已答題</div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
