@@ -340,8 +340,15 @@ export default function GameLivePage() {
                                 {option.key}
                               </div>
                               <div className="flex-1">
-                                <div className="text-3xl font-bold text-gray-800">{distribution?.count || 0}</div>
-                                <div className="text-sm text-gray-600">人選擇</div>
+                                {/* 只在倒數結束後顯示人數統計 */}
+                                {timeLeft <= 0 ? (
+                                  <>
+                                    <div className="text-3xl font-bold text-gray-800">{distribution?.count || 0}</div>
+                                    <div className="text-sm text-gray-600">人選擇</div>
+                                  </>
+                                ) : (
+                                  <div className="text-3xl font-bold text-gray-400">?</div>
+                                )}
                                 {timeLeft <= 0 && isCorrect && (
                                   <div className="text-green-600 font-semibold text-sm mt-1">✅ 正確答案</div>
                                 )}
