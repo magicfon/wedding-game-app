@@ -216,6 +216,22 @@ export async function POST(request: Request) {
             updated_at: new Date().toISOString()
           })
           .eq('id', 1);
+
+        // 清空所有用戶的加入狀態（向下兼容）
+        try {
+          await supabase
+            .from('users')
+            .update({
+              is_in_quiz_page: false,
+              updated_at: new Date().toISOString()
+            })
+            .neq('line_id', ''); // 更新所有用戶
+        } catch (error) {
+          // 如果 is_in_quiz_page 欄位不存在，忽略錯誤
+          console.log('⚠️ is_in_quiz_page 欄位可能不存在，跳過清空加入狀態');
+        }
+
+        actionDetails = { game_ended: true, cleared_join_status: true };
         break;
 
       case 'reset_game':
@@ -225,13 +241,25 @@ export async function POST(request: Request) {
           .delete()
           .neq('id', 0); // 刪除所有記錄
 
-        // 重置用戶分數
-        await supabase
-          .from('users')
-          .update({ 
-            total_score: 0
-          })
-          .neq('line_id', '');
+        // 重置用戶分數並清空加入狀態（向下兼容）
+        try {
+          await supabase
+            .from('users')
+            .update({ 
+              total_score: 0,
+              is_in_quiz_page: false
+            })
+            .neq('line_id', '');
+        } catch (error) {
+          // 如果 is_in_quiz_page 欄位不存在，只重置分數
+          console.log('⚠️ is_in_quiz_page 欄位可能不存在，只重置用戶分數');
+          await supabase
+            .from('users')
+            .update({ 
+              total_score: 0
+            })
+            .neq('line_id', '');
+        }
 
         // 檢查表格結構以準備重置資料
         const { data: gameStateForReset } = await supabase
@@ -264,7 +292,7 @@ export async function POST(request: Request) {
           .update(resetUpdateData)
           .eq('id', 1);
 
-        actionDetails = { reset_complete: true, stage: 'waiting_for_players' };
+        actionDetails = { reset_complete: true, stage: 'waiting_for_players', cleared_join_status: true };
         break;
 
       default:
