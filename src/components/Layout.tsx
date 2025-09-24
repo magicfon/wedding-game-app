@@ -196,7 +196,7 @@ export default function Layout({ children, title, showNavigation = true }: Layou
       )}
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-4">
         {children}
       </main>
     </div>

@@ -279,8 +279,8 @@ export default function GameLivePage() {
             {/* 題目和答題分佈 */}
             <div className="lg:col-span-2">
               {/* 當前題目 */}
-              <div className="bg-white rounded-2xl shadow-lg p-8 mb-6">
-                <div className="flex items-center justify-between mb-6">
+              <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+                <div className="flex items-center justify-between mb-4">
                   <h3 className="text-2xl font-bold text-gray-800 flex-1">
                     {currentQuestion.question_text}
                   </h3>
