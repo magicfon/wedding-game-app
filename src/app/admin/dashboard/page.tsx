@@ -394,9 +394,20 @@ export default function AdminDashboard() {
                 className="flex items-center space-x-2 bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg transition-colors"
               >
                 <PlayCircle className="w-4 h-4" />
-                <span>開始遊戲</span>
+                <span>遊戲開始</span>
+              </button>
+            ) : gameState?.is_waiting_for_players ? (
+              // 等待階段：顯示開始出題按鈕
+              <button
+                onClick={() => controlGame('start_first_question')}
+                disabled={gameLoading}
+                className="flex items-center space-x-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg transition-colors"
+              >
+                <Play className="w-4 h-4" />
+                <span>開始出題</span>
               </button>
             ) : (
+              // 答題階段：顯示傳統控制按鈕
               <>
                 {isPaused ? (
                   <button
@@ -426,16 +437,19 @@ export default function AdminDashboard() {
                   <SkipForward className="w-4 h-4" />
                   <span>下一題</span>
                 </button>
-
-                <button
-                  onClick={() => controlGame('end_game')}
-                  disabled={gameLoading}
-                  className="flex items-center space-x-2 bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg transition-colors"
-                >
-                  <Square className="w-4 h-4" />
-                  <span>結束遊戲</span>
-                </button>
               </>
+            )}
+
+            {/* 通用控制按鈕 */}
+            {isGameActive && (
+              <button
+                onClick={() => controlGame('end_game')}
+                disabled={gameLoading}
+                className="flex items-center space-x-2 bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg transition-colors"
+              >
+                <Square className="w-4 h-4" />
+                <span>結束遊戲</span>
+              </button>
             )}
 
             <button

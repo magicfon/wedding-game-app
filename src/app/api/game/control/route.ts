@@ -23,7 +23,25 @@ export async function POST(request: Request) {
 
     switch (action) {
       case 'start_game':
-        // 開始遊戲 - 設定第一題
+        // 開始遊戲 - 進入等待玩家階段
+        result = await supabase
+          .from('game_state')
+          .upsert({
+            id: 1,
+            is_game_active: true,
+            is_waiting_for_players: true,
+            is_paused: false,
+            current_question_id: null,
+            question_start_time: null,
+            qr_code_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/quiz`,
+            updated_at: new Date().toISOString()
+          });
+
+        actionDetails = { stage: 'waiting_for_players' };
+        break;
+
+      case 'start_first_question':
+        // 開始第一題 - 從等待階段進入答題階段
         const { data: firstQuestion } = await supabase
           .from('questions')
           .select('id')
@@ -36,21 +54,17 @@ export async function POST(request: Request) {
           return NextResponse.json({ error: '沒有可用的題目' }, { status: 400 });
         }
 
-        const sessionId = `game_${Date.now()}_${Math.random().toString(36).substring(2)}`;
-        
         result = await supabase
           .from('game_state')
-          .upsert({
-            id: 1,
+          .update({
+            is_waiting_for_players: false,
             current_question_id: firstQuestion.id,
-            is_game_active: true,
-            is_paused: false,
             question_start_time: new Date().toISOString(),
-            completed_questions: 0,
-            game_session_id: sessionId
-          });
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', 1);
 
-        actionDetails = { question_id: firstQuestion.id };
+        actionDetails = { question_id: firstQuestion.id, stage: 'first_question_started' };
         break;
 
       case 'pause_game':
@@ -174,7 +188,7 @@ export async function POST(request: Request) {
         break;
 
       case 'reset_game':
-        // 重置遊戲 - 清空所有答題記錄
+        // 重置遊戲 - 清空所有答題記錄，回到等待階段
         await supabase
           .from('answer_records')
           .delete()
@@ -191,16 +205,18 @@ export async function POST(request: Request) {
         result = await supabase
           .from('game_state')
           .update({
-            is_game_active: false,
+            is_game_active: true,
+            is_waiting_for_players: true,
             is_paused: false,
             current_question_id: null,
-            completed_questions: 0,
-            game_session_id: `reset_${Date.now()}_${Math.random().toString(36).substring(2)}`,
+            question_start_time: null,
+            total_questions: 0,
+            qr_code_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/quiz`,
             updated_at: new Date().toISOString()
           })
           .eq('id', 1);
 
-        actionDetails = { reset_complete: true };
+        actionDetails = { reset_complete: true, stage: 'waiting_for_players' };
         break;
 
       default:

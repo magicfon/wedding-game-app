@@ -19,12 +19,13 @@ export interface GameState {
   id: number;
   current_question_id: number | null;
   is_game_active: boolean;
+  is_waiting_for_players: boolean;
   is_paused: boolean;
   question_start_time: string | null;
   question_duration: number;
   completed_questions: number;
   total_questions: number;
-  game_session_id: string;
+  qr_code_url: string | null;
   questions: GameQuestion | null;
   time_remaining: number;
   created_at: string;
