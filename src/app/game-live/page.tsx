@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { createSupabaseBrowser } from '@/lib/supabase'
 import { useRealtimeGameState } from '@/hooks/useRealtimeGameState'
 import Layout from '@/components/Layout'
-import { Play, Pause, Users, Clock, HelpCircle, Zap, QrCode, UserPlus } from 'lucide-react'
+import { Play, Pause, Users, Clock, HelpCircle, Zap, QrCode, UserPlus, Trophy } from 'lucide-react'
 
 interface AnswerDistribution {
   answer: 'A' | 'B' | 'C' | 'D'
@@ -20,10 +20,19 @@ interface TopPlayer {
   is_correct: boolean
 }
 
+interface ScoreRanking {
+  line_id: string
+  display_name: string
+  avatar_url?: string
+  total_score: number
+}
+
 export default function GameLivePage() {
   
   const [answerDistribution, setAnswerDistribution] = useState<AnswerDistribution[]>([])
   const [topPlayers, setTopPlayers] = useState<TopPlayer[]>([])
+  const [scoreRankings, setScoreRankings] = useState<ScoreRanking[]>([])
+  const [showScoreRankings, setShowScoreRankings] = useState(false)
   const [timeLeft, setTimeLeft] = useState<number>(0)
   const [displayTimeLeft, setDisplayTimeLeft] = useState<number>(0)
   const [currentQuestionAnswerCount, setCurrentQuestionAnswerCount] = useState<number>(0)
@@ -73,6 +82,25 @@ export default function GameLivePage() {
       setCurrentQuestionAnswerCount(0)
     }
   }, [currentQuestion, supabase])
+
+  // 獲取分數排行榜
+  const fetchScoreRankings = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('line_id, display_name, avatar_url, total_score')
+        .gt('total_score', 0) // 只顯示有分數的用戶
+        .order('total_score', { ascending: false })
+        .order('join_time', { ascending: true }) // 同分時以加入時間排序
+        .limit(10) // 只顯示前10名
+      
+      if (error) throw error
+      setScoreRankings(data || [])
+    } catch (error) {
+      console.error('Error fetching score rankings:', error)
+      setScoreRankings([])
+    }
+  }, [supabase])
 
   // 獲取答題分佈
   const fetchAnswerDistribution = useCallback(async () => {
@@ -203,6 +231,7 @@ export default function GameLivePage() {
     if (currentQuestion) {
       // 強制重置狀態並清除 localStorage
       setShowingCorrectOnly(false)
+      setShowScoreRankings(false) // 重置分數排行榜顯示
       if (typeof window !== 'undefined') {
         localStorage.setItem('game-live-showing-correct-only', 'false');
       }
@@ -244,11 +273,17 @@ export default function GameLivePage() {
         fetchAnswerDistribution()
         fetchTopPlayers(false) // 倒數結束時先獲取所有玩家
         // 移除 fetchCurrentQuestionAnswerCount() - 時間結束後不會再有新答題
+        
+        // 5秒後顯示分數排行榜
+        setTimeout(() => {
+          fetchScoreRankings()
+          setShowScoreRankings(true)
+        }, 5000) // 5秒延遲
       }
     }, 1000) // 每秒同步一次
 
     return () => clearInterval(syncTimer)
-  }, [gameState, calculateTimeLeft, fetchAnswerDistribution, fetchTopPlayers, timeLeft])
+  }, [gameState, calculateTimeLeft, fetchAnswerDistribution, fetchTopPlayers, fetchScoreRankings, timeLeft])
 
   // 本機顯示計時器（100ms更新顯示，模擬毫秒變化）
   useEffect(() => {
@@ -398,13 +433,81 @@ export default function GameLivePage() {
               )}
             </div>
 
-            {/* 答題速度排行榜 */}
+            {/* 排行榜區域 */}
             <div className="lg:col-span-1">
               <div className="bg-white rounded-2xl shadow-lg p-6 sticky top-6">
-                <div className="flex items-center justify-center space-x-2 mb-6">
-                  <Zap className="w-6 h-6 text-yellow-500" />
-                  <h4 className="text-xl font-bold text-gray-800">⚡ 速度排行榜</h4>
-                </div>
+                {showScoreRankings ? (
+                  // 分數排行榜
+                  <>
+                    <div className="flex items-center justify-center space-x-2 mb-6">
+                      <Trophy className="w-6 h-6 text-purple-500" />
+                      <h4 className="text-xl font-bold text-gray-800">🏆 總分排行榜</h4>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      {scoreRankings.length === 0 ? (
+                        <div className="text-center py-8 text-gray-500">
+                          <Trophy className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                          <p>暫無分數記錄...</p>
+                        </div>
+                      ) : (
+                        scoreRankings.map((player, index) => (
+                          <div
+                            key={player.line_id}
+                            className={`flex items-center space-x-3 p-4 rounded-xl transition-all duration-500 ${
+                              index === 0 ? 'bg-gradient-to-r from-yellow-100 to-yellow-200 border-2 border-yellow-400 shadow-lg' :
+                              index === 1 ? 'bg-gradient-to-r from-gray-100 to-gray-200 border-2 border-gray-400 shadow-md' :
+                              index === 2 ? 'bg-gradient-to-r from-orange-100 to-orange-200 border-2 border-orange-400 shadow-md' :
+                              'bg-gray-50 border border-gray-200'
+                            }`}
+                          >
+                            <div className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold ${
+                              index === 0 ? 'bg-gradient-to-br from-yellow-400 to-yellow-600 text-white shadow-lg' :
+                              index === 1 ? 'bg-gradient-to-br from-gray-400 to-gray-600 text-white shadow-md' :
+                              index === 2 ? 'bg-gradient-to-br from-orange-400 to-orange-600 text-white shadow-md' :
+                              'bg-gradient-to-br from-blue-400 to-blue-600 text-white'
+                            }`}>
+                              {index + 1}
+                            </div>
+                            
+                            {player.avatar_url ? (
+                              <img 
+                                src={player.avatar_url} 
+                                alt={player.display_name} 
+                                className="w-14 h-14 rounded-full border-2 border-white shadow-md" 
+                              />
+                            ) : (
+                              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center text-lg font-bold text-white">
+                                {player.display_name?.charAt(0) || '?'}
+                              </div>
+                            )}
+                            
+                            <div className="flex-1 min-w-0">
+                              <div className="text-lg font-bold text-gray-800 truncate">
+                                {player.display_name}
+                              </div>
+                              <div className="text-xl font-bold text-purple-600">
+                                🎯 {player.total_score} 分
+                              </div>
+                            </div>
+                            
+                            {index < 3 && (
+                              <div className="text-2xl">
+                                {index === 0 ? '👑' : index === 1 ? '🥈' : '🥉'}
+                              </div>
+                            )}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  // 速度排行榜
+                  <>
+                    <div className="flex items-center justify-center space-x-2 mb-6">
+                      <Zap className="w-6 h-6 text-yellow-500" />
+                      <h4 className="text-xl font-bold text-gray-800">⚡ 速度排行榜</h4>
+                    </div>
                 
                 <div className="space-y-3">
                   {topPlayers.length === 0 ? (
@@ -470,6 +573,8 @@ export default function GameLivePage() {
                     })
                   )}
                 </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
