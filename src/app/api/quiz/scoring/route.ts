@@ -176,8 +176,14 @@ async function calculateScore({
     return result
   }
 
-  // 處理答對情況
-  result.base_score = question.base_score || 100
+  // 處理答對情況 - 優先使用管理界面設定的 points
+  result.base_score = question.points || question.base_score || 100
+  console.log('📊 基礎分數計算:', {
+    question_id: question.id,
+    管理界面設定_points: question.points,
+    資料庫預設_base_score: question.base_score,
+    最終使用_base_score: result.base_score
+  })
 
   // 計算速度加成（基於剩餘時間比例）
   const totalTimeMs = question.time_limit * 1000

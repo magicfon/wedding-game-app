@@ -29,7 +29,8 @@ export interface Question {
   option_c: string
   option_d: string
   correct_answer: 'A' | 'B' | 'C' | 'D'
-  base_score: number
+  points: number  // 統一使用 points 作為基礎分數欄位
+  base_score?: number  // 向下相容，保留舊欄位
   penalty_enabled: boolean
   penalty_score: number
   timeout_penalty_enabled: boolean
