@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 檢查用戶是否已經答過這題
-    const { data: existingAnswer, error: existingError } = await supabase
+    const { data: existingAnswer } = await supabase
       .from('answer_records')
       .select('id')
       .eq('user_line_id', user_line_id)
@@ -72,8 +72,7 @@ export async function POST(request: NextRequest) {
       question,
       selected_answer,
       answer_time,
-      is_timeout,
-      supabase
+      is_timeout
     })
 
     // 記錄答題
@@ -117,14 +116,12 @@ async function calculateScore({
   question,
   selected_answer,
   answer_time,
-  is_timeout,
-  supabase
+  is_timeout
 }: {
   question: any
   selected_answer: 'A' | 'B' | 'C' | 'D' | null
   answer_time: number
   is_timeout: boolean
-  supabase: any
 }): Promise<ScoreCalculationResult> {
   const result: ScoreCalculationResult = {
     base_score: 0,
@@ -183,7 +180,7 @@ async function updateTopAnswerBonuses(question_id: number, supabase: any) {
     }
 
     // 為前三名添加額外加分
-    const updates = correctAnswers.map((record, index) => {
+    const updates = correctAnswers.map((record: any, index: number) => {
       const rankBonus = SCORING_RULES.TOP_ANSWER_BONUS[index] || 0
       const newScore = record.earned_score + rankBonus
       

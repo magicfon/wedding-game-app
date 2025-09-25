@@ -7,9 +7,6 @@ import {
   Plus, 
   Minus, 
   Trophy, 
-  User, 
-  Clock, 
-  AlertTriangle,
   CheckCircle,
   XCircle,
   History

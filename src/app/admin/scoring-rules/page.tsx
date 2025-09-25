@@ -1,13 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import AdminLayout from '@/components/AdminLayout'
 import { 
   Trophy, 
   Timer, 
   Target, 
   Award,
-  Settings,
   Save,
   RotateCcw,
   Info,
@@ -46,7 +45,7 @@ export default function ScoringRulesPage() {
       // 目前先顯示成功訊息
       await new Promise(resolve => setTimeout(resolve, 1000)) // 模擬保存
       showMessage('success', '計分規則已保存')
-    } catch (error) {
+    } catch {
       showMessage('error', '保存失敗')
     } finally {
       setLoading(false)

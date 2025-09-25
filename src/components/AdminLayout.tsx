@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { 
   Shield, 
@@ -11,7 +11,6 @@ import {
   Settings, 
   BarChart3,
   Home,
-  LogOut,
   Menu,
   X
 } from 'lucide-react'
