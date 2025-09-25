@@ -108,7 +108,6 @@ export async function GET(request: NextRequest) {
 
     // 計算累積分數（從最舊的記錄開始）
     const recordsWithCumulative = []
-    let cumulativeScore = 0
 
     // 先獲取用戶當前總分
     const { data: user, error: userError } = await supabase

@@ -249,7 +249,7 @@ export default function AdminLineMenuPage() {
               <div className="mt-6">
                 <h4 className="font-medium text-gray-900 mb-3">豐富選單列表</h4>
                 <div className="space-y-2">
-                  {menuStatus.richMenus.map((menu, index) => (
+                  {menuStatus.richMenus.map((menu) => (
                     <div key={menu.richMenuId} className="p-3 bg-gray-50 rounded-lg">
                       <div className="flex items-center justify-between">
                         <div>

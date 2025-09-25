@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { Client } from '@line/bot-sdk'
 
 // 設置 LINE Bot 選單
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
     const channelAccessToken = process.env.LINE_CHANNEL_ACCESS_TOKEN
     
@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
 }
 
 // 獲取當前選單狀態
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const channelAccessToken = process.env.LINE_CHANNEL_ACCESS_TOKEN
     
@@ -115,7 +115,7 @@ export async function GET(request: NextRequest) {
     let defaultRichMenuId = null
     try {
       defaultRichMenuId = await client.getDefaultRichMenuId()
-    } catch (error) {
+    } catch {
       console.log('No default rich menu set')
     }
 

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useLiff } from '@/hooks/useLiff'
 import { useRouter } from 'next/navigation'
 import Layout from '@/components/Layout'
-import { Trophy, Clock, TrendingUp, TrendingDown, Calendar, Award } from 'lucide-react'
+import { Trophy, TrendingUp, TrendingDown, Calendar, Award } from 'lucide-react'
 
 interface ScoreHistoryRecord {
   id: string
