@@ -85,19 +85,21 @@ export default function GameLivePage() {
 
   // 獲取分數排行榜
   const fetchScoreRankings = useCallback(async () => {
+    console.log('🏆 開始獲取分數排行榜...')
     try {
       const { data, error } = await supabase
         .from('users')
         .select('line_id, display_name, avatar_url, total_score')
-        .gt('total_score', 0) // 只顯示有分數的用戶
+        .gte('total_score', 0) // 顯示所有用戶，包括0分
         .order('total_score', { ascending: false })
         .order('join_time', { ascending: true }) // 同分時以加入時間排序
         .limit(10) // 只顯示前10名
       
       if (error) throw error
+      console.log('🏆 分數排行榜資料:', data)
       setScoreRankings(data || [])
     } catch (error) {
-      console.error('Error fetching score rankings:', error)
+      console.error('❌ 獲取分數排行榜錯誤:', error)
       setScoreRankings([])
     }
   }, [supabase])
@@ -275,7 +277,9 @@ export default function GameLivePage() {
         // 移除 fetchCurrentQuestionAnswerCount() - 時間結束後不會再有新答題
         
         // 5秒後顯示分數排行榜
+        console.log('⏰ 時間結束，5秒後將顯示分數排行榜')
         setTimeout(() => {
+          console.log('🏆 5秒已到，開始顯示分數排行榜')
           fetchScoreRankings()
           setShowScoreRankings(true)
         }, 5000) // 5秒延遲
@@ -439,16 +443,28 @@ export default function GameLivePage() {
                 {showScoreRankings ? (
                   // 分數排行榜
                   <>
-                    <div className="flex items-center justify-center space-x-2 mb-6">
-                      <Trophy className="w-6 h-6 text-purple-500" />
-                      <h4 className="text-xl font-bold text-gray-800">🏆 總分排行榜</h4>
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="flex items-center space-x-2">
+                        <Trophy className="w-6 h-6 text-purple-500" />
+                        <h4 className="text-xl font-bold text-gray-800">🏆 總分排行榜</h4>
+                      </div>
+                      <button
+                        onClick={() => {
+                          console.log('🔄 手動重新載入分數排行榜')
+                          fetchScoreRankings()
+                        }}
+                        className="text-xs bg-purple-100 hover:bg-purple-200 text-purple-700 px-3 py-1 rounded-lg transition-colors"
+                      >
+                        重新載入
+                      </button>
                     </div>
                     
                     <div className="space-y-3">
                       {scoreRankings.length === 0 ? (
                         <div className="text-center py-8 text-gray-500">
                           <Trophy className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                          <p>暫無分數記錄...</p>
+                          <p>載入分數排行榜中...</p>
+                          <p className="text-xs mt-2">如果持續沒有顯示，可能尚未有分數記錄</p>
                         </div>
                       ) : (
                         scoreRankings.map((player, index) => (
@@ -504,9 +520,21 @@ export default function GameLivePage() {
                 ) : (
                   // 速度排行榜
                   <>
-                    <div className="flex items-center justify-center space-x-2 mb-6">
-                      <Zap className="w-6 h-6 text-yellow-500" />
-                      <h4 className="text-xl font-bold text-gray-800">⚡ 速度排行榜</h4>
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="flex items-center space-x-2">
+                        <Zap className="w-6 h-6 text-yellow-500" />
+                        <h4 className="text-xl font-bold text-gray-800">⚡ 速度排行榜</h4>
+                      </div>
+                      <button
+                        onClick={() => {
+                          console.log('🧪 測試：手動切換到分數排行榜')
+                          fetchScoreRankings()
+                          setShowScoreRankings(true)
+                        }}
+                        className="text-xs bg-yellow-100 hover:bg-yellow-200 text-yellow-700 px-3 py-1 rounded-lg transition-colors"
+                      >
+                        測試分數榜
+                      </button>
                     </div>
                 
                 <div className="space-y-3">
