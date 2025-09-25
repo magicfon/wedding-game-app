@@ -76,6 +76,15 @@ export async function POST(request: NextRequest) {
     })
 
     // 記錄答題
+    console.log('💾 準備記錄答題:', {
+      user_line_id,
+      question_id,
+      selected_answer: is_timeout ? null : selected_answer,
+      answer_time,
+      is_correct: !is_timeout && selected_answer === question.correct_answer,
+      earned_score: scoreResult.final_score
+    })
+
     const { data: answerRecord, error: insertError } = await supabase
       .from('answer_records')
       .insert({
@@ -89,17 +98,36 @@ export async function POST(request: NextRequest) {
       .select()
       .single()
 
-    if (insertError) throw insertError
+    if (insertError) {
+      console.error('❌ 記錄答題失敗:', insertError)
+      throw insertError
+    }
+    
+    console.log('✅ 答題記錄已插入:', answerRecord)
 
     // 如果答對了，檢查是否需要給前三名額外加分
     if (!is_timeout && selected_answer === question.correct_answer) {
       await updateTopAnswerBonuses(question_id, supabase)
     }
 
+    // 檢查用戶總分是否已更新（觸發器應該會自動更新）
+    const { data: updatedUser, error: userError } = await supabase
+      .from('users')
+      .select('total_score')
+      .eq('line_id', user_line_id)
+      .single()
+
+    if (userError) {
+      console.error('⚠️ 無法檢查用戶分數更新:', userError)
+    } else {
+      console.log('📊 用戶當前總分:', updatedUser.total_score)
+    }
+
     return NextResponse.json({
       success: true,
       score_details: scoreResult,
       answer_record: answerRecord,
+      user_total_score: updatedUser?.total_score || 0,
       message: `獲得 ${scoreResult.final_score} 分！`
     })
   } catch (error) {
