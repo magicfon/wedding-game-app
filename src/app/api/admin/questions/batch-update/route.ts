@@ -21,26 +21,36 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // 構建更新條件
-    let query = supabase.from('questions')
+    // 構建更新資料
+    const updateData = {
+      timeout_penalty_enabled,
+      timeout_penalty_score,
+      updated_at: new Date().toISOString()
+    }
+
+    let updatedQuestions, updateError
 
     // 如果指定了特定題目ID，只更新這些題目
     if (question_ids && Array.isArray(question_ids) && question_ids.length > 0) {
-      query = query.update({
-        timeout_penalty_enabled,
-        timeout_penalty_score,
-        updated_at: new Date().toISOString()
-      }).in('id', question_ids)
+      const result = await supabase
+        .from('questions')
+        .update(updateData)
+        .in('id', question_ids)
+        .select()
+      
+      updatedQuestions = result.data
+      updateError = result.error
     } else {
       // 更新所有題目
-      query = query.update({
-        timeout_penalty_enabled,
-        timeout_penalty_score,
-        updated_at: new Date().toISOString()
-      }).neq('id', 0) // 更新所有ID不為0的題目（即所有題目）
+      const result = await supabase
+        .from('questions')
+        .update(updateData)
+        .neq('id', 0) // 更新所有ID不為0的題目（即所有題目）
+        .select()
+      
+      updatedQuestions = result.data
+      updateError = result.error
     }
-
-    const { data: updatedQuestions, error: updateError } = await query.select()
 
     if (updateError) {
       console.error('批量更新題目失敗:', updateError)
