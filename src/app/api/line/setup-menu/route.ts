@@ -16,7 +16,16 @@ export async function POST() {
       channelAccessToken,
     })
 
-    // 設置豐富選單
+    // 獲取 LIFF ID
+    const liffId = process.env.NEXT_PUBLIC_LIFF_ID
+    
+    if (!liffId) {
+      return NextResponse.json({ 
+        error: 'LIFF ID not configured. Please set NEXT_PUBLIC_LIFF_ID environment variable.' 
+      }, { status: 500 })
+    }
+
+    // 設置豐富選單 - 使用 LIFF URL
     const richMenu = {
       size: {
         width: 2500,
@@ -30,42 +39,42 @@ export async function POST() {
           bounds: { x: 0, y: 0, width: 833, height: 843 },
           action: { 
             type: "uri" as const, 
-            uri: `https://wedding-game-app.vercel.app/login?redirect=game-live`
+            uri: `https://liff.line.me/${liffId}/game-live`
           }
         },
         {
           bounds: { x: 833, y: 0, width: 834, height: 843 },
           action: { 
             type: "uri" as const, 
-            uri: `https://wedding-game-app.vercel.app/login?redirect=quiz`
+            uri: `https://liff.line.me/${liffId}/quiz`
           }
         },
         {
           bounds: { x: 1667, y: 0, width: 833, height: 843 },
           action: { 
             type: "uri" as const, 
-            uri: `https://wedding-game-app.vercel.app/login?redirect=photo-upload`
+            uri: `https://liff.line.me/${liffId}/photo-upload`
           }
         },
         {
           bounds: { x: 0, y: 843, width: 833, height: 843 },
           action: { 
             type: "uri" as const, 
-            uri: `https://wedding-game-app.vercel.app/login?redirect=photo-wall`
+            uri: `https://liff.line.me/${liffId}/photo-wall`
           }
         },
         {
           bounds: { x: 833, y: 843, width: 834, height: 843 },
           action: { 
             type: "uri" as const, 
-            uri: `https://wedding-game-app.vercel.app/login?redirect=leaderboard`
+            uri: `https://liff.line.me/${liffId}/leaderboard`
           }
         },
         {
           bounds: { x: 1667, y: 843, width: 833, height: 843 },
           action: { 
             type: "uri" as const, 
-            uri: `https://wedding-game-app.vercel.app/login?redirect=score-history`
+            uri: `https://liff.line.me/${liffId}/score-history`
           }
         }
       ]

@@ -162,14 +162,14 @@ export default function AdminLineMenuPage() {
             </button>
           </div>
 
-          {/* 新的登入流程說明 */}
-          <div className="bg-blue-50 p-4 rounded-lg mb-6">
-            <h3 className="font-semibold text-blue-900 mb-2">🔧 新的登入流程</h3>
-            <div className="text-blue-800 text-sm space-y-2">
-              <p>• 使用通用登入 URL，每個用戶都能獨立登入</p>
-              <p>• 不再依賴 LIFF URL，避免用戶間授權衝突</p>
-              <p>• 支援自動重定向到目標功能頁面</p>
-              <p>• 所有用戶都可以正常使用 LINE Bot 選單</p>
+          {/* LIFF 登入流程說明 */}
+          <div className="bg-green-50 p-4 rounded-lg mb-6">
+            <h3 className="font-semibold text-green-900 mb-2">🔧 LIFF 登入流程</h3>
+            <div className="text-green-800 text-sm space-y-2">
+              <p>• 使用 LIFF URL，每個用戶用自己的 LINE 帳號自動登入</p>
+              <p>• 無需額外授權步驟，直接在 LINE 內開啟遊戲</p>
+              <p>• 自動獲取用戶 LINE 資訊（姓名、頭像等）</p>
+              <p>• 提供最佳的 LINE 用戶體驗</p>
             </div>
           </div>
 
@@ -180,7 +180,7 @@ export default function AdminLineMenuPage() {
                 <span className="font-medium text-gray-900">🎮 遊戲實況</span>
                 <ExternalLink className="w-4 h-4 text-gray-500" />
               </div>
-              <p className="text-sm text-gray-600">/login?redirect=game-live</p>
+              <p className="text-sm text-gray-600">https://liff.line.me/{'{LIFF_ID}'}/game-live</p>
             </div>
             
             <div className="bg-gray-50 p-4 rounded-lg">
@@ -188,7 +188,7 @@ export default function AdminLineMenuPage() {
                 <span className="font-medium text-gray-900">❓ 快問快答</span>
                 <ExternalLink className="w-4 h-4 text-gray-500" />
               </div>
-              <p className="text-sm text-gray-600">/login?redirect=quiz</p>
+              <p className="text-sm text-gray-600">https://liff.line.me/{'{LIFF_ID}'}/quiz</p>
             </div>
             
             <div className="bg-gray-50 p-4 rounded-lg">
@@ -196,7 +196,7 @@ export default function AdminLineMenuPage() {
                 <span className="font-medium text-gray-900">📸 照片上傳</span>
                 <ExternalLink className="w-4 h-4 text-gray-500" />
               </div>
-              <p className="text-sm text-gray-600">/login?redirect=photo-upload</p>
+              <p className="text-sm text-gray-600">https://liff.line.me/{'{LIFF_ID}'}/photo-upload</p>
             </div>
             
             <div className="bg-gray-50 p-4 rounded-lg">
@@ -204,7 +204,7 @@ export default function AdminLineMenuPage() {
                 <span className="font-medium text-gray-900">🖼️ 照片牆</span>
                 <ExternalLink className="w-4 h-4 text-gray-500" />
               </div>
-              <p className="text-sm text-gray-600">/login?redirect=photo-wall</p>
+              <p className="text-sm text-gray-600">https://liff.line.me/{'{LIFF_ID}'}/photo-wall</p>
             </div>
             
             <div className="bg-gray-50 p-4 rounded-lg">
@@ -212,7 +212,7 @@ export default function AdminLineMenuPage() {
                 <span className="font-medium text-gray-900">🏆 排行榜</span>
                 <ExternalLink className="w-4 h-4 text-gray-500" />
               </div>
-              <p className="text-sm text-gray-600">/login?redirect=leaderboard</p>
+              <p className="text-sm text-gray-600">https://liff.line.me/{'{LIFF_ID}'}/leaderboard</p>
             </div>
             
             <div className="bg-gray-50 p-4 rounded-lg">
@@ -220,7 +220,7 @@ export default function AdminLineMenuPage() {
                 <span className="font-medium text-gray-900">📊 積分歷史</span>
                 <ExternalLink className="w-4 h-4 text-gray-500" />
               </div>
-              <p className="text-sm text-gray-600">/login?redirect=score-history</p>
+              <p className="text-sm text-gray-600">https://liff.line.me/{'{LIFF_ID}'}/score-history</p>
             </div>
           </div>
         </div>

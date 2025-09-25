@@ -24,9 +24,16 @@ function validateSignature(body: string, signature: string): boolean {
   return hash === signature
 }
 
-// 主選單訊息 - 使用通用登入 URL
+// 主選單訊息 - 使用 LIFF URL
 const getMainMenuMessage = () => {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://wedding-game-app.vercel.app'
+  const liffId = process.env.NEXT_PUBLIC_LIFF_ID
+  
+  if (!liffId) {
+    return {
+      type: 'text' as const,
+      text: '⚠️ 系統設定錯誤：LIFF ID 未配置\n請聯絡管理員'
+    }
+  }
   
   return {
     type: 'text' as const,
@@ -35,28 +42,28 @@ const getMainMenuMessage = () => {
 請點擊以下連結參與各種精彩活動：
 
 🎮 遊戲實況：
-${baseUrl}/login?redirect=game-live
+https://liff.line.me/${liffId}/game-live
 
 ❓ 快問快答：
-${baseUrl}/login?redirect=quiz
+https://liff.line.me/${liffId}/quiz
 
 📸 照片上傳：
-${baseUrl}/login?redirect=photo-upload
+https://liff.line.me/${liffId}/photo-upload
 
 🖼️ 照片牆：
-${baseUrl}/login?redirect=photo-wall
+https://liff.line.me/${liffId}/photo-wall
 
 ❤️ 快門傳情：
-${baseUrl}/login?redirect=photo-slideshow
+https://liff.line.me/${liffId}/photo-slideshow
 
 🏆 排行榜：
-${baseUrl}/login?redirect=leaderboard
+https://liff.line.me/${liffId}/leaderboard
 
 📊 積分歷史：
-${baseUrl}/login?redirect=score-history
+https://liff.line.me/${liffId}/score-history
 
 🏠 回到首頁：
-${baseUrl}/login
+https://liff.line.me/${liffId}
 
 輸入「選單」可重新顯示此訊息
 輸入「幫助」查看詳細說明`
