@@ -28,6 +28,7 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
   const adminMenuItems = [
     { name: '控制台', href: '/admin/dashboard', icon: BarChart3 },
     { name: '題目管理', href: '/admin/questions', icon: HelpCircle },
+    { name: '批量設定', href: '/admin/batch-settings', icon: Settings },
     { name: '分數管理', href: '/admin/scores', icon: Trophy },
     { name: '計分規則', href: '/admin/scoring-rules', icon: Settings },
     { name: '用戶管理', href: '/admin/users', icon: Users },
