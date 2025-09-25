@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { Client } from '@line/bot-sdk'
 
 // 設置 LINE Bot 選單

@@ -63,12 +63,17 @@ export async function GET(request: NextRequest) {
 
     // 處理答題記錄
     if (answerRecords) {
-      answerRecords.forEach(record => {
+      answerRecords.forEach((record: any) => {
+        const questionData = record.questions
+        const questionText = questionData && typeof questionData === 'object' && 'question_text' in questionData 
+          ? questionData.question_text 
+          : '未知題目'
+        
         allRecords.push({
           id: `answer_${record.id}`,
           type: 'answer',
           score_change: record.earned_score,
-          description: `答題：${record.questions?.question_text || '未知題目'}`,
+          description: `答題：${questionText}`,
           details: {
             question_id: record.question_id,
             selected_answer: record.selected_answer,
