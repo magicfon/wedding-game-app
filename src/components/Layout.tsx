@@ -61,6 +61,7 @@ export default function Layout({ children, title, showNavigation = true }: Layou
     { name: '照片牆', href: '/photo-wall', icon: Heart },
     { name: '快門傳情', href: '/photo-slideshow', icon: Heart },
     { name: '排行榜', href: '/leaderboard', icon: Trophy },
+    { name: '積分歷史', href: '/score-history', icon: Trophy },
   ]
 
   const handleSignOut = async () => {
