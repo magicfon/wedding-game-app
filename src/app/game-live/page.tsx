@@ -96,7 +96,7 @@ export default function GameLivePage() {
         .limit(10) // 只顯示前10名
       
       if (error) throw error
-      console.log('🏆 分數排行榜資料:', data)
+      console.log('🏆 分數排行榜資料:', JSON.stringify(data, null, 2))
       setScoreRankings(data || [])
     } catch (error) {
       console.error('❌ 獲取分數排行榜錯誤:', error)
