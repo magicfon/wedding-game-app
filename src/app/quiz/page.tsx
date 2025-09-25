@@ -86,24 +86,32 @@ export default function QuizPage() {
     setHasAnswered(true)
     
     try {
-      const { error } = await supabase
-        .from('answer_records')
-        .insert({
+      // 使用新的計分 API 處理超時
+      const response = await fetch('/api/quiz/scoring', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           user_line_id: profile.userId,
           question_id: currentQuestion.id,
           selected_answer: null,
           answer_time: currentQuestion.time_limit * 1000,
-          is_correct: false,
-          earned_score: currentQuestion.timeout_penalty_enabled ? -currentQuestion.timeout_penalty_score : 0
+          is_timeout: true
         })
+      })
 
-      if (error) throw error
+      const result = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(result.error || '提交超時記錄失敗')
+      }
 
-      // 超時記錄，不顯示結果
+      console.log('⏰ 超時記錄已提交:', result.message)
     } catch (error) {
       console.error('Error recording timeout:', error)
     }
-  }, [profile, currentQuestion, hasAnswered, supabase])
+  }, [profile, currentQuestion, hasAnswered])
 
   // 倒數計時器
   useEffect(() => {
@@ -134,33 +142,36 @@ export default function QuizPage() {
     const remainingTimeMs = calculateTimeLeft() // 剩餘毫秒數
     const totalTimeMs = currentQuestion.time_limit * 1000 // 總時間毫秒數
     const answerTime = Math.max(0, totalTimeMs - remainingTimeMs) // 已用時間毫秒數
-    const isCorrect = answer === currentQuestion.correct_answer
-    
-    let earnedScore = 0
-    if (isCorrect) {
-      // 計算得分：基礎分數 + 速度加成（基於剩餘時間比例）
-      const timeRatio = remainingTimeMs > 0 ? remainingTimeMs / totalTimeMs : 0
-      const speedBonus = Math.floor(timeRatio * currentQuestion.base_score * 0.5)
-      earnedScore = currentQuestion.base_score + speedBonus
-    } else if (currentQuestion.penalty_enabled) {
-      earnedScore = -currentQuestion.penalty_score
-    }
 
     try {
-      const { error } = await supabase
-        .from('answer_records')
-        .insert({
+      // 使用新的計分 API 處理答題
+      const response = await fetch('/api/quiz/scoring', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           user_line_id: profile.userId,
           question_id: currentQuestion.id,
           selected_answer: answer,
           answer_time: answerTime,
-          is_correct: isCorrect,
-          earned_score: earnedScore
+          is_timeout: false
         })
+      })
 
-      if (error) throw error
+      const result = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(result.error || '提交答案失敗')
+      }
 
-      // 答題成功，不顯示結果，只記錄選擇
+      console.log('✅ 答題提交成功:', result.message)
+      
+      // 可以在這裡顯示得分詳情（如果需要的話）
+      if (result.score_details) {
+        const { base_score, speed_bonus, rank_bonus, final_score } = result.score_details
+        console.log(`📊 得分詳情: 基礎分數 ${base_score} + 速度加成 ${speed_bonus} + 排名加分 ${rank_bonus} = ${final_score}`)
+      }
     } catch (error) {
       console.error('Error submitting answer:', error)
     }
