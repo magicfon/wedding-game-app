@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createSupabaseServer } from '@/lib/supabase'
+import { createSupabaseServer } from '@/lib/supabase-server'
 
 // 獲取用戶分數和調整記錄
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createSupabaseServer()
+    const supabase = await createSupabaseServer()
     const { searchParams } = new URL(request.url)
     const type = searchParams.get('type') || 'users'
 
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
 // 調整用戶分數
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createSupabaseServer()
+    const supabase = await createSupabaseServer()
     const body = await request.json()
     
     const { user_line_id, adjustment_score, reason, admin_id } = body
@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
 // 批量調整分數
 export async function PATCH(request: NextRequest) {
   try {
-    const supabase = createSupabaseServer()
+    const supabase = await createSupabaseServer()
     const body = await request.json()
     
     const { adjustments, admin_id } = body
