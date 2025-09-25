@@ -24,9 +24,9 @@ function validateSignature(body: string, signature: string): boolean {
   return hash === signature
 }
 
-// 主選單訊息 - 使用 LIFF URL
+// 主選單訊息 - 使用通用登入 URL
 const getMainMenuMessage = () => {
-  const liffId = process.env.LIFF_ID || 'your-liff-id'
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://wedding-game-app.vercel.app'
   
   return {
     type: 'text' as const,
@@ -35,25 +35,28 @@ const getMainMenuMessage = () => {
 請點擊以下連結參與各種精彩活動：
 
 🎮 遊戲實況：
-https://liff.line.me/${liffId}/game-live
+${baseUrl}/login?redirect=game-live
 
 ❓ 快問快答：
-https://liff.line.me/${liffId}/quiz
+${baseUrl}/login?redirect=quiz
 
 📸 照片上傳：
-https://liff.line.me/${liffId}/photo-upload
+${baseUrl}/login?redirect=photo-upload
 
 🖼️ 照片牆：
-https://liff.line.me/${liffId}/photo-wall
+${baseUrl}/login?redirect=photo-wall
 
 ❤️ 快門傳情：
-https://liff.line.me/${liffId}/photo-slideshow
+${baseUrl}/login?redirect=photo-slideshow
 
 🏆 排行榜：
-https://liff.line.me/${liffId}/leaderboard
+${baseUrl}/login?redirect=leaderboard
+
+📊 積分歷史：
+${baseUrl}/login?redirect=score-history
 
 🏠 回到首頁：
-https://liff.line.me/${liffId}
+${baseUrl}/login
 
 輸入「選單」可重新顯示此訊息
 輸入「幫助」查看詳細說明`

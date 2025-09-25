@@ -43,7 +43,10 @@ function LineAuthContent() {
             //   password: data.user.line_id
             // })
 
-            router.push('/?login=success')
+            // 檢查是否有重定向路徑
+            const redirectPath = state || '/'
+            console.log('Redirecting to:', redirectPath)
+            router.push(redirectPath + (redirectPath.includes('?') ? '&' : '?') + 'login=success')
           } else {
             const errorData = await response.json()
             console.error('Line auth API error:', errorData)
