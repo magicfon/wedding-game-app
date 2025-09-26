@@ -52,7 +52,13 @@ export async function POST(request: NextRequest) {
       timeout_penalty_score = 0,
       speed_bonus_enabled = true,
       max_bonus_points = 5,
-      created_by
+      created_by,
+      // 媒體支援欄位
+      media_type = 'text',
+      media_url,
+      media_thumbnail_url,
+      media_alt_text,
+      media_duration
     } = body
 
     // 驗證必填欄位
@@ -84,7 +90,13 @@ export async function POST(request: NextRequest) {
         timeout_penalty_score,
         speed_bonus_enabled,
         max_bonus_points,
-        created_by
+        created_by,
+        // 媒體支援欄位
+        media_type,
+        media_url,
+        media_thumbnail_url,
+        media_alt_text,
+        media_duration
       })
       .select()
       .single()

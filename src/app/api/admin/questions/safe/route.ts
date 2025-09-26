@@ -17,7 +17,13 @@ export async function POST(request: NextRequest) {
       option_d,
       correct_answer,
       points = 10,
-      created_by
+      created_by,
+      // 媒體支援欄位
+      media_type = 'text',
+      media_url,
+      media_thumbnail_url,
+      media_alt_text,
+      media_duration
     } = body
 
     // 驗證必填欄位
@@ -33,7 +39,7 @@ export async function POST(request: NextRequest) {
     console.log('🔌 Creating Supabase admin client...')
     const supabase = createSupabaseAdmin()
 
-    // 只插入基本欄位，避免欄位不存在的錯誤
+    // 插入基本欄位和媒體欄位
     const basicData = {
       question_text,
       option_a,
@@ -42,7 +48,13 @@ export async function POST(request: NextRequest) {
       option_d,
       correct_answer,
       points,
-      is_active: true
+      is_active: true,
+      // 媒體支援欄位
+      media_type,
+      media_url,
+      media_thumbnail_url,
+      media_alt_text,
+      media_duration
     }
 
     console.log('💾 Attempting to insert basic data:', basicData)

@@ -37,26 +37,13 @@ export function useRealtimeGameState() {
 
       // 如果有當前題目，獲取題目詳情
       if (gameData?.current_question_id) {
-        console.log('🔍 Fetching question details for ID:', gameData.current_question_id)
         const { data: questionData, error: questionError } = await supabase
           .from('questions')
           .select('*')
           .eq('id', gameData.current_question_id)
           .single()
 
-        if (questionError) {
-          console.error('❌ Question fetch error:', questionError)
-          throw questionError
-        }
-        
-        console.log('📝 Question data fetched:', {
-          id: questionData?.id,
-          question_text: questionData?.question_text?.substring(0, 50) + '...',
-          media_type: questionData?.media_type,
-          media_url: questionData?.media_url,
-          hasMediaUrl: !!questionData?.media_url
-        })
-        
+        if (questionError) throw questionError
         setCurrentQuestion(questionData)
       } else {
         setCurrentQuestion(null)
