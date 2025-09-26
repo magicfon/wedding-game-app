@@ -241,6 +241,17 @@ export async function POST(request: Request) {
           .delete()
           .neq('id', 0); // 刪除所有記錄
 
+        // 清空所有分數調整記錄
+        try {
+          await supabase
+            .from('score_adjustments')
+            .delete()
+            .neq('id', 0); // 刪除所有分數調整記錄
+          console.log('✅ 已清空所有分數調整記錄');
+        } catch (error) {
+          console.log('⚠️ 清空分數調整記錄時出錯，可能表格不存在:', error);
+        }
+
         // 重置用戶分數並清空加入狀態（向下兼容）
         try {
           await supabase
@@ -250,6 +261,7 @@ export async function POST(request: Request) {
               is_in_quiz_page: false
             })
             .neq('line_id', '');
+          console.log('✅ 已重置所有用戶分數為 0');
         } catch (error) {
           // 如果 is_in_quiz_page 欄位不存在，只重置分數
           console.log('⚠️ is_in_quiz_page 欄位可能不存在，只重置用戶分數');
@@ -259,6 +271,7 @@ export async function POST(request: Request) {
               total_score: 0
             })
             .neq('line_id', '');
+          console.log('✅ 已重置所有用戶分數為 0（向下兼容模式）');
         }
 
         // 檢查表格結構以準備重置資料
@@ -292,7 +305,14 @@ export async function POST(request: Request) {
           .update(resetUpdateData)
           .eq('id', 1);
 
-        actionDetails = { reset_complete: true, stage: 'waiting_for_players', cleared_join_status: true };
+        actionDetails = { 
+          reset_complete: true, 
+          stage: 'waiting_for_players',
+          cleared_join_status: true,
+          cleared_answer_records: true,
+          cleared_score_adjustments: true,
+          reset_user_scores: true
+        };
         break;
 
       default:
