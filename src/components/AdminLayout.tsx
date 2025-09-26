@@ -12,7 +12,8 @@ import {
   BarChart3,
   Home,
   Menu,
-  X
+  X,
+  HardDrive
 } from 'lucide-react'
 
 interface AdminLayoutProps {
@@ -33,6 +34,7 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
     { name: '積分歷史', href: '/admin/score-history', icon: Trophy },
     { name: '計分規則', href: '/admin/scoring-rules', icon: Settings },
     { name: 'LINE 選單', href: '/admin/line-menu', icon: Settings },
+    { name: '媒體清理', href: '/admin/media-cleanup', icon: HardDrive },
     { name: '用戶管理', href: '/admin/users', icon: Users },
     { name: '照片管理', href: '/admin/photos', icon: Camera },
     { name: '系統設定', href: '/admin/settings', icon: Settings },
