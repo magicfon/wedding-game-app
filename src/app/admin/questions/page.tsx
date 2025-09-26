@@ -305,6 +305,54 @@ export default function QuestionsManagePage() {
     }
   }
 
+  // 媒體清理診斷函數
+  const handleMediaDiagnosis = async () => {
+    setCleanupLoading(true)
+    setCleanupResult(null)
+
+    try {
+      console.log('🔍 開始診斷媒體清理問題...')
+      
+      const response = await fetch('/api/debug/media-cleanup-debug')
+      const data = await response.json()
+      
+      if (data.success) {
+        const diagnosis = data.diagnosis
+        const message = `🔍 媒體清理診斷報告：
+
+📁 Storage 檔案：${diagnosis.storage_files.total} 個
+📋 資料庫題目：${diagnosis.database_questions.total} 個
+🎯 使用媒體的題目：${diagnosis.database_questions.with_media} 個
+🔗 使用中檔案：${diagnosis.file_analysis.used_count} 個
+🗑️ 未使用檔案：${diagnosis.file_analysis.unused_count} 個
+
+🔐 權限狀態：
+- Service Role Key：${diagnosis.permissions.service_role_key_exists ? '✅ 已設定' : '❌ 未設定'}
+
+📝 下一步：
+${diagnosis.next_steps.join('\n')}
+
+詳細資訊請查看瀏覽器控制台`
+        
+        setCleanupResult(message)
+        console.log('🔍 完整診斷結果:', data)
+        alert(message)
+      } else {
+        console.error('❌ 診斷失敗:', data.error)
+        const errorMessage = `❌ 診斷失敗：${data.error}`
+        setCleanupResult(errorMessage)
+        alert(errorMessage)
+      }
+    } catch (error) {
+      console.error('❌ 診斷錯誤:', error)
+      const errorMessage = '❌ 診斷時發生錯誤，請稍後再試'
+      setCleanupResult(errorMessage)
+      alert(errorMessage)
+    } finally {
+      setCleanupLoading(false)
+    }
+  }
+
   // 媒體清理函數
   const handleMediaCleanup = async () => {
     if (!confirm('確定要清理未使用的媒體檔案嗎？\n\n這個操作會刪除 Supabase Storage 中沒有被任何題目使用的媒體檔案，無法撤銷！')) {
@@ -479,13 +527,22 @@ export default function QuestionsManagePage() {
             </div>
             <div className="flex items-center space-x-2">
               <button
+                onClick={handleMediaDiagnosis}
+                disabled={cleanupLoading}
+                className="flex items-center space-x-2 bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg transition-colors disabled:opacity-50 text-sm"
+                title="診斷媒體清理問題"
+              >
+                <AlertCircle className="w-4 h-4" />
+                <span>診斷</span>
+              </button>
+              <button
                 onClick={handleMediaCleanup}
                 disabled={cleanupLoading}
                 className="flex items-center space-x-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition-colors disabled:opacity-50"
                 title="清理未使用的媒體檔案"
               >
                 <HardDrive className="w-4 h-4" />
-                <span>{cleanupLoading ? '清理中...' : '媒體清理'}</span>
+                <span>{cleanupLoading ? '處理中...' : '媒體清理'}</span>
               </button>
               <button
                 onClick={() => setShowForm(true)}
