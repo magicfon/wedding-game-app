@@ -159,7 +159,6 @@ export default function BatchSettingsPage() {
   const timeoutDisabledCount = questions.length - timeoutEnabledCount
   const penalty10Count = questions.filter(q => q.timeout_penalty_score === 10).length
   const timeLimit10Count = questions.filter(q => q.time_limit === 10).length
-  const timeLimit30Count = questions.filter(q => q.time_limit === 30).length
   const averageTimeLimit = questions.length > 0 ? Math.round(questions.reduce((sum, q) => sum + q.time_limit, 0) / questions.length) : 0
 
   return (

@@ -34,38 +34,40 @@ export default function LeaderboardPage() {
     getUser()
   }, [supabase.auth])
 
-  useEffect(() => {
-    const fetchLeaderboard = async (isManualRefresh = false) => {
-      try {
-        if (isManualRefresh) {
-          setRefreshing(true)
-        }
-        console.log('🔄 重新載入排行榜...')
-        const { data, error } = await supabase
-          .from('users')
-          .select('*')
-          .order('quiz_score', { ascending: false })
-          .order('join_time', { ascending: true })
-          .limit(50)
+  // 獲取排行榜數據的函數
+  const fetchLeaderboard = async (isManualRefresh = false) => {
+    try {
+      if (isManualRefresh) {
+        setRefreshing(true)
+      }
+      console.log('🔄 重新載入排行榜...')
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .order('quiz_score', { ascending: false })
+        .order('join_time', { ascending: true })
+        .limit(50)
 
-        if (error) throw error
-        console.log('📊 排行榜資料:', data?.map(u => ({ name: u.display_name, score: u.quiz_score })))
-        setUsers(data as UserScore[])
-        setLastUpdated(new Date())
-      } catch (error) {
-        console.error('Error fetching leaderboard:', error)
-      } finally {
-        setLoading(false)
-        if (isManualRefresh) {
-          setRefreshing(false)
-        }
+      if (error) throw error
+      console.log('📊 排行榜資料:', data?.map(u => ({ name: u.display_name, score: u.quiz_score })))
+      setUsers(data as UserScore[])
+      setLastUpdated(new Date())
+    } catch (error) {
+      console.error('Error fetching leaderboard:', error)
+    } finally {
+      setLoading(false)
+      if (isManualRefresh) {
+        setRefreshing(false)
       }
     }
+  }
 
-    // 手動刷新函數
-    const handleManualRefresh = () => {
-      fetchLeaderboard(true)
-    }
+  // 手動刷新函數
+  const handleManualRefresh = () => {
+    fetchLeaderboard(true)
+  }
+
+  useEffect(() => {
 
     fetchLeaderboard()
 
