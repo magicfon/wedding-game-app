@@ -328,11 +328,36 @@ export default function GameLivePage() {
             <div className="lg:col-span-2">
               {/* 當前題目 */}
               <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-2xl font-bold text-gray-800 flex-1">
-                    {currentQuestion.question_text}
-                  </h3>
-                  <div className="flex items-center space-x-4 ml-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1 mr-6">
+                    <h3 className="text-2xl font-bold text-gray-800 mb-4">
+                      {currentQuestion.question_text}
+                    </h3>
+                    
+                    {/* 媒體內容 */}
+                    {currentQuestion.media_url && (
+                      <div className="mt-4">
+                        {currentQuestion.media_type === 'image' && (
+                          <img
+                            src={currentQuestion.media_url}
+                            alt={currentQuestion.media_alt_text || '題目圖片'}
+                            className="max-w-full h-auto max-h-80 rounded-lg shadow-md"
+                          />
+                        )}
+                        {currentQuestion.media_type === 'video' && (
+                          <video
+                            src={currentQuestion.media_url}
+                            poster={currentQuestion.media_thumbnail_url}
+                            controls
+                            className="max-w-full h-auto max-h-80 rounded-lg shadow-md"
+                          >
+                            您的瀏覽器不支援影片播放
+                          </video>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center space-x-4">
                     {gameState?.is_game_active && !gameState?.is_paused && (
                       <div className={`w-16 h-16 rounded-full flex items-center justify-center text-sm font-bold ${
                         displayTimeLeft > 10000 ? 'bg-green-100 text-green-700' :

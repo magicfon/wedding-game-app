@@ -249,7 +249,13 @@ export default function QuestionsManagePage() {
       timeout_penalty_enabled: question.timeout_penalty_enabled,
       timeout_penalty_score: question.timeout_penalty_score,
       speed_bonus_enabled: question.speed_bonus_enabled,
-      max_bonus_points: question.max_bonus_points
+      max_bonus_points: question.max_bonus_points,
+      // 媒體欄位
+      media_type: question.media_type || 'text',
+      media_url: question.media_url,
+      media_thumbnail_url: question.media_thumbnail_url,
+      media_alt_text: question.media_alt_text,
+      media_duration: question.media_duration
     })
     setShowForm(true)
   }
@@ -517,6 +523,66 @@ export default function QuestionsManagePage() {
                     />
                   </div>
 
+                  {/* 媒體類型選擇 */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-900 mb-2">
+                      題目類型
+                    </label>
+                    <div className="grid grid-cols-3 gap-4">
+                      {[
+                        { value: 'text', label: '純文字', icon: FileText, color: 'gray' },
+                        { value: 'image', label: '圖片', icon: ImageIcon, color: 'blue' },
+                        { value: 'video', label: '影片', icon: Video, color: 'purple' }
+                      ].map(({ value, label, icon: Icon, color }) => (
+                        <button
+                          key={value}
+                          type="button"
+                          onClick={() => setFormData({ 
+                            ...formData, 
+                            media_type: value as 'text' | 'image' | 'video',
+                            // 清空媒體相關欄位如果改變類型
+                            ...(value !== formData.media_type && {
+                              media_url: undefined,
+                              media_thumbnail_url: undefined,
+                              media_alt_text: undefined,
+                              media_duration: undefined
+                            })
+                          })}
+                          className={`flex flex-col items-center p-4 rounded-lg border-2 transition-colors ${
+                            formData.media_type === value
+                              ? `border-${color}-500 bg-${color}-50 text-${color}-700`
+                              : 'border-gray-200 hover:border-gray-300 text-gray-600'
+                          }`}
+                        >
+                          <Icon className="w-8 h-8 mb-2" />
+                          <span className="font-medium">{label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 媒體上傳 */}
+                  {(formData.media_type === 'image' || formData.media_type === 'video') && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-900 mb-2">
+                        {formData.media_type === 'image' ? '圖片上傳' : '影片上傳'}
+                      </label>
+                      <MediaUpload
+                        mediaType={formData.media_type}
+                        currentMediaUrl={formData.media_url}
+                        currentThumbnailUrl={formData.media_thumbnail_url}
+                        currentAltText={formData.media_alt_text}
+                        onMediaChange={(data) => setFormData({
+                          ...formData,
+                          media_url: data.mediaUrl || undefined,
+                          media_thumbnail_url: data.thumbnailUrl || undefined,
+                          media_alt_text: data.altText || undefined
+                        })}
+                        disabled={loading}
+                      />
+                    </div>
+                  )}
+
                   {/* 選項 */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {(['A', 'B', 'C', 'D'] as const).map((option) => (
@@ -730,9 +796,56 @@ export default function QuestionsManagePage() {
                       </div>
                     </div>
                     
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                      {question.question_text}
-                    </h3>
+                    <div className="flex items-start space-x-3 mb-4">
+                      {/* 媒體類型圖標 */}
+                      <div className="flex-shrink-0 mt-1">
+                        {question.media_type === 'image' && (
+                          <div className="flex items-center text-blue-600">
+                            <ImageIcon className="w-5 h-5" />
+                          </div>
+                        )}
+                        {question.media_type === 'video' && (
+                          <div className="flex items-center text-purple-600">
+                            <Video className="w-5 h-5" />
+                          </div>
+                        )}
+                        {(!question.media_type || question.media_type === 'text') && (
+                          <div className="flex items-center text-gray-500">
+                            <FileText className="w-5 h-5" />
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* 題目內容 */}
+                      <div className="flex-1">
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          {question.question_text}
+                        </h3>
+                        
+                        {/* 媒體預覽 */}
+                        {question.media_url && (
+                          <div className="mt-3">
+                            {question.media_type === 'image' && (
+                              <img
+                                src={question.media_url}
+                                alt={question.media_alt_text || '題目圖片'}
+                                className="max-w-xs h-auto rounded-lg border border-gray-200"
+                              />
+                            )}
+                            {question.media_type === 'video' && (
+                              <video
+                                src={question.media_url}
+                                poster={question.media_thumbnail_url}
+                                controls
+                                className="max-w-xs h-auto rounded-lg border border-gray-200"
+                              >
+                                您的瀏覽器不支援影片播放
+                              </video>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-4">
                       {[
