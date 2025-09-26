@@ -6,13 +6,11 @@ import {
   FileText, 
   Image as ImageIcon, 
   Video,
-  CheckCircle,
-  AlertCircle,
   Eye,
   EyeOff
 } from 'lucide-react'
 
-interface Question {
+interface SimplifiedQuestion {
   id: number
   question_text: string
   display_order: number
@@ -22,9 +20,9 @@ interface Question {
 }
 
 interface DragDropQuestionListProps {
-  questions: Question[]
+  questions: SimplifiedQuestion[]
   onReorder: (questionIds: number[]) => Promise<void>
-  onEdit: (question: Question) => void
+  onEdit: (questionId: number) => void  // 只傳遞 ID，讓父組件處理編輯邏輯
   onToggleActive: (questionId: number, isActive: boolean) => void
   loading?: boolean
 }
@@ -235,7 +233,7 @@ export default function DragDropQuestionList({
 
               {/* 編輯按鈕 */}
               <button
-                onClick={() => onEdit(question)}
+                onClick={() => onEdit(question.id)}
                 className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
               >
                 編輯

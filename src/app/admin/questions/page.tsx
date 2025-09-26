@@ -877,7 +877,10 @@ export default function QuestionsManagePage() {
                   media_url: q.media_url
                 }))}
                 onReorder={handleReorder}
-                onEdit={handleEdit}
+                onEdit={(questionId) => {
+                  const question = questions.find(q => q.id === questionId)
+                  if (question) handleEdit(question)
+                }}
                 onToggleActive={handleToggleActive}
                 loading={loading}
               />
