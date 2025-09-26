@@ -436,6 +436,34 @@ export default function QuestionsManagePage() {
               </div>
             </div>
             <div className="flex items-center space-x-2">
+              {/* 添加排序欄位按鈕 */}
+              <button
+                onClick={async () => {
+                  if (confirm('確定要添加 display_order 欄位嗎？這會修改資料庫結構並為所有題目設定初始排序。')) {
+                    try {
+                      const response = await fetch('/api/admin/add-display-order-column', {
+                        method: 'POST'
+                      })
+                      const data = await response.json()
+                      
+                      if (data.success) {
+                        alert(`✅ 欄位添加成功！\n處理了 ${data.updated_count}/${data.questions_count} 個題目`)
+                        await fetchQuestions()
+                      } else {
+                        alert(`❌ 添加失敗：${data.error}\n\n💡 建議：${data.suggestion || '請手動執行 SQL'}`)
+                      }
+                    } catch (error) {
+                      console.error('添加排序欄位失敗:', error)
+                      alert('添加欄位時發生錯誤')
+                    }
+                  }
+                }}
+                className="flex items-center space-x-1 bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm"
+              >
+                <span>🔧</span>
+                <span>添加排序欄位</span>
+              </button>
+              
               {/* 初始化排序按鈕 */}
               <button
                 onClick={async () => {
