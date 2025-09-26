@@ -492,7 +492,147 @@ export default function QuestionsManagePage() {
             </div>
           ) : (
             /* 卡片視圖 - 原有的網格顯示 */
-                      message += `失敗測試: ${data.summary?.failedTests || 0}\n\n`
+            questions.map((question, index) => (
+              <div key={question.id} className="bg-white rounded-2xl shadow-lg p-6">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-3 mb-3">
+                      <span className="bg-blue-100 text-blue-800 text-sm font-medium px-2.5 py-0.5 rounded">
+                        Q{index + 1}
+                      </span>
+                      {question.is_active ? (
+                        <span className="bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded flex items-center">
+                          <CheckCircle className="w-3 h-3 mr-1" />
+                          啟用
+                        </span>
+                      ) : (
+                        <span className="bg-red-100 text-red-800 text-xs font-medium px-2 py-1 rounded flex items-center">
+                          <AlertCircle className="w-3 h-3 mr-1" />
+                          停用
+                        </span>
+                      )}
+                      <div className="flex items-center space-x-4 text-sm text-gray-500">
+                        <span className="flex items-center">
+                          <Award className="w-4 h-4 mr-1" />
+                          {question.points}分
+                        </span>
+                        <span className="flex items-center">
+                          <Clock className="w-4 h-4 mr-1" />
+                          {question.time_limit}秒
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-start space-x-3 mb-4">
+                      {/* 媒體類型圖標 */}
+                      <div className="flex-shrink-0 mt-1">
+                        {question.media_type === 'image' && (
+                          <div className="flex items-center text-blue-600">
+                            <ImageIcon className="w-5 h-5" />
+                          </div>
+                        )}
+                        {question.media_type === 'video' && (
+                          <div className="flex items-center text-purple-600">
+                            <Video className="w-5 h-5" />
+                          </div>
+                        )}
+                        {(!question.media_type || question.media_type === 'text') && (
+                          <div className="flex items-center text-gray-500">
+                            <FileText className="w-5 h-5" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-lg font-semibold text-gray-900">{question.question_text}</h3>
+                        {question.media_url && (
+                          <div className="mt-3">
+                            {question.media_type === 'image' && (
+                              <img
+                                src={question.media_url}
+                                alt={question.media_alt_text || '題目圖片'}
+                                className="max-w-full h-auto max-h-48 rounded-lg shadow-sm"
+                              />
+                            )}
+                            {question.media_type === 'video' && (
+                              <video
+                                src={question.media_url}
+                                poster={question.media_thumbnail_url}
+                                controls
+                                className="max-w-full h-auto max-h-48 rounded-lg shadow-sm"
+                              >
+                                您的瀏覽器不支援影片播放
+                              </video>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* 選項顯示 */}
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                      {[
+                        { key: 'A', value: question.option_a },
+                        { key: 'B', value: question.option_b },
+                        { key: 'C', value: question.option_c },
+                        { key: 'D', value: question.option_d }
+                      ].map(option => (
+                        <div 
+                          key={option.key}
+                          className={`p-3 rounded-lg border ${
+                            option.key === question.correct_answer 
+                              ? 'bg-green-50 border-green-200 text-green-800' 
+                              : 'bg-gray-50 border-gray-200 text-gray-900'
+                          }`}
+                        >
+                          <span className="font-medium">{option.key}.</span> {option.value}
+                          {option.key === question.correct_answer && (
+                            <CheckCircle className="w-4 h-4 inline ml-2 text-green-600" />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* 設定標籤 */}
+                    <div className="flex flex-wrap gap-2">
+                      {question.penalty_enabled && (
+                        <span className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded">
+                          答錯扣{question.penalty_score}分
+                        </span>
+                      )}
+                      {question.timeout_penalty_enabled && (
+                        <span className="bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded">
+                          超時扣{question.timeout_penalty_score}分
+                        </span>
+                      )}
+                      {question.speed_bonus_enabled && (
+                        <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
+                          速度加成最多{question.max_bonus_points}分
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2 ml-4">
+                    <button
+                      onClick={() => handleEdit(question)}
+                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                      title="編輯"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(question.id)}
+                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      title="刪除"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
                       
                       if (data.testResults) {
                         data.testResults.forEach((result: any, index: number) => {
