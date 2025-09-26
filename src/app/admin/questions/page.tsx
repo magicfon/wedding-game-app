@@ -15,8 +15,12 @@ import {
   AlertCircle,
   CheckCircle,
   Home,
-  ArrowLeft
+  ArrowLeft,
+  Image as ImageIcon,
+  Video,
+  FileText
 } from 'lucide-react'
+import MediaUpload from '@/components/MediaUpload'
 
 interface Question {
   id: number
@@ -37,6 +41,12 @@ interface Question {
   is_active: boolean
   created_at: string
   created_by?: string
+  // 媒體支援欄位
+  media_type: 'text' | 'image' | 'video'
+  media_url?: string
+  media_thumbnail_url?: string
+  media_alt_text?: string
+  media_duration?: number
 }
 
 interface QuestionFormData {
@@ -54,6 +64,12 @@ interface QuestionFormData {
   timeout_penalty_score: number
   speed_bonus_enabled: boolean
   max_bonus_points: number
+  // 媒體支援欄位
+  media_type: 'text' | 'image' | 'video'
+  media_url?: string
+  media_thumbnail_url?: string
+  media_alt_text?: string
+  media_duration?: number
 }
 
 const initialFormData: QuestionFormData = {
@@ -70,7 +86,13 @@ const initialFormData: QuestionFormData = {
   timeout_penalty_enabled: false,
   timeout_penalty_score: 0,
   speed_bonus_enabled: true,
-  max_bonus_points: 5
+  max_bonus_points: 5,
+  // 媒體支援預設值
+  media_type: 'text',
+  media_url: undefined,
+  media_thumbnail_url: undefined,
+  media_alt_text: undefined,
+  media_duration: undefined
 }
 
 export default function QuestionsManagePage() {

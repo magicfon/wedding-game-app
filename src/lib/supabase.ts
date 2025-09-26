@@ -37,6 +37,12 @@ export interface Question {
   timeout_penalty_score: number
   time_limit: number
   is_active: boolean
+  // 媒體支援欄位
+  media_type: 'text' | 'image' | 'video'
+  media_url?: string
+  media_thumbnail_url?: string
+  media_alt_text?: string
+  media_duration?: number  // 影片長度（秒）
 }
 
 export interface AnswerRecord {
