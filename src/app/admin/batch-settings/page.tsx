@@ -4,13 +4,14 @@ import { useState, useEffect } from 'react'
 import { useLiff } from '@/hooks/useLiff'
 import { useRouter } from 'next/navigation'
 import AdminLayout from '@/components/AdminLayout'
-import { Settings, Clock, AlertTriangle } from 'lucide-react'
+import { Settings, Clock, AlertTriangle, Timer } from 'lucide-react'
 
 interface Question {
   id: number
   question_text: string
   timeout_penalty_enabled: boolean
   timeout_penalty_score: number
+  time_limit: number
 }
 
 interface BatchUpdateResult {
@@ -103,6 +104,46 @@ export default function BatchSettingsPage() {
     }
   }
 
+  // 批量設定所有題目答題時間
+  const handleSetTimeLimit = async (timeLimit: number) => {
+    if (!confirm(`確定要將所有題目的答題時間設定為 ${timeLimit} 秒嗎？`)) return
+
+    try {
+      setUpdating(true)
+      setResult(null)
+
+      const response = await fetch('/api/admin/questions/set-time-limit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          time_limit: timeLimit
+        })
+      })
+
+      const data = await response.json()
+      setResult({
+        success: data.success,
+        message: data.message,
+        updated_questions: data.updated_count || 0,
+        settings: { timeout_penalty_enabled: false, timeout_penalty_score: 0 }
+      })
+
+      if (data.success) {
+        await fetchQuestions() // 重新載入題目列表
+      }
+    } catch (error) {
+      console.error('批量更新答題時間錯誤:', error)
+      setResult({
+        success: false,
+        message: '更新答題時間失敗',
+        updated_questions: 0,
+        settings: { timeout_penalty_enabled: false, timeout_penalty_score: 0 }
+      })
+    } finally {
+      setUpdating(false)
+    }
+  }
+
   // 如果還在載入中，顯示載入畫面
   if (liffLoading || adminLoading || loading) {
     return (
@@ -117,19 +158,42 @@ export default function BatchSettingsPage() {
   const timeoutEnabledCount = questions.filter(q => q.timeout_penalty_enabled).length
   const timeoutDisabledCount = questions.length - timeoutEnabledCount
   const penalty10Count = questions.filter(q => q.timeout_penalty_score === 10).length
+  const timeLimit10Count = questions.filter(q => q.time_limit === 10).length
+  const timeLimit30Count = questions.filter(q => q.time_limit === 30).length
+  const averageTimeLimit = questions.length > 0 ? Math.round(questions.reduce((sum, q) => sum + q.time_limit, 0) / questions.length) : 0
 
   return (
     <AdminLayout title="批量設定">
       <div className="max-w-6xl mx-auto">
         
         {/* 統計資訊 */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
           <div className="bg-white p-6 rounded-lg shadow-md">
             <div className="flex items-center">
               <Settings className="w-8 h-8 text-blue-500 mr-3" />
               <div>
                 <p className="text-sm text-gray-500">總題目數</p>
                 <p className="text-2xl font-bold text-gray-900">{questions.length}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <div className="flex items-center">
+              <Timer className="w-8 h-8 text-blue-500 mr-3" />
+              <div>
+                <p className="text-sm text-gray-500">平均答題時間</p>
+                <p className="text-2xl font-bold text-blue-600">{averageTimeLimit}秒</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <div className="flex items-center">
+              <div className="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center mr-3 font-bold">10</div>
+              <div>
+                <p className="text-sm text-gray-500">10秒答題時間</p>
+                <p className="text-2xl font-bold text-green-600">{timeLimit10Count}</p>
               </div>
             </div>
           </div>
@@ -169,20 +233,63 @@ export default function BatchSettingsPage() {
         <div className="bg-white p-6 rounded-lg shadow-md mb-8">
           <h3 className="text-lg font-semibold mb-4">批量操作</h3>
           
-          <div className="flex flex-col sm:flex-row gap-4">
-            <button
-              onClick={handleSetTimeoutPenalty}
-              disabled={updating}
-              className="flex items-center justify-center px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <Clock className="w-5 h-5 mr-2" />
-              {updating ? '設定中...' : '所有題目設定超時扣10分'}
-            </button>
-          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* 答題時間設定 */}
+            <div className="space-y-3">
+              <h4 className="font-medium text-gray-900 flex items-center">
+                <Timer className="w-4 h-4 mr-2" />
+                答題時間設定
+              </h4>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleSetTimeLimit(10)}
+                  disabled={updating}
+                  className="flex-1 flex items-center justify-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
+                >
+                  <Timer className="w-4 h-4 mr-1" />
+                  {updating ? '設定中...' : '設定為10秒'}
+                </button>
+                <button
+                  onClick={() => handleSetTimeLimit(15)}
+                  disabled={updating}
+                  className="flex-1 flex items-center justify-center px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
+                >
+                  <Timer className="w-4 h-4 mr-1" />
+                  {updating ? '設定中...' : '設定為15秒'}
+                </button>
+                <button
+                  onClick={() => handleSetTimeLimit(30)}
+                  disabled={updating}
+                  className="flex-1 flex items-center justify-center px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
+                >
+                  <Timer className="w-4 h-4 mr-1" />
+                  {updating ? '設定中...' : '設定為30秒'}
+                </button>
+              </div>
+              <p className="text-sm text-gray-500">
+                批量設定所有題目的答題時間限制
+              </p>
+            </div>
 
-          <p className="text-sm text-gray-500 mt-2">
-            這將會把所有題目的超時扣分設定為啟用並扣除10分
-          </p>
+            {/* 超時扣分設定 */}
+            <div className="space-y-3">
+              <h4 className="font-medium text-gray-900 flex items-center">
+                <Clock className="w-4 h-4 mr-2" />
+                超時扣分設定
+              </h4>
+              <button
+                onClick={handleSetTimeoutPenalty}
+                disabled={updating}
+                className="w-full flex items-center justify-center px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <Clock className="w-4 h-4 mr-2" />
+                {updating ? '設定中...' : '所有題目設定超時扣10分'}
+              </button>
+              <p className="text-sm text-gray-500">
+                啟用超時扣分並設定為扣除10分
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* 更新結果 */}
