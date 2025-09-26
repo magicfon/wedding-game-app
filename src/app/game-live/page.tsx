@@ -334,7 +334,13 @@ export default function GameLivePage() {
                       {currentQuestion.question_text}
                     </h3>
                     
-                    {/* 媒體內容 */}
+                    {/* 媒體內容 - 添加調試信息 */}
+                    {console.log('🎯 Current Question Media Debug:', {
+                      media_type: currentQuestion.media_type,
+                      media_url: currentQuestion.media_url,
+                      media_alt_text: currentQuestion.media_alt_text,
+                      hasMediaUrl: !!currentQuestion.media_url
+                    })}
                     {currentQuestion.media_url && (
                       <div className="mt-4">
                         {currentQuestion.media_type === 'image' && (
@@ -342,6 +348,8 @@ export default function GameLivePage() {
                             src={currentQuestion.media_url}
                             alt={currentQuestion.media_alt_text || '題目圖片'}
                             className="max-w-full h-auto max-h-80 rounded-lg shadow-md"
+                            onLoad={() => console.log('✅ 圖片載入成功:', currentQuestion.media_url)}
+                            onError={(e) => console.error('❌ 圖片載入失敗:', currentQuestion.media_url, e)}
                           />
                         )}
                         {currentQuestion.media_type === 'video' && (
@@ -350,10 +358,20 @@ export default function GameLivePage() {
                             poster={currentQuestion.media_thumbnail_url}
                             controls
                             className="max-w-full h-auto max-h-80 rounded-lg shadow-md"
+                            onLoadedData={() => console.log('✅ 影片載入成功:', currentQuestion.media_url)}
+                            onError={(e) => console.error('❌ 影片載入失敗:', currentQuestion.media_url, e)}
                           >
                             您的瀏覽器不支援影片播放
                           </video>
                         )}
+                      </div>
+                    )}
+                    {/* 如果沒有媒體URL但有媒體類型，顯示提示 */}
+                    {!currentQuestion.media_url && currentQuestion.media_type && currentQuestion.media_type !== 'text' && (
+                      <div className="mt-4 p-4 bg-yellow-100 border border-yellow-300 rounded-lg">
+                        <p className="text-yellow-800">
+                          ⚠️ 這是 {currentQuestion.media_type === 'image' ? '圖片' : '影片'} 題目，但沒有媒體檔案
+                        </p>
                       </div>
                     )}
                   </div>
