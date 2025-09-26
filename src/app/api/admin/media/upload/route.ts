@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createSupabaseServer } from '@/lib/supabase-server'
+import { createSupabaseAdmin } from '@/lib/supabase-server'
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createSupabaseServer()
+    const supabase = createSupabaseAdmin()
     const formData = await request.formData()
     
     const file = formData.get('file') as File
@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const supabase = await createSupabaseServer()
+    const supabase = createSupabaseAdmin()
     const { searchParams } = new URL(request.url)
     const filePath = searchParams.get('filePath')
     

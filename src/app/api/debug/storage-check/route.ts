@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createSupabaseServer } from '@/lib/supabase-server'
+import { createSupabaseAdmin } from '@/lib/supabase-server'
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createSupabaseServer()
+    const supabase = createSupabaseAdmin()
     
     console.log('🔍 檢查 Supabase Storage 配置...')
     
@@ -130,7 +130,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createSupabaseServer()
+    const supabase = createSupabaseAdmin()
     
     console.log('🔧 強制創建 media bucket...')
     
