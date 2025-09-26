@@ -299,6 +299,10 @@ export async function POST(request: Request) {
         if (gameStateForReset && 'total_questions' in gameStateForReset) {
           resetUpdateData.total_questions = 0;
         }
+        // 重置已完成題目數為 0
+        if (gameStateForReset && 'completed_questions' in gameStateForReset) {
+          resetUpdateData.completed_questions = 0;
+        }
 
         result = await supabase
           .from('game_state')
