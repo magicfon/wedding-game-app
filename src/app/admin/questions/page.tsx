@@ -18,9 +18,12 @@ import {
   ArrowLeft,
   Image as ImageIcon,
   Video,
-  FileText
+  FileText,
+  List,
+  Grid3X3
 } from 'lucide-react'
 import MediaUpload from '@/components/MediaUpload'
+import DragDropQuestionList from '@/components/DragDropQuestionList'
 
 interface Question {
   id: number
@@ -47,6 +50,8 @@ interface Question {
   media_thumbnail_url?: string
   media_alt_text?: string
   media_duration?: number
+  // 排序欄位
+  display_order: number
 }
 
 interface QuestionFormData {
@@ -103,6 +108,7 @@ export default function QuestionsManagePage() {
   const [formData, setFormData] = useState<QuestionFormData>(initialFormData)
   const [submitting, setSubmitting] = useState(false)
   const [showActiveOnly, setShowActiveOnly] = useState(true)
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   
   const { isLoggedIn, profile, isAdmin, loading: liffLoading, adminLoading } = useLiff()
   const router = useRouter()
@@ -130,7 +136,14 @@ export default function QuestionsManagePage() {
       const data = await response.json()
       
       if (data.success) {
-        setQuestions(data.questions)
+        // 按 display_order 排序，如果沒有則按 id 排序
+        const sortedQuestions = data.questions.sort((a: Question, b: Question) => {
+          if (a.display_order && b.display_order) {
+            return a.display_order - b.display_order
+          }
+          return a.id - b.id
+        })
+        setQuestions(sortedQuestions)
       } else {
         console.error('Failed to fetch questions:', data.error)
       }
@@ -229,6 +242,63 @@ export default function QuestionsManagePage() {
     } catch (error) {
       console.error('Error deleting question:', error)
       alert('刪除時發生錯誤')
+    }
+  }
+
+  // 重新排序題目
+  const handleReorder = async (questionIds: number[]) => {
+    try {
+      const response = await fetch('/api/admin/questions/reorder', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ questionIds })
+      })
+      
+      const data = await response.json()
+      
+      if (data.success) {
+        console.log('✅ 題目重新排序成功')
+        // 重新載入題目列表
+        await fetchQuestions()
+      } else {
+        console.error('❌ 重新排序失敗:', data.error)
+        alert('重新排序失敗：' + data.error)
+      }
+    } catch (error) {
+      console.error('Error reordering questions:', error)
+      alert('重新排序時發生錯誤')
+    }
+  }
+
+  // 切換題目啟用狀態
+  const handleToggleActive = async (questionId: number, isActive: boolean) => {
+    try {
+      const response = await fetch('/api/admin/questions', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: questionId,
+          is_active: isActive
+        })
+      })
+      
+      const data = await response.json()
+      
+      if (data.success) {
+        console.log('✅ 題目狀態更新成功')
+        // 重新載入題目列表
+        await fetchQuestions()
+      } else {
+        console.error('❌ 狀態更新失敗:', data.error)
+        alert('狀態更新失敗：' + data.error)
+      }
+    } catch (error) {
+      console.error('Error toggling question status:', error)
+      alert('狀態更新時發生錯誤')
     }
   }
 
@@ -338,6 +408,32 @@ export default function QuestionsManagePage() {
                 />
                 <span className="text-sm text-gray-900">只顯示啟用的問題</span>
               </label>
+              
+              {/* 視圖模式切換 */}
+              <div className="flex items-center bg-gray-100 rounded-lg p-1">
+                <button
+                  onClick={() => setViewMode('grid')}
+                  className={`flex items-center space-x-1 px-3 py-1 rounded text-sm transition-colors ${
+                    viewMode === 'grid' 
+                      ? 'bg-white text-gray-900 shadow-sm' 
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  <Grid3X3 className="w-4 h-4" />
+                  <span>卡片</span>
+                </button>
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`flex items-center space-x-1 px-3 py-1 rounded text-sm transition-colors ${
+                    viewMode === 'list' 
+                      ? 'bg-white text-gray-900 shadow-sm' 
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  <List className="w-4 h-4" />
+                  <span>列表</span>
+                </button>
+              </div>
             </div>
             <div className="flex items-center space-x-2">
                 <button
@@ -764,7 +860,30 @@ export default function QuestionsManagePage() {
                 新增第一個問題
               </button>
             </div>
+          ) : viewMode === 'list' ? (
+            /* 列表視圖 - 拖拽排序 */
+            <div className="bg-white rounded-2xl shadow-lg p-6">
+              <div className="mb-4">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">拖拽排序</h3>
+                <p className="text-sm text-gray-600">拖拽題目來調整順序，變更會立即保存</p>
+              </div>
+              <DragDropQuestionList
+                questions={questions.map(q => ({
+                  id: q.id,
+                  question_text: q.question_text,
+                  display_order: q.display_order || q.id,
+                  media_type: q.media_type,
+                  is_active: q.is_active,
+                  media_url: q.media_url
+                }))}
+                onReorder={handleReorder}
+                onEdit={handleEdit}
+                onToggleActive={handleToggleActive}
+                loading={loading}
+              />
+            </div>
           ) : (
+            /* 卡片視圖 - 原有的網格顯示 */
             questions.map((question, index) => (
               <div key={question.id} className="bg-white rounded-2xl shadow-lg p-6">
                 <div className="flex items-start justify-between">

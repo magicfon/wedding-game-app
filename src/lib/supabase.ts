@@ -43,6 +43,8 @@ export interface Question {
   media_thumbnail_url?: string
   media_alt_text?: string
   media_duration?: number  // 影片長度（秒）
+  // 排序欄位
+  display_order: number  // 題目顯示順序
 }
 
 export interface AnswerRecord {
