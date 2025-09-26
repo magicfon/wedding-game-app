@@ -525,6 +525,46 @@ export default function QuestionsManagePage() {
                 <span>檢查</span>
               </button>
               
+              {/* 測試排序功能按鈕 */}
+              <button
+                onClick={async () => {
+                  try {
+                    // 獲取前3個題目的ID進行測試
+                    const testIds = questions.slice(0, Math.min(3, questions.length)).map(q => q.id).reverse()
+                    
+                    if (testIds.length === 0) {
+                      alert('沒有題目可以測試')
+                      return
+                    }
+                    
+                    console.log('🧪 測試排序，題目IDs:', testIds)
+                    
+                    const response = await fetch('/api/admin/questions/test-reorder', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ questionIds: testIds })
+                    })
+                    
+                    const data = await response.json()
+                    console.log('測試排序結果:', data)
+                    
+                    if (data.success) {
+                      alert(`✅ 排序測試成功！\n成功: ${data.success_count}/${data.total_questions}`)
+                      await fetchQuestions()
+                    } else {
+                      alert(`⚠️ 排序測試部分成功：\n${data.message}`)
+                    }
+                  } catch (error) {
+                    console.error('測試排序失敗:', error)
+                    alert('測試時發生錯誤')
+                  }
+                }}
+                className="flex items-center space-x-1 bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-1 rounded text-xs"
+              >
+                <span>🧪</span>
+                <span>測試</span>
+              </button>
+              
                 <button
                   onClick={async () => {
                     console.log('Checking environment variables...')

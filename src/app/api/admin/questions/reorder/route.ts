@@ -97,18 +97,53 @@ export async function POST(request: NextRequest) {
     
     console.log('✅ 排序更新成功:', updatedQuestions)
     
-    // 獲取所有題目的最新排序狀態
+    // 獲取所有題目的最新排序狀態 - 使用更安全的查詢
+    console.log('📝 獲取更新後的題目列表...')
+    
     const { data: allQuestions, error: allQuestionsError } = await supabase
       .from('questions')
-      .select('id, question_text, display_order, media_type, is_active')
+      .select('id, question_text, display_order')
       .order('display_order', { ascending: true })
     
     if (allQuestionsError) {
       console.error('❌ 獲取更新後題目列表失敗:', allQuestionsError)
-      return NextResponse.json({
-        error: '獲取更新後題目列表失敗',
-        details: allQuestionsError.message
-      }, { status: 500 })
+      console.error('錯誤詳情:', {
+        code: allQuestionsError.code,
+        message: allQuestionsError.message,
+        details: allQuestionsError.details,
+        hint: allQuestionsError.hint
+      })
+      
+      // 嘗試更簡單的查詢
+      console.log('🔄 嘗試簡化查詢...')
+      const { data: simpleQuestions, error: simpleError } = await supabase
+        .from('questions')
+        .select('id, display_order')
+        .order('id', { ascending: true })
+      
+      if (simpleError) {
+        console.error('❌ 簡化查詢也失敗:', simpleError)
+        // 即使最終查詢失敗，我們也返回成功，因為更新本身是成功的
+        return NextResponse.json({
+          success: true,
+          message: `成功重新排序 ${questionIds.length} 個題目（但無法獲取最新列表）`,
+          updated_count: questionIds.length,
+          updated_questions: updatedQuestions,
+          warning: '排序更新成功，但獲取最新列表失敗'
+        })
+      } else {
+        // 使用簡化的數據
+        return NextResponse.json({
+          success: true,
+          message: `成功重新排序 ${questionIds.length} 個題目`,
+          updated_count: questionIds.length,
+          updated_questions: updatedQuestions,
+          all_questions: simpleQuestions?.map(q => ({
+            id: q.id,
+            display_order: q.display_order
+          }))
+        })
+      }
     }
     
     return NextResponse.json({
@@ -119,9 +154,7 @@ export async function POST(request: NextRequest) {
       all_questions: allQuestions?.map(q => ({
         id: q.id,
         question_text: q.question_text,
-        display_order: q.display_order,
-        media_type: q.media_type,
-        is_active: q.is_active
+        display_order: q.display_order
       }))
     })
     
