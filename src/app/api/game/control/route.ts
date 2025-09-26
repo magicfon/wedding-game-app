@@ -252,26 +252,26 @@ export async function POST(request: Request) {
           console.log('⚠️ 清空分數調整記錄時出錯，可能表格不存在:', error);
         }
 
-        // 重置用戶分數並清空加入狀態（向下兼容）
+        // 重置用戶快問快答分數並清空加入狀態（向下兼容）
         try {
           await supabase
             .from('users')
             .update({ 
-              total_score: 0,
+              quiz_score: 0,
               is_in_quiz_page: false
             })
             .neq('line_id', '');
-          console.log('✅ 已重置所有用戶分數為 0');
+          console.log('✅ 已重置所有用戶快問快答分數為 0');
         } catch (error) {
           // 如果 is_in_quiz_page 欄位不存在，只重置分數
-          console.log('⚠️ is_in_quiz_page 欄位可能不存在，只重置用戶分數');
+          console.log('⚠️ is_in_quiz_page 欄位可能不存在，只重置用戶快問快答分數');
           await supabase
             .from('users')
             .update({ 
-              total_score: 0
+              quiz_score: 0
             })
             .neq('line_id', '');
-          console.log('✅ 已重置所有用戶分數為 0（向下兼容模式）');
+          console.log('✅ 已重置所有用戶快問快答分數為 0（向下兼容模式）');
         }
 
         // 檢查表格結構以準備重置資料

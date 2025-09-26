@@ -24,7 +24,7 @@ interface ScoreRanking {
   line_id: string
   display_name: string
   avatar_url?: string
-  total_score: number
+  quiz_score: number
 }
 
 export default function GameLivePage() {
@@ -89,9 +89,9 @@ export default function GameLivePage() {
     try {
       const { data, error } = await supabase
         .from('users')
-        .select('line_id, display_name, avatar_url, total_score')
-        .gte('total_score', 0) // 顯示所有用戶，包括0分
-        .order('total_score', { ascending: false })
+        .select('line_id, display_name, avatar_url, quiz_score')
+        .gte('quiz_score', 0) // 顯示所有用戶，包括0分
+        .order('quiz_score', { ascending: false })
         .order('join_time', { ascending: true }) // 同分時以加入時間排序
         .limit(10) // 只顯示前10名
       
@@ -503,7 +503,7 @@ export default function GameLivePage() {
                                 {player.display_name}
                               </div>
                               <div className="text-xl font-bold text-purple-600">
-                                🎯 {player.total_score} 分
+                                🎯 {player.quiz_score} 分
                               </div>
                             </div>
                             

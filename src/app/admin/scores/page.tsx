@@ -16,6 +16,7 @@ interface UserScore {
   line_id: string
   display_name: string
   avatar_url: string
+  quiz_score: number
   total_score: number
   join_time: string
 }
@@ -56,7 +57,7 @@ export default function ScoreManagePage() {
       const { data, error } = await supabase
         .from('users')
         .select('*')
-        .order('total_score', { ascending: false })
+        .order('quiz_score', { ascending: false })
 
       if (error) throw error
       setUsers(data as UserScore[])
@@ -198,7 +199,7 @@ export default function ScoreManagePage() {
                   <option value="">請選擇用戶</option>
                   {users.map((user) => (
                     <option key={user.line_id} value={user.line_id}>
-                      {user.display_name} (目前分數: {user.total_score})
+                      {user.display_name} (快問快答分數: {user.quiz_score})
                     </option>
                   ))}
                 </select>
@@ -274,7 +275,7 @@ export default function ScoreManagePage() {
                     <div>
                       <p className="font-medium">{users.find(u => u.line_id === selectedUser)?.display_name}</p>
                       <p className="text-sm text-gray-500">
-                        目前分數: {users.find(u => u.line_id === selectedUser)?.total_score}
+                        快問快答分數: {users.find(u => u.line_id === selectedUser)?.quiz_score}
                       </p>
                     </div>
                   </div>
@@ -287,7 +288,7 @@ export default function ScoreManagePage() {
                       </p>
                       <p className="text-sm">
                         調整後分數: <span className="font-medium">
-                          {(users.find(u => u.line_id === selectedUser)?.total_score || 0) + adjustmentScore}
+                          {(users.find(u => u.line_id === selectedUser)?.quiz_score || 0) + adjustmentScore}
                         </span>
                       </p>
                     </div>
@@ -351,7 +352,7 @@ export default function ScoreManagePage() {
 
                 <div className="flex items-center space-x-4">
                   <div className="text-right">
-                    <p className="text-xl font-bold">{user.total_score}</p>
+                    <p className="text-xl font-bold">{user.quiz_score}</p>
                     <p className="text-sm text-gray-500">分</p>
                   </div>
                   <div className="flex space-x-1">

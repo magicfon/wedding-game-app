@@ -9,6 +9,7 @@ import { Trophy, Clock, TrendingUp, TrendingDown, Search, Users, Award } from 'l
 interface User {
   line_id: string
   display_name: string
+  quiz_score: number
   total_score: number
   avatar_url?: string
 }

@@ -9,6 +9,7 @@ interface UserScore {
   line_id: string
   display_name: string
   avatar_url: string
+  quiz_score: number
   total_score: number
   join_time: string
 }
@@ -37,7 +38,7 @@ export default function LeaderboardPage() {
         const { data, error } = await supabase
           .from('users')
           .select('*')
-          .order('total_score', { ascending: false })
+          .order('quiz_score', { ascending: false })
           .order('join_time', { ascending: true })
           .limit(50)
 
@@ -233,7 +234,7 @@ export default function LeaderboardPage() {
                         <div className={`text-2xl font-bold ${
                           rank <= 3 ? 'text-white' : 'text-gray-800'
                         }`}>
-                          {user.total_score}
+                          {user.quiz_score}
                         </div>
                         <p className={`text-sm ${
                           rank <= 3 ? 'text-white/80' : 'text-gray-500'
