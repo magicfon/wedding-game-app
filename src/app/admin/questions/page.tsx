@@ -436,6 +436,67 @@ export default function QuestionsManagePage() {
               </div>
             </div>
             <div className="flex items-center space-x-2">
+              {/* 初始化排序按鈕 */}
+              <button
+                onClick={async () => {
+                  if (confirm('確定要初始化題目排序嗎？這會為沒有排序的題目設定預設順序。')) {
+                    try {
+                      const response = await fetch('/api/admin/init-display-order', {
+                        method: 'POST'
+                      })
+                      const data = await response.json()
+                      
+                      if (data.success) {
+                        alert(`✅ 初始化成功！\n處理了 ${data.initialized_count} 個題目`)
+                        await fetchQuestions()
+                      } else {
+                        alert('❌ 初始化失敗：' + data.error)
+                      }
+                    } catch (error) {
+                      console.error('初始化排序失敗:', error)
+                      alert('初始化時發生錯誤')
+                    }
+                  }
+                }}
+                className="flex items-center space-x-1 bg-purple-500 hover:bg-purple-600 text-white px-3 py-1 rounded text-sm"
+              >
+                <span>🔄</span>
+                <span>初始化排序</span>
+              </button>
+              
+              {/* 檢查排序狀態按鈕 */}
+              <button
+                onClick={async () => {
+                  try {
+                    const response = await fetch('/api/debug/check-display-order')
+                    const data = await response.json()
+                    console.log('排序狀態檢查結果:', data)
+                    
+                    let message = '📊 排序狀態檢查結果：\n\n'
+                    if (data.success) {
+                      message += `✅ display_order 欄位存在\n`
+                      message += `總題目數: ${data.order_stats?.total_questions || 0}\n`
+                      message += `已設定排序: ${data.order_stats?.questions_with_order || 0}\n`
+                      message += `未設定排序: ${data.order_stats?.questions_without_order || 0}\n`
+                    } else {
+                      message += `❌ 檢查失敗: ${data.error}\n`
+                      if (data.hint) {
+                        message += `💡 建議: ${data.hint}\n`
+                      }
+                    }
+                    message += '\n詳細結果請查看控制台'
+                    alert(message)
+                  } catch (error) {
+                    console.error('檢查排序狀態失敗:', error)
+                    alert('檢查時發生錯誤')
+                  }
+                }}
+                className="flex items-center space-x-1 bg-indigo-500 hover:bg-indigo-600 text-white px-2 py-1 rounded text-xs"
+              >
+                <span>🔍</span>
+                <span>檢查</span>
+              </button>
+              
                 <button
                   onClick={async () => {
                     console.log('Checking environment variables...')

@@ -50,28 +50,50 @@ export async function POST(request: NextRequest) {
     
     console.log('📝 更新排序:', updates)
     
-    // 使用 upsert 批量更新
-    const { data: updatedQuestions, error: updateError } = await supabase
+    // 先檢查 display_order 欄位是否存在
+    const { data: testQuery, error: testError } = await supabase
       .from('questions')
-      .upsert(
-        updates.map(update => ({
-          id: update.id,
-          display_order: update.display_order
-        })),
-        { 
-          onConflict: 'id',
-          ignoreDuplicates: false 
-        }
-      )
-      .select('id, question_text, display_order')
+      .select('id, display_order')
+      .limit(1)
     
-    if (updateError) {
-      console.error('❌ 更新排序失敗:', updateError)
+    if (testError) {
+      console.error('❌ display_order 欄位不存在或無法訪問:', testError)
       return NextResponse.json({
-        error: '更新排序失敗',
-        details: updateError.message
+        error: 'display_order 欄位不存在，請先執行資料庫遷移',
+        details: testError.message,
+        code: testError.code,
+        hint: '請在 Supabase SQL Editor 中執行 database/add-question-order.sql'
       }, { status: 500 })
     }
+
+    // 使用逐一更新的方式，避免 upsert 可能的問題
+    const updateResults = []
+    let failedUpdates = 0
+    
+    for (const update of updates) {
+      const { data: singleUpdate, error: singleError } = await supabase
+        .from('questions')
+        .update({ display_order: update.display_order })
+        .eq('id', update.id)
+        .select('id, question_text, display_order')
+      
+      if (singleError) {
+        console.error(`❌ 更新題目 ${update.id} 失敗:`, singleError)
+        failedUpdates++
+      } else {
+        updateResults.push(singleUpdate?.[0])
+      }
+    }
+    
+    if (failedUpdates > 0) {
+      console.error(`❌ 有 ${failedUpdates} 個題目更新失敗`)
+      return NextResponse.json({
+        error: `部分更新失敗：${failedUpdates}/${updates.length} 個題目更新失敗`,
+        details: `成功更新 ${updateResults.length} 個，失敗 ${failedUpdates} 個`
+      }, { status: 500 })
+    }
+    
+    const updatedQuestions = updateResults.filter(Boolean)
     
     console.log('✅ 排序更新成功:', updatedQuestions)
     
