@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useLiff } from '@/hooks/useLiff'
 
 export default function AdminMenuTestPage() {
-  const { isLoggedIn, isAdmin, user, loading: liffLoading, adminLoading } = useLiff()
+  const { isLoggedIn, isAdmin, profile, loading: liffLoading, adminLoading, adminInfo } = useLiff()
   const [menuItems, setMenuItems] = useState<any[]>([])
 
   // 模擬 AdminLayout 中的選單項目
@@ -77,7 +77,8 @@ export default function AdminMenuTestPage() {
           <div className="space-y-2">
             <p><strong>登入狀態:</strong> {isLoggedIn ? '✅ 已登入' : '❌ 未登入'}</p>
             <p><strong>管理員權限:</strong> {isAdmin ? '✅ 是管理員' : '❌ 不是管理員'}</p>
-            <p><strong>用戶資訊:</strong> {user ? `${user.displayName} (${user.lineId})` : '無'}</p>
+            <p><strong>用戶資訊:</strong> {profile ? `${profile.displayName} (${profile.userId})` : '無'}</p>
+            <p><strong>管理員資訊:</strong> {adminInfo ? `${adminInfo.displayName} (${adminInfo.lineId})` : '無'}</p>
             <p><strong>LIFF 載入中:</strong> {liffLoading ? '是' : '否'}</p>
             <p><strong>管理員檢查中:</strong> {adminLoading ? '是' : '否'}</p>
           </div>
