@@ -20,7 +20,8 @@ import {
   Video,
   FileText,
   List,
-  Grid3X3
+  Grid3X3,
+  HardDrive
 } from 'lucide-react'
 import MediaUpload from '@/components/MediaUpload'
 import DragDropQuestionList from '@/components/DragDropQuestionList'
@@ -109,6 +110,8 @@ export default function QuestionsManagePage() {
   const [submitting, setSubmitting] = useState(false)
   const [showActiveOnly, setShowActiveOnly] = useState(true)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const [cleanupLoading, setCleanupLoading] = useState(false)
+  const [cleanupResult, setCleanupResult] = useState<string | null>(null)
   
   const { isLoggedIn, profile, isAdmin, loading: liffLoading, adminLoading } = useLiff()
   const router = useRouter()
@@ -302,6 +305,45 @@ export default function QuestionsManagePage() {
     }
   }
 
+  // 媒體清理函數
+  const handleMediaCleanup = async () => {
+    if (!confirm('確定要清理未使用的媒體檔案嗎？\n\n這個操作會刪除 Supabase Storage 中沒有被任何題目使用的媒體檔案，無法撤銷！')) {
+      return
+    }
+
+    setCleanupLoading(true)
+    setCleanupResult(null)
+
+    try {
+      console.log('🧹 開始清理未使用的媒體檔案...')
+      
+      const response = await fetch('/api/admin/media/cleanup', {
+        method: 'POST'
+      })
+      
+      const data = await response.json()
+      
+      if (data.success) {
+        const message = `✅ 清理完成！\n\n刪除檔案：${data.deleted_count} 個\n節省空間：${data.size_saved_mb} MB\n剩餘檔案：${data.remaining_files} 個`
+        setCleanupResult(message)
+        alert(message)
+        console.log('🎉 媒體檔案清理成功:', data)
+      } else {
+        console.error('❌ 媒體清理失敗:', data.error)
+        const errorMessage = `❌ 清理失敗：${data.error}`
+        setCleanupResult(errorMessage)
+        alert(errorMessage)
+      }
+    } catch (error) {
+      console.error('❌ 媒體清理錯誤:', error)
+      const errorMessage = '❌ 清理時發生錯誤，請稍後再試'
+      setCleanupResult(errorMessage)
+      alert(errorMessage)
+    } finally {
+      setCleanupLoading(false)
+    }
+  }
+
   // 開始編輯
   const handleEdit = (question: Question) => {
     setEditingQuestion(question)
@@ -437,6 +479,15 @@ export default function QuestionsManagePage() {
             </div>
             <div className="flex items-center space-x-2">
               <button
+                onClick={handleMediaCleanup}
+                disabled={cleanupLoading}
+                className="flex items-center space-x-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition-colors disabled:opacity-50"
+                title="清理未使用的媒體檔案"
+              >
+                <HardDrive className="w-4 h-4" />
+                <span>{cleanupLoading ? '清理中...' : '媒體清理'}</span>
+              </button>
+              <button
                 onClick={() => setShowForm(true)}
                 className="flex items-center space-x-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors"
               >
@@ -446,6 +497,33 @@ export default function QuestionsManagePage() {
             </div>
           </div>
         </div>
+
+        {/* Cleanup Result */}
+        {cleanupResult && (
+          <div className={`p-4 rounded-lg border ${
+            cleanupResult.includes('✅') 
+              ? 'bg-green-50 border-green-300 text-green-800' 
+              : 'bg-red-50 border-red-300 text-red-800'
+          }`}>
+            <div className="flex items-start space-x-2">
+              {cleanupResult.includes('✅') ? (
+                <CheckCircle className="w-5 h-5 mt-0.5" />
+              ) : (
+                <AlertCircle className="w-5 h-5 mt-0.5" />
+              )}
+              <div>
+                <p className="font-medium">媒體清理結果</p>
+                <pre className="text-sm mt-1 whitespace-pre-wrap">{cleanupResult}</pre>
+                <button
+                  onClick={() => setCleanupResult(null)}
+                  className="text-sm underline mt-2 hover:no-underline"
+                >
+                  關閉
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Questions List */}
         <div className="space-y-4">
