@@ -436,182 +436,62 @@ export default function QuestionsManagePage() {
               </div>
             </div>
             <div className="flex items-center space-x-2">
-              {/* 添加排序欄位按鈕 */}
               <button
-                onClick={async () => {
-                  if (confirm('確定要添加 display_order 欄位嗎？這會修改資料庫結構並為所有題目設定初始排序。')) {
-                    try {
-                      const response = await fetch('/api/admin/add-display-order-column', {
-                        method: 'POST'
-                      })
-                      const data = await response.json()
-                      
-                      if (data.success) {
-                        alert(`✅ 欄位添加成功！\n處理了 ${data.updated_count}/${data.questions_count} 個題目`)
-                        await fetchQuestions()
-                      } else {
-                        alert(`❌ 添加失敗：${data.error}\n\n💡 建議：${data.suggestion || '請手動執行 SQL'}`)
-                      }
-                    } catch (error) {
-                      console.error('添加排序欄位失敗:', error)
-                      alert('添加欄位時發生錯誤')
-                    }
-                  }
-                }}
-                className="flex items-center space-x-1 bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm"
+                onClick={() => setShowForm(true)}
+                className="flex items-center space-x-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors"
               >
-                <span>🔧</span>
-                <span>添加排序欄位</span>
+                <Plus className="w-4 h-4" />
+                <span>新增問題</span>
               </button>
-              
-              {/* 初始化排序按鈕 */}
+            </div>
+          </div>
+        </div>
+
+        {/* Questions List */}
+        <div className="space-y-4">
+          {loading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+              <p className="text-gray-900 mt-2">載入問題中...</p>
+            </div>
+          ) : questions.length === 0 ? (
+            <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
+              <HelpCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-900">還沒有任何問題</p>
               <button
-                onClick={async () => {
-                  if (confirm('確定要初始化題目排序嗎？這會為沒有排序的題目設定預設順序。')) {
-                    try {
-                      const response = await fetch('/api/admin/init-display-order', {
-                        method: 'POST'
-                      })
-                      const data = await response.json()
-                      
-                      if (data.success) {
-                        alert(`✅ 初始化成功！\n處理了 ${data.initialized_count} 個題目`)
-                        await fetchQuestions()
-                      } else {
-                        alert('❌ 初始化失敗：' + data.error)
-                      }
-                    } catch (error) {
-                      console.error('初始化排序失敗:', error)
-                      alert('初始化時發生錯誤')
-                    }
-                  }
-                }}
-                className="flex items-center space-x-1 bg-purple-500 hover:bg-purple-600 text-white px-3 py-1 rounded text-sm"
+                onClick={() => setShowForm(true)}
+                className="mt-4 bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition-colors"
               >
-                <span>🔄</span>
-                <span>初始化排序</span>
+                新增第一個問題
               </button>
-              
-              {/* 檢查排序狀態按鈕 */}
-              <button
-                onClick={async () => {
-                  try {
-                    const response = await fetch('/api/debug/check-display-order')
-                    const data = await response.json()
-                    console.log('排序狀態檢查結果:', data)
-                    
-                    let message = '📊 排序狀態檢查結果：\n\n'
-                    if (data.success) {
-                      message += `✅ display_order 欄位存在\n`
-                      message += `總題目數: ${data.order_stats?.total_questions || 0}\n`
-                      message += `已設定排序: ${data.order_stats?.questions_with_order || 0}\n`
-                      message += `未設定排序: ${data.order_stats?.questions_without_order || 0}\n`
-                    } else {
-                      message += `❌ 檢查失敗: ${data.error}\n`
-                      if (data.hint) {
-                        message += `💡 建議: ${data.hint}\n`
-                      }
-                    }
-                    message += '\n詳細結果請查看控制台'
-                    alert(message)
-                  } catch (error) {
-                    console.error('檢查排序狀態失敗:', error)
-                    alert('檢查時發生錯誤')
-                  }
+            </div>
+          ) : viewMode === 'list' ? (
+            /* 列表視圖 - 拖拽排序 */
+            <div className="bg-white rounded-2xl shadow-lg p-6">
+              <div className="mb-4">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">拖拽排序</h3>
+                <p className="text-sm text-gray-600">拖拽題目來調整順序，變更會立即保存</p>
+              </div>
+              <DragDropQuestionList
+                questions={questions.map(q => ({
+                  id: q.id,
+                  question_text: q.question_text,
+                  display_order: q.display_order || q.id,
+                  media_type: q.media_type,
+                  is_active: q.is_active,
+                  media_url: q.media_url
+                }))}
+                onReorder={handleReorder}
+                onEdit={(questionId) => {
+                  const question = questions.find(q => q.id === questionId)
+                  if (question) handleEdit(question)
                 }}
-                className="flex items-center space-x-1 bg-indigo-500 hover:bg-indigo-600 text-white px-2 py-1 rounded text-xs"
-              >
-                <span>🔍</span>
-                <span>檢查</span>
-              </button>
-              
-              {/* 測試排序功能按鈕 */}
-              <button
-                onClick={async () => {
-                  try {
-                    // 獲取前3個題目的ID進行測試
-                    const testIds = questions.slice(0, Math.min(3, questions.length)).map(q => q.id).reverse()
-                    
-                    if (testIds.length === 0) {
-                      alert('沒有題目可以測試')
-                      return
-                    }
-                    
-                    console.log('🧪 測試排序，題目IDs:', testIds)
-                    
-                    const response = await fetch('/api/admin/questions/test-reorder', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ questionIds: testIds })
-                    })
-                    
-                    const data = await response.json()
-                    console.log('測試排序結果:', data)
-                    
-                    if (data.success) {
-                      alert(`✅ 排序測試成功！\n成功: ${data.success_count}/${data.total_questions}`)
-                      await fetchQuestions()
-                    } else {
-                      alert(`⚠️ 排序測試部分成功：\n${data.message}`)
-                    }
-                  } catch (error) {
-                    console.error('測試排序失敗:', error)
-                    alert('測試時發生錯誤')
-                  }
-                }}
-                className="flex items-center space-x-1 bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-1 rounded text-xs"
-              >
-                <span>🧪</span>
-                <span>測試</span>
-              </button>
-              
-                <button
-                  onClick={async () => {
-                    console.log('Checking environment variables...')
-                    try {
-                      const response = await fetch('/api/debug/env-check')
-                      const data = await response.json()
-                      console.log('Environment check result:', data)
-                      
-                      // 顯示關鍵信息
-                      const supabaseStatus = data.supabase
-                      let message = '環境變數檢查結果：\n\n'
-                      message += `Supabase URL: ${supabaseStatus?.url?.valid ? '✅ 正常' : '❌ 有問題'}\n`
-                      message += `Supabase Key: ${supabaseStatus?.key?.valid ? '✅ 正常' : '❌ 有問題'}\n`
-                      message += `Line Channel ID: ${data.otherVars?.lineChannelId ? '✅ 正常' : '❌ 缺失'}\n\n`
-                      
-                      if (supabaseStatus?.url?.issues?.length > 0) {
-                        message += 'URL 問題：' + supabaseStatus.url.issues.join(', ') + '\n'
-                      }
-                      if (supabaseStatus?.key?.issues?.length > 0) {
-                        message += 'Key 問題：' + supabaseStatus.key.issues.join(', ') + '\n'
-                      }
-                      
-                      message += '\n完整結果：\n' + JSON.stringify(data, null, 2)
-                      alert(message)
-                    } catch (error) {
-                      console.error('Environment check failed:', error)
-                      alert('環境變數檢查失敗：' + error)
-                    }
-                  }}
-                  className="flex items-center space-x-1 bg-orange-500 hover:bg-orange-600 text-white px-2 py-1 rounded text-xs"
-                >
-                  <span>環境變數</span>
-                </button>
-                <button
-                  onClick={async () => {
-                    console.log('Testing write permissions...')
-                    try {
-                      const response = await fetch('/api/debug/write-test', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' }
-                      })
-                      const data = await response.json()
-                      console.log('Write test result:', data)
-                      
-                      let message = '寫入權限測試結果：\n\n'
-                      message += `總測試數: ${data.summary?.totalTests || 0}\n`
-                      message += `通過測試: ${data.summary?.passedTests || 0}\n`
+                onToggleActive={handleToggleActive}
+                loading={loading}
+              />
+            </div>
+          ) : (
+            /* 卡片視圖 - 原有的網格顯示 */
                       message += `失敗測試: ${data.summary?.failedTests || 0}\n\n`
                       
                       if (data.testResults) {
