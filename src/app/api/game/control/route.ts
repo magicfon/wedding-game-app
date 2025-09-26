@@ -59,12 +59,13 @@ export async function POST(request: Request) {
         break;
 
       case 'start_first_question':
-        // 開始第一題 - 從等待階段進入答題階段
+        // 開始第一題 - 從等待階段進入答題階段，按 display_order 排序
         const { data: firstQuestion } = await supabase
           .from('questions')
-          .select('id')
+          .select('id, display_order')
           .eq('is_active', true)
-          .order('created_at', { ascending: true })
+          .order('display_order', { ascending: true })
+          .order('id', { ascending: true }) // 備用排序，以防 display_order 相同
           .limit(1)
           .single();
 
@@ -122,7 +123,7 @@ export async function POST(request: Request) {
         break;
 
       case 'next_question':
-        // 下一題
+        // 下一題 - 按 display_order 排序找到下一題
         const { data: currentState } = await supabase
           .from('game_state')
           .select('current_question_id, completed_questions')
@@ -133,13 +134,25 @@ export async function POST(request: Request) {
           return NextResponse.json({ error: '遊戲狀態不存在' }, { status: 400 });
         }
 
-        // 找到下一題
+        // 先獲取當前題目的 display_order
+        const { data: currentQuestion } = await supabase
+          .from('questions')
+          .select('display_order')
+          .eq('id', currentState.current_question_id)
+          .single();
+
+        if (!currentQuestion) {
+          return NextResponse.json({ error: '當前題目不存在' }, { status: 400 });
+        }
+
+        // 找到下一題（按 display_order 排序）
         const { data: nextQuestion } = await supabase
           .from('questions')
-          .select('id')
+          .select('id, display_order')
           .eq('is_active', true)
-          .gt('id', currentState.current_question_id)
-          .order('id', { ascending: true })
+          .gt('display_order', currentQuestion.display_order)
+          .order('display_order', { ascending: true })
+          .order('id', { ascending: true }) // 備用排序，以防 display_order 相同
           .limit(1)
           .single();
 
