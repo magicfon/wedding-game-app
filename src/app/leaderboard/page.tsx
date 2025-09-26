@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { createSupabaseBrowser } from '@/lib/supabase'
 import Layout from '@/components/Layout'
-import { Trophy, Medal, Crown, Star } from 'lucide-react'
+import { Trophy, Medal, Crown, Star, RefreshCw } from 'lucide-react'
 
 interface UserScore {
   line_id: string
@@ -17,6 +17,8 @@ interface UserScore {
 export default function LeaderboardPage() {
   const [users, setUsers] = useState<UserScore[]>([])
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const [currentUser, setCurrentUser] = useState<{
     id: string
     email?: string
@@ -33,8 +35,12 @@ export default function LeaderboardPage() {
   }, [supabase.auth])
 
   useEffect(() => {
-    const fetchLeaderboard = async () => {
+    const fetchLeaderboard = async (isManualRefresh = false) => {
       try {
+        if (isManualRefresh) {
+          setRefreshing(true)
+        }
+        console.log('🔄 重新載入排行榜...')
         const { data, error } = await supabase
           .from('users')
           .select('*')
@@ -43,37 +49,56 @@ export default function LeaderboardPage() {
           .limit(50)
 
         if (error) throw error
+        console.log('📊 排行榜資料:', data?.map(u => ({ name: u.display_name, score: u.quiz_score })))
         setUsers(data as UserScore[])
+        setLastUpdated(new Date())
       } catch (error) {
         console.error('Error fetching leaderboard:', error)
       } finally {
         setLoading(false)
+        if (isManualRefresh) {
+          setRefreshing(false)
+        }
       }
+    }
+
+    // 手動刷新函數
+    const handleManualRefresh = () => {
+      fetchLeaderboard(true)
     }
 
     fetchLeaderboard()
 
-    // 訂閱分數變化
+    // 訂閱分數變化 - 使用更積極的實時更新
     const subscription = supabase
-      .channel('leaderboard')
+      .channel('leaderboard_realtime')
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
         table: 'users'
-      }, () => {
+      }, (payload) => {
+        console.log('👤 用戶表變更:', payload)
         fetchLeaderboard()
       })
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
         table: 'answer_records'
-      }, () => {
+      }, (payload) => {
+        console.log('📝 答題記錄變更:', payload)
         fetchLeaderboard()
       })
       .subscribe()
 
+    // 定期刷新排行榜（每30秒）
+    const intervalRefresh = setInterval(() => {
+      console.log('⏰ 定期刷新排行榜')
+      fetchLeaderboard()
+    }, 30000)
+
     return () => {
       subscription.unsubscribe()
+      clearInterval(intervalRefresh)
     }
   }, [supabase])
 
@@ -124,12 +149,30 @@ export default function LeaderboardPage() {
   return (
     <Layout title="排行榜">
       <div className="max-w-4xl mx-auto">
-        {/* 標題 */}
+        {/* 標題和刷新控制 */}
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
           <div className="text-center">
             <Trophy className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
             <h2 className="text-3xl font-bold text-gray-800 mb-2">🏆 積分排行榜</h2>
             <p className="text-gray-600">快問快答積分競賽</p>
+            
+            {/* 刷新控制 */}
+            <div className="mt-4 flex items-center justify-center space-x-4">
+              <button
+                onClick={handleManualRefresh}
+                disabled={refreshing}
+                className="flex items-center space-x-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+                <span>{refreshing ? '刷新中...' : '手動刷新'}</span>
+              </button>
+              
+              {lastUpdated && (
+                <div className="text-sm text-gray-500">
+                  最後更新：{lastUpdated.toLocaleTimeString('zh-TW')}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
