@@ -633,107 +633,6 @@ export default function QuestionsManagePage() {
             ))
           )}
         </div>
-                      
-                      if (data.testResults) {
-                        data.testResults.forEach((result: any, index: number) => {
-                          message += `${index + 1}. ${result.test}: ${result.success ? '✅' : '❌'}\n`
-                          if (!result.success && result.error) {
-                            message += `   錯誤: ${result.error}\n`
-                          }
-                        })
-                      }
-                      
-                      message += '\n詳細結果請查看控制台'
-                      alert(message)
-                    } catch (error) {
-                      console.error('Write test failed:', error)
-                      alert('寫入測試失敗：' + error)
-                    }
-                  }}
-                  className="flex items-center space-x-1 bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs"
-                >
-                  <span>寫入測試</span>
-                </button>
-                <button
-                  onClick={async () => {
-                    console.log('Testing service key...')
-                    try {
-                      const response = await fetch('/api/debug/service-key-test', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' }
-                      })
-                      const data = await response.json()
-                      console.log('Service key test result:', data)
-                      
-                      let message = '服務密鑰測試結果：\n\n'
-                      if (data.success) {
-                        message += '✅ 服務密鑰測試成功！\n'
-                        message += '✅ 可以正常插入資料\n'
-                        message += '✅ 新增題目功能應該可以正常使用了\n'
-                      } else {
-                        message += '❌ 服務密鑰測試失敗\n'
-                        message += `錯誤: ${data.error}\n`
-                        if (data.details) {
-                          message += `詳細: ${JSON.stringify(data.details)}\n`
-                        }
-                      }
-                      
-                      message += '\n詳細結果請查看控制台'
-                      alert(message)
-                    } catch (error) {
-                      console.error('Service key test failed:', error)
-                      alert('服務密鑰測試失敗：' + error)
-                    }
-                  }}
-                  className="flex items-center space-x-1 bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs"
-                >
-                  <span>服務密鑰測試</span>
-                </button>
-              <button
-                onClick={async () => {
-                  console.log('Testing basic API...')
-                  try {
-                    const response = await fetch('/api/debug/basic-test')
-                    const data = await response.json()
-                    console.log('Basic API test result:', data)
-                    alert('基本 API 測試結果已記錄在控制台')
-                  } catch (error) {
-                    console.error('Basic test failed:', error)
-                    alert('基本測試失敗：' + error)
-                  }
-                }}
-                className="flex items-center space-x-1 bg-gray-500 hover:bg-gray-600 text-white px-2 py-1 rounded text-xs"
-              >
-                <span>基本</span>
-              </button>
-              <button
-                onClick={async () => {
-                  console.log('Testing direct Supabase...')
-                  try {
-                    const response = await fetch('/api/debug/direct-supabase')
-                    const data = await response.json()
-                    console.log('Direct Supabase test result:', data)
-                    alert('直接 Supabase 測試結果已記錄在控制台')
-                  } catch (error) {
-                    console.error('Direct Supabase test failed:', error)
-                    alert('Supabase 測試失敗：' + error)
-                  }
-                }}
-                className="flex items-center space-x-1 bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs"
-              >
-                <AlertCircle className="w-3 h-3" />
-                <span>DB</span>
-              </button>
-              <button
-                onClick={() => setShowForm(true)}
-                className="flex items-center space-x-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors"
-              >
-                <Plus className="w-4 h-4" />
-                <span>新增問題</span>
-              </button>
-            </div>
-          </div>
-        </div>
 
         {/* Question Form Modal */}
         {showForm && (
@@ -770,9 +669,7 @@ export default function QuestionsManagePage() {
 
                   {/* 媒體類型選擇 */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-900 mb-2">
-                      題目類型
-                    </label>
+                    <label className="block text-sm font-medium text-gray-900 mb-2">題目類型</label>
                     <div className="grid grid-cols-3 gap-4">
                       {[
                         { value: 'text', label: '純文字', icon: FileText, color: 'gray' },
@@ -783,9 +680,8 @@ export default function QuestionsManagePage() {
                           key={value}
                           type="button"
                           onClick={() => setFormData({ 
-                            ...formData, 
+                            ...formData,
                             media_type: value as 'text' | 'image' | 'video',
-                            // 清空媒體相關欄位如果改變類型
                             ...(value !== formData.media_type && {
                               media_url: undefined,
                               media_thumbnail_url: undefined,
@@ -823,14 +719,14 @@ export default function QuestionsManagePage() {
                           media_thumbnail_url: data.thumbnailUrl || undefined,
                           media_alt_text: data.altText || undefined
                         })}
-                        disabled={loading}
+                        disabled={submitting}
                       />
                     </div>
                   )}
 
                   {/* 選項 */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {(['A', 'B', 'C', 'D'] as const).map((option) => (
+                  <div className="grid grid-cols-2 gap-4">
+                    {['A', 'B', 'C', 'D'].map((option) => (
                       <div key={option}>
                         <label className="block text-sm font-medium text-gray-900 mb-2">
                           選項 {option} *
@@ -838,13 +734,13 @@ export default function QuestionsManagePage() {
                         <input
                           type="text"
                           value={formData[`option_${option.toLowerCase()}` as keyof QuestionFormData] as string}
-                          onChange={(e) => setFormData({ 
-                            ...formData, 
-                            [`option_${option.toLowerCase()}`]: e.target.value 
+                          onChange={(e) => setFormData({
+                            ...formData,
+                            [`option_${option.toLowerCase()}`]: e.target.value
                           })}
                           required
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
-                          placeholder={`選項 ${option}`}
+                          placeholder={`請輸入選項 ${option}...`}
                         />
                       </div>
                     ))}
@@ -855,132 +751,141 @@ export default function QuestionsManagePage() {
                     <label className="block text-sm font-medium text-gray-900 mb-2">
                       正確答案 *
                     </label>
-                    <select
-                      value={formData.correct_answer}
-                      onChange={(e) => setFormData({ ...formData, correct_answer: e.target.value as 'A' | 'B' | 'C' | 'D' })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
-                    >
-                      <option value="A">A</option>
-                      <option value="B">B</option>
-                      <option value="C">C</option>
-                      <option value="D">D</option>
-                    </select>
+                    <div className="flex space-x-4">
+                      {['A', 'B', 'C', 'D'].map((option) => (
+                        <label key={option} className="flex items-center">
+                          <input
+                            type="radio"
+                            name="correct_answer"
+                            value={option}
+                            checked={formData.correct_answer === option}
+                            onChange={(e) => setFormData({ ...formData, correct_answer: e.target.value as 'A' | 'B' | 'C' | 'D' })}
+                            className="mr-2"
+                          />
+                          <span className="text-gray-900">選項 {option}</span>
+                        </label>
+                      ))}
+                    </div>
                   </div>
 
-                  {/* 分數設定 */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* 基礎設定 */}
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-900 mb-2">
-                        <Award className="w-4 h-4 inline mr-1" />
                         基礎分數
                       </label>
                       <input
                         type="number"
                         value={formData.points}
-                        onChange={(e) => setFormData({ ...formData, points: parseInt(e.target.value) || 0 })}
-                        min="0"
+                        onChange={(e) => setFormData({ ...formData, points: parseInt(e.target.value) })}
+                        min="1"
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                       />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-900 mb-2">
-                        <Clock className="w-4 h-4 inline mr-1" />
                         答題時間 (秒)
                       </label>
                       <input
                         type="number"
                         value={formData.time_limit}
-                        onChange={(e) => setFormData({ ...formData, time_limit: parseInt(e.target.value) || 30 })}
+                        onChange={(e) => setFormData({ ...formData, time_limit: parseInt(e.target.value) })}
                         min="5"
                         max="300"
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                       />
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-900 mb-2">
-                        最大加成分數
-                      </label>
-                      <input
-                        type="number"
-                        value={formData.max_bonus_points}
-                        onChange={(e) => setFormData({ ...formData, max_bonus_points: parseInt(e.target.value) || 0 })}
-                        min="0"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
-                      />
-                    </div>
                   </div>
 
-                  {/* 扣分設定 */}
-                  <div className="border border-gray-200 rounded-lg p-4">
-                    <h4 className="font-medium text-gray-900 mb-3">扣分設定</h4>
+                  {/* 進階設定 */}
+                  <div className="space-y-4">
+                    <h4 className="font-medium text-gray-900">進階設定</h4>
                     
-                    <div className="space-y-3">
-                      <label className="flex items-center space-x-3">
+                    {/* 答錯扣分 */}
+                    <div className="flex items-center space-x-4">
+                      <label className="flex items-center">
                         <input
                           type="checkbox"
                           checked={formData.penalty_enabled}
                           onChange={(e) => setFormData({ ...formData, penalty_enabled: e.target.checked })}
-                          className="rounded border-gray-300"
+                          className="mr-2"
                         />
-                        <span className="text-sm text-gray-900">答錯扣分</span>
-                        {formData.penalty_enabled && (
-                          <input
-                            type="number"
-                            value={formData.penalty_score}
-                            onChange={(e) => setFormData({ ...formData, penalty_score: parseInt(e.target.value) || 0 })}
-                            min="0"
-                            className="w-20 px-2 py-1 border border-gray-300 rounded text-sm text-gray-900"
-                            placeholder="分數"
-                          />
-                        )}
+                        <span className="text-gray-900">答錯扣分</span>
                       </label>
+                      {formData.penalty_enabled && (
+                        <input
+                          type="number"
+                          value={formData.penalty_score}
+                          onChange={(e) => setFormData({ ...formData, penalty_score: parseInt(e.target.value) })}
+                          min="0"
+                          className="w-20 px-2 py-1 border border-gray-300 rounded text-gray-900"
+                          placeholder="分數"
+                        />
+                      )}
+                    </div>
 
-                      <label className="flex items-center space-x-3">
+                    {/* 超時扣分 */}
+                    <div className="flex items-center space-x-4">
+                      <label className="flex items-center">
                         <input
                           type="checkbox"
                           checked={formData.timeout_penalty_enabled}
                           onChange={(e) => setFormData({ ...formData, timeout_penalty_enabled: e.target.checked })}
-                          className="rounded border-gray-300"
+                          className="mr-2"
                         />
-                        <span className="text-sm text-gray-900">超時扣分</span>
-                        {formData.timeout_penalty_enabled && (
-                          <input
-                            type="number"
-                            value={formData.timeout_penalty_score}
-                            onChange={(e) => setFormData({ ...formData, timeout_penalty_score: parseInt(e.target.value) || 0 })}
-                            min="0"
-                            className="w-20 px-2 py-1 border border-gray-300 rounded text-sm text-gray-900"
-                            placeholder="分數"
-                          />
-                        )}
+                        <span className="text-gray-900">超時扣分</span>
                       </label>
+                      {formData.timeout_penalty_enabled && (
+                        <input
+                          type="number"
+                          value={formData.timeout_penalty_score}
+                          onChange={(e) => setFormData({ ...formData, timeout_penalty_score: parseInt(e.target.value) })}
+                          min="0"
+                          className="w-20 px-2 py-1 border border-gray-300 rounded text-gray-900"
+                          placeholder="分數"
+                        />
+                      )}
+                    </div>
 
-                      <label className="flex items-center space-x-3">
+                    {/* 速度加成 */}
+                    <div className="flex items-center space-x-4">
+                      <label className="flex items-center">
                         <input
                           type="checkbox"
                           checked={formData.speed_bonus_enabled}
                           onChange={(e) => setFormData({ ...formData, speed_bonus_enabled: e.target.checked })}
-                          className="rounded border-gray-300"
+                          className="mr-2"
                         />
-                        <span className="text-sm text-gray-900">啟用速度加成</span>
+                        <span className="text-gray-900">速度加成</span>
                       </label>
+                      {formData.speed_bonus_enabled && (
+                        <input
+                          type="number"
+                          value={formData.max_bonus_points}
+                          onChange={(e) => setFormData({ ...formData, max_bonus_points: parseInt(e.target.value) })}
+                          min="0"
+                          className="w-20 px-2 py-1 border border-gray-300 rounded text-gray-900"
+                          placeholder="最高分"
+                        />
+                      )}
                     </div>
                   </div>
 
-                  {/* 提交按鈕 */}
-                  <div className="flex justify-end space-x-3">
+                  {/* 按鈕 */}
+                  <div className="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200">
                     <button
                       type="button"
                       onClick={handleCancel}
-                      className="px-4 py-2 border border-gray-300 text-gray-900 rounded-lg hover:bg-gray-50 transition-colors"
+                      className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
                     >
                       取消
                     </button>
                     <button
                       type="submit"
                       disabled={submitting}
-                      className="flex items-center space-x-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors disabled:opacity-50"
+                      className="flex items-center space-x-2 bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition-colors disabled:opacity-50"
                     >
+                      {submitting && <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>}
                       <Save className="w-4 h-4" />
                       <span>{submitting ? '儲存中...' : '儲存'}</span>
                     </button>
@@ -990,198 +895,6 @@ export default function QuestionsManagePage() {
             </div>
           </div>
         )}
-
-        {/* Questions List */}
-        <div className="space-y-4">
-          {loading ? (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
-              <p className="text-gray-900 mt-2">載入問題中...</p>
-            </div>
-          ) : questions.length === 0 ? (
-            <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
-              <HelpCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-900">還沒有任何問題</p>
-              <button
-                onClick={() => setShowForm(true)}
-                className="mt-4 bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition-colors"
-              >
-                新增第一個問題
-              </button>
-            </div>
-          ) : viewMode === 'list' ? (
-            /* 列表視圖 - 拖拽排序 */
-            <div className="bg-white rounded-2xl shadow-lg p-6">
-              <div className="mb-4">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">拖拽排序</h3>
-                <p className="text-sm text-gray-600">拖拽題目來調整順序，變更會立即保存</p>
-              </div>
-              <DragDropQuestionList
-                questions={questions.map(q => ({
-                  id: q.id,
-                  question_text: q.question_text,
-                  display_order: q.display_order || q.id,
-                  media_type: q.media_type,
-                  is_active: q.is_active,
-                  media_url: q.media_url
-                }))}
-                onReorder={handleReorder}
-                onEdit={(questionId) => {
-                  const question = questions.find(q => q.id === questionId)
-                  if (question) handleEdit(question)
-                }}
-                onToggleActive={handleToggleActive}
-                loading={loading}
-              />
-            </div>
-          ) : (
-            /* 卡片視圖 - 原有的網格顯示 */
-            questions.map((question, index) => (
-              <div key={question.id} className="bg-white rounded-2xl shadow-lg p-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-3 mb-3">
-                      <span className="bg-blue-100 text-blue-800 text-sm font-medium px-2.5 py-0.5 rounded">
-                        Q{index + 1}
-                      </span>
-                      {question.is_active ? (
-                        <span className="bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded flex items-center">
-                          <CheckCircle className="w-3 h-3 mr-1" />
-                          啟用
-                        </span>
-                      ) : (
-                        <span className="bg-red-100 text-red-800 text-xs font-medium px-2 py-1 rounded flex items-center">
-                          <AlertCircle className="w-3 h-3 mr-1" />
-                          停用
-                        </span>
-                      )}
-                      <div className="flex items-center space-x-4 text-sm text-gray-500">
-                        <span className="flex items-center">
-                          <Award className="w-4 h-4 mr-1" />
-                          {question.points}分
-                        </span>
-                        <span className="flex items-center">
-                          <Clock className="w-4 h-4 mr-1" />
-                          {question.time_limit}秒
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-start space-x-3 mb-4">
-                      {/* 媒體類型圖標 */}
-                      <div className="flex-shrink-0 mt-1">
-                        {question.media_type === 'image' && (
-                          <div className="flex items-center text-blue-600">
-                            <ImageIcon className="w-5 h-5" />
-                          </div>
-                        )}
-                        {question.media_type === 'video' && (
-                          <div className="flex items-center text-purple-600">
-                            <Video className="w-5 h-5" />
-                          </div>
-                        )}
-                        {(!question.media_type || question.media_type === 'text') && (
-                          <div className="flex items-center text-gray-500">
-                            <FileText className="w-5 h-5" />
-                          </div>
-                        )}
-                      </div>
-                      
-                      {/* 題目內容 */}
-                      <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-gray-900">
-                          {question.question_text}
-                        </h3>
-                        
-                        {/* 媒體預覽 */}
-                        {question.media_url && (
-                          <div className="mt-3">
-                            {question.media_type === 'image' && (
-                              <img
-                                src={question.media_url}
-                                alt={question.media_alt_text || '題目圖片'}
-                                className="max-w-xs h-auto rounded-lg border border-gray-200"
-                              />
-                            )}
-                            {question.media_type === 'video' && (
-                              <video
-                                src={question.media_url}
-                                poster={question.media_thumbnail_url}
-                                controls
-                                className="max-w-xs h-auto rounded-lg border border-gray-200"
-                              >
-                                您的瀏覽器不支援影片播放
-                              </video>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-4">
-                      {[
-                        { key: 'A', value: question.option_a },
-                        { key: 'B', value: question.option_b },
-                        { key: 'C', value: question.option_c },
-                        { key: 'D', value: question.option_d }
-                      ].map(option => (
-                        <div 
-                          key={option.key}
-                          className={`p-3 rounded-lg border ${
-                            option.key === question.correct_answer 
-                              ? 'bg-green-50 border-green-200 text-green-800' 
-                              : 'bg-gray-50 border-gray-200 text-gray-900'
-                          }`}
-                        >
-                          <span className="font-medium">{option.key}.</span> {option.value}
-                          {option.key === question.correct_answer && (
-                            <CheckCircle className="w-4 h-4 inline ml-2 text-green-600" />
-                          )}
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* 設定標籤 */}
-                    <div className="flex flex-wrap gap-2">
-                      {question.penalty_enabled && (
-                        <span className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded">
-                          答錯扣{question.penalty_score}分
-                        </span>
-                      )}
-                      {question.timeout_penalty_enabled && (
-                        <span className="bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded">
-                          超時扣{question.timeout_penalty_score}分
-                        </span>
-                      )}
-                      {question.speed_bonus_enabled && (
-                        <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
-                          速度加成最多{question.max_bonus_points}分
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2 ml-4">
-                    <button
-                      onClick={() => handleEdit(question)}
-                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                      title="編輯"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(question.id)}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                      title="刪除"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
       </main>
     </div>
   )
