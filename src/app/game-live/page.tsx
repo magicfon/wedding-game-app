@@ -571,9 +571,7 @@ export default function GameLivePage() {
                                       {user.display_name?.charAt(0) || '?'}
                                     </div>
                                   )}
-                                  <span className="text-xs text-black mt-1 text-center leading-tight max-w-[2rem] truncate">
-                                    {user.display_name}
-                                  </span>
+                                  
                                 </div>
                               ))}
                                 {distribution.users.length > 12 && (
