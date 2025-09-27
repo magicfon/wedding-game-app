@@ -36,6 +36,11 @@ export default function GameLivePage() {
   const [timeLeft, setTimeLeft] = useState<number>(0)
   const [displayTimeLeft, setDisplayTimeLeft] = useState<number>(0)
   const [currentQuestionAnswerCount, setCurrentQuestionAnswerCount] = useState<number>(0)
+  
+  // 顯示階段控制
+  const [displayPhase, setDisplayPhase] = useState<'question' | 'options'>('question')
+  const [phaseTimer, setPhaseTimer] = useState<NodeJS.Timeout | null>(null)
+  
   // 從 localStorage 初始化狀態，以防組件重新載入
   const [showingCorrectOnly, setShowingCorrectOnly] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
@@ -56,6 +61,55 @@ export default function GameLivePage() {
       localStorage.setItem('game-live-showing-correct-only', showingCorrectOnly.toString());
     }
   }, [showingCorrectOnly])
+
+  // 控制顯示階段切換
+  useEffect(() => {
+    if (!currentQuestion || !gameState?.is_game_active || gameState?.is_paused) {
+      return
+    }
+
+    // 清除之前的計時器
+    if (phaseTimer) {
+      clearTimeout(phaseTimer)
+    }
+
+    // 重置為題目階段
+    setDisplayPhase('question')
+
+    // 根據媒體類型設定切換時間
+    let switchDelay = 3000 // 預設3秒（圖片或純文字）
+    
+    if (currentQuestion.media_type === 'video' && currentQuestion.media_duration) {
+      // 如果有影片長度資訊，使用影片長度
+      switchDelay = currentQuestion.media_duration * 1000
+    } else if (currentQuestion.media_type === 'video') {
+      // 沒有長度資訊的影片，預設5秒
+      switchDelay = 5000
+    }
+
+    // 設定切換到選項階段的計時器
+    const timer = setTimeout(() => {
+      setDisplayPhase('options')
+    }, switchDelay)
+
+    setPhaseTimer(timer)
+
+    // 清理函數
+    return () => {
+      if (timer) {
+        clearTimeout(timer)
+      }
+    }
+  }, [currentQuestion?.id, gameState?.is_game_active, gameState?.is_paused])
+
+  // 清理計時器
+  useEffect(() => {
+    return () => {
+      if (phaseTimer) {
+        clearTimeout(phaseTimer)
+      }
+    }
+  }, [])
 
   // 獲取當前題目答題人數
   const fetchCurrentQuestionAnswerCount = useCallback(async () => {
@@ -311,18 +365,162 @@ export default function GameLivePage() {
   }
 
   return (
-    <Layout title="遊戲實況" showNavigation={false}>
-      <div className="max-w-7xl mx-auto">
-        {/* 遊戲暫停提示 */}
-        {gameState?.is_paused && (
-          <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded-lg mb-6">
-            ⏸️ 遊戲暫停中，請等待主持人繼續遊戲
-          </div>
-        )}
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+      {/* 遊戲暫停提示 */}
+      {gameState?.is_paused && (
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 bg-yellow-100 border border-yellow-400 text-yellow-700 px-6 py-3 rounded-lg shadow-lg">
+          ⏸️ 遊戲暫停中，請等待主持人繼續遊戲
+        </div>
+      )}
 
-        {gameState?.is_game_active && (gameState?.is_waiting_for_players !== undefined ? gameState.is_waiting_for_players : !gameState?.current_question_id) ? (
-          <WaitingStage gameState={gameState} />
-        ) : currentQuestion && gameState?.is_game_active && !gameState?.is_paused ? (
+      {gameState?.is_game_active && (gameState?.is_waiting_for_players !== undefined ? gameState.is_waiting_for_players : !gameState?.current_question_id) ? (
+        <WaitingStage gameState={gameState} />
+      ) : currentQuestion && gameState?.is_game_active && !gameState?.is_paused ? (
+        <div className="h-screen flex flex-col">
+          {displayPhase === 'question' ? (
+            // 題目階段 - 滿版顯示
+            <div className="flex-1 flex items-center justify-center p-8">
+              <div className="w-full max-w-6xl text-center">
+                {/* 題目文字 */}
+                <h1 className="text-4xl md:text-6xl lg:text-8xl font-bold text-white mb-8 leading-tight">
+                  {currentQuestion.question_text}
+                </h1>
+                
+                {/* 媒體內容 - 滿版顯示 */}
+                {currentQuestion.media_url && (
+                  <div className="flex justify-center">
+                    {currentQuestion.media_type === 'image' && (
+                      <img
+                        src={currentQuestion.media_url}
+                        alt={currentQuestion.media_alt_text || '題目圖片'}
+                        className="max-w-full max-h-[60vh] object-contain rounded-2xl shadow-2xl"
+                      />
+                    )}
+                    {currentQuestion.media_type === 'video' && (
+                      <video
+                        key={currentQuestion.id}
+                        src={currentQuestion.media_url}
+                        poster={currentQuestion.media_thumbnail_url}
+                        controls
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                        className="max-w-full max-h-[60vh] object-contain rounded-2xl shadow-2xl"
+                        ref={(video) => {
+                          if (video) {
+                            const handleCanPlay = () => {
+                              video.play().then(() => {
+                                console.log('影片自動播放成功')
+                                video.muted = false
+                              }).catch((error) => {
+                                console.log('自動播放失敗:', error)
+                              })
+                            }
+                            video.addEventListener('canplay', handleCanPlay, { once: true })
+                          }
+                        }}
+                      >
+                        您的瀏覽器不支援影片播放
+                      </video>
+                    )}
+                  </div>
+                )}
+                
+                {/* 階段指示器 */}
+                <div className="mt-8">
+                  <div className="inline-flex items-center space-x-2 bg-white bg-opacity-20 rounded-full px-6 py-3">
+                    <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
+                    <span className="text-white text-lg font-medium">
+                      {currentQuestion.media_type === 'video' ? '影片播放中...' : '題目展示中...'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            // 選項階段 - 滿版顯示選項
+            <div className="flex-1 p-8">
+              {/* 題目標題（縮小版） */}
+              <div className="text-center mb-8">
+                <h2 className="text-2xl md:text-4xl font-bold text-white mb-4">
+                  {currentQuestion.question_text}
+                </h2>
+                
+                {/* 倒數計時 */}
+                <div className="inline-flex items-center space-x-4 bg-white bg-opacity-20 rounded-full px-6 py-3">
+                  <div className="text-white text-xl font-bold">
+                    ⏱️ {Math.ceil(displayTimeLeft / 1000)}秒
+                  </div>
+                  <div className="text-white text-lg">
+                    已答題: {currentQuestionAnswerCount} 人
+                  </div>
+                </div>
+              </div>
+
+              {/* 四個選項 - 2x2 網格滿版 */}
+              <div className="grid grid-cols-2 gap-6 h-[calc(100vh-200px)]">
+                {[
+                  { key: 'A', text: currentQuestion.option_a, color: 'from-red-500 to-red-600' },
+                  { key: 'B', text: currentQuestion.option_b, color: 'from-blue-500 to-blue-600' },
+                  { key: 'C', text: currentQuestion.option_c, color: 'from-green-500 to-green-600' },
+                  { key: 'D', text: currentQuestion.option_d, color: 'from-yellow-500 to-yellow-600' }
+                ].map((option) => {
+                  const distribution = answerDistribution.find(d => d.answer === option.key)
+                  const isCorrect = currentQuestion.correct_answer === option.key
+                  const percentage = distribution ? Math.round((distribution.count / Math.max(currentQuestionAnswerCount, 1)) * 100) : 0
+                  
+                  return (
+                    <div
+                      key={option.key}
+                      className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${option.color} shadow-2xl transform transition-all duration-500 hover:scale-105 flex items-center justify-center ${
+                        timeLeft <= 0 && isCorrect ? 'ring-8 ring-white ring-opacity-80 animate-pulse' : ''
+                      }`}
+                    >
+                      {/* 答題進度條 */}
+                      {distribution && distribution.count > 0 && (
+                        <div 
+                          className="absolute bottom-0 left-0 bg-white bg-opacity-30 transition-all duration-1000"
+                          style={{ 
+                            height: `${Math.max(percentage, 5)}%`,
+                            width: '100%'
+                          }}
+                        />
+                      )}
+                      
+                      {/* 選項內容 */}
+                      <div className="relative z-10 text-center p-8">
+                        <div className="text-6xl md:text-8xl font-black text-white mb-4">
+                          {option.key}
+                        </div>
+                        <div className="text-xl md:text-3xl font-bold text-white leading-tight">
+                          {option.text}
+                        </div>
+                        
+                        {/* 答題統計 */}
+                        {distribution && distribution.count > 0 && (
+                          <div className="mt-4 bg-white bg-opacity-20 rounded-full px-4 py-2">
+                            <span className="text-white font-bold text-lg">
+                              {distribution.count} 人 ({percentage}%)
+                            </span>
+                          </div>
+                        )}
+                        
+                        {/* 正確答案標示 */}
+                        {timeLeft <= 0 && isCorrect && (
+                          <div className="absolute -top-4 -right-4 bg-white text-green-600 rounded-full p-4 shadow-lg">
+                            <span className="text-2xl">✓</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* 題目和答題分佈 */}
             <div className="lg:col-span-2">
