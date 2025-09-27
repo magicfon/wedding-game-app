@@ -350,16 +350,28 @@ export default function GameLivePage() {
                             poster={currentQuestion.media_thumbnail_url}
                             controls
                             autoPlay
-                            muted
                             loop
                             playsInline
                             className="max-w-full h-auto max-h-80 rounded-lg shadow-md"
                             onLoadedData={(e) => {
-                              // 嘗試自動播放，如果失敗則顯示控制項
+                              // 嘗試有聲自動播放，如果失敗則嘗試靜音播放
                               const video = e.target as HTMLVideoElement
+                              video.muted = false // 先嘗試有聲播放
+                              video.volume = 0.8 // 設定適中的音量
                               video.play().catch(() => {
-                                console.log('自動播放被阻止，需要用戶手動播放')
+                                console.log('有聲自動播放被阻止，嘗試靜音播放')
+                                video.muted = true
+                                video.play().catch(() => {
+                                  console.log('自動播放完全被阻止，需要用戶手動播放')
+                                })
                               })
+                            }}
+                            onCanPlay={(e) => {
+                              // 當影片可以播放時，確保音量設定正確
+                              const video = e.target as HTMLVideoElement
+                              if (!video.muted) {
+                                video.volume = 0.8
+                              }
                             }}
                           >
                             您的瀏覽器不支援影片播放

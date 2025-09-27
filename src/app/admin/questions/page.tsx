@@ -716,14 +716,19 @@ ${diagnosis.recommendations?.join('\n') || '無建議'}
                                 src={question.media_url}
                                 poster={question.media_thumbnail_url}
                                 controls
-                                muted
                                 playsInline
                                 className="max-w-full h-auto max-h-48 rounded-lg shadow-sm"
                                 onMouseEnter={(e) => {
-                                  // 滑鼠懸停時自動播放預覽
+                                  // 滑鼠懸停時自動播放預覽（有聲音）
                                   const video = e.target as HTMLVideoElement
+                                  video.muted = false
+                                  video.volume = 0.5 // 設定適中的音量
                                   video.play().catch(() => {
-                                    console.log('預覽播放被阻止')
+                                    console.log('有聲預覽播放被阻止，嘗試靜音')
+                                    video.muted = true
+                                    video.play().catch(() => {
+                                      console.log('預覽播放完全被阻止')
+                                    })
                                   })
                                 }}
                                 onMouseLeave={(e) => {
