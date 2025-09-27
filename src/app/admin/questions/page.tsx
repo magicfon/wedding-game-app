@@ -716,7 +716,22 @@ ${diagnosis.recommendations?.join('\n') || '無建議'}
                                 src={question.media_url}
                                 poster={question.media_thumbnail_url}
                                 controls
+                                muted
+                                playsInline
                                 className="max-w-full h-auto max-h-48 rounded-lg shadow-sm"
+                                onMouseEnter={(e) => {
+                                  // 滑鼠懸停時自動播放預覽
+                                  const video = e.target as HTMLVideoElement
+                                  video.play().catch(() => {
+                                    console.log('預覽播放被阻止')
+                                  })
+                                }}
+                                onMouseLeave={(e) => {
+                                  // 滑鼠離開時暫停
+                                  const video = e.target as HTMLVideoElement
+                                  video.pause()
+                                  video.currentTime = 0
+                                }}
                               >
                                 您的瀏覽器不支援影片播放
                               </video>

@@ -202,13 +202,34 @@ export default function DragDropQuestionList({
             </div>
 
             {/* 媒體預覽 */}
-            {question.media_url && question.media_type === 'image' && (
+            {question.media_url && (
               <div className="flex-shrink-0">
-                <img
-                  src={question.media_url}
-                  alt="題目圖片"
-                  className="w-12 h-12 object-cover rounded border"
-                />
+                {question.media_type === 'image' && (
+                  <img
+                    src={question.media_url}
+                    alt="題目圖片"
+                    className="w-12 h-12 object-cover rounded border"
+                  />
+                )}
+                {question.media_type === 'video' && (
+                  <video
+                    src={question.media_url}
+                    muted
+                    playsInline
+                    className="w-12 h-12 object-cover rounded border"
+                    onMouseEnter={(e) => {
+                      const video = e.target as HTMLVideoElement
+                      video.play().catch(() => {})
+                    }}
+                    onMouseLeave={(e) => {
+                      const video = e.target as HTMLVideoElement
+                      video.pause()
+                      video.currentTime = 0
+                    }}
+                  >
+                    影片
+                  </video>
+                )}
               </div>
             )}
 

@@ -349,7 +349,18 @@ export default function GameLivePage() {
                             src={currentQuestion.media_url}
                             poster={currentQuestion.media_thumbnail_url}
                             controls
+                            autoPlay
+                            muted
+                            loop
+                            playsInline
                             className="max-w-full h-auto max-h-80 rounded-lg shadow-md"
+                            onLoadedData={(e) => {
+                              // 嘗試自動播放，如果失敗則顯示控制項
+                              const video = e.target as HTMLVideoElement
+                              video.play().catch(() => {
+                                console.log('自動播放被阻止，需要用戶手動播放')
+                              })
+                            }}
                           >
                             您的瀏覽器不支援影片播放
                           </video>
