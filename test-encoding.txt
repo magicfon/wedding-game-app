@@ -1,3 +1,0 @@
-測試中文編碼
-Test Chinese encoding
-時間：2024年
