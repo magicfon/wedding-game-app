@@ -552,8 +552,11 @@ function WaitingStage({ gameState }: { gameState: any }) {
     try {
       const response = await fetch('/api/qr-code?url=' + encodeURIComponent(`${window.location.origin}/quiz`))
       const data = await response.json()
-      if (data.qrCode) {
-        setQrCodeDataURL(data.qrCode)
+      console.log('QR Code API response:', data) // 添加調試日誌
+      if (data.success && (data.qrCodeDataURL || data.qrCode)) {
+        setQrCodeDataURL(data.qrCodeDataURL || data.qrCode)
+      } else {
+        console.error('QR Code generation failed:', data)
       }
     } catch (error) {
       console.error('Error generating QR code:', error)
