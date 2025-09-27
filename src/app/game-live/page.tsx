@@ -507,7 +507,7 @@ export default function GameLivePage() {
                         {timeLeft <= 0 && (
                           <div className="text-center mb-4">
                             <div className="bg-white bg-opacity-20 rounded-full px-4 py-2 inline-block">
-                              <span className="text-white font-bold text-lg">
+                              <span className="text-black font-bold text-lg">
                                 {distribution?.count || 0} 人 ({percentage}%)
                               </span>
                             </div>
@@ -527,21 +527,21 @@ export default function GameLivePage() {
                                       className="w-8 h-8 rounded-full object-cover border-2 border-white"
                                     />
                                   ) : (
-                                    <div className="w-8 h-8 bg-white bg-opacity-30 rounded-full flex items-center justify-center text-white font-bold text-xs border-2 border-white">
+                                    <div className="w-8 h-8 bg-white bg-opacity-30 rounded-full flex items-center justify-center text-black font-bold text-xs border-2 border-white">
                                       {user.display_name?.charAt(0) || '?'}
                                     </div>
                                   )}
-                                  <span className="text-xs text-white mt-1 text-center leading-tight max-w-[2rem] truncate">
+                                  <span className="text-xs text-black mt-1 text-center leading-tight max-w-[2rem] truncate">
                                     {user.display_name}
                                   </span>
                                 </div>
                               ))}
                               {distribution.users.length > 12 && (
                                 <div className="flex flex-col items-center">
-                                  <div className="w-8 h-8 bg-white bg-opacity-50 rounded-full flex items-center justify-center text-white font-bold text-xs border-2 border-white">
+                                  <div className="w-8 h-8 bg-white bg-opacity-50 rounded-full flex items-center justify-center text-black font-bold text-xs border-2 border-white">
                                     +{distribution.users.length - 12}
                                   </div>
-                                  <span className="text-xs text-white mt-1">更多</span>
+                                  <span className="text-xs text-black mt-1">更多</span>
                                 </div>
                               )}
                             </div>
