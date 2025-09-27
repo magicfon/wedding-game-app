@@ -539,7 +539,7 @@ export default function GameLivePage() {
                         <div className="text-4xl font-black text-white mb-2">
                           {option.key}
                         </div>
-                        <div className="text-lg font-bold text-white mb-4 leading-tight">
+                        <div className="text-lg font-bold text-black mb-4 leading-tight">
                           {option.text}
                         </div>
                         
@@ -548,14 +548,14 @@ export default function GameLivePage() {
                           <div className="text-3xl font-bold text-white mb-2">
                             {distribution?.count || 0} 人
                           </div>
-                          <div className="text-xl text-white opacity-90">
+                          <div className="text-xl text-black opacity-90">
                             {percentage}%
                           </div>
                         </div>
                         
                         {/* 正確答案標示 */}
                         {isCorrect && (
-                          <div className="absolute -top-2 -right-2 bg-green-500 text-white rounded-full p-3 shadow-lg">
+                          <div className="absolute -top-2 -right-2 bg-green-500 text-black rounded-full p-3 shadow-lg">
                             <span className="text-xl">✓</span>
                           </div>
                         )}
@@ -611,20 +611,20 @@ export default function GameLivePage() {
                     
                     {/* 玩家資訊 */}
                     <div className="flex-1">
-                      <div className="text-2xl font-bold text-white">
+                      <div className="text-2xl font-bold text-black">
                         {player.display_name}
                       </div>
                     </div>
                     
                     {/* 分數 */}
-                    <div className="text-3xl font-bold text-white">
+                    <div className="text-3xl font-bold text-black">
                       {player.quiz_score} 分
                     </div>
                   </div>
                 ))}
                 
                 {scoreRankings.length === 0 && (
-                  <div className="text-center text-white text-xl opacity-60 py-8">
+                  <div className="text-center text-black text-xl opacity-60 py-8">
                     暫無排行榜資料
                   </div>
                 )}
