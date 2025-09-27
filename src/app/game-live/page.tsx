@@ -539,7 +539,7 @@ export default function GameLivePage() {
                         <div className="text-4xl font-black text-white mb-2">
                           {option.key}
                         </div>
-                        <div className="text-lg font-bold text-black mb-4 leading-tight">
+                        <div className="text-lg font-bold text-white mb-4 leading-tight">
                           {option.text}
                         </div>
                         
