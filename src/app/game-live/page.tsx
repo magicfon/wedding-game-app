@@ -37,7 +37,7 @@ export default function GameLivePage() {
   const [currentQuestionAnswerCount, setCurrentQuestionAnswerCount] = useState<number>(0)
   
   // 顯示階段控制
-  const [displayPhase, setDisplayPhase] = useState<'question' | 'options'>('question')
+  const [displayPhase, setDisplayPhase] = useState<'question' | 'options' | 'results' | 'rankings'>('question')
   const [phaseTimer, setPhaseTimer] = useState<NodeJS.Timeout | null>(null)
   
   // 從 localStorage 初始化狀態，以防組件重新載入
@@ -109,6 +109,27 @@ export default function GameLivePage() {
       }
     }
   }, [])
+
+  // 監聽時間結束，切換到結果顯示階段
+  useEffect(() => {
+    if (displayPhase === 'options' && timeLeft <= 0 && currentQuestion) {
+      // 時間結束，顯示答題結果
+      const timer = setTimeout(() => {
+        setDisplayPhase('results')
+        
+        // 5秒後顯示分數排行榜
+        const rankingTimer = setTimeout(() => {
+          setDisplayPhase('rankings')
+          // 在這裡直接調用分數排行榜獲取邏輯
+          fetchScoreRankings()
+        }, 5000)
+        
+        return () => clearTimeout(rankingTimer)
+      }, 2000) // 2秒延遲顯示結果
+      
+      return () => clearTimeout(timer)
+    }
+  }, [displayPhase, timeLeft, currentQuestion])
 
   // 獲取當前題目答題人數
   const fetchCurrentQuestionAnswerCount = useCallback(async () => {
@@ -400,7 +421,7 @@ export default function GameLivePage() {
                 </div>
               </div>
             </div>
-          ) : (
+          ) : displayPhase === 'options' ? (
             // 選項階段 - 滿版顯示選項
             <div className="flex-1 p-8">
               {/* 題目標題（縮小版） */}
@@ -480,7 +501,136 @@ export default function GameLivePage() {
                 })}
               </div>
             </div>
-          )}
+          ) : displayPhase === 'results' ? (
+            // 結果階段 - 顯示答題分佈
+            <div className="flex-1 p-8">
+              <div className="text-center mb-8">
+                <h2 className="text-4xl md:text-6xl font-bold text-white mb-4">
+                  📊 答題結果
+                </h2>
+                <div className="text-2xl text-white mb-4">
+                  正確答案：<span className="text-green-400 font-bold">{currentQuestion.correct_answer}</span>
+                </div>
+                <div className="text-xl text-white opacity-80">
+                  總共 {currentQuestionAnswerCount} 人參與答題
+                </div>
+              </div>
+
+              {/* 答題分佈圖表 */}
+              <div className="grid grid-cols-2 gap-6 max-w-4xl mx-auto">
+                {[
+                  { key: 'A', text: currentQuestion.option_a, color: 'from-red-500 to-red-600' },
+                  { key: 'B', text: currentQuestion.option_b, color: 'from-blue-500 to-blue-600' },
+                  { key: 'C', text: currentQuestion.option_c, color: 'from-green-500 to-green-600' },
+                  { key: 'D', text: currentQuestion.option_d, color: 'from-yellow-500 to-yellow-600' }
+                ].map((option) => {
+                  const distribution = answerDistribution.find(d => d.answer === option.key)
+                  const isCorrect = currentQuestion.correct_answer === option.key
+                  const percentage = distribution ? Math.round((distribution.count / Math.max(currentQuestionAnswerCount, 1)) * 100) : 0
+                  
+                  return (
+                    <div
+                      key={option.key}
+                      className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${option.color} shadow-xl p-6 ${
+                        isCorrect ? 'ring-4 ring-green-400 ring-opacity-80' : ''
+                      }`}
+                    >
+                      <div className="text-center">
+                        <div className="text-4xl font-black text-white mb-2">
+                          {option.key}
+                        </div>
+                        <div className="text-lg font-bold text-white mb-4 leading-tight">
+                          {option.text}
+                        </div>
+                        
+                        {/* 答題統計 */}
+                        <div className="bg-white bg-opacity-20 rounded-lg p-4">
+                          <div className="text-3xl font-bold text-white mb-2">
+                            {distribution?.count || 0} 人
+                          </div>
+                          <div className="text-xl text-white opacity-90">
+                            {percentage}%
+                          </div>
+                        </div>
+                        
+                        {/* 正確答案標示 */}
+                        {isCorrect && (
+                          <div className="absolute -top-2 -right-2 bg-green-500 text-white rounded-full p-3 shadow-lg">
+                            <span className="text-xl">✓</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          ) : displayPhase === 'rankings' ? (
+            // 排行榜階段 - 顯示分數排行榜
+            <div className="flex-1 p-8">
+              <div className="text-center mb-8">
+                <h2 className="text-4xl md:text-6xl font-bold text-white mb-4">
+                  🏆 目前排行榜
+                </h2>
+                <div className="text-xl text-white opacity-80">
+                  前 10 名玩家
+                </div>
+              </div>
+
+              {/* 分數排行榜 */}
+              <div className="max-w-4xl mx-auto space-y-4">
+                {scoreRankings.map((player, index) => (
+                  <div
+                    key={player.line_id}
+                    className={`flex items-center space-x-6 bg-white bg-opacity-10 backdrop-blur-md rounded-2xl p-6 ${
+                      index < 3 ? 'ring-2 ring-yellow-400 ring-opacity-60' : ''
+                    }`}
+                  >
+                    {/* 排名 */}
+                    <div className={`w-16 h-16 rounded-full flex items-center justify-center font-bold text-2xl ${
+                      index === 0 ? 'bg-yellow-500 text-white' :
+                      index === 1 ? 'bg-gray-400 text-white' :
+                      index === 2 ? 'bg-orange-600 text-white' :
+                      'bg-white bg-opacity-20 text-white'
+                    }`}>
+                      {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : index + 1}
+                    </div>
+                    
+                    {/* 玩家頭像 */}
+                    {player.avatar_url ? (
+                      <img 
+                        src={player.avatar_url} 
+                        alt={player.display_name} 
+                        className="w-16 h-16 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-16 h-16 bg-white bg-opacity-30 rounded-full flex items-center justify-center text-white font-bold text-xl">
+                        {player.display_name?.charAt(0) || '?'}
+                      </div>
+                    )}
+                    
+                    {/* 玩家資訊 */}
+                    <div className="flex-1">
+                      <div className="text-2xl font-bold text-white">
+                        {player.display_name}
+                      </div>
+                    </div>
+                    
+                    {/* 分數 */}
+                    <div className="text-3xl font-bold text-white">
+                      {player.quiz_score} 分
+                    </div>
+                  </div>
+                ))}
+                
+                {scoreRankings.length === 0 && (
+                  <div className="text-center text-white text-xl opacity-60 py-8">
+                    暫無排行榜資料
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : null}
         </div>
       ) : (
         <div className="flex items-center justify-center h-screen">
