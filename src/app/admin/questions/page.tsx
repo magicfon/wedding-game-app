@@ -318,21 +318,44 @@ export default function QuestionsManagePage() {
       
       if (data.success) {
         const diagnosis = data.diagnosis
-        const message = `🔍 媒體清理診斷報告：
+        const storageScan = diagnosis.storage_scan || {}
+        const dbAnalysis = diagnosis.database_analysis || {}
+        const matchingAnalysis = diagnosis.matching_analysis || {}
+        const summary = diagnosis.summary || {}
+        
+        // 計算目錄資訊
+        const directoriesInfo = Object.entries(storageScan.files_by_directory || {})
+          .map(([dir, files]: [string, any]) => `  - ${dir}: ${files.length} 個檔案`)
+          .join('\n')
+        
+        const message = `🔍 Supabase Storage 媒體診斷報告：
 
-📁 Storage 檔案：${diagnosis.storage_files.total} 個
-📋 資料庫題目：${diagnosis.database_questions.total} 個
-🎯 使用媒體的題目：${diagnosis.database_questions.with_media} 個
-🔗 使用中檔案：${diagnosis.file_analysis.used_count} 個
-🗑️ 未使用檔案：${diagnosis.file_analysis.unused_count} 個
+📁 Storage 掃描結果：
+- 總檔案數：${storageScan.total_files || 0} 個
+- 掃描目錄：${summary.directories_scanned || 0} 個
+- 預期檔案：${summary.expected_files || 7} 個
+- 符合預期：${summary.files_match_expected ? '✅ 是' : '❌ 否'}
 
-🔐 權限狀態：
-- Service Role Key：${diagnosis.permissions.service_role_key_exists ? '✅ 已設定' : '❌ 未設定'}
+📂 檔案分佈：
+${directoriesInfo || '  - 無檔案'}
 
-📝 下一步：
-${diagnosis.next_steps.join('\n')}
+📋 資料庫分析：
+- 總題目：${dbAnalysis.total_questions || 0} 個
+- 使用媒體：${dbAnalysis.media_questions_count || 0} 個題目
+- 使用路徑：${dbAnalysis.used_file_paths?.length || 0} 個
 
-詳細資訊請查看瀏覽器控制台`
+🔍 匹配分析：
+- 使用中檔案：${matchingAnalysis.used_files_count || 0} 個
+- 未使用檔案：${matchingAnalysis.unused_files_count || 0} 個
+- 可清理：${summary.can_cleanup ? '✅ 是' : '❌ 否'}
+
+🔐 系統狀態：
+- Service Role Key：${diagnosis.system_info?.service_role_key_exists ? '✅ 已設定' : '❌ 未設定'}
+
+📝 建議：
+${diagnosis.recommendations?.join('\n') || '無建議'}
+
+詳細資訊請查看瀏覽器控制台 (F12)`
         
         setCleanupResult(message)
         console.log('🔍 完整診斷結果:', data)
