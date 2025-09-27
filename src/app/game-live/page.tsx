@@ -588,10 +588,10 @@ export default function GameLivePage() {
                   >
                     {/* 排名 */}
                     <div className={`w-16 h-16 rounded-full flex items-center justify-center font-bold text-2xl ${
-                      index === 0 ? 'bg-yellow-500 text-white' :
-                      index === 1 ? 'bg-gray-400 text-white' :
-                      index === 2 ? 'bg-orange-600 text-white' :
-                      'bg-white bg-opacity-20 text-white'
+                      index === 0 ? 'bg-yellow-500 text-black' :
+                      index === 1 ? 'bg-gray-400 text-black' :
+                      index === 2 ? 'bg-orange-600 text-black' :
+                      'bg-white bg-opacity-20 text-black'
                     }`}>
                       {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : index + 1}
                     </div>
@@ -604,7 +604,7 @@ export default function GameLivePage() {
                         className="w-16 h-16 rounded-full object-cover"
                       />
                     ) : (
-                      <div className="w-16 h-16 bg-white bg-opacity-30 rounded-full flex items-center justify-center text-white font-bold text-xl">
+                      <div className="w-16 h-16 bg-white bg-opacity-30 rounded-full flex items-center justify-center text-black font-bold text-xl">
                         {player.display_name?.charAt(0) || '?'}
                       </div>
                     )}
