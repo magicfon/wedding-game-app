@@ -1,20 +1,23 @@
-🔧 修復 QR Code 生成和顯示問題
+🎨 修復 QR Code 載入狀態在白色背景上的文字顏色問題
 
 🐛 修復問題：
-- QR Code API 返回字段不一致導致無法正常載入
-- 前端無法正確接收 QR Code 數據
+- QR Code 載入狀態的文字在白色背景上看不見
+- 載入中的文字顏色與背景對比度不足
 
 ✨ 修復方案：
-- API 返回：同時提供 qrCode 和 qrCodeDataURL 字段
-- 前端接收：支援兩種字段名稱的回退機制
-- 調試日誌：添加 QR Code API 響應日誌
+- 載入狀態文字：text-gray-600 → text-gray-700 和 text-gray-800
+- QR Code 圖標：text-gray-400 → text-gray-500
+- 載入文字：添加 font-semibold 增強可讀性
+- QR Code 圖片：添加 object-contain p-4 確保完整顯示
 
 🎯 修復內容：
-- /api/qr-code/route.ts：返回兼容的字段名稱
-- game-live/page.tsx：改進 QR Code 數據處理邏輯
-- 添加詳細的錯誤處理和調試信息
+- 載入狀態容器：深灰色文字在白色背景上清晰可見
+- QR Code 圖標：適當的灰色層次
+- 載入提示文字：更深的顏色和更粗的字體
+- QR Code 圖片：添加內邊距和適當縮放
 
 📱 用戶體驗：
-- QR Code 現在能正常生成和顯示
-- 載入失敗時提供清晰的錯誤信息
-- 提升 QR Code 載入的可靠性
+- QR Code 載入狀態現在清晰可見
+- 文字與白色背景形成良好對比
+- 載入提示更加明顯和專業
+- QR Code 顯示更加完整和美觀
