@@ -199,16 +199,30 @@ export default function GameLivePage() {
       console.log('fetchAnswerDistribution: Raw answers data:', answers)
 
       // 統計每個答案的分佈
-      const distribution = ['A', 'B', 'C', 'D'].map(option => ({
-        answer: option,
-        count: answers?.filter(a => a.answer === option).length || 0,
-        users: answers?.filter(a => a.answer === option).map(a => ({
-          display_name: (a.users as any).display_name,
-          avatar_url: (a.users as any).avatar_url
-        })) || []
-      }))
+      const distribution = ['A', 'B', 'C', 'D'].map(option => {
+        const optionAnswers = answers?.filter(a => a.answer === option) || []
+        const users = optionAnswers.map(a => {
+          const userData = a.users as any
+          return {
+            display_name: userData?.display_name || '未知用戶',
+            avatar_url: userData?.avatar_url || null
+          }
+        })
+        
+        return {
+          answer: option,
+          count: optionAnswers.length,
+          users: users
+        }
+      })
 
       console.log('fetchAnswerDistribution: Calculated distribution:', distribution)
+      console.log('fetchAnswerDistribution: Distribution details:', distribution.map(d => ({
+        answer: d.answer,
+        count: d.count,
+        userCount: d.users.length,
+        users: d.users.map(u => ({ name: u.display_name, hasAvatar: !!u.avatar_url }))
+      })))
       setAnswerDistribution(distribution)
     } catch (error) {
       console.error('Error fetching answer distribution:', error)
@@ -515,10 +529,11 @@ export default function GameLivePage() {
                         )}
 
                         {/* 選擇此選項的玩家頭像 - 只在倒數結束後顯示 */}
-                        {timeLeft <= 0 && distribution && distribution.users && distribution.users.length > 0 && (
+                        {timeLeft <= 0 && (
                           <div className="flex-1 flex flex-col justify-center">
-                            <div className="grid grid-cols-4 gap-2 justify-items-center">
-                              {distribution.users.slice(0, 12).map((user, userIndex) => (
+                            {distribution && distribution.users && distribution.users.length > 0 ? (
+                              <div className="grid grid-cols-4 gap-2 justify-items-center">
+                                {distribution.users.slice(0, 12).map((user, userIndex) => (
                                 <div key={userIndex} className="flex flex-col items-center">
                                   {user.avatar_url ? (
                                     <img 
@@ -536,15 +551,20 @@ export default function GameLivePage() {
                                   </span>
                                 </div>
                               ))}
-                              {distribution.users.length > 12 && (
-                                <div className="flex flex-col items-center">
-                                  <div className="w-8 h-8 bg-white bg-opacity-50 rounded-full flex items-center justify-center text-black font-bold text-xs border-2 border-white">
-                                    +{distribution.users.length - 12}
+                                {distribution.users.length > 12 && (
+                                  <div className="flex flex-col items-center">
+                                    <div className="w-8 h-8 bg-white bg-opacity-50 rounded-full flex items-center justify-center text-black font-bold text-xs border-2 border-white">
+                                      +{distribution.users.length - 12}
+                                    </div>
+                                    <span className="text-xs text-black mt-1">更多</span>
                                   </div>
-                                  <span className="text-xs text-black mt-1">更多</span>
-                                </div>
-                              )}
-                            </div>
+                                )}
+                              </div>
+                            ) : (
+                              <div className="text-center text-white opacity-60">
+                                <div className="text-lg">暫無人選擇</div>
+                              </div>
+                            )}
                           </div>
                         )}
 
