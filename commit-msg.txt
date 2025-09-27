@@ -1,62 +1,40 @@
-🔧 重構答題分佈數據獲取邏輯
+🔧 新增答題分佈調試工具
 
-🚀 核心改進：
-1. **分離式查詢**：
-   - 先獲取答題記錄 (answer_records)
-   - 再獲取用戶資料 (users)
-   - 避免複雜的 JOIN 查詢問題
+🛠️ 調試工具功能：
+1. **API 端點**：`/api/debug/test-answer-distribution`
+   - 獨立測試答題分佈數據獲取
+   - 支援 questionId 參數
+   - 返回詳細的原始數據和處理結果
 
-2. **數據處理優化**：
-   - 使用 Map 建立用戶查找索引
-   - 確保數據映射的準確性
-   - 過濾無效用戶記錄
+2. **前端測試頁面**：`/debug/answer-test`
+   - 視覺化測試界面
+   - 實時查看數據處理結果
+   - 顯示原始數據和計算結果
 
-🔍 問題診斷：
-- 原本使用 `users!inner()` JOIN 可能導致數據結構問題
-- 新方法使用分步查詢確保數據完整性
-- 添加詳細日誌追蹤數據流
+🔍 調試功能：
+- **數據流追蹤**：完整記錄從資料庫查詢到數據處理的每個步驟
+- **結構化輸出**：清楚顯示答題記錄、用戶資料、分佈統計
+- **錯誤處理**：詳細的錯誤信息和狀態回報
+- **視覺化展示**：頭像、姓名、統計數據的完整呈現
 
-💡 技術實現：
-```typescript
-// Before: 複雜的 JOIN 查詢
-const { data: answers, error } = await supabase
-  .from('answer_records')
-  .select(`
-    answer,
-    users!inner(display_name, avatar_url)
-  `)
-  .eq('question_id', currentQuestion.id)
+📊 測試項目：
+1. **答題記錄獲取**：驗證 answer_records 表查詢
+2. **用戶資料關聯**：驗證 users 表數據映射
+3. **數據處理邏輯**：驗證分佈計算和用戶過濾
+4. **結果展示**：驗證前端顯示邏輯
 
-// After: 分離式查詢
-// 1. 獲取答題記錄
-const { data: answerRecords, error: answerError } = await supabase
-  .from('answer_records')
-  .select('answer, line_id')
-  .eq('question_id', currentQuestion.id)
-
-// 2. 獲取用戶資料
-const lineIds = [...new Set(answerRecords.map(record => record.line_id))]
-const { data: users, error: usersError } = await supabase
-  .from('users')
-  .select('line_id, display_name, avatar_url')
-  .in('line_id', lineIds)
-
-// 3. 建立映射並處理數據
-const userMap = new Map()
-users?.forEach(user => {
-  userMap.set(user.line_id, user)
-})
+💡 使用方法：
+```
+1. 訪問 /debug/answer-test
+2. 輸入題目 ID（例如：1, 2, 3）
+3. 點擊「測試」按鈕
+4. 查看結果和原始數據
+5. 檢查瀏覽器 Console 的詳細日誌
 ```
 
-📊 數據處理改進：
-1. **用戶映射**：使用 Map 提高查找效率
-2. **數據驗證**：過濾無效用戶記錄
-3. **空狀態處理**：正確處理沒有答題記錄的情況
-4. **調試支援**：詳細的日誌記錄
-
-🎯 預期效果：
-- ✅ 準確顯示每個選項的答題人數
-- ✅ 正確計算百分比
-- ✅ 正常顯示玩家頭像和姓名
-- ✅ 解決數據結構不一致問題
-- ✅ 提供詳細的調試信息
+🎯 診斷目標：
+- ✅ 確認數據庫連接正常
+- ✅ 驗證查詢邏輯正確
+- ✅ 檢查數據結構一致性
+- ✅ 測試用戶映射準確性
+- ✅ 確保統計計算正確
