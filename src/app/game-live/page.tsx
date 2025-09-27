@@ -330,7 +330,7 @@ export default function GameLivePage() {
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
       {/* 遊戲暫停提示 */}
       {gameState?.is_paused && (
-        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 bg-yellow-100 border border-yellow-400 text-yellow-700 px-6 py-3 rounded-lg shadow-lg">
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 bg-yellow-500 bg-opacity-90 border border-yellow-400 text-white px-6 py-3 rounded-lg shadow-lg backdrop-blur-sm">
           ⏸️ 遊戲暫停中，請等待主持人繼續遊戲
         </div>
       )}
@@ -620,7 +620,7 @@ function WaitingStage({ gameState }: { gameState: any }) {
                         className="w-12 h-12 rounded-full object-cover"
                       />
                     ) : (
-                      <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center text-gray-600 font-bold">
+                      <div className="w-12 h-12 bg-white bg-opacity-30 rounded-full flex items-center justify-center text-white font-bold">
                         {player.display_name?.charAt(0) || '?'}
                       </div>
                     )}
@@ -649,8 +649,8 @@ function WaitingStage({ gameState }: { gameState: any }) {
                   className="w-full h-full rounded-3xl"
                 />
               ) : (
-                <div className="text-center text-gray-500">
-                  <QrCode className="w-24 h-24 mx-auto mb-4" />
+                <div className="text-center text-white">
+                  <QrCode className="w-24 h-24 mx-auto mb-4 text-gray-400" />
                   <p className="text-lg">QR Code 載入中...</p>
                 </div>
               )}
