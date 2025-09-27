@@ -490,7 +490,7 @@ export default function GameLivePage() {
             <p className="text-xl mb-8">目前沒有進行中的題目</p>
             <a
               href="/quiz"
-              className="inline-flex items-center space-x-3 bg-white bg-opacity-20 hover:bg-opacity-30 text-white font-bold py-4 px-8 rounded-2xl transition-all duration-200 backdrop-blur-sm"
+              className="inline-flex items-center space-x-3 bg-white bg-opacity-20 hover:bg-opacity-30 text-black font-bold py-4 px-8 rounded-2xl transition-all duration-200 backdrop-blur-sm"
             >
               <HelpCircle className="w-6 h-6" />
               <span>參與答題</span>
@@ -604,7 +604,7 @@ function WaitingStage({ gameState }: { gameState: any }) {
           <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-3xl p-8">
             <div className="flex items-center justify-center space-x-4 mb-8">
               <Users className="w-12 h-12 text-white" />
-              <h2 className="text-4xl font-bold text-white">
+              <h2 className="text-4xl font-bold text-black">
                 已加入玩家 ({playerCount})
               </h2>
             </div>
@@ -613,7 +613,7 @@ function WaitingStage({ gameState }: { gameState: any }) {
               {joinedPlayers.length > 0 ? (
                 joinedPlayers.map((player, index) => (
                   <div key={player.line_id} className="flex items-center space-x-4 bg-white bg-opacity-20 rounded-2xl p-4">
-                    <div className="w-12 h-12 bg-white bg-opacity-30 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                    <div className="w-12 h-12 bg-white bg-opacity-30 rounded-full flex items-center justify-center text-black font-bold text-lg">
                       {index + 1}
                     </div>
                     {player.avatar_url ? (
@@ -623,17 +623,17 @@ function WaitingStage({ gameState }: { gameState: any }) {
                         className="w-12 h-12 rounded-full object-cover"
                       />
                     ) : (
-                      <div className="w-12 h-12 bg-white bg-opacity-30 rounded-full flex items-center justify-center text-white font-bold">
+                      <div className="w-12 h-12 bg-white bg-opacity-30 rounded-full flex items-center justify-center text-black font-bold">
                         {player.display_name?.charAt(0) || '?'}
                       </div>
                     )}
-                    <span className="text-xl font-semibold text-white flex-1 text-left">
+                    <span className="text-xl font-semibold text-black flex-1 text-left">
                       {player.display_name}
                     </span>
                   </div>
                 ))
               ) : (
-                <div className="text-white text-xl opacity-60 py-8">
+                <div className="text-black text-xl opacity-60 py-8">
                   等待玩家加入...
                 </div>
               )}
@@ -643,7 +643,7 @@ function WaitingStage({ gameState }: { gameState: any }) {
           {/* 右側：QR Code */}
           <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-3xl p-8">
             <QrCode className="w-16 h-16 text-white mx-auto mb-6" />
-            <h3 className="text-3xl font-bold text-white mb-8">掃描加入遊戲</h3>
+            <h3 className="text-3xl font-bold text-black mb-8">掃描加入遊戲</h3>
             <div className="w-80 h-80 bg-white rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-2xl">
               {qrCodeDataURL ? (
                 <img 
@@ -658,7 +658,7 @@ function WaitingStage({ gameState }: { gameState: any }) {
                 </div>
               )}
             </div>
-            <p className="text-white text-xl opacity-80">
+            <p className="text-black text-xl opacity-80">
               使用 LINE 掃描 QR Code<br />
               進入快問快答遊戲
             </p>
