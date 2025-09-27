@@ -350,9 +350,15 @@ export default function GameLivePage() {
                             poster={currentQuestion.media_thumbnail_url}
                             controls
                             autoPlay
+                            muted
                             loop
                             playsInline
                             className="max-w-full h-auto max-h-80 rounded-lg shadow-md"
+                            onLoadedData={(e) => {
+                              // 載入後嘗試取消靜音
+                              const video = e.target as HTMLVideoElement
+                              video.muted = false
+                            }}
                           >
                             您的瀏覽器不支援影片播放
                           </video>
