@@ -391,7 +391,7 @@ export default function GameLivePage() {
                 
                 {/* 階段指示器 */}
                 <div className="mt-8">
-                  <div className="inline-flex items-center space-x-2 bg-white bg-opacity-20 rounded-full px-6 py-3">
+                  <div className="inline-flex items-center space-x-2 bg-black bg-opacity-40 rounded-full px-6 py-3 backdrop-blur-sm border border-white border-opacity-30">
                     <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
                     <span className="text-white text-lg font-medium">
                       {currentQuestion.media_type === 'video' ? '影片播放中...' : '題目展示中...'}
@@ -410,7 +410,7 @@ export default function GameLivePage() {
                 </h2>
                 
                 {/* 倒數計時 */}
-                <div className="inline-flex items-center space-x-4 bg-white bg-opacity-20 rounded-full px-6 py-3">
+                <div className="inline-flex items-center space-x-4 bg-black bg-opacity-40 rounded-full px-6 py-3 backdrop-blur-sm border border-white border-opacity-30">
                   <div className="text-white text-xl font-bold">
                     ⏱️ {Math.ceil(displayTimeLeft / 1000)}秒
                   </div>
