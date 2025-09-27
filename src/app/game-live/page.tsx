@@ -37,7 +37,7 @@ export default function GameLivePage() {
   const [currentQuestionAnswerCount, setCurrentQuestionAnswerCount] = useState<number>(0)
   
   // 顯示階段控制
-  const [displayPhase, setDisplayPhase] = useState<'question' | 'options' | 'results' | 'rankings'>('question')
+  const [displayPhase, setDisplayPhase] = useState<'question' | 'options' | 'rankings'>('question')
   const [phaseTimer, setPhaseTimer] = useState<NodeJS.Timeout | null>(null)
   
   // 從 localStorage 初始化狀態，以防組件重新載入
@@ -110,39 +110,23 @@ export default function GameLivePage() {
     }
   }, [])
 
-  // 監聽時間結束，切換到結果顯示階段
+  // 監聽時間結束，獲取最終答題數據並準備顯示排行榜
   useEffect(() => {
     if (displayPhase === 'options' && timeLeft <= 0 && currentQuestion) {
-      // 時間結束，顯示答題結果
-      const timer = setTimeout(() => {
-        // 切換到結果階段前，重新獲取最新的答題數據
-        fetchAnswerDistribution()
-        fetchCurrentQuestionAnswerCount()
-        setDisplayPhase('results')
-        
-        // 5秒後顯示分數排行榜
-        const rankingTimer = setTimeout(() => {
-          setDisplayPhase('rankings')
-          // 在這裡直接調用分數排行榜獲取邏輯
-          fetchScoreRankings()
-        }, 5000)
-        
-        return () => clearTimeout(rankingTimer)
-      }, 2000) // 2秒延遲顯示結果
-      
-      return () => clearTimeout(timer)
-    }
-  }, [displayPhase, timeLeft, currentQuestion])
-
-  // 監聽結果階段，確保數據是最新的
-  useEffect(() => {
-    if (displayPhase === 'results' && currentQuestion) {
-      // 在結果階段再次獲取最新數據，確保顯示正確
+      // 時間結束，重新獲取最新的答題數據以顯示最終結果
       fetchAnswerDistribution()
       fetchCurrentQuestionAnswerCount()
-      console.log('結果階段：重新獲取答題數據')
+      console.log('倒數結束：重新獲取答題數據以顯示最終分佈')
+      
+      // 5秒後顯示分數排行榜
+      const rankingTimer = setTimeout(() => {
+        setDisplayPhase('rankings')
+        fetchScoreRankings()
+      }, 5000)
+      
+      return () => clearTimeout(rankingTimer)
     }
-  }, [displayPhase, currentQuestion])
+  }, [displayPhase, timeLeft, currentQuestion])
 
   // 獲取當前題目答題人數
   const fetchCurrentQuestionAnswerCount = useCallback(async () => {
@@ -451,15 +435,30 @@ export default function GameLivePage() {
                   {currentQuestion.question_text}
                 </h2>
                 
-                {/* 倒數計時 */}
-                <div className="inline-flex items-center space-x-4 bg-black bg-opacity-40 rounded-full px-6 py-3 backdrop-blur-sm border border-white border-opacity-30">
-                  <div className="text-white text-xl font-bold">
-                    ⏱️ {Math.ceil(displayTimeLeft / 1000)}秒
+                {/* 倒數計時或結果顯示 */}
+                {timeLeft > 0 ? (
+                  <div className="inline-flex items-center space-x-4 bg-black bg-opacity-40 rounded-full px-6 py-3 backdrop-blur-sm border border-white border-opacity-30">
+                    <div className="text-white text-xl font-bold">
+                      ⏱️ {Math.ceil(displayTimeLeft / 1000)}秒
+                    </div>
+                    <div className="text-white text-lg">
+                      已答題: {currentQuestionAnswerCount} 人
+                    </div>
                   </div>
-                  <div className="text-white text-lg">
-                    已答題: {currentQuestionAnswerCount} 人
+                ) : (
+                  <div className="space-y-4">
+                    <div className="inline-flex items-center space-x-4 bg-green-600 bg-opacity-90 rounded-full px-6 py-3 backdrop-blur-sm border border-green-400 border-opacity-50">
+                      <div className="text-white text-xl font-bold">
+                        ✅ 正確答案：{currentQuestion.correct_answer}
+                      </div>
+                    </div>
+                    <div className="inline-flex items-center space-x-4 bg-black bg-opacity-40 rounded-full px-6 py-3 backdrop-blur-sm border border-white border-opacity-30">
+                      <div className="text-white text-lg">
+                        總共 {currentQuestionAnswerCount} 人參與答題
+                      </div>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
 
               {/* 四個選項 - 2x2 網格滿版 */}
@@ -481,8 +480,8 @@ export default function GameLivePage() {
                         timeLeft <= 0 && isCorrect ? 'ring-8 ring-white ring-opacity-80 animate-pulse' : ''
                       }`}
                     >
-                      {/* 答題進度條 */}
-                      {distribution && distribution.count > 0 && (
+                      {/* 答題進度條 - 只在倒數結束後顯示 */}
+                      {timeLeft <= 0 && distribution && distribution.count > 0 && (
                         <div 
                           className="absolute bottom-0 left-0 bg-white bg-opacity-30 transition-all duration-1000"
                           style={{ 
@@ -501,83 +500,19 @@ export default function GameLivePage() {
                           {option.text}
                         </div>
                         
-                        {/* 答題統計 */}
-                        {distribution && distribution.count > 0 && (
-                          <div className="mt-4 bg-white bg-opacity-20 rounded-full px-4 py-2">
-                            <span className="text-white font-bold text-lg">
-                              {distribution.count} 人 ({percentage}%)
-                            </span>
-                          </div>
-                        )}
+                      {/* 答題統計 - 只在倒數結束後顯示 */}
+                      {timeLeft <= 0 && distribution && distribution.count > 0 && (
+                        <div className="mt-4 bg-white bg-opacity-20 rounded-full px-4 py-2">
+                          <span className="text-white font-bold text-lg">
+                            {distribution.count} 人 ({percentage}%)
+                          </span>
+                        </div>
+                      )}
                         
                         {/* 正確答案標示 */}
                         {timeLeft <= 0 && isCorrect && (
                           <div className="absolute -top-4 -right-4 bg-white text-green-600 rounded-full p-4 shadow-lg">
                             <span className="text-2xl">✓</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          ) : displayPhase === 'results' ? (
-            // 結果階段 - 顯示答題分佈
-            <div className="flex-1 p-8">
-              <div className="text-center mb-8">
-                <h2 className="text-4xl md:text-6xl font-bold text-white mb-4">
-                  📊 答題結果
-                </h2>
-                <div className="text-2xl text-white mb-4">
-                  正確答案：<span className="text-green-400 font-bold">{currentQuestion.correct_answer}</span>
-                </div>
-                <div className="text-xl text-white opacity-80">
-                  總共 {currentQuestionAnswerCount} 人參與答題
-                </div>
-              </div>
-
-              {/* 答題分佈圖表 */}
-              <div className="grid grid-cols-2 gap-6 max-w-4xl mx-auto">
-                {[
-                  { key: 'A', text: currentQuestion.option_a, color: 'from-red-500 to-red-600' },
-                  { key: 'B', text: currentQuestion.option_b, color: 'from-blue-500 to-blue-600' },
-                  { key: 'C', text: currentQuestion.option_c, color: 'from-green-500 to-green-600' },
-                  { key: 'D', text: currentQuestion.option_d, color: 'from-yellow-500 to-yellow-600' }
-                ].map((option) => {
-                  const distribution = answerDistribution.find(d => d.answer === option.key)
-                  const isCorrect = currentQuestion.correct_answer === option.key
-                  const percentage = distribution ? Math.round((distribution.count / Math.max(currentQuestionAnswerCount, 1)) * 100) : 0
-                  
-                  return (
-                    <div
-                      key={option.key}
-                      className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${option.color} shadow-xl p-6 ${
-                        isCorrect ? 'ring-4 ring-green-400 ring-opacity-80' : ''
-                      }`}
-                    >
-                      <div className="text-center">
-                        <div className="text-4xl font-black text-white mb-2">
-                          {option.key}
-                        </div>
-                        <div className="text-lg font-bold text-white mb-4 leading-tight">
-                          {option.text}
-                        </div>
-                        
-                        {/* 答題統計 */}
-                        <div className="bg-white bg-opacity-20 rounded-lg p-4">
-                          <div className="text-3xl font-bold text-black mb-2">
-                            {distribution?.count || 0} 人
-                          </div>
-                          <div className="text-xl text-black opacity-90">
-                            {percentage}%
-                          </div>
-                        </div>
-                        
-                        {/* 正確答案標示 */}
-                        {isCorrect && (
-                          <div className="absolute -top-2 -right-2 bg-green-500 text-black rounded-full p-3 shadow-lg">
-                            <span className="text-xl">✓</span>
                           </div>
                         )}
                       </div>
