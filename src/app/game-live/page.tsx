@@ -492,23 +492,62 @@ export default function GameLivePage() {
                       )}
                       
                       {/* 選項內容 */}
-                      <div className="relative z-10 text-center p-8">
-                        <div className="text-6xl md:text-8xl font-black text-white mb-4">
-                          {option.key}
+                      <div className="relative z-10 flex flex-col h-full p-6">
+                        {/* 選項標題區域 */}
+                        <div className="text-center flex-shrink-0">
+                          <div className="text-4xl md:text-6xl font-black text-white mb-2">
+                            {option.key}
+                          </div>
+                          <div className="text-lg md:text-2xl font-bold text-white leading-tight mb-4">
+                            {option.text}
+                          </div>
                         </div>
-                        <div className="text-xl md:text-3xl font-bold text-white leading-tight">
-                          {option.text}
-                        </div>
-                        
-                      {/* 答題統計 - 只在倒數結束後顯示 */}
-                      {timeLeft <= 0 && distribution && distribution.count > 0 && (
-                        <div className="mt-4 bg-white bg-opacity-20 rounded-full px-4 py-2">
-                          <span className="text-white font-bold text-lg">
-                            {distribution.count} 人 ({percentage}%)
-                          </span>
-                        </div>
-                      )}
-                        
+
+                        {/* 答題統計 - 只在倒數結束後顯示 */}
+                        {timeLeft <= 0 && (
+                          <div className="text-center mb-4">
+                            <div className="bg-white bg-opacity-20 rounded-full px-4 py-2 inline-block">
+                              <span className="text-white font-bold text-lg">
+                                {distribution?.count || 0} 人 ({percentage}%)
+                              </span>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* 選擇此選項的玩家頭像 - 只在倒數結束後顯示 */}
+                        {timeLeft <= 0 && distribution && distribution.users && distribution.users.length > 0 && (
+                          <div className="flex-1 flex flex-col justify-center">
+                            <div className="grid grid-cols-4 gap-2 justify-items-center">
+                              {distribution.users.slice(0, 12).map((user, userIndex) => (
+                                <div key={userIndex} className="flex flex-col items-center">
+                                  {user.avatar_url ? (
+                                    <img 
+                                      src={user.avatar_url} 
+                                      alt={user.display_name} 
+                                      className="w-8 h-8 rounded-full object-cover border-2 border-white"
+                                    />
+                                  ) : (
+                                    <div className="w-8 h-8 bg-white bg-opacity-30 rounded-full flex items-center justify-center text-white font-bold text-xs border-2 border-white">
+                                      {user.display_name?.charAt(0) || '?'}
+                                    </div>
+                                  )}
+                                  <span className="text-xs text-white mt-1 text-center leading-tight max-w-[2rem] truncate">
+                                    {user.display_name}
+                                  </span>
+                                </div>
+                              ))}
+                              {distribution.users.length > 12 && (
+                                <div className="flex flex-col items-center">
+                                  <div className="w-8 h-8 bg-white bg-opacity-50 rounded-full flex items-center justify-center text-white font-bold text-xs border-2 border-white">
+                                    +{distribution.users.length - 12}
+                                  </div>
+                                  <span className="text-xs text-white mt-1">更多</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
                         {/* 正確答案標示 */}
                         {timeLeft <= 0 && isCorrect && (
                           <div className="absolute -top-4 -right-4 bg-white text-green-600 rounded-full p-4 shadow-lg">
