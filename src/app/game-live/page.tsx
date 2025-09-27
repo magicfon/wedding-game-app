@@ -625,7 +625,7 @@ export default function GameLivePage() {
                     }`}
                   >
                     {/* 排名 */}
-                    <div className={`w-16 h-16 rounded-full flex items-center justify-center font-bold text-2xl ${
+                    <div className={`w-16 h-8 rounded-full flex items-center justify-center font-bold text-2xl ${
                       index === 0 ? 'bg-yellow-500 text-black' :
                       index === 1 ? 'bg-gray-400 text-black' :
                       index === 2 ? 'bg-orange-600 text-black' :
