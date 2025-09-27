@@ -115,6 +115,9 @@ export default function GameLivePage() {
     if (displayPhase === 'options' && timeLeft <= 0 && currentQuestion) {
       // 時間結束，顯示答題結果
       const timer = setTimeout(() => {
+        // 切換到結果階段前，重新獲取最新的答題數據
+        fetchAnswerDistribution()
+        fetchCurrentQuestionAnswerCount()
         setDisplayPhase('results')
         
         // 5秒後顯示分數排行榜
@@ -130,6 +133,16 @@ export default function GameLivePage() {
       return () => clearTimeout(timer)
     }
   }, [displayPhase, timeLeft, currentQuestion])
+
+  // 監聽結果階段，確保數據是最新的
+  useEffect(() => {
+    if (displayPhase === 'results' && currentQuestion) {
+      // 在結果階段再次獲取最新數據，確保顯示正確
+      fetchAnswerDistribution()
+      fetchCurrentQuestionAnswerCount()
+      console.log('結果階段：重新獲取答題數據')
+    }
+  }, [displayPhase, currentQuestion])
 
   // 獲取當前題目答題人數
   const fetchCurrentQuestionAnswerCount = useCallback(async () => {
@@ -181,7 +194,12 @@ export default function GameLivePage() {
 
   // 獲取答題分佈
   const fetchAnswerDistribution = useCallback(async () => {
-    if (!currentQuestion) return
+    if (!currentQuestion) {
+      console.log('fetchAnswerDistribution: No current question')
+      return
+    }
+
+    console.log('fetchAnswerDistribution: Fetching for question ID:', currentQuestion.id)
 
     try {
       const { data: answers, error } = await supabase
@@ -194,6 +212,8 @@ export default function GameLivePage() {
 
       if (error) throw error
 
+      console.log('fetchAnswerDistribution: Raw answers data:', answers)
+
       // 統計每個答案的分佈
       const distribution = ['A', 'B', 'C', 'D'].map(option => ({
         answer: option,
@@ -204,6 +224,7 @@ export default function GameLivePage() {
         })) || []
       }))
 
+      console.log('fetchAnswerDistribution: Calculated distribution:', distribution)
       setAnswerDistribution(distribution)
     } catch (error) {
       console.error('Error fetching answer distribution:', error)
