@@ -522,7 +522,7 @@ export default function GameLivePage() {
                       {/* 答題進度條 - 只在倒數結束後顯示 */}
                       {timeLeft <= 0 && distribution && distribution.count > 0 && (
                         <div 
-                          className="absolute bottom-0 left-0 bg-white bg-opacity-30 transition-all duration-1000"
+                          className="absolute bottom-0 left-0 bg-opacity-30 transition-all duration-1000"
                           style={{ 
                             height: `${Math.max(percentage, 5)}%`,
                             width: '100%'
