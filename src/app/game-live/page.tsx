@@ -346,6 +346,7 @@ export default function GameLivePage() {
                         )}
                         {currentQuestion.media_type === 'video' && (
                           <video
+                            key={currentQuestion.id} // 確保每次題目切換時重新載入
                             src={currentQuestion.media_url}
                             poster={currentQuestion.media_thumbnail_url}
                             controls
@@ -354,10 +355,21 @@ export default function GameLivePage() {
                             loop
                             playsInline
                             className="max-w-full h-auto max-h-80 rounded-lg shadow-md"
-                            onLoadedData={(e) => {
-                              // 載入後嘗試取消靜音
-                              const video = e.target as HTMLVideoElement
-                              video.muted = false
+                            ref={(video) => {
+                              if (video) {
+                                // 當影片元素創建時立即嘗試播放
+                                const handleCanPlay = () => {
+                                  video.play().then(() => {
+                                    console.log('影片自動播放成功')
+                                    // 播放成功後嘗試取消靜音
+                                    video.muted = false
+                                  }).catch((error) => {
+                                    console.log('自動播放失敗:', error)
+                                  })
+                                }
+                                
+                                video.addEventListener('canplay', handleCanPlay, { once: true })
+                              }
                             }}
                           >
                             您的瀏覽器不支援影片播放
