@@ -186,42 +186,67 @@ export default function GameLivePage() {
     console.log('fetchAnswerDistribution: Fetching for question ID:', currentQuestion.id)
 
     try {
-      const { data: answers, error } = await supabase
+      // 先獲取答題記錄
+      const { data: answerRecords, error: answerError } = await supabase
         .from('answer_records')
-        .select(`
-          answer,
-          users!inner(display_name, avatar_url)
-        `)
+        .select('answer, line_id')
         .eq('question_id', currentQuestion.id)
 
-      if (error) throw error
+      if (answerError) throw answerError
 
-      console.log('fetchAnswerDistribution: Raw answers data:', answers)
+      console.log('fetchAnswerDistribution: Answer records:', answerRecords)
+
+      if (!answerRecords || answerRecords.length === 0) {
+        console.log('fetchAnswerDistribution: No answer records found')
+        setAnswerDistribution(['A', 'B', 'C', 'D'].map(option => ({
+          answer: option,
+          count: 0,
+          users: []
+        })))
+        return
+      }
+
+      // 獲取所有相關用戶的資料
+      const lineIds = [...new Set(answerRecords.map(record => record.line_id))]
+      const { data: users, error: usersError } = await supabase
+        .from('users')
+        .select('line_id, display_name, avatar_url')
+        .in('line_id', lineIds)
+
+      if (usersError) throw usersError
+
+      console.log('fetchAnswerDistribution: Users data:', users)
+
+      // 創建用戶查找映射
+      const userMap = new Map()
+      users?.forEach(user => {
+        userMap.set(user.line_id, user)
+      })
 
       // 統計每個答案的分佈
       const distribution = ['A', 'B', 'C', 'D'].map(option => {
-        const optionAnswers = answers?.filter(a => a.answer === option) || []
-        const users = optionAnswers.map(a => {
-          const userData = a.users as any
+        const optionAnswers = answerRecords.filter(record => record.answer === option)
+        const optionUsers = optionAnswers.map(record => {
+          const user = userMap.get(record.line_id)
           return {
-            display_name: userData?.display_name || '未知用戶',
-            avatar_url: userData?.avatar_url || null
+            display_name: user?.display_name || '未知用戶',
+            avatar_url: user?.avatar_url || null
           }
-        })
+        }).filter(user => user.display_name !== '未知用戶') // 過濾掉無效用戶
         
         return {
           answer: option,
-          count: optionAnswers.length,
-          users: users
+          count: optionUsers.length,
+          users: optionUsers
         }
       })
 
-      console.log('fetchAnswerDistribution: Calculated distribution:', distribution)
-      console.log('fetchAnswerDistribution: Distribution details:', distribution.map(d => ({
+      console.log('fetchAnswerDistribution: Final distribution:', distribution)
+      console.log('fetchAnswerDistribution: Distribution summary:', distribution.map(d => ({
         answer: d.answer,
         count: d.count,
         userCount: d.users.length,
-        users: d.users.map(u => ({ name: u.display_name, hasAvatar: !!u.avatar_url }))
+        userNames: d.users.map(u => u.display_name)
       })))
       setAnswerDistribution(distribution)
     } catch (error) {

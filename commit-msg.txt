@@ -1,60 +1,62 @@
-🐛 修復答題人數顯示和頭像顯示問題
+🔧 重構答題分佈數據獲取邏輯
 
-🔧 問題修復：
-1. **人數顯示錯誤**：
-   - 改進 fetchAnswerDistribution 數據處理邏輯
-   - 添加詳細的調試日誌
-   - 確保用戶數據正確映射和計算
+🚀 核心改進：
+1. **分離式查詢**：
+   - 先獲取答題記錄 (answer_records)
+   - 再獲取用戶資料 (users)
+   - 避免複雜的 JOIN 查詢問題
 
-2. **頭像沒有顯示**：
-   - 簡化頭像顯示條件邏輯
-   - 移除過於嚴格的條件檢查
-   - 添加「暫無人選擇」的提示
+2. **數據處理優化**：
+   - 使用 Map 建立用戶查找索引
+   - 確保數據映射的準確性
+   - 過濾無效用戶記錄
 
-📊 數據處理優化：
-- 重構答題分佈計算邏輯
-- 改善用戶數據提取和處理
-- 添加預設值處理未知用戶情況
-- 增強錯誤處理和數據驗證
+🔍 問題診斷：
+- 原本使用 `users!inner()` JOIN 可能導致數據結構問題
+- 新方法使用分步查詢確保數據完整性
+- 添加詳細日誌追蹤數據流
 
-🎨 界面改進：
-1. **條件渲染優化**：
-   ```tsx
-   // Before: 過於嚴格的條件
-   {timeLeft <= 0 && distribution && distribution.users && distribution.users.length > 0 && (...)}
-   
-   // After: 簡化條件，內部處理
-   {timeLeft <= 0 && (
-     <div>
-       {distribution && distribution.users && distribution.users.length > 0 ? (
-         // 顯示頭像
-       ) : (
-         // 顯示「暫無人選擇」
-       )}
-     </div>
-   )}
-   ```
+💡 技術實現：
+```typescript
+// Before: 複雜的 JOIN 查詢
+const { data: answers, error } = await supabase
+  .from('answer_records')
+  .select(`
+    answer,
+    users!inner(display_name, avatar_url)
+  `)
+  .eq('question_id', currentQuestion.id)
 
-2. **空狀態處理**：
-   - 沒有人選擇時顯示「暫無人選擇」
-   - 統計數據仍然顯示「0 人 (0%)」
-   - 保持界面一致性
+// After: 分離式查詢
+// 1. 獲取答題記錄
+const { data: answerRecords, error: answerError } = await supabase
+  .from('answer_records')
+  .select('answer, line_id')
+  .eq('question_id', currentQuestion.id)
 
-🔍 調試功能增強：
-- 添加原始數據日誌記錄
-- 詳細的分佈計算日誌
-- 用戶數據結構驗證日誌
-- 便於問題診斷和追蹤
+// 2. 獲取用戶資料
+const lineIds = [...new Set(answerRecords.map(record => record.line_id))]
+const { data: users, error: usersError } = await supabase
+  .from('users')
+  .select('line_id, display_name, avatar_url')
+  .in('line_id', lineIds)
 
-💡 技術改進：
-- 更健壯的數據處理邏輯
-- 更好的錯誤處理機制
-- 更清晰的條件判斷邏輯
-- 更詳細的調試信息
+// 3. 建立映射並處理數據
+const userMap = new Map()
+users?.forEach(user => {
+  userMap.set(user.line_id, user)
+})
+```
 
-🎯 用戶體驗：
-- ✅ 正確顯示每個選項的答題人數
-- ✅ 準確計算和顯示百分比
+📊 數據處理改進：
+1. **用戶映射**：使用 Map 提高查找效率
+2. **數據驗證**：過濾無效用戶記錄
+3. **空狀態處理**：正確處理沒有答題記錄的情況
+4. **調試支援**：詳細的日誌記錄
+
+🎯 預期效果：
+- ✅ 準確顯示每個選項的答題人數
+- ✅ 正確計算百分比
 - ✅ 正常顯示玩家頭像和姓名
-- ✅ 空狀態有適當的提示信息
-- ✅ 統計數據實時更新
+- ✅ 解決數據結構不一致問題
+- ✅ 提供詳細的調試信息
