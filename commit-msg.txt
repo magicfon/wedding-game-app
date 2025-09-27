@@ -1,23 +1,22 @@
-🎨 修復 QR Code 載入狀態在白色背景上的文字顏色問題
+⚫ 修復 QR Code 載入狀態文字顏色 - 改為黑色
 
 🐛 修復問題：
-- QR Code 載入狀態的文字在白色背景上看不見
-- 載入中的文字顏色與背景對比度不足
+- QR Code 載入狀態的文字顏色在白色背景上不夠清晰
+- 用戶要求將 text-white 改為 text-black
 
 ✨ 修復方案：
-- 載入狀態文字：text-gray-600 → text-gray-700 和 text-gray-800
-- QR Code 圖標：text-gray-400 → text-gray-500
-- 載入文字：添加 font-semibold 增強可讀性
-- QR Code 圖片：添加 object-contain p-4 確保完整顯示
+- 載入狀態容器：text-gray-700 → text-black
+- 載入文字：text-gray-800 → text-black  
+- QR Code 圖標：text-gray-500 → text-gray-600
+- 確保在白色背景上有最佳對比度
 
 🎯 修復內容：
-- 載入狀態容器：深灰色文字在白色背景上清晰可見
-- QR Code 圖標：適當的灰色層次
-- 載入提示文字：更深的顏色和更粗的字體
-- QR Code 圖片：添加內邊距和適當縮放
+- WaitingStage 組件中的 QR Code 載入狀態
+- 白色背景容器內的所有文字都使用黑色
+- 保持載入提示的清晰度和可讀性
 
 📱 用戶體驗：
-- QR Code 載入狀態現在清晰可見
-- 文字與白色背景形成良好對比
-- 載入提示更加明顯和專業
-- QR Code 顯示更加完整和美觀
+- QR Code 載入狀態現在使用純黑色文字
+- 在白色背景上提供最佳對比度
+- 載入提示更加清晰和專業
+- 符合用戶的明確要求

@@ -652,9 +652,9 @@ function WaitingStage({ gameState }: { gameState: any }) {
                   className="w-full h-full rounded-3xl object-contain p-4"
                 />
               ) : (
-                <div className="text-center text-gray-700">
-                  <QrCode className="w-24 h-24 mx-auto mb-4 text-gray-500" />
-                  <p className="text-lg font-semibold text-gray-800">QR Code 載入中...</p>
+                <div className="text-center text-black">
+                  <QrCode className="w-24 h-24 mx-auto mb-4 text-gray-600" />
+                  <p className="text-lg font-semibold text-black">QR Code 載入中...</p>
                 </div>
               )}
             </div>
