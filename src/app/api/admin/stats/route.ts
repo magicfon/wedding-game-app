@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
       supabase.from('game_state').select('is_game_active').single(),
       
       // 總答題數
-      supabase.from('user_answers').select('*', { count: 'exact', head: true }),
+      supabase.from('answer_records').select('*', { count: 'exact', head: true }),
       
       // 活躍管理員數
       supabase.from('admin_line_ids').select('*', { count: 'exact', head: true }).eq('is_active', true)

@@ -189,7 +189,7 @@ export default function GameLivePage() {
       // 先獲取答題記錄
       const { data: answerRecords, error: answerError } = await supabase
         .from('answer_records')
-        .select('answer, line_id')
+        .select('selected_answer, user_line_id')
         .eq('question_id', currentQuestion.id)
 
       if (answerError) throw answerError
@@ -207,7 +207,7 @@ export default function GameLivePage() {
       }
 
       // 獲取所有相關用戶的資料
-      const lineIds = [...new Set(answerRecords.map(record => record.line_id))]
+      const lineIds = [...new Set(answerRecords.map(record => record.user_line_id))]
       const { data: users, error: usersError } = await supabase
         .from('users')
         .select('line_id, display_name, avatar_url')
@@ -225,9 +225,9 @@ export default function GameLivePage() {
 
       // 統計每個答案的分佈
       const distribution = ['A', 'B', 'C', 'D'].map(option => {
-        const optionAnswers = answerRecords.filter(record => record.answer === option)
+        const optionAnswers = answerRecords.filter(record => record.selected_answer === option)
         const optionUsers = optionAnswers.map(record => {
-          const user = userMap.get(record.line_id)
+          const user = userMap.get(record.user_line_id)
           return {
             display_name: user?.display_name || '未知用戶',
             avatar_url: user?.avatar_url || null
