@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createSupabaseBrowser } from '@/lib/supabase'
 import Layout from '@/components/Layout'
@@ -27,7 +27,7 @@ export default function PhotoUploadPage() {
   const supabase = createSupabaseBrowser()
 
   // 獲取用戶資訊
-  useState(() => {
+  useEffect(() => {
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
@@ -38,7 +38,7 @@ export default function PhotoUploadPage() {
     }
 
     getUser()
-  })
+  }, [supabase.auth, router])
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
