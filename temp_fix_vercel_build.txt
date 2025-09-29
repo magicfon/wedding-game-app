@@ -1,0 +1,7 @@
+🔧 修復 Vercel 部署建置錯誤
+
+- 修復 photo-wall/page.tsx 中剩餘的 user 變數引用
+- 將所有 user 變數更新為 profile 變數
+- 統一使用 LIFF 認證系統
+- 解決 TypeScript 編譯錯誤：Cannot find name 'user'
+- 確保所有照片功能頁面使用一致的認證邏輯

@@ -54,7 +54,7 @@ export default function PhotoWallPage() {
 
   // 獲取用戶投票記錄
   const fetchUserVotes = useCallback(async () => {
-    if (!user) return
+    if (!profile) return
 
     try {
       const { data, error } = await supabase
@@ -74,7 +74,7 @@ export default function PhotoWallPage() {
     } catch (error) {
       console.error('Error fetching user votes:', error)
     }
-  }, [user, supabase])
+  }, [profile, supabase])
 
   // 獲取照片列表
   const fetchPhotos = useCallback(async () => {
@@ -100,7 +100,7 @@ export default function PhotoWallPage() {
   }, [sortBy, supabase])
 
   useEffect(() => {
-    if (!user) return
+    if (!profile) return
 
     fetchVotingSettings()
     fetchUserVotes()
@@ -129,7 +129,7 @@ export default function PhotoWallPage() {
     return () => {
       photosSubscription.unsubscribe()
     }
-  }, [user, sortBy, fetchPhotos, fetchUserVotes, fetchVotingSettings, supabase])
+  }, [profile, sortBy, fetchPhotos, fetchUserVotes, fetchVotingSettings, supabase])
 
   const handleVote = async (photoId: number) => {
     if (!profile || !votingEnabled) return
@@ -149,7 +149,7 @@ export default function PhotoWallPage() {
         },
         body: JSON.stringify({
           photoId,
-          voterLineId: user.id
+          voterLineId: profile.userId
         })
       })
 
