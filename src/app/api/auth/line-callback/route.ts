@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createSupabaseAdmin } from '@/lib/supabase-server'
 
 interface LineTokenResponse {
   access_token: string
@@ -71,28 +72,103 @@ export async function POST(request: NextRequest) {
       refresh_token: tokenData.refresh_token,
     }
 
-    // 4. 如果有設置 Supabase，可以在這裡儲存用戶資料
-    // 目前先返回用戶資料，讓前端處理
+    // 4. 將用戶資料儲存到 Supabase 並創建 session
+    const supabase = createSupabaseAdmin()
     
-    // TODO: 在這裡可以：
-    // - 將用戶資料儲存到 Supabase users 表
-    // - 創建或更新用戶記錄
-    // - 設定 JWT token 或 session
+    try {
+      // 檢查用戶是否已存在
+      const { data: existingUser } = await supabase
+        .from('users')
+        .select('*')
+        .eq('line_id', userData.line_id)
+        .single()
 
-    console.log('Line user authenticated:', {
-      userId: userData.line_id,
-      displayName: userData.display_name
-    })
+      if (!existingUser) {
+        // 創建新用戶
+        const { error: insertError } = await supabase
+          .from('users')
+          .insert({
+            line_id: userData.line_id,
+            display_name: userData.display_name,
+            avatar_url: userData.avatar_url,
+            total_score: 0,
+            is_active: true
+          })
 
-    return NextResponse.json({
-      success: true,
-      user: {
-        line_id: userData.line_id,
-        display_name: userData.display_name,
-        avatar_url: userData.avatar_url,
-      },
-      message: 'Login successful'
-    })
+        if (insertError) {
+          console.error('Error creating user:', insertError)
+        }
+      } else {
+        // 更新現有用戶資料
+        const { error: updateError } = await supabase
+          .from('users')
+          .update({
+            display_name: userData.display_name,
+            avatar_url: userData.avatar_url,
+            is_active: true
+          })
+          .eq('line_id', userData.line_id)
+
+        if (updateError) {
+          console.error('Error updating user:', updateError)
+        }
+      }
+
+      // 創建 Supabase Auth 用戶 (使用 Line ID 作為唯一標識)
+      const email = `${userData.line_id}@line.local`
+      const password = userData.line_id // 使用 Line ID 作為密碼
+
+      // 嘗試創建或登入 Supabase Auth 用戶
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        email,
+        password,
+        user_metadata: {
+          line_id: userData.line_id,
+          full_name: userData.display_name,
+          avatar_url: userData.avatar_url,
+          provider: 'line'
+        },
+        email_confirm: true
+      })
+
+      if (authError && !authError.message.includes('already registered')) {
+        console.error('Error creating Supabase auth user:', authError)
+      }
+
+      console.log('Line user authenticated and stored:', {
+        userId: userData.line_id,
+        displayName: userData.display_name,
+        supabaseUserId: authData?.user?.id
+      })
+
+      return NextResponse.json({
+        success: true,
+        user: {
+          line_id: userData.line_id,
+          display_name: userData.display_name,
+          avatar_url: userData.avatar_url,
+        },
+        auth: {
+          email,
+          password // 前端需要這個來登入 Supabase
+        },
+        message: 'Login successful'
+      })
+
+    } catch (error) {
+      console.error('Error handling Supabase integration:', error)
+      
+      // 即使 Supabase 整合失敗，仍然返回成功的 Line 登入
+      return NextResponse.json({
+        success: true,
+        user: {
+          line_id: userData.line_id,
+          display_name: userData.display_name,
+          avatar_url: userData.avatar_url,
+        },
+        message: 'Login successful (Supabase integration failed)'
+      })
+    }
 
   } catch (error) {
     console.error('Line callback error:', error)

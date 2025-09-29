@@ -37,11 +37,23 @@ function LineAuthContent() {
             const data = await response.json()
             console.log('Line auth success:', data)
             
-            // 如果有 Supabase，可以在這裡設定 session
-            // const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-            //   email: data.user.line_id + '@line.local',
-            //   password: data.user.line_id
-            // })
+            // 如果有 Supabase 認證資料，登入 Supabase
+            if (data.auth) {
+              try {
+                const { error: authError } = await supabase.auth.signInWithPassword({
+                  email: data.auth.email,
+                  password: data.auth.password
+                })
+
+                if (authError) {
+                  console.error('Supabase auth error:', authError)
+                } else {
+                  console.log('Supabase auth success')
+                }
+              } catch (authError) {
+                console.error('Error signing in to Supabase:', authError)
+              }
+            }
 
             // 檢查是否有重定向路徑
             const redirectPath = state || '/'
