@@ -64,17 +64,52 @@ export async function POST(request: NextRequest) {
       .from('wedding-photos')
       .getPublicUrl(fileName)
 
-    // 儲存照片資訊到資料庫
+    // 先確保用戶存在於 users 表格中
+    const { data: existingUser, error: userCheckError } = await supabase
+      .from('users')
+      .select('line_id')
+      .eq('line_id', uploaderLineId)
+      .single()
+
+    if (userCheckError && userCheckError.code === 'PGRST116') {
+      // 用戶不存在，創建用戶記錄
+      const { error: userCreateError } = await supabase
+        .from('users')
+        .insert({
+          line_id: uploaderLineId,
+          display_name: 'Unknown User', // 臨時名稱，之後會被 LIFF sync 更新
+          total_score: 0,
+          is_active: true
+        })
+
+      if (userCreateError) {
+        console.error('❌ 創建用戶失敗:', userCreateError)
+        return NextResponse.json({ 
+          error: '用戶創建失敗',
+          details: userCreateError.message 
+        }, { status: 500 })
+      }
+    }
+
+    // 儲存照片資訊到資料庫 (不指定 upload_time，使用資料庫預設值)
+    const photoInsertData: any = {
+      uploader_line_id: uploaderLineId,
+      file_name: fileName,
+      blessing_message: blessingMessage || '',
+      is_public: isPublic,
+      vote_count: 0
+    }
+
+    // 根據表格結構決定使用哪個欄位
+    if (uploadData.path) {
+      photoInsertData.google_drive_file_id = uploadData.path
+    }
+
+    console.log('📸 準備插入資料庫:', photoInsertData)
+
     const { data: photoData, error: dbError } = await supabase
       .from('photos')
-      .insert({
-        uploader_line_id: uploaderLineId,
-        google_drive_file_id: uploadData.path,
-        file_name: fileName,
-        blessing_message: blessingMessage || '',
-        is_public: isPublic,
-        vote_count: 0
-      })
+      .insert(photoInsertData)
       .select()
       .single()
 
@@ -100,10 +135,10 @@ export async function POST(request: NextRequest) {
       data: {
         id: photoData.id,
         fileName,
-        publicUrl: urlData.publicUrl,
+        publicUrl: urlData?.publicUrl || `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/wedding-photos/${fileName}`,
         blessingMessage,
         isPublic,
-        uploadTime: photoData.upload_time
+        uploadTime: photoData.upload_time || photoData.created_at || new Date().toISOString()
       }
     })
 
