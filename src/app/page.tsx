@@ -57,25 +57,12 @@ export default function Home() {
       color: 'bg-green-500'
     },
     {
-      title: '📸 照片上傳',
-      description: '上傳美好回憶',
-      href: '/photo-upload',
+      title: '📸 照片分享',
+      description: '上傳、瀏覽、投票照片',
+      href: '/photos',
       icon: Camera,
-      color: 'bg-purple-500'
-    },
-    {
-      title: '🖼️ 照片牆',
-      description: '瀏覽和投票',
-      href: '/photo-wall',
-      icon: Heart,
-      color: 'bg-pink-500'
-    },
-    {
-      title: '❤️ 快門傳情',
-      description: '輪播觀看照片',
-      href: '/photo-slideshow',
-      icon: Heart,
-      color: 'bg-red-500'
+      color: 'bg-gradient-to-r from-pink-500 to-purple-500',
+      special: true
     },
     {
       title: '🏆 排行榜',
@@ -157,22 +144,37 @@ export default function Home() {
             </div>
 
             {/* Menu Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
               {menuItems.map((item, index) => (
                 <div
                   key={index}
                   onClick={() => router.push(item.href)}
-                  className="bg-white rounded-2xl shadow-lg p-6 cursor-pointer transform transition-all duration-200 hover:scale-105 hover:shadow-xl"
+                  className={`${
+                    item.special 
+                      ? 'bg-gradient-to-r from-pink-50 to-purple-50 border-2 border-pink-200' 
+                      : 'bg-white'
+                  } rounded-2xl shadow-lg p-6 cursor-pointer transform transition-all duration-200 hover:scale-105 hover:shadow-xl`}
                 >
                   <div className="flex items-center space-x-4 mb-4">
-                    <div className={`w-12 h-12 ${item.color} rounded-xl flex items-center justify-center`}>
+                    <div className={`w-12 h-12 ${item.color} rounded-xl flex items-center justify-center ${
+                      item.special ? 'shadow-lg' : ''
+                    }`}>
                       <item.icon className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-800">{item.title}</h3>
-                      <p className="text-sm text-gray-600">{item.description}</p>
+                      <h3 className={`text-lg font-semibold ${
+                        item.special ? 'text-purple-800' : 'text-gray-800'
+                      }`}>{item.title}</h3>
+                      <p className={`text-sm ${
+                        item.special ? 'text-purple-600' : 'text-gray-600'
+                      }`}>{item.description}</p>
                     </div>
                   </div>
+                  {item.special && (
+                    <div className="mt-4 text-xs text-purple-600 font-medium">
+                      ✨ 包含上傳、照片牆、快門傳情三大功能
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -200,4 +202,5 @@ export default function Home() {
       </main>
     </div>
   )
+}
 }

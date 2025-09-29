@@ -86,16 +86,49 @@ export default function PhotoSlideshowPage() {
 
   const handleVote = async (photoId: number) => {
     try {
-      const { error } = await supabase
-        .from('votes')
-        .insert({
-          voter_line_id: 'anonymous', // 在實際應用中應該使用真實用戶ID
-          photo_id: photoId
-        })
+      // 需要先獲取用戶身份
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (!user) {
+        alert('請先登入才能投票')
+        return
+      }
 
-      if (error) throw error
+      const response = await fetch('/api/photo/vote', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          photoId,
+          voterLineId: user.id
+        })
+      })
+
+      const result = await response.json()
+
+      if (!result.success) {
+        // 如果是投票額度用完，顯示友善訊息
+        if (result.error.includes('投票額度已用完')) {
+          alert('您的投票額度已用完！感謝您的參與 ❤️')
+        } else {
+          alert(result.error || '投票失敗')
+        }
+        return
+      }
+
+      // 投票成功的視覺回饋
+      const button = document.querySelector(`[data-photo-id="${photoId}"]`)
+      if (button) {
+        button.classList.add('animate-pulse')
+        setTimeout(() => {
+          button.classList.remove('animate-pulse')
+        }, 1000)
+      }
+
     } catch (error) {
       console.error('Error voting:', error)
+      alert('投票失敗，請稍後再試')
     }
   }
 
@@ -177,7 +210,7 @@ export default function PhotoSlideshowPage() {
             {/* 照片 */}
             <div className="aspect-video bg-gray-100 flex items-center justify-center">
               <img
-                src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/wedding-photos/${currentPhoto.file_name}`}
+                src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/wedding-photos/${currentPhoto.google_drive_file_id}`}
                 alt="Wedding photo"
                 className="max-w-full max-h-full object-contain"
                 onError={(e) => {
@@ -189,6 +222,7 @@ export default function PhotoSlideshowPage() {
             {/* 愛心按鈕 */}
             <button
               onClick={() => handleVote(currentPhoto.id)}
+              data-photo-id={currentPhoto.id}
               className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm p-3 rounded-full shadow-lg hover:bg-white hover:scale-110 transition-all duration-200"
             >
               <Heart className="w-6 h-6 text-red-500" />

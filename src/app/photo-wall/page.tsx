@@ -145,35 +145,45 @@ export default function PhotoWallPage() {
   const handleVote = async (photoId: number) => {
     if (!user || !votingEnabled) return
 
-    const currentVotes = userVotes[photoId] || 0
     const totalUsedVotes = Object.values(userVotes).reduce((sum, count) => sum + count, 0)
     
-    // 使用 currentVotes 變數
-    console.log('Current votes for photo:', photoId, currentVotes)
-
     if (totalUsedVotes >= availableVotes) {
       alert('您的投票額度已用完！')
       return
     }
 
     try {
-      const { error } = await supabase
-        .from('votes')
-        .insert({
-          voter_line_id: user.id,
-          photo_id: photoId
+      const response = await fetch('/api/photo/vote', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          photoId,
+          voterLineId: user.id
         })
+      })
 
-      if (error) throw error
+      const result = await response.json()
+
+      if (!result.success) {
+        throw new Error(result.error || '投票失敗')
+      }
 
       // 更新本地狀態
       setUserVotes(prev => ({
         ...prev,
         [photoId]: (prev[photoId] || 0) + 1
       }))
+
+      // 可選：顯示成功訊息
+      if (result.data.remainingVotes === 0) {
+        alert('投票成功！您的投票額度已用完。')
+      }
+
     } catch (error) {
       console.error('Error voting:', error)
-      alert('投票失敗，請稍後再試')
+      alert(error instanceof Error ? error.message : '投票失敗，請稍後再試')
     }
   }
 

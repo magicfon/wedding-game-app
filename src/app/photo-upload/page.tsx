@@ -72,33 +72,24 @@ export default function PhotoUploadPage() {
     setUploading(true)
 
     try {
-      // 生成唯一檔案名
-      const fileExt = selectedFile.name.split('.').pop()
-      const fileName = `${user.id}_${Date.now()}.${fileExt}`
+      // 使用 FormData 準備上傳資料
+      const formData = new FormData()
+      formData.append('file', selectedFile)
+      formData.append('blessingMessage', blessingMessage)
+      formData.append('isPublic', isPublic.toString())
+      formData.append('uploaderLineId', user.id)
 
-      // 上傳到 Supabase Storage
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('wedding-photos')
-        .upload(fileName, selectedFile, {
-          cacheControl: '3600',
-          upsert: false
-        })
+      // 呼叫照片上傳 API
+      const response = await fetch('/api/photo/upload', {
+        method: 'POST',
+        body: formData
+      })
 
-      if (uploadError) throw uploadError
+      const result = await response.json()
 
-      // 儲存照片資訊到資料庫
-      const { error: dbError } = await supabase
-        .from('photos')
-        .insert({
-          uploader_line_id: user.id,
-          google_drive_file_id: uploadData.path, // 暫時使用 Supabase path
-          file_name: fileName,
-          blessing_message: blessingMessage,
-          is_public: isPublic,
-          vote_count: 0
-        })
-
-      if (dbError) throw dbError
+      if (!result.success) {
+        throw new Error(result.error || '上傳失敗')
+      }
 
       setUploadSuccess(true)
       
@@ -117,7 +108,7 @@ export default function PhotoUploadPage() {
 
     } catch (error) {
       console.error('Upload error:', error)
-      alert('上傳失敗，請稍後再試')
+      alert(error instanceof Error ? error.message : '上傳失敗，請稍後再試')
     } finally {
       setUploading(false)
     }
