@@ -1,0 +1,6 @@
+🐛 修復 Vercel 部署錯誤
+
+- 修正 page.tsx 中多餘的右大括號
+- 替換不存在的 Slideshow 圖示為 Play 圖示  
+- 修正 photo-slideshow 中的屬性名稱錯誤
+- 確保所有照片功能可正常建置和部署

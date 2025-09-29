@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createSupabaseBrowser } from '@/lib/supabase'
 import Layout from '@/components/Layout'
-import { Camera, Heart, ImageIcon, Upload, Users, Slideshow, Trophy, Settings } from 'lucide-react'
+import { Camera, Heart, ImageIcon, Upload, Users, Trophy, Settings, Play } from 'lucide-react'
 
 export default function PhotosPage() {
   const [user, setUser] = useState<any>(null)
@@ -88,7 +88,7 @@ export default function PhotosPage() {
       id: 'slideshow',
       title: '❤️ 快門傳情',
       description: '輪播欣賞精彩瞬間',
-      icon: <Slideshow className="w-8 h-8 text-purple-500" />,
+      icon: <Play className="w-8 h-8 text-purple-500" />,
       path: '/photo-slideshow',
       color: 'bg-purple-50 hover:bg-purple-100 border-purple-200',
       stats: '自動輪播展示'
