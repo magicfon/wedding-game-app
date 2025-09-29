@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createSupabaseBrowser, Photo } from '@/lib/supabase'
+import { useLiff } from '@/hooks/useLiff'
 import Layout from '@/components/Layout'
 import { Heart, MessageSquare, User, Clock, Trophy, Filter } from 'lucide-react'
 
@@ -17,13 +18,6 @@ interface PhotoWithUser extends Photo {
 export default function PhotoWallPage() {
   const [photos, setPhotos] = useState<PhotoWithUser[]>([])
   const [loading, setLoading] = useState(true)
-  const [user, setUser] = useState<{
-    id: string
-    email?: string
-    user_metadata?: {
-      full_name?: string
-    }
-  } | null>(null)
   const [sortBy, setSortBy] = useState<'votes' | 'time'>('votes')
   const [userVotes, setUserVotes] = useState<Record<number, number>>({})
   const [availableVotes, setAvailableVotes] = useState(3)
@@ -31,20 +25,15 @@ export default function PhotoWallPage() {
   
   const router = useRouter()
   const supabase = createSupabaseBrowser()
+  const { isReady, isLoggedIn, profile, loading: liffLoading } = useLiff()
 
-  // 獲取用戶資訊
+  // 檢查登入狀態
   useEffect(() => {
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        router.push('/auth/line')
-        return
-      }
-      setUser(user)
+    if (isReady && !liffLoading && !isLoggedIn) {
+      alert('請先登入才能查看照片牆')
+      router.push('/')
     }
-
-    getUser()
-  }, [supabase.auth, router])
+  }, [isReady, isLoggedIn, liffLoading, router])
 
   // 獲取投票設定
   const fetchVotingSettings = useCallback(async () => {
@@ -71,7 +60,7 @@ export default function PhotoWallPage() {
       const { data, error } = await supabase
         .from('votes')
         .select('photo_id')
-        .eq('voter_line_id', user.id)
+        .eq('voter_line_id', profile.userId)
 
       if (error) throw error
 
@@ -143,7 +132,7 @@ export default function PhotoWallPage() {
   }, [user, sortBy, fetchPhotos, fetchUserVotes, fetchVotingSettings, supabase])
 
   const handleVote = async (photoId: number) => {
-    if (!user || !votingEnabled) return
+    if (!profile || !votingEnabled) return
 
     const totalUsedVotes = Object.values(userVotes).reduce((sum, count) => sum + count, 0)
     

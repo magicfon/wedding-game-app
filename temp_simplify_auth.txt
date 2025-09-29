@@ -1,0 +1,10 @@
+🎯 簡化認證架構：移除不必要的 Supabase Auth
+
+- 移除 Line callback 中複雜的 Supabase Auth 創建邏輯  
+- 簡化認證流程，統一使用 Line LIFF
+- 照片上傳頁面改用 useLiff() hook 進行認證檢查
+- 照片牆頁面改用 useLiff() hook 進行認證檢查
+- 保持資料庫用戶同步（透過現有的 liff-sync API）
+- 解決架構不一致和 400 錯誤問題
+
+Line LIFF 本身就有完整的 session 管理，不需要額外的 Supabase Auth 層。

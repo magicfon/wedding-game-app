@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { createSupabaseBrowser } from '@/lib/supabase'
+import { useLiff } from '@/hooks/useLiff'
 import Layout from '@/components/Layout'
 import { Camera, Upload, Heart, Lock, Globe, Image as ImageIcon, X } from 'lucide-react'
 
@@ -12,33 +12,20 @@ export default function PhotoUploadPage() {
   const [blessingMessage, setBlessingMessage] = useState('')
   const [isPublic, setIsPublic] = useState(true)
   const [uploading, setUploading] = useState(false)
-  const [user, setUser] = useState<{
-    id: string
-    email?: string
-    user_metadata?: {
-      full_name?: string
-      avatar_url?: string
-    }
-  } | null>(null)
   const [uploadSuccess, setUploadSuccess] = useState(false)
   
   const fileInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
-  const supabase = createSupabaseBrowser()
+  const { isReady, isLoggedIn, profile, login, loading } = useLiff()
 
-  // 獲取用戶資訊
+  // 檢查登入狀態
   useEffect(() => {
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        router.push('/auth/line')
-        return
-      }
-      setUser(user)
+    if (isReady && !loading && !isLoggedIn) {
+      // 用戶未登入，提示登入
+      alert('請先登入才能上傳照片')
+      router.push('/')
     }
-
-    getUser()
-  }, [supabase.auth, router])
+  }, [isReady, isLoggedIn, loading, router])
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -67,7 +54,7 @@ export default function PhotoUploadPage() {
   }
 
   const handleUpload = async () => {
-    if (!selectedFile || !user) return
+    if (!selectedFile || !profile) return
 
     setUploading(true)
 
@@ -77,7 +64,7 @@ export default function PhotoUploadPage() {
       formData.append('file', selectedFile)
       formData.append('blessingMessage', blessingMessage)
       formData.append('isPublic', isPublic.toString())
-      formData.append('uploaderLineId', user.id)
+      formData.append('uploaderLineId', profile.userId)
 
       // 呼叫照片上傳 API
       const response = await fetch('/api/photo/upload', {
