@@ -56,16 +56,14 @@ export async function POST(request: NextRequest) {
     console.log('📊 Photos 表格查詢:', { photos, photosError })
 
     // 3. 嘗試插入測試照片記錄
+    // 注意: 使用實際的資料庫欄位名稱
     const testPhotoData: any = {
-      uploader_line_id: uploaderLineId,
-      file_name: `test_${Date.now()}.jpg`,
+      user_id: uploaderLineId,
+      image_url: `https://via.placeholder.com/400x400?text=Test+Photo+${Date.now()}`,
       blessing_message: '測試祝福訊息',
       is_public: true,
       vote_count: 0
     }
-
-    // 可選欄位
-    testPhotoData.google_drive_file_id = 'test_path'
 
     console.log('📸 準備插入測試照片:', testPhotoData)
 

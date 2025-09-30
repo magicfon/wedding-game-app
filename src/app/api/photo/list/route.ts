@@ -13,11 +13,12 @@ export async function GET(request: NextRequest) {
     console.log(`📸 獲取照片列表，排序：${sortBy}，公開：${isPublic}，限制：${limit || '無'}`)
 
     // 構建查詢
+    // 注意: 實際資料庫使用 user_id 而非 uploader_line_id
     let query = supabase
       .from('photos')
       .select(`
         *,
-        uploader:users!photos_uploader_line_id_fkey(display_name, avatar_url)
+        uploader:users!photos_user_id_fkey(display_name, avatar_url)
       `)
     
     // 如果只要公開照片
@@ -26,10 +27,11 @@ export async function GET(request: NextRequest) {
     }
     
     // 排序
+    // 注意: 實際資料庫使用 created_at 而非 upload_time
     if (sortBy === 'votes') {
       query = query.order('vote_count', { ascending: false })
     } else {
-      query = query.order('upload_time', { ascending: false })
+      query = query.order('created_at', { ascending: false })
     }
     
     // 限制數量
@@ -47,11 +49,8 @@ export async function GET(request: NextRequest) {
       }, { status: 500 })
     }
 
-    // 為每張照片添加完整的圖片 URL
-    const photosWithUrls = photos?.map(photo => ({
-      ...photo,
-      imageUrl: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/wedding-photos/${photo.google_drive_file_id}`
-    })) || []
+    // 照片已經包含 image_url，不需要額外處理
+    const photosWithUrls = photos || []
 
     console.log(`✅ 成功獲取 ${photosWithUrls.length} 張照片`)
 

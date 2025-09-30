@@ -210,7 +210,7 @@ export default function PhotoSlideshowPage() {
             {/* 照片 */}
             <div className="aspect-video bg-gray-100 flex items-center justify-center">
               <img
-                src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/wedding-photos/${currentPhoto.file_name}`}
+                src={currentPhoto.image_url}
                 alt="Wedding photo"
                 className="max-w-full max-h-full object-contain"
                 onError={(e) => {

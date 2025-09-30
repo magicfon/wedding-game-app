@@ -253,7 +253,7 @@ export default function PhotoWallPage() {
                 {/* 照片 */}
                 <div className="relative aspect-square">
                   <img
-                    src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/wedding-photos/${photo.google_drive_file_id}`}
+                    src={photo.image_url}
                     alt="Wedding photo"
                     className="w-full h-full object-cover"
                   />
