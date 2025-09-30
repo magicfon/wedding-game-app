@@ -38,7 +38,7 @@ export default function PhotosPage() {
       const [photosResult, votesResult, userPhotosResult, userVotesResult] = await Promise.all([
         supabase.from('photos').select('*', { count: 'exact', head: true }).eq('is_public', true),
         supabase.from('votes').select('*', { count: 'exact', head: true }),
-        supabase.from('photos').select('*', { count: 'exact', head: true }).eq('uploader_line_id', userId),
+        supabase.from('photos').select('*', { count: 'exact', head: true }).eq('user_id', userId),
         supabase.from('votes').select('*', { count: 'exact', head: true }).eq('voter_line_id', userId)
       ])
 

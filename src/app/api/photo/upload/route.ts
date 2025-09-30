@@ -154,7 +154,7 @@ export async function POST(request: NextRequest) {
         publicUrl: urlData?.publicUrl || `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/wedding-photos/${fileName}`,
         blessingMessage,
         isPublic,
-        uploadTime: photoData.upload_time || photoData.created_at || new Date().toISOString()
+        uploadTime: photoData.created_at || new Date().toISOString()
       }
     })
 

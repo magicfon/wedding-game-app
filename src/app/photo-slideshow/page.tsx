@@ -32,7 +32,7 @@ export default function PhotoSlideshowPage() {
           .from('photos')
           .select(`
             *,
-            uploader:users!photos_uploader_line_id_fkey(display_name, avatar_url)
+            uploader:users!photos_user_id_fkey(display_name, avatar_url)
           `)
           .eq('is_public', true)
           .order('vote_count', { ascending: false })
@@ -253,7 +253,7 @@ export default function PhotoSlideshowPage() {
                     </span>
                   </div>
                   <p className="text-sm text-gray-500">
-                    {new Date(currentPhoto.upload_time).toLocaleString('zh-TW')}
+                    {new Date(currentPhoto.created_at).toLocaleString('zh-TW')}
                   </p>
                 </div>
               </div>

@@ -83,10 +83,10 @@ export default function PhotoWallPage() {
         .from('photos')
         .select(`
           *,
-          uploader:users!photos_uploader_line_id_fkey(display_name, avatar_url)
+          uploader:users!photos_user_id_fkey(display_name, avatar_url)
         `)
         .eq('is_public', true)
-        .order(sortBy === 'votes' ? 'vote_count' : 'upload_time', 
+        .order(sortBy === 'votes' ? 'vote_count' : 'created_at', 
                { ascending: sortBy === 'votes' ? false : false })
 
       if (error) throw error
@@ -301,7 +301,7 @@ export default function PhotoWallPage() {
                       <div className="flex items-center space-x-2">
                         <Clock className="w-4 h-4 text-gray-400" />
                         <span className="text-xs text-gray-500">
-                          {new Date(photo.upload_time).toLocaleString('zh-TW')}
+                          {new Date(photo.created_at).toLocaleString('zh-TW')}
                         </span>
                       </div>
                     </div>
