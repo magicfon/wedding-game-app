@@ -73,7 +73,9 @@ export async function POST(request: NextRequest) {
 
     if (userCheckError && userCheckError.code === 'PGRST116') {
       // 用戶不存在，創建用戶記錄
-      const { error: userCreateError } = await supabase
+      console.log('📝 用戶不存在，準備創建用戶:', uploaderLineId)
+      
+      const { data: newUser, error: userCreateError } = await supabase
         .from('users')
         .insert({
           line_id: uploaderLineId,
@@ -81,14 +83,27 @@ export async function POST(request: NextRequest) {
           total_score: 0,
           is_active: true
         })
+        .select()
+        .single()
 
       if (userCreateError) {
         console.error('❌ 創建用戶失敗:', userCreateError)
+        console.error('完整錯誤:', JSON.stringify(userCreateError, null, 2))
         return NextResponse.json({ 
           error: '用戶創建失敗',
-          details: userCreateError.message 
+          details: userCreateError.message,
+          code: userCreateError.code,
+          hint: userCreateError.hint
         }, { status: 500 })
       }
+      
+      console.log('✅ 用戶創建成功:', newUser)
+    } else if (userCheckError) {
+      console.error('❌ 檢查用戶時發生錯誤:', userCheckError)
+      return NextResponse.json({ 
+        error: '檢查用戶失敗',
+        details: userCheckError.message 
+      }, { status: 500 })
     }
 
     // 儲存照片資訊到資料庫 (不指定 upload_time，使用資料庫預設值)
@@ -115,6 +130,8 @@ export async function POST(request: NextRequest) {
 
     if (dbError) {
       console.error('❌ 資料庫儲存失敗:', dbError)
+      console.error('完整錯誤:', JSON.stringify(dbError, null, 2))
+      console.error('嘗試插入的資料:', JSON.stringify(photoInsertData, null, 2))
       
       // 如果資料庫儲存失敗，嘗試刪除已上傳的檔案
       await supabase.storage
@@ -123,7 +140,10 @@ export async function POST(request: NextRequest) {
         
       return NextResponse.json({ 
         error: '照片資訊儲存失敗',
-        details: dbError.message 
+        details: dbError.message,
+        code: dbError.code,
+        hint: dbError.hint,
+        fullError: dbError
       }, { status: 500 })
     }
 
