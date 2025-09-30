@@ -7,11 +7,11 @@ import { Heart, User, MessageSquare, ChevronLeft, ChevronRight, Play, Pause } fr
 
 interface PhotoWithUser {
   id: number
-  uploader_line_id: string
-  file_name: string
+  user_id: string  // 對應 users.line_id
+  image_url: string  // 照片的公開 URL
   blessing_message: string
   vote_count: number
-  upload_time: string
+  created_at: string  // 創建時間
   uploader: {
     display_name: string
     avatar_url: string

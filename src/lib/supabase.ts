@@ -60,13 +60,13 @@ export interface AnswerRecord {
 
 export interface Photo {
   id: number
-  uploader_line_id: string
-  google_drive_file_id: string
-  file_name: string
+  user_id: string  // 對應 users.line_id
+  image_url: string  // 照片的公開 URL
   blessing_message: string
   is_public: boolean
   vote_count: number
-  upload_time: string
+  created_at: string  // 創建時間
+  updated_at?: string  // 更新時間（可選）
 }
 
 export interface Vote {
