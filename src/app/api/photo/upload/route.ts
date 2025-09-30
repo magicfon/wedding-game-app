@@ -106,18 +106,14 @@ export async function POST(request: NextRequest) {
       }, { status: 500 })
     }
 
-    // 儲存照片資訊到資料庫 (不指定 upload_time，使用資料庫預設值)
+    // 儲存照片資訊到資料庫
+    // 注意: 實際的資料庫結構使用 image_url 和 user_id，而非 file_name 和 uploader_line_id
     const photoInsertData: any = {
-      uploader_line_id: uploaderLineId,
-      file_name: fileName,
+      user_id: uploaderLineId,  // 對應 users.line_id
+      image_url: urlData.publicUrl,  // 使用公開 URL
       blessing_message: blessingMessage || '',
       is_public: isPublic,
       vote_count: 0
-    }
-
-    // 根據表格結構決定使用哪個欄位
-    if (uploadData.path) {
-      photoInsertData.google_drive_file_id = uploadData.path
     }
 
     console.log('📸 準備插入資料庫:', photoInsertData)
