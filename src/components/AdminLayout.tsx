@@ -37,6 +37,7 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
     { name: '媒體清理', href: '/admin/media-cleanup', icon: HardDrive },
     { name: '用戶管理', href: '/admin/users', icon: Users },
     { name: '照片管理', href: '/admin/photos', icon: Camera },
+    { name: '隱私照片', href: '/admin/private-photos', icon: Camera },
     { name: '系統設定', href: '/admin/settings', icon: Settings },
   ]
 
