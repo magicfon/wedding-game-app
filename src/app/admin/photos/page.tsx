@@ -318,17 +318,17 @@ export default function PhotosManagePage() {
                   className="group relative bg-white rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer"
                   onClick={() => setSelectedPhoto(photo)}
                 >
-                  <div className="aspect-square relative bg-gray-200">
+                  <div className="aspect-square relative overflow-hidden bg-gray-100">
                     {photo.image_url ? (
                       <Image
                         src={photo.image_url}
                         alt={photo.blessing_message || '照片'}
                         fill
+                        sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
                         className="object-cover"
                         unoptimized
                         onError={(e) => {
                           console.error('圖片載入失敗:', photo.image_url)
-                          e.currentTarget.style.display = 'none'
                         }}
                       />
                     ) : (
@@ -338,7 +338,7 @@ export default function PhotosManagePage() {
                     )}
                     
                     {/* 公開/隱私標記 */}
-                    <div className="absolute top-2 right-2">
+                    <div className="absolute top-2 right-2 z-10">
                       {photo.is_public ? (
                         <div className="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1">
                           <Eye className="w-3 h-3" />
@@ -353,7 +353,7 @@ export default function PhotosManagePage() {
                     </div>
                     
                     {/* 懸停遮罩 */}
-                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all duration-300 flex items-center justify-center">
+                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all duration-300 flex items-center justify-center z-[5] pointer-events-none">
                       <Eye className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     </div>
                   </div>
