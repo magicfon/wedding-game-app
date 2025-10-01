@@ -221,6 +221,7 @@ export default function PrivatePhotosPage() {
                       alt={photo.blessing_message || '隱私照片'}
                       fill
                       className="object-cover"
+                      unoptimized
                     />
                     
                     {/* 懸停遮罩 */}
@@ -239,6 +240,7 @@ export default function PrivatePhotosPage() {
                           width={24}
                           height={24}
                           className="rounded-full"
+                          unoptimized
                         />
                       ) : (
                         <div className="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center">
@@ -284,6 +286,7 @@ export default function PrivatePhotosPage() {
                   alt={selectedPhoto.blessing_message || '隱私照片'}
                   fill
                   className="object-contain"
+                  unoptimized
                 />
               </div>
 
@@ -298,6 +301,7 @@ export default function PrivatePhotosPage() {
                       width={48}
                       height={48}
                       className="rounded-full"
+                      unoptimized
                     />
                   ) : (
                     <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center">
