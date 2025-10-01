@@ -168,7 +168,7 @@ export default function PhotoSlideshowPage() {
           <img
             src={currentPhoto.image_url}
             alt="Wedding photo"
-            className="w-full h-full object-cover"
+            className="max-w-full max-h-full object-contain"
             onError={(e) => {
               (e.target as HTMLImageElement).src = 'https://via.placeholder.com/1920x1080/1a1a1a/9ca3af?text=照片載入中...'
             }}
