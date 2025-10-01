@@ -355,19 +355,19 @@ export default function PhotosManagePage() {
                   <div className="p-3">
                     <div className="flex items-center space-x-2 mb-2">
                       {photo.uploader.picture_url ? (
-                        <Image
+                        <img
                           src={photo.uploader.picture_url}
                           alt={photo.uploader.display_name}
-                          width={24}
-                          height={24}
-                          className="rounded-full"
-                          unoptimized
+                          className="w-6 h-6 rounded-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none'
+                            e.currentTarget.nextElementSibling?.classList.remove('hidden')
+                          }}
                         />
-                      ) : (
-                        <div className="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center">
-                          <User className="w-4 h-4 text-gray-600" />
-                        </div>
-                      )}
+                      ) : null}
+                      <div className={`w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center ${photo.uploader.picture_url ? 'hidden' : ''}`}>
+                        <User className="w-4 h-4 text-gray-600" />
+                      </div>
                       <span className="text-sm text-gray-700 truncate">
                         {photo.uploader.display_name}
                       </span>
@@ -416,19 +416,19 @@ export default function PhotosManagePage() {
                 {/* 上傳者 */}
                 <div className="flex items-center space-x-3">
                   {selectedPhoto.uploader.picture_url ? (
-                    <Image
+                    <img
                       src={selectedPhoto.uploader.picture_url}
                       alt={selectedPhoto.uploader.display_name}
-                      width={48}
-                      height={48}
-                      className="rounded-full"
-                      unoptimized
+                      className="w-12 h-12 rounded-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none'
+                        e.currentTarget.nextElementSibling?.classList.remove('hidden')
+                      }}
                     />
-                  ) : (
-                    <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center">
-                      <User className="w-6 h-6 text-gray-600" />
-                    </div>
-                  )}
+                  ) : null}
+                  <div className={`w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0 ${selectedPhoto.uploader.picture_url ? 'hidden' : ''}`}>
+                    <User className="w-6 h-6 text-gray-600" />
+                  </div>
                   <div>
                     <p className="font-semibold text-gray-900">{selectedPhoto.uploader.display_name}</p>
                     <p className="text-sm text-gray-500">
