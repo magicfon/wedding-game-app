@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createSupabaseBrowser, Photo } from '@/lib/supabase'
 import { useLiff } from '@/hooks/useLiff'
 import Layout from '@/components/Layout'
-import { Heart, MessageSquare, User, Clock, Trophy, Filter, Download, X } from 'lucide-react'
+import { Heart, MessageSquare, User, Clock, Trophy, Filter, X } from 'lucide-react'
 
 interface PhotoWithUser extends Photo {
   uploader: {
@@ -233,23 +233,6 @@ export default function PhotoWallPage() {
     }
   }
 
-  const handleDownload = async (photo: PhotoWithUser) => {
-    try {
-      const response = await fetch(photo.image_url)
-      const blob = await response.blob()
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `wedding-photo-${photo.id}.jpg`
-      document.body.appendChild(a)
-      a.click()
-      window.URL.revokeObjectURL(url)
-      document.body.removeChild(a)
-    } catch (error) {
-      console.error('Error downloading photo:', error)
-      alert('下載失敗，請稍後再試')
-    }
-  }
 
   const getRemainingVotes = () => {
     const used = Object.values(userVotes).reduce((sum, count) => sum + count, 0)
@@ -518,18 +501,6 @@ export default function PhotoWallPage() {
                       <span>投票</span>
                     </button>
                   )}
-
-                  {/* 下載按鈕 */}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleDownload(selectedPhoto)
-                    }}
-                    className="flex items-center space-x-2 bg-blue-500 hover:bg-blue-600 px-6 py-3 rounded-full font-semibold transition-colors"
-                  >
-                    <Download className="w-5 h-5" />
-                    <span>下載</span>
-                  </button>
                 </div>
               </div>
             </div>
