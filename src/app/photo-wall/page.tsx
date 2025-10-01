@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createSupabaseBrowser, Photo } from '@/lib/supabase'
 import { useLiff } from '@/hooks/useLiff'
 import Layout from '@/components/Layout'
-import { Heart, MessageSquare, User, Clock, Trophy, Filter } from 'lucide-react'
+import { Heart, MessageSquare, User, Clock, Trophy, Filter, Download, X } from 'lucide-react'
 
 interface PhotoWithUser extends Photo {
   uploader: {
@@ -17,15 +17,23 @@ interface PhotoWithUser extends Photo {
 
 export default function PhotoWallPage() {
   const [photos, setPhotos] = useState<PhotoWithUser[]>([])
+  const [displayedPhotos, setDisplayedPhotos] = useState<PhotoWithUser[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [sortBy, setSortBy] = useState<'votes' | 'time'>('votes')
   const [userVotes, setUserVotes] = useState<Record<number, number>>({})
   const [availableVotes, setAvailableVotes] = useState(3)
   const [votingEnabled, setVotingEnabled] = useState(false)
+  const [selectedPhoto, setSelectedPhoto] = useState<PhotoWithUser | null>(null)
+  const [page, setPage] = useState(1)
+  const observerRef = useRef<IntersectionObserver | null>(null)
+  const loadMoreRef = useRef<HTMLDivElement | null>(null)
   
   const router = useRouter()
   const supabase = createSupabaseBrowser()
   const { isReady, isLoggedIn, profile, loading: liffLoading } = useLiff()
+
+  const PHOTOS_PER_PAGE = 12
 
   // 檢查登入狀態
   useEffect(() => {
@@ -92,12 +100,54 @@ export default function PhotoWallPage() {
       if (error) throw error
       
       setPhotos(data as PhotoWithUser[])
+      setDisplayedPhotos((data as PhotoWithUser[]).slice(0, PHOTOS_PER_PAGE))
+      setPage(1)
     } catch (error) {
       console.error('Error fetching photos:', error)
     } finally {
       setLoading(false)
     }
   }, [sortBy, supabase])
+
+  // 載入更多照片
+  const loadMorePhotos = useCallback(() => {
+    if (loadingMore || displayedPhotos.length >= photos.length) return
+
+    setLoadingMore(true)
+    setTimeout(() => {
+      const nextPage = page + 1
+      const newPhotos = photos.slice(0, nextPage * PHOTOS_PER_PAGE)
+      setDisplayedPhotos(newPhotos)
+      setPage(nextPage)
+      setLoadingMore(false)
+    }, 500)
+  }, [loadingMore, displayedPhotos.length, photos, page])
+
+  // 設置 Intersection Observer 用於無限滾動
+  useEffect(() => {
+    if (observerRef.current) {
+      observerRef.current.disconnect()
+    }
+
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !loadingMore && displayedPhotos.length < photos.length) {
+          loadMorePhotos()
+        }
+      },
+      { threshold: 0.1 }
+    )
+
+    if (loadMoreRef.current) {
+      observerRef.current.observe(loadMoreRef.current)
+    }
+
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect()
+      }
+    }
+  }, [loadMorePhotos, loadingMore, displayedPhotos.length, photos.length])
 
   useEffect(() => {
     if (!profile) return
@@ -131,7 +181,8 @@ export default function PhotoWallPage() {
     }
   }, [profile, sortBy, fetchPhotos, fetchUserVotes, fetchVotingSettings, supabase])
 
-  const handleVote = async (photoId: number) => {
+  const handleVote = async (photoId: number, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation()
     if (!profile || !votingEnabled) return
 
     const totalUsedVotes = Object.values(userVotes).reduce((sum, count) => sum + count, 0)
@@ -165,14 +216,38 @@ export default function PhotoWallPage() {
         [photoId]: (prev[photoId] || 0) + 1
       }))
 
-      // 可選：顯示成功訊息
-      if (result.data.remainingVotes === 0) {
-        alert('投票成功！您的投票額度已用完。')
+      // 更新照片列表中的票數
+      setPhotos(prev => prev.map(p => 
+        p.id === photoId ? { ...p, vote_count: p.vote_count + 1 } : p
+      ))
+      setDisplayedPhotos(prev => prev.map(p => 
+        p.id === photoId ? { ...p, vote_count: p.vote_count + 1 } : p
+      ))
+      if (selectedPhoto?.id === photoId) {
+        setSelectedPhoto(prev => prev ? { ...prev, vote_count: prev.vote_count + 1 } : null)
       }
 
     } catch (error) {
       console.error('Error voting:', error)
       alert(error instanceof Error ? error.message : '投票失敗，請稍後再試')
+    }
+  }
+
+  const handleDownload = async (photo: PhotoWithUser) => {
+    try {
+      const response = await fetch(photo.image_url)
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `wedding-photo-${photo.id}.jpg`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+    } catch (error) {
+      console.error('Error downloading photo:', error)
+      alert('下載失敗，請稍後再試')
     }
   }
 
@@ -231,8 +306,8 @@ export default function PhotoWallPage() {
           </div>
         </div>
 
-        {/* 照片網格 */}
-        {photos.length === 0 ? (
+        {/* Pinterest 風格瀑布流照片牆 */}
+        {displayedPhotos.length === 0 ? (
           <div className="text-center py-16">
             <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md mx-auto">
               <Heart className="w-16 h-16 text-gray-400 mx-auto mb-6" />
@@ -247,90 +322,91 @@ export default function PhotoWallPage() {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {photos.map((photo) => (
-              <div key={photo.id} className="bg-white rounded-2xl shadow-lg overflow-hidden">
-                {/* 照片 */}
-                <div className="relative aspect-square">
-                  <img
-                    src={photo.image_url}
-                    alt="Wedding photo"
-                    className="w-full h-full object-cover"
-                  />
-                  
-                  {/* 投票按鈕 */}
-                  {votingEnabled && (
-                    <button
-                      onClick={() => handleVote(photo.id)}
-                      disabled={getRemainingVotes() <= 0}
-                      className={`absolute top-3 right-3 p-2 rounded-full shadow-lg transition-all duration-200 ${
-                        getRemainingVotes() <= 0
-                          ? 'bg-gray-300 cursor-not-allowed'
-                          : 'bg-white hover:bg-pink-50 hover:scale-110'
-                      }`}
-                    >
-                      <Heart className={`w-5 h-5 ${
-                        userVotes[photo.id] > 0 ? 'text-red-500 fill-current' : 'text-gray-600'
-                      }`} />
-                    </button>
-                  )}
+          <>
+            {/* 瀑布流布局 */}
+            <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4 space-y-4">
+              {displayedPhotos.map((photo) => (
+                <div 
+                  key={photo.id} 
+                  className="break-inside-avoid mb-4 cursor-pointer group"
+                  onClick={() => setSelectedPhoto(photo)}
+                >
+                  <div className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
+                    {/* 照片 */}
+                    <div className="relative">
+                      <img
+                        src={photo.image_url}
+                        alt="Wedding photo"
+                        className="w-full h-auto object-cover"
+                        loading="lazy"
+                      />
+                      
+                      {/* 懸停遮罩 */}
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-300">
+                        {/* 投票按鈕 */}
+                        {votingEnabled && (
+                          <button
+                            onClick={(e) => handleVote(photo.id, e)}
+                            disabled={getRemainingVotes() <= 0}
+                            className={`absolute top-3 right-3 p-2 rounded-full shadow-lg transition-all duration-200 opacity-0 group-hover:opacity-100 ${
+                              getRemainingVotes() <= 0
+                                ? 'bg-gray-300 cursor-not-allowed'
+                                : 'bg-white hover:bg-pink-50 hover:scale-110'
+                            }`}
+                          >
+                            <Heart className={`w-5 h-5 ${
+                              userVotes[photo.id] > 0 ? 'text-red-500 fill-current' : 'text-gray-600'
+                            }`} />
+                          </button>
+                        )}
 
-                  {/* 票數顯示 */}
-                  <div className="absolute bottom-3 left-3 bg-black/70 text-white px-2 py-1 rounded-lg flex items-center space-x-1">
-                    <Heart className="w-4 h-4" />
-                    <span className="text-sm font-medium">{photo.vote_count}</span>
-                  </div>
-                </div>
+                        {/* 票數顯示 */}
+                        <div className="absolute bottom-3 left-3 bg-black/70 text-white px-3 py-1.5 rounded-full flex items-center space-x-1">
+                          <Heart className="w-4 h-4 fill-current" />
+                          <span className="text-sm font-semibold">{photo.vote_count}</span>
+                        </div>
+                      </div>
+                    </div>
 
-                {/* 照片資訊 */}
-                <div className="p-4">
-                  {/* 上傳者資訊 */}
-                  <div className="flex items-center space-x-3 mb-3">
-                    <img
-                      src={photo.uploader.avatar_url || '/default-avatar.png'}
-                      alt="Avatar"
-                      className="w-8 h-8 rounded-full"
-                    />
-                    <div className="flex-1">
+                    {/* 簡化資訊 */}
+                    <div className="p-3">
                       <div className="flex items-center space-x-2">
-                        <User className="w-4 h-4 text-gray-500" />
-                        <span className="text-sm font-medium text-gray-800">
+                        <img
+                          src={photo.uploader.avatar_url || '/default-avatar.png'}
+                          alt="Avatar"
+                          className="w-6 h-6 rounded-full"
+                        />
+                        <span className="text-sm font-medium text-gray-800 truncate">
                           {photo.uploader.display_name}
                         </span>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <Clock className="w-4 h-4 text-gray-400" />
-                        <span className="text-xs text-gray-500">
-                          {new Date(photo.created_at).toLocaleString('zh-TW')}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 祝福訊息 */}
-                  {photo.blessing_message && (
-                    <div className="bg-pink-50 rounded-lg p-3">
-                      <div className="flex items-start space-x-2">
-                        <MessageSquare className="w-4 h-4 text-pink-500 mt-0.5 flex-shrink-0" />
-                        <p className="text-sm text-gray-700 leading-relaxed">
+                      {photo.blessing_message && (
+                        <p className="text-xs text-gray-600 mt-2 line-clamp-2">
                           {photo.blessing_message}
                         </p>
-                      </div>
+                      )}
                     </div>
-                  )}
-
-                  {/* 投票統計 */}
-                  {userVotes[photo.id] > 0 && (
-                    <div className="mt-3 text-center">
-                      <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-medium">
-                        您投了 {userVotes[photo.id]} 票
-                      </span>
-                    </div>
-                  )}
+                  </div>
                 </div>
+              ))}
+            </div>
+
+            {/* 載入更多指示器 */}
+            {displayedPhotos.length < photos.length && (
+              <div ref={loadMoreRef} className="text-center py-8">
+                {loadingMore && (
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-500 mx-auto"></div>
+                )}
               </div>
-            ))}
-          </div>
+            )}
+
+            {/* 已載入全部照片 */}
+            {displayedPhotos.length >= photos.length && photos.length > PHOTOS_PER_PAGE && (
+              <div className="text-center py-8">
+                <p className="text-gray-500 text-sm">✨ 已載入全部 {photos.length} 張照片</p>
+              </div>
+            )}
+          </>
         )}
 
         {/* 底部提示 */}
@@ -343,6 +419,123 @@ export default function PhotoWallPage() {
           </p>
         </div>
       </div>
+
+      {/* 照片放大檢視模態框 */}
+      {selectedPhoto && (
+        <div 
+          className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4 animate-fadeIn"
+          onClick={() => setSelectedPhoto(null)}
+        >
+          <div className="max-w-6xl w-full h-full flex flex-col">
+            {/* 頂部工具列 */}
+            <div className="flex items-center justify-between p-4 text-white">
+              <div className="flex items-center space-x-4">
+                <img
+                  src={selectedPhoto.uploader.avatar_url || '/default-avatar.png'}
+                  alt="Avatar"
+                  className="w-12 h-12 rounded-full border-2 border-white"
+                />
+                <div>
+                  <h3 className="font-semibold text-lg">{selectedPhoto.uploader.display_name}</h3>
+                  <p className="text-sm text-gray-300">
+                    {new Date(selectedPhoto.created_at).toLocaleString('zh-TW')}
+                  </p>
+                </div>
+              </div>
+              
+              <button
+                onClick={() => setSelectedPhoto(null)}
+                className="p-2 hover:bg-white/10 rounded-full transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* 照片主體 */}
+            <div 
+              className="flex-1 flex items-center justify-center relative"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <img
+                src={selectedPhoto.image_url}
+                alt="Wedding photo"
+                className="max-w-full max-h-[70vh] object-contain rounded-lg shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
+
+            {/* 底部資訊列 */}
+            <div 
+              className="bg-white/10 backdrop-blur-md rounded-2xl p-6 mt-4 text-white"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-4 sm:space-y-0">
+                {/* 左側資訊 */}
+                <div className="space-y-3 flex-1">
+                  {/* 得票數 */}
+                  <div className="flex items-center space-x-3">
+                    <div className="bg-pink-500 px-4 py-2 rounded-full flex items-center space-x-2">
+                      <Heart className="w-5 h-5 fill-current" />
+                      <span className="font-semibold">{selectedPhoto.vote_count} 票</span>
+                    </div>
+                    {userVotes[selectedPhoto.id] > 0 && (
+                      <span className="bg-red-500/80 px-3 py-1 rounded-full text-sm">
+                        您投了 {userVotes[selectedPhoto.id]} 票
+                      </span>
+                    )}
+                  </div>
+
+                  {/* 祝福訊息 */}
+                  {selectedPhoto.blessing_message && (
+                    <div className="flex items-start space-x-2">
+                      <MessageSquare className="w-5 h-5 mt-0.5 flex-shrink-0 text-pink-300" />
+                      <p className="text-white/90 leading-relaxed">
+                        {selectedPhoto.blessing_message}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* 右側按鈕 */}
+                <div className="flex items-center space-x-3">
+                  {/* 投票按鈕 */}
+                  {votingEnabled && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleVote(selectedPhoto.id)
+                      }}
+                      disabled={getRemainingVotes() <= 0}
+                      className={`flex items-center space-x-2 px-6 py-3 rounded-full font-semibold transition-all duration-200 ${
+                        getRemainingVotes() <= 0
+                          ? 'bg-gray-500 cursor-not-allowed'
+                          : userVotes[selectedPhoto.id] > 0
+                          ? 'bg-red-500 hover:bg-red-600'
+                          : 'bg-pink-500 hover:bg-pink-600'
+                      }`}
+                    >
+                      <Heart className={`w-5 h-5 ${userVotes[selectedPhoto.id] > 0 ? 'fill-current' : ''}`} />
+                      <span>投票</span>
+                    </button>
+                  )}
+
+                  {/* 下載按鈕 */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleDownload(selectedPhoto)
+                    }}
+                    className="flex items-center space-x-2 bg-blue-500 hover:bg-blue-600 px-6 py-3 rounded-full font-semibold transition-colors"
+                  >
+                    <Download className="w-5 h-5" />
+                    <span>下載</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </Layout>
   )
 }
