@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
         user_id,
         uploader:users!photos_user_id_fkey (
           display_name,
-          picture_url
+          avatar_url
         )
       `)
       .order('created_at', { ascending: false })
