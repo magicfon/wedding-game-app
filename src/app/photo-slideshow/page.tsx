@@ -164,43 +164,6 @@ export default function PhotoSlideshowPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 p-4">
       <div className="max-w-6xl mx-auto">
-        {/* 控制列 */}
-        <div className="bg-white rounded-2xl shadow-lg p-4 mb-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <h2 className="text-2xl font-bold text-gray-800">❤️ 快門傳情</h2>
-              <span className="bg-pink-100 text-pink-700 px-3 py-1 rounded-full text-sm font-medium">
-                {currentIndex + 1} / {photos.length}
-              </span>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={handlePrevious}
-                className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-              >
-                <ChevronLeft className="w-6 h-6 text-gray-600" />
-              </button>
-              
-              <button
-                onClick={() => setIsPlaying(!isPlaying)}
-                className={`p-2 rounded-lg transition-colors ${
-                  isPlaying ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'
-                }`}
-              >
-                {isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />}
-              </button>
-
-              <button
-                onClick={handleNext}
-                className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-              >
-                <ChevronRight className="w-6 h-6 text-gray-600" />
-              </button>
-            </div>
-          </div>
-        </div>
-
         {/* 主要展示區 */}
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
           <div className="relative">
@@ -216,16 +179,52 @@ export default function PhotoSlideshowPage() {
               />
             </div>
 
-            {/* 愛心按鈕 */}
-            <button
-              onClick={() => handleVote(currentPhoto.id)}
-              data-photo-id={currentPhoto.id}
-              className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm p-3 rounded-full shadow-lg hover:bg-white hover:scale-110 transition-all duration-200"
-            >
-              <Heart className="w-6 h-6 text-red-500" />
-            </button>
+            {/* 計數器 - 左上角 */}
+            <div className="absolute top-4 left-4 bg-black/70 text-white px-3 py-2 rounded-lg flex items-center space-x-2">
+              <span className="font-medium">{currentIndex + 1} / {photos.length}</span>
+            </div>
 
-            {/* 票數顯示 */}
+            {/* 控制按鈕組 - 右下角 */}
+            <div className="absolute bottom-4 right-4 flex items-center space-x-2">
+              {/* 上一張 */}
+              <button
+                onClick={handlePrevious}
+                className="bg-white/90 backdrop-blur-sm p-3 rounded-full shadow-lg hover:bg-white hover:scale-110 transition-all duration-200"
+              >
+                <ChevronLeft className="w-6 h-6 text-gray-700" />
+              </button>
+              
+              {/* 播放/暫停 */}
+              <button
+                onClick={() => setIsPlaying(!isPlaying)}
+                className="bg-white/90 backdrop-blur-sm p-3 rounded-full shadow-lg hover:bg-white hover:scale-110 transition-all duration-200"
+              >
+                {isPlaying ? (
+                  <Pause className="w-6 h-6 text-red-500" />
+                ) : (
+                  <Play className="w-6 h-6 text-green-500" />
+                )}
+              </button>
+
+              {/* 下一張 */}
+              <button
+                onClick={handleNext}
+                className="bg-white/90 backdrop-blur-sm p-3 rounded-full shadow-lg hover:bg-white hover:scale-110 transition-all duration-200"
+              >
+                <ChevronRight className="w-6 h-6 text-gray-700" />
+              </button>
+
+              {/* 投票按鈕 */}
+              <button
+                onClick={() => handleVote(currentPhoto.id)}
+                data-photo-id={currentPhoto.id}
+                className="bg-white/90 backdrop-blur-sm p-3 rounded-full shadow-lg hover:bg-white hover:scale-110 transition-all duration-200"
+              >
+                <Heart className="w-6 h-6 text-red-500" />
+              </button>
+            </div>
+
+            {/* 票數顯示 - 左下角 */}
             <div className="absolute bottom-4 left-4 bg-black/70 text-white px-3 py-2 rounded-lg flex items-center space-x-2">
               <Heart className="w-4 h-4 text-red-400" />
               <span className="font-medium">{currentPhoto.vote_count} 個愛心</span>
