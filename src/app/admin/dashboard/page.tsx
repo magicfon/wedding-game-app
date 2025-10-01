@@ -154,17 +154,10 @@ export default function AdminDashboard() {
     },
     {
       title: '照片管理',
-      description: '管理上傳的照片',
+      description: '管理公開和隱私照片',
       icon: Camera,
       href: '/admin/photos',
       color: 'bg-pink-500'
-    },
-    {
-      title: '隱私照片',
-      description: '管理隱私照片',
-      icon: Camera,
-      href: '/admin/private-photos',
-      color: 'bg-purple-600'
     },
     {
       title: '排行榜',
