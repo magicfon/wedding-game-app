@@ -56,13 +56,21 @@ export default function PhotosManagePage() {
 
   // 篩選照片
   useEffect(() => {
+    console.log('篩選照片 - filter:', filter, 'photos.length:', photos.length)
     if (filter === 'all') {
       setFilteredPhotos(photos)
     } else if (filter === 'public') {
-      setFilteredPhotos(photos.filter(p => p.is_public))
+      const publicPhotos = photos.filter(p => p.is_public)
+      console.log('公開照片數量:', publicPhotos.length)
+      setFilteredPhotos(publicPhotos)
     } else if (filter === 'private') {
-      setFilteredPhotos(photos.filter(p => !p.is_public))
+      const privatePhotos = photos.filter(p => !p.is_public)
+      console.log('隱私照片數量:', privatePhotos.length)
+      setFilteredPhotos(privatePhotos)
     }
+    console.log('filteredPhotos 將更新為:', filter === 'all' ? photos.length : 
+                filter === 'public' ? photos.filter(p => p.is_public).length :
+                photos.filter(p => !p.is_public).length)
   }, [filter, photos])
 
   // 獲取所有照片
@@ -80,8 +88,11 @@ export default function PhotosManagePage() {
       })
 
       if (response.ok) {
-        setPhotos(data.photos || [])
-        console.log('照片已載入:', data.photos?.length || 0)
+        const photosData = data.photos || []
+        setPhotos(photosData)
+        console.log('照片已載入:', photosData.length)
+        console.log('第一張照片資訊:', photosData[0])
+        console.log('第一張照片 URL:', photosData[0]?.image_url)
       } else {
         console.error('獲取照片失敗:', data.error)
       }
@@ -173,6 +184,8 @@ export default function PhotosManagePage() {
 
   const publicCount = photos.filter(p => p.is_public).length
   const privateCount = photos.filter(p => !p.is_public).length
+
+  console.log('渲染照片管理頁面 - photos:', photos.length, 'filteredPhotos:', filteredPhotos.length, 'filter:', filter)
 
   return (
     <div className="min-h-screen bg-gray-100">
