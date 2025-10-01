@@ -286,8 +286,7 @@ export default function PhotoSlideshowPage() {
                 className="w-20 h-20 rounded-full ring-4 ring-white shadow-2xl"
               />
               <div>
-                <div className="flex items-center justify-center space-x-2">
-                  <User className="w-6 h-6 text-white drop-shadow-lg" />
+                <div className="flex items-center justify-center">
                   <span className="text-3xl font-bold text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)]">
                     {currentPhoto.uploader.display_name}
                   </span>
@@ -301,8 +300,8 @@ export default function PhotoSlideshowPage() {
             {/* 祝福訊息 */}
             {currentPhoto.blessing_message && (
               <div className="flex items-start justify-center space-x-3">
-                <MessageSquare className="w-7 h-7 text-white drop-shadow-lg mt-1 flex-shrink-0" />
-                <p className="text-2xl text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)] leading-relaxed font-medium max-w-3xl">
+                <MessageSquare className="w-8 h-8 text-white drop-shadow-lg mt-1 flex-shrink-0" />
+                <p className="text-3xl text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)] leading-relaxed font-medium max-w-3xl">
                   {currentPhoto.blessing_message}
                 </p>
               </div>
