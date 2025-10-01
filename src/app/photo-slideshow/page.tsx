@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { createSupabaseBrowser } from '@/lib/supabase'
-import Layout from '@/components/Layout'
 import { Heart, User, MessageSquare, ChevronLeft, ChevronRight, Play, Pause } from 'lucide-react'
 
 interface PhotoWithUser {
@@ -134,38 +133,36 @@ export default function PhotoSlideshowPage() {
 
   if (loading) {
     return (
-      <Layout title="快門傳情">
-        <div className="flex items-center justify-center py-16">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500"></div>
-        </div>
-      </Layout>
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500"></div>
+      </div>
     )
   }
 
   if (photos.length === 0) {
     return (
-      <Layout title="快門傳情">
-        <div className="max-w-4xl mx-auto text-center py-16">
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 flex items-center justify-center p-4">
+        <div className="max-w-4xl mx-auto text-center">
           <div className="bg-white rounded-2xl shadow-lg p-8">
             <Heart className="w-16 h-16 text-gray-400 mx-auto mb-6" />
             <h2 className="text-2xl font-bold text-gray-800 mb-4">還沒有照片</h2>
             <p className="text-gray-600 mb-6">快去上傳第一張照片吧！</p>
             <a
               href="/photo-upload"
-              className="bg-pink-500 hover:bg-pink-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
+              className="inline-block bg-pink-500 hover:bg-pink-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
             >
               上傳照片
             </a>
           </div>
         </div>
-      </Layout>
+      </div>
     )
   }
 
   const currentPhoto = photos[currentIndex]
 
   return (
-    <Layout title="快門傳情">
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 p-4">
       <div className="max-w-6xl mx-auto">
         {/* 控制列 */}
         <div className="bg-white rounded-2xl shadow-lg p-4 mb-6">
@@ -280,6 +277,6 @@ export default function PhotoSlideshowPage() {
           </p>
         </div>
       </div>
-    </Layout>
+    </div>
   )
 }
