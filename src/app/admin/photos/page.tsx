@@ -318,17 +318,15 @@ export default function PhotosManagePage() {
                   className="group relative bg-white rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer"
                   onClick={() => setSelectedPhoto(photo)}
                 >
-                  <div className="aspect-square relative overflow-hidden bg-gray-100">
+                  <div className="aspect-square w-full relative overflow-hidden bg-gray-100">
                     {photo.image_url ? (
-                      <Image
+                      <img
                         src={photo.image_url}
                         alt={photo.blessing_message || '照片'}
-                        fill
-                        sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
-                        className="object-cover"
-                        unoptimized
+                        className="w-full h-full object-cover"
                         onError={(e) => {
                           console.error('圖片載入失敗:', photo.image_url)
+                          e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect width="100" height="100" fill="%23ddd"/%3E%3C/svg%3E'
                         }}
                       />
                     ) : (
