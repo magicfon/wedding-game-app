@@ -270,12 +270,6 @@ export default function PhotoSlideshowPage() {
           </div>
         </div>
 
-        {/* 底部提示 */}
-        <div className="bg-blue-50 rounded-xl p-4 mt-6 text-center">
-          <p className="text-blue-700 text-sm">
-            💡 照片每 5 秒自動切換，點擊愛心為照片投票，點擊暫停可停止自動播放
-          </p>
-        </div>
       </div>
     </div>
   )
