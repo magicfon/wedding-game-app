@@ -24,13 +24,29 @@ LIFF (LINE Front-end Framework) 讓您的 Web 應用程式能在 LINE 內運行�
 
 ```
 LIFF app name: 婚禮互動遊戲
-Size: Full (全螢幕)
+Size: Full (全螢幕) ⭐️ 重要！
 Endpoint URL: https://wedding-game-app.vercel.app
 Scope: 
   ✅ profile (必須)
   ✅ openid (必須)
 Bot link feature: On (Aggressive)
 ```
+
+#### ⭐ Size 選項說明：
+- **Full（全螢幕）** ✅ 推薦使用
+  - 完全佔據整個螢幕
+  - 不顯示瀏覽器標籤欄
+  - 向下滑動不會縮小瀏覽器
+  - 提供最佳沉浸式體驗
+  
+- **Tall（高模式）** ❌ 不推薦
+  - 佔據大部分螢幕
+  - 會顯示瀏覽器標籤欄
+  - 向下滑動可能縮小瀏覽器
+  
+- **Compact（緊湊模式）** ❌ 不推薦
+  - 只佔據螢幕下半部
+  - 適合小型互動，不適合遊戲
 
 ### 第三步：取得 LIFF ID
 
@@ -136,6 +152,36 @@ https://liff.line.me/{LIFF_ID}/score-history  → 積分歷史
 3. **選單無法點擊**
    - 確認豐富選單已設為預設
    - 檢查 URL 格式是否正確
+
+4. **❗ 顯示其他分頁標籤、向下滑動縮小瀏覽器**
+   
+   **問題原因：**
+   - LIFF Size 設定為 Tall 或 Compact 而非 Full
+   - 缺少必要的 viewport meta 標籤
+   
+   **解決方法：**
+   
+   a. **檢查 LIFF Size 設定**（最重要！）
+      1. 前往 LINE Developers Console
+      2. 選擇你的 Channel → LIFF 標籤
+      3. 點擊你的 LIFF 應用程式進行編輯
+      4. 確認 **Size 設定為 Full**
+      5. 如果不是，修改為 Full 並儲存
+   
+   b. **確認網頁配置**
+      - 確保已正確設定 viewport meta 標籤（已在 layout.tsx 中設定）
+      - 確保 CSS 樣式正確（已在 globals.css 中設定）
+   
+   c. **測試步驟**
+      1. 關閉 LINE 應用程式（完全關閉，不是最小化）
+      2. 重新開啟 LINE
+      3. 透過 Rich Menu 再次打開 LIFF
+      4. 應該會看到全屏顯示，無其他分頁
+   
+   **預期效果：**
+   - ✅ 全螢幕顯示，無瀏覽器標籤欄
+   - ✅ 向下滑動不會縮小瀏覽器
+   - ✅ 沉浸式使用體驗
 
 ## 📞 技術支援
 
