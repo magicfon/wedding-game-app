@@ -230,24 +230,24 @@ export default function PhotoSlideshowPage() {
               <span className="font-medium">{currentPhoto.vote_count} 個愛心</span>
             </div>
 
-            {/* 中央漂浮資訊卡片 */}
+            {/* 中央漂浮資訊 */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="animate-float-slow bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl p-6 max-w-md mx-4 pointer-events-auto">
+              <div className="animate-float-slow max-w-2xl mx-4 text-center pointer-events-auto">
                 {/* 上傳者資訊 */}
-                <div className="flex items-center space-x-3 mb-3">
+                <div className="flex flex-col items-center space-y-2 mb-4">
                   <img
                     src={currentPhoto.uploader.avatar_url || '/default-avatar.png'}
                     alt="Avatar"
-                    className="w-12 h-12 rounded-full ring-2 ring-pink-200"
+                    className="w-16 h-16 rounded-full ring-4 ring-white shadow-2xl"
                   />
                   <div>
-                    <div className="flex items-center space-x-2">
-                      <User className="w-4 h-4 text-gray-500" />
-                      <span className="font-semibold text-gray-800">
+                    <div className="flex items-center justify-center space-x-2">
+                      <User className="w-5 h-5 text-white drop-shadow-lg" />
+                      <span className="text-2xl font-bold text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
                         {currentPhoto.uploader.display_name}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] mt-1">
                       {new Date(currentPhoto.created_at).toLocaleString('zh-TW')}
                     </p>
                   </div>
@@ -255,13 +255,11 @@ export default function PhotoSlideshowPage() {
 
                 {/* 祝福訊息 */}
                 {currentPhoto.blessing_message && (
-                  <div className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-lg p-4">
-                    <div className="flex items-start space-x-2">
-                      <MessageSquare className="w-5 h-5 text-pink-500 mt-0.5 flex-shrink-0" />
-                      <p className="text-gray-700 leading-relaxed">
-                        {currentPhoto.blessing_message}
-                      </p>
-                    </div>
+                  <div className="flex items-start justify-center space-x-2">
+                    <MessageSquare className="w-6 h-6 text-white drop-shadow-lg mt-1 flex-shrink-0" />
+                    <p className="text-xl text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] leading-relaxed font-medium max-w-lg">
+                      {currentPhoto.blessing_message}
+                    </p>
                   </div>
                 )}
               </div>
