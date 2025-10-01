@@ -349,11 +349,6 @@ export default function PhotosManagePage() {
                         </div>
                       )}
                     </div>
-                    
-                    {/* 懸停遮罩 */}
-                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all duration-300 flex items-center justify-center z-[5] pointer-events-none">
-                      <Eye className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                    </div>
                   </div>
 
                   {/* 照片資訊 */}
