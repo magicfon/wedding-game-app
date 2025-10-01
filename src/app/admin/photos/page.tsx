@@ -68,11 +68,20 @@ export default function PhotosManagePage() {
   // 獲取所有照片
   const fetchAllPhotos = async () => {
     try {
+      console.log('開始獲取所有照片...')
       const response = await fetch('/api/admin/photos/all-list')
       const data = await response.json()
 
+      console.log('API 回應:', {
+        ok: response.ok,
+        status: response.status,
+        photosCount: data.photos?.length || 0,
+        photos: data.photos
+      })
+
       if (response.ok) {
         setPhotos(data.photos || [])
+        console.log('照片已載入:', data.photos?.length || 0)
       } else {
         console.error('獲取照片失敗:', data.error)
       }
@@ -296,14 +305,24 @@ export default function PhotosManagePage() {
                   className="group relative bg-white rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer"
                   onClick={() => setSelectedPhoto(photo)}
                 >
-                  <div className="aspect-square relative">
-                    <Image
-                      src={photo.image_url}
-                      alt={photo.blessing_message || '照片'}
-                      fill
-                      className="object-cover"
-                      unoptimized
-                    />
+                  <div className="aspect-square relative bg-gray-200">
+                    {photo.image_url ? (
+                      <Image
+                        src={photo.image_url}
+                        alt={photo.blessing_message || '照片'}
+                        fill
+                        className="object-cover"
+                        unoptimized
+                        onError={(e) => {
+                          console.error('圖片載入失敗:', photo.image_url)
+                          e.currentTarget.style.display = 'none'
+                        }}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <ImageIcon className="w-12 h-12 text-gray-400" />
+                      </div>
+                    )}
                     
                     {/* 公開/隱私標記 */}
                     <div className="absolute top-2 right-2">
