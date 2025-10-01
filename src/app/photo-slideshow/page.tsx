@@ -222,6 +222,12 @@ export default function PhotoSlideshowPage() {
           <span className="font-medium text-lg">{currentIndex + 1} / {photos.length}</span>
         </div>
 
+        {/* 票數顯示 - 右上角 */}
+        <div className="absolute top-6 right-6 bg-black/70 text-white px-5 py-3 rounded-lg flex items-center space-x-2 backdrop-blur-sm">
+          <Heart className="w-6 h-6 text-red-400" />
+          <span className="font-bold text-2xl">{currentPhoto.vote_count}</span>
+        </div>
+
         {/* 控制按鈕組 - 右下角 */}
         <div className="absolute bottom-6 right-6 flex items-center space-x-3">
           {/* 上一張 */}
@@ -260,12 +266,6 @@ export default function PhotoSlideshowPage() {
           >
             <Heart className="w-8 h-8 text-red-500" />
           </button>
-        </div>
-
-        {/* 票數顯示 - 左下角 */}
-        <div className="absolute bottom-6 left-6 bg-black/70 text-white px-4 py-2 rounded-lg flex items-center space-x-2 backdrop-blur-sm">
-          <Heart className="w-5 h-5 text-red-400" />
-          <span className="font-medium text-lg">{currentPhoto.vote_count} 個愛心</span>
         </div>
 
         {/* 反彈移動的資訊卡片 */}
