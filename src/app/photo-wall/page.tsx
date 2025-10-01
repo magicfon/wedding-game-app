@@ -324,14 +324,14 @@ export default function PhotoWallPage() {
         ) : (
           <>
             {/* 瀑布流布局 */}
-            <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4 space-y-4">
+            <div className="columns-3 sm:columns-4 md:columns-5 lg:columns-4 xl:columns-5 gap-3 sm:gap-4 space-y-3 sm:space-y-4">
               {displayedPhotos.map((photo) => (
                 <div 
                   key={photo.id} 
-                  className="break-inside-avoid mb-4 cursor-pointer group"
+                  className="break-inside-avoid mb-3 sm:mb-4 cursor-pointer group"
                   onClick={() => setSelectedPhoto(photo)}
                 >
-                  <div className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
+                  <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
                     {/* 照片 */}
                     <div className="relative">
                       <img
@@ -348,40 +348,40 @@ export default function PhotoWallPage() {
                           <button
                             onClick={(e) => handleVote(photo.id, e)}
                             disabled={getRemainingVotes() <= 0}
-                            className={`absolute top-3 right-3 p-2 rounded-full shadow-lg transition-all duration-200 opacity-0 group-hover:opacity-100 ${
+                            className={`absolute top-2 right-2 sm:top-3 sm:right-3 p-1.5 sm:p-2 rounded-full shadow-lg transition-all duration-200 opacity-0 group-hover:opacity-100 ${
                               getRemainingVotes() <= 0
                                 ? 'bg-gray-300 cursor-not-allowed'
                                 : 'bg-white hover:bg-pink-50 hover:scale-110'
                             }`}
                           >
-                            <Heart className={`w-5 h-5 ${
+                            <Heart className={`w-4 h-4 sm:w-5 sm:h-5 ${
                               userVotes[photo.id] > 0 ? 'text-red-500 fill-current' : 'text-gray-600'
                             }`} />
                           </button>
                         )}
 
                         {/* 票數顯示 */}
-                        <div className="absolute bottom-3 left-3 bg-black/70 text-white px-3 py-1.5 rounded-full flex items-center space-x-1">
-                          <Heart className="w-4 h-4 fill-current" />
-                          <span className="text-sm font-semibold">{photo.vote_count}</span>
+                        <div className="absolute bottom-2 left-2 sm:bottom-3 sm:left-3 bg-black/70 text-white px-2 py-1 sm:px-3 sm:py-1.5 rounded-full flex items-center space-x-1">
+                          <Heart className="w-3 h-3 sm:w-4 sm:h-4 fill-current" />
+                          <span className="text-xs sm:text-sm font-semibold">{photo.vote_count}</span>
                         </div>
                       </div>
                     </div>
 
                     {/* 簡化資訊 */}
-                    <div className="p-3">
-                      <div className="flex items-center space-x-2">
+                    <div className="p-2 sm:p-3">
+                      <div className="flex items-center space-x-1.5 sm:space-x-2">
                         <img
                           src={photo.uploader.avatar_url || '/default-avatar.png'}
                           alt="Avatar"
-                          className="w-6 h-6 rounded-full"
+                          className="w-5 h-5 sm:w-6 sm:h-6 rounded-full"
                         />
-                        <span className="text-sm font-medium text-gray-800 truncate">
+                        <span className="text-xs sm:text-sm font-medium text-gray-800 truncate">
                           {photo.uploader.display_name}
                         </span>
                       </div>
                       {photo.blessing_message && (
-                        <p className="text-xs text-gray-600 mt-2 line-clamp-2">
+                        <p className="text-xs text-gray-600 mt-1.5 sm:mt-2 line-clamp-2">
                           {photo.blessing_message}
                         </p>
                       )}
