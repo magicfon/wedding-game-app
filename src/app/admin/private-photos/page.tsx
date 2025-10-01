@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useLiff } from '@/hooks/useLiff'
 import AdminLayout from '@/components/AdminLayout'
 import { Eye, EyeOff, Download, Trash2, Image as ImageIcon, Clock, User, Heart } from 'lucide-react'
 import Image from 'next/image'
@@ -27,31 +28,32 @@ export default function PrivatePhotosPage() {
   const [photos, setPhotos] = useState<PhotoWithUser[]>([])
   const [selectedPhoto, setSelectedPhoto] = useState<PhotoWithUser | null>(null)
 
+  const { isLoggedIn, profile, isAdmin: liffIsAdmin, loading: liffLoading, adminLoading } = useLiff()
+
   // 檢查管理員權限
   useEffect(() => {
-    const checkAdmin = async () => {
-      try {
-        const response = await fetch('/api/admin/check-line-admin-simple', {
-          credentials: 'include'
-        })
-        const data = await response.json()
-        
-        if (data.isAdmin) {
-          setIsAdmin(true)
-          await fetchPrivatePhotos()
-        } else {
-          router.push('/admin/line-auth')
-        }
-      } catch (error) {
-        console.error('管理員檢查失敗:', error)
-        router.push('/admin/line-auth')
-      } finally {
-        setLoading(false)
-      }
+    // 等待 LIFF 載入完成
+    if (liffLoading || adminLoading) {
+      return
     }
 
-    checkAdmin()
-  }, [router])
+    // 如果未登入，跳轉首頁
+    if (!isLoggedIn || !profile?.userId) {
+      router.push('/')
+      return
+    }
+
+    // 如果不是管理員，跳轉回首頁
+    if (!liffIsAdmin) {
+      router.push('/')
+      return
+    }
+
+    // 是管理員，載入照片
+    setIsAdmin(true)
+    fetchPrivatePhotos()
+    setLoading(false)
+  }, [isLoggedIn, profile, liffIsAdmin, liffLoading, adminLoading, router])
 
   // 獲取隱私照片
   const fetchPrivatePhotos = async () => {
