@@ -3,8 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLiff } from '@/hooks/useLiff'
-import AdminLayout from '@/components/AdminLayout'
-import { Eye, EyeOff, Download, Trash2, Image as ImageIcon, Clock, User, Heart } from 'lucide-react'
+import { Eye, EyeOff, Download, Trash2, Image as ImageIcon, Clock, User, Heart, Home, ArrowLeft } from 'lucide-react'
 import Image from 'next/image'
 
 interface PhotoWithUser {
@@ -137,13 +136,14 @@ export default function PrivatePhotosPage() {
     document.body.removeChild(link)
   }
 
-  if (loading) {
+  if (loading || liffLoading || adminLoading) {
     return (
-      <AdminLayout title="隱私照片管理">
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500"></div>
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">載入中...</p>
         </div>
-      </AdminLayout>
+      </div>
     )
   }
 
@@ -152,8 +152,39 @@ export default function PrivatePhotosPage() {
   }
 
   return (
-    <AdminLayout title="隱私照片管理">
-      <div className="space-y-6">
+    <div className="min-h-screen bg-gray-100">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => router.push('/admin/dashboard')}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5 text-gray-600" />
+              </button>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">隱私照片管理</h1>
+                <p className="text-sm text-gray-600">管理所有未公開的照片</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => router.push('/admin/dashboard')}
+                className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <Home className="w-4 h-4" />
+                <span className="text-sm">控制台</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="space-y-6">
         {/* 統計卡片 */}
         <div className="bg-white rounded-xl shadow-md p-6">
           <div className="flex items-center space-x-4">
@@ -360,7 +391,9 @@ export default function PrivatePhotosPage() {
           </div>
         </div>
       )}
-    </AdminLayout>
+        </div>
+      </div>
+    </div>
   )
 }
 

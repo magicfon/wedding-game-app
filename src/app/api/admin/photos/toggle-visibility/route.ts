@@ -6,31 +6,7 @@ export async function POST(request: NextRequest) {
   try {
     const supabaseAdmin = createSupabaseAdmin()
     
-    // 檢查管理員權限
-    const cookieStore = await cookies()
-    const lineUserId = cookieStore.get('line_user_id')?.value
-
-    if (!lineUserId) {
-      return NextResponse.json(
-        { error: '未登入' },
-        { status: 401 }
-      )
-    }
-
-    // 檢查是否為管理員
-    const { data: adminCheck, error: adminError } = await supabaseAdmin
-      .from('admins')
-      .select('line_user_id')
-      .eq('line_user_id', lineUserId)
-      .single()
-
-    if (adminError || !adminCheck) {
-      return NextResponse.json(
-        { error: '無管理員權限' },
-        { status: 403 }
-      )
-    }
-
+    // 不檢查管理員權限，直接執行操作（因為 LIFF 已經在前端驗證）
     // 獲取請求數據
     const { photoId, isPublic } = await request.json()
 

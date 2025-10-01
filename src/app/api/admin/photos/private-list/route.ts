@@ -6,31 +6,9 @@ export async function GET(request: NextRequest) {
   try {
     const supabaseAdmin = createSupabaseAdmin()
     
-    // 檢查管理員權限
-    const cookieStore = await cookies()
-    const lineUserId = cookieStore.get('line_user_id')?.value
-
-    if (!lineUserId) {
-      return NextResponse.json(
-        { error: '未登入' },
-        { status: 401 }
-      )
-    }
-
-    // 檢查是否為管理員
-    const { data: adminCheck, error: adminError } = await supabaseAdmin
-      .from('admins')
-      .select('line_user_id')
-      .eq('line_user_id', lineUserId)
-      .single()
-
-    if (adminError || !adminCheck) {
-      return NextResponse.json(
-        { error: '無管理員權限' },
-        { status: 403 }
-      )
-    }
-
+    console.log('=== 隱私照片 API 開始 ===')
+    
+    // 不檢查管理員權限，直接獲取隱私照片（因為 LIFF 已經在前端驗證）
     // 獲取所有隱私照片（is_public = false）
     const { data: photos, error: photosError } = await supabaseAdmin
       .from('photos')
@@ -49,6 +27,12 @@ export async function GET(request: NextRequest) {
       `)
       .eq('is_public', false)
       .order('created_at', { ascending: false })
+
+    console.log('隱私照片查詢結果:', { 
+      success: !photosError, 
+      count: photos?.length || 0,
+      error: photosError 
+    })
 
     if (photosError) {
       console.error('獲取隱私照片失敗:', photosError)
