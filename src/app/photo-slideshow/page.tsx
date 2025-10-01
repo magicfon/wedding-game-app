@@ -229,43 +229,43 @@ export default function PhotoSlideshowPage() {
               <Heart className="w-4 h-4 text-red-400" />
               <span className="font-medium">{currentPhoto.vote_count} 個愛心</span>
             </div>
-          </div>
 
-          {/* 照片資訊 */}
-          <div className="p-6">
-            <div className="flex items-start justify-between mb-4">
-              {/* 上傳者資訊 */}
-              <div className="flex items-center space-x-3">
-                <img
-                  src={currentPhoto.uploader.avatar_url || '/default-avatar.png'}
-                  alt="Avatar"
-                  className="w-12 h-12 rounded-full"
-                />
-                <div>
-                  <div className="flex items-center space-x-2">
-                    <User className="w-4 h-4 text-gray-500" />
-                    <span className="font-semibold text-gray-800">
-                      {currentPhoto.uploader.display_name}
-                    </span>
+            {/* 中央漂浮資訊卡片 */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="animate-float-slow bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl p-6 max-w-md mx-4 pointer-events-auto">
+                {/* 上傳者資訊 */}
+                <div className="flex items-center space-x-3 mb-3">
+                  <img
+                    src={currentPhoto.uploader.avatar_url || '/default-avatar.png'}
+                    alt="Avatar"
+                    className="w-12 h-12 rounded-full ring-2 ring-pink-200"
+                  />
+                  <div>
+                    <div className="flex items-center space-x-2">
+                      <User className="w-4 h-4 text-gray-500" />
+                      <span className="font-semibold text-gray-800">
+                        {currentPhoto.uploader.display_name}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-500">
+                      {new Date(currentPhoto.created_at).toLocaleString('zh-TW')}
+                    </p>
                   </div>
-                  <p className="text-sm text-gray-500">
-                    {new Date(currentPhoto.created_at).toLocaleString('zh-TW')}
-                  </p>
                 </div>
+
+                {/* 祝福訊息 */}
+                {currentPhoto.blessing_message && (
+                  <div className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-lg p-4">
+                    <div className="flex items-start space-x-2">
+                      <MessageSquare className="w-5 h-5 text-pink-500 mt-0.5 flex-shrink-0" />
+                      <p className="text-gray-700 leading-relaxed">
+                        {currentPhoto.blessing_message}
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
-
-            {/* 祝福訊息 */}
-            {currentPhoto.blessing_message && (
-              <div className="bg-pink-50 rounded-lg p-4">
-                <div className="flex items-start space-x-2">
-                  <MessageSquare className="w-5 h-5 text-pink-500 mt-0.5 flex-shrink-0" />
-                  <p className="text-gray-700 leading-relaxed">
-                    {currentPhoto.blessing_message}
-                  </p>
-                </div>
-              </div>
-            )}
           </div>
         </div>
 

@@ -39,6 +39,20 @@ body {
   animation: fadeIn 0.2s ease-in-out;
 }
 
+/* 緩慢漂浮動畫 */
+@keyframes float-slow {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-15px);
+  }
+}
+
+.animate-float-slow {
+  animation: float-slow 6s ease-in-out infinite;
+}
+
 /* 文字截斷 */
 .line-clamp-2 {
   display: -webkit-box;
