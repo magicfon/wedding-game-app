@@ -88,10 +88,10 @@ export default function PhotoUploadPage() {
         fileInputRef.current.value = ''
       }
 
-      // 3秒後隱藏成功訊息
+      // 2秒後跳轉到照片牆
       setTimeout(() => {
-        setUploadSuccess(false)
-      }, 3000)
+        router.push('/photo-wall')
+      }, 2000)
 
     } catch (error) {
       console.error('Upload error:', error)
@@ -111,14 +111,21 @@ export default function PhotoUploadPage() {
 
   return (
     <Layout title="照片上傳">
-      <div className="max-w-2xl mx-auto">
-        {/* 成功訊息 */}
-        {uploadSuccess && (
-          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg mb-6 flex items-center space-x-2">
-            <Heart className="w-5 h-5" />
-            <span>照片上傳成功！感謝您的分享 ❤️</span>
+      {/* 成功訊息彈出框 */}
+      {uploadSuccess && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 animate-fadeIn">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 mx-4 max-w-md text-center transform animate-scaleIn">
+            <div className="mb-4">
+              <Heart className="w-16 h-16 text-pink-500 mx-auto animate-pulse" />
+            </div>
+            <h3 className="text-2xl font-bold text-black mb-2">上傳成功！</h3>
+            <p className="text-black">感謝您的分享 ❤️</p>
+            <p className="text-sm text-gray-500 mt-4">即將跳轉到照片牆...</p>
           </div>
-        )}
+        </div>
+      )}
+      
+      <div className="max-w-2xl mx-auto">
 
         {/* 隱私設定 */}
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
