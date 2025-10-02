@@ -101,16 +101,13 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-50 to-indigo-100">
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-sm border-b border-pink-200">
-        <div className="container mx-auto px-4 py-4">
+        <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex items-center justify-center">
                 <Heart className="w-6 h-6 text-white" />
               </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-800">婚禮互動遊戲</h1>
-                <p className="text-sm text-gray-600">讓愛更加精彩</p>
-              </div>
+              <h1 className="text-xl font-bold text-gray-800">婚禮互動遊戲</h1>
             </div>
             <div className="flex items-center space-x-2">
               <Users className="w-5 h-5 text-gray-600" />
