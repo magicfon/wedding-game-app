@@ -159,8 +159,7 @@ export default function PhotoUploadPage() {
         {/* 上傳區域 */}
         <div className="bg-white rounded-2xl shadow-lg p-8 mb-6">
           <div className="text-center mb-8">
-            <Camera className="w-16 h-16 text-pink-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">分享美好時刻</h2>
+            <Camera className="w-10 h-10 text-pink-500 mx-auto mb-4" />
             <p className="text-gray-600">上傳照片並留下祝福的話語</p>
           </div>
 
