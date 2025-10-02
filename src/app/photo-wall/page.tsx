@@ -20,6 +20,7 @@ export default function PhotoWallPage() {
   const [displayedPhotos, setDisplayedPhotos] = useState<PhotoWithUser[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
   const [sortBy, setSortBy] = useState<'votes' | 'time'>('votes')
   const [userVotes, setUserVotes] = useState<Record<number, number>>({})
   const [availableVotes, setAvailableVotes] = useState(3)
@@ -28,6 +29,9 @@ export default function PhotoWallPage() {
   const [page, setPage] = useState(1)
   const observerRef = useRef<IntersectionObserver | null>(null)
   const loadMoreRef = useRef<HTMLDivElement | null>(null)
+  const [pullStartY, setPullStartY] = useState(0)
+  const [pullDistance, setPullDistance] = useState(0)
+  const containerRef = useRef<HTMLDivElement | null>(null)
   
   const router = useRouter()
   const supabase = createSupabaseBrowser()
@@ -239,6 +243,47 @@ export default function PhotoWallPage() {
     return Math.max(0, availableVotes - used)
   }
 
+  // 下拉刷新功能
+  const handleRefresh = async () => {
+    setRefreshing(true)
+    await Promise.all([
+      fetchPhotos(),
+      fetchUserVotes(),
+      fetchVotingSettings()
+    ])
+    setTimeout(() => {
+      setRefreshing(false)
+      setPullDistance(0)
+    }, 500)
+  }
+
+  // 觸控事件處理
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (window.scrollY === 0) {
+      setPullStartY(e.touches[0].clientY)
+    }
+  }
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (pullStartY === 0 || window.scrollY > 0) return
+    
+    const currentY = e.touches[0].clientY
+    const distance = currentY - pullStartY
+    
+    if (distance > 0 && distance < 150) {
+      setPullDistance(distance)
+    }
+  }
+
+  const handleTouchEnd = () => {
+    if (pullDistance > 80) {
+      handleRefresh()
+    } else {
+      setPullDistance(0)
+    }
+    setPullStartY(0)
+  }
+
   if (loading) {
     return (
       <Layout title="照片牆">
@@ -251,7 +296,47 @@ export default function PhotoWallPage() {
 
   return (
     <Layout title="照片牆">
-      <div className="max-w-6xl mx-auto">
+      <div 
+        ref={containerRef}
+        className="max-w-6xl mx-auto"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        style={{
+          transform: `translateY(${pullDistance}px)`,
+          transition: refreshing || pullDistance === 0 ? 'transform 0.3s ease' : 'none'
+        }}
+      >
+        {/* 下拉刷新指示器 */}
+        {pullDistance > 0 && (
+          <div 
+            className="absolute top-0 left-0 right-0 flex items-center justify-center"
+            style={{
+              transform: `translateY(-${Math.min(pullDistance, 80)}px)`,
+              opacity: Math.min(pullDistance / 80, 1)
+            }}
+          >
+            <div className="bg-white rounded-full shadow-lg px-4 py-2 flex items-center space-x-2">
+              {refreshing ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-pink-500"></div>
+                  <span className="text-sm text-gray-700">刷新中...</span>
+                </>
+              ) : pullDistance > 80 ? (
+                <>
+                  <span className="text-pink-500 text-xl">↓</span>
+                  <span className="text-sm text-gray-700">放開刷新</span>
+                </>
+              ) : (
+                <>
+                  <span className="text-gray-400 text-xl">↓</span>
+                  <span className="text-sm text-gray-700">下拉刷新</span>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+        
         {/* 頂部控制列 */}
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
           <div className="flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0">
