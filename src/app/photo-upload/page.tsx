@@ -122,7 +122,7 @@ export default function PhotoUploadPage() {
 
         {/* 隱私設定 */}
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">隱私設定</h3>
+          <h3 className="text-lg font-semibold text-black mb-4">隱私設定</h3>
           <div className="space-y-4">
             <label className="flex items-center space-x-3 cursor-pointer">
               <input
@@ -134,8 +134,8 @@ export default function PhotoUploadPage() {
               />
               <Globe className="w-5 h-5 text-green-500" />
               <div>
-                <div className="font-medium text-gray-800">公開展示</div>
-                <div className="text-sm text-gray-600">所有賓客都可以看到並投票</div>
+                <div className="font-medium text-black">公開展示</div>
+                <div className="text-sm text-black">所有賓客都可以看到並投票</div>
               </div>
             </label>
             
@@ -149,8 +149,8 @@ export default function PhotoUploadPage() {
               />
               <Lock className="w-5 h-5 text-gray-500" />
               <div>
-                <div className="font-medium text-gray-800">私下傳送</div>
-                <div className="text-sm text-gray-600">只有林敬和孟庭可以看到</div>
+                <div className="font-medium text-black">私下傳送</div>
+                <div className="text-sm text-black">只有林敬和孟庭可以看到</div>
               </div>
             </label>
           </div>
@@ -160,7 +160,7 @@ export default function PhotoUploadPage() {
         <div className="bg-white rounded-2xl shadow-lg p-8 mb-6">
           <div className="text-center mb-8">
             <Camera className="w-10 h-10 text-pink-500 mx-auto mb-4" />
-            <p className="text-gray-600">上傳照片並留下祝福的話語</p>
+            <p className="text-black">上傳照片並留下祝福的話語</p>
           </div>
 
           {!preview ? (
@@ -169,8 +169,8 @@ export default function PhotoUploadPage() {
               className="border-2 border-dashed border-gray-300 rounded-xl p-12 text-center cursor-pointer hover:border-pink-400 hover:bg-pink-50 transition-colors"
             >
               <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-lg text-gray-600 mb-2">點擊選擇照片</p>
-              <p className="text-sm text-gray-500">支援 JPG, PNG 格式，最大 5MB</p>
+              <p className="text-lg text-black mb-2">點擊選擇照片</p>
+              <p className="text-sm text-black">支援 JPG, PNG 格式，最大 5MB</p>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -198,7 +198,7 @@ export default function PhotoUploadPage() {
 
         {/* 祝福訊息 */}
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+          <h3 className="text-lg font-semibold text-black mb-4 flex items-center">
             <Heart className="w-5 h-5 text-pink-500 mr-2" />
             祝福訊息
           </h3>
@@ -206,10 +206,10 @@ export default function PhotoUploadPage() {
             value={blessingMessage}
             onChange={(e) => setBlessingMessage(e.target.value)}
             placeholder="寫下您對新人的祝福..."
-            className="w-full h-32 p-4 border border-gray-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+            className="w-full h-32 p-4 border border-gray-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent text-black"
             maxLength={200}
           />
-          <div className="text-right text-sm text-gray-500 mt-2">
+          <div className="text-right text-sm text-black mt-2">
             {blessingMessage.length}/200
           </div>
         </div>
@@ -241,7 +241,7 @@ export default function PhotoUploadPage() {
 
         {/* 提示 */}
         <div className="bg-blue-50 rounded-xl p-4 mt-6 text-center">
-          <p className="text-blue-700 text-sm">
+          <p className="text-black text-sm">
             💡 上傳的照片將會出現在照片牆和快門傳情中，讓所有賓客一起欣賞美好回憶！
           </p>
         </div>
