@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createSupabaseBrowser, Photo } from '@/lib/supabase'
 import { useLiff } from '@/hooks/useLiff'
 import Layout from '@/components/Layout'
-import { Heart, User, Clock, Trophy, X } from 'lucide-react'
+import { Heart, User, Clock, Trophy, X, MessageSquare } from 'lucide-react'
 
 interface PhotoWithUser extends Photo {
   uploader: {
@@ -560,6 +560,16 @@ export default function PhotoWallPage() {
                       </span>
                     )}
                   </div>
+
+                  {/* 祝福訊息 */}
+                  {selectedPhoto.blessing_message && (
+                    <div className="flex items-start space-x-2">
+                      <MessageSquare className="w-5 h-5 mt-0.5 flex-shrink-0 text-pink-300" />
+                      <p className="text-white/90 leading-relaxed">
+                        {selectedPhoto.blessing_message}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {/* 右側按鈕 */}
