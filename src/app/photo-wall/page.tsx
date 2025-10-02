@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createSupabaseBrowser, Photo } from '@/lib/supabase'
 import { useLiff } from '@/hooks/useLiff'
 import Layout from '@/components/Layout'
-import { Heart, User, Clock, Trophy, Filter, X } from 'lucide-react'
+import { Heart, User, Clock, Trophy, X } from 'lucide-react'
 
 interface PhotoWithUser extends Photo {
   uploader: {
@@ -358,17 +358,30 @@ export default function PhotoWallPage() {
                 </div>
               )}
 
-              {/* 排序選擇 */}
-              <div className="flex items-center space-x-2">
-                <Filter className="w-5 h-5 text-gray-600" />
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as 'votes' | 'time')}
-                  className="border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-500"
+              {/* 排序切換按鈕 */}
+              <div className="flex items-center space-x-2 bg-gray-100 rounded-lg p-1">
+                <button
+                  onClick={() => setSortBy('votes')}
+                  className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center space-x-2 ${
+                    sortBy === 'votes'
+                      ? 'bg-white text-pink-600 shadow-md'
+                      : 'text-gray-600 hover:text-gray-800'
+                  }`}
                 >
-                  <option value="votes">按票數排序</option>
-                  <option value="time">按時間排序</option>
-                </select>
+                  <Trophy className="w-4 h-4" />
+                  <span>票數</span>
+                </button>
+                <button
+                  onClick={() => setSortBy('time')}
+                  className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center space-x-2 ${
+                    sortBy === 'time'
+                      ? 'bg-white text-pink-600 shadow-md'
+                      : 'text-gray-600 hover:text-gray-800'
+                  }`}
+                >
+                  <Clock className="w-4 h-4" />
+                  <span>時間</span>
+                </button>
               </div>
             </div>
           </div>
