@@ -21,7 +21,7 @@ export default function PhotoWallPage() {
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
-  const [sortBy, setSortBy] = useState<'votes' | 'time'>('votes')
+  const [sortBy, setSortBy] = useState<'votes' | 'time'>('time')
   const [userVotes, setUserVotes] = useState<Record<number, number>>({})
   const [availableVotes, setAvailableVotes] = useState(3)
   const [votingEnabled, setVotingEnabled] = useState(false)
