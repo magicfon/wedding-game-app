@@ -120,6 +120,42 @@ export default function PhotoUploadPage() {
           </div>
         )}
 
+        {/* 隱私設定 */}
+        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">隱私設定</h3>
+          <div className="space-y-4">
+            <label className="flex items-center space-x-3 cursor-pointer">
+              <input
+                type="radio"
+                name="privacy"
+                checked={isPublic}
+                onChange={() => setIsPublic(true)}
+                className="w-4 h-4 text-pink-500"
+              />
+              <Globe className="w-5 h-5 text-green-500" />
+              <div>
+                <div className="font-medium text-gray-800">公開展示</div>
+                <div className="text-sm text-gray-600">所有賓客都可以看到並投票</div>
+              </div>
+            </label>
+            
+            <label className="flex items-center space-x-3 cursor-pointer">
+              <input
+                type="radio"
+                name="privacy"
+                checked={!isPublic}
+                onChange={() => setIsPublic(false)}
+                className="w-4 h-4 text-pink-500"
+              />
+              <Lock className="w-5 h-5 text-gray-500" />
+              <div>
+                <div className="font-medium text-gray-800">私下傳送</div>
+                <div className="text-sm text-gray-600">只有林敬和孟庭可以看到</div>
+              </div>
+            </label>
+          </div>
+        </div>
+
         {/* 上傳區域 */}
         <div className="bg-white rounded-2xl shadow-lg p-8 mb-6">
           <div className="text-center mb-8">
@@ -176,42 +212,6 @@ export default function PhotoUploadPage() {
           />
           <div className="text-right text-sm text-gray-500 mt-2">
             {blessingMessage.length}/200
-          </div>
-        </div>
-
-        {/* 隱私設定 */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">隱私設定</h3>
-          <div className="space-y-4">
-            <label className="flex items-center space-x-3 cursor-pointer">
-              <input
-                type="radio"
-                name="privacy"
-                checked={isPublic}
-                onChange={() => setIsPublic(true)}
-                className="w-4 h-4 text-pink-500"
-              />
-              <Globe className="w-5 h-5 text-green-500" />
-              <div>
-                <div className="font-medium text-gray-800">公開展示</div>
-                <div className="text-sm text-gray-600">所有賓客都可以看到並投票</div>
-              </div>
-            </label>
-            
-            <label className="flex items-center space-x-3 cursor-pointer">
-              <input
-                type="radio"
-                name="privacy"
-                checked={!isPublic}
-                onChange={() => setIsPublic(false)}
-                className="w-4 h-4 text-pink-500"
-              />
-              <Lock className="w-5 h-5 text-gray-500" />
-              <div>
-                <div className="font-medium text-gray-800">私下傳送</div>
-                <div className="text-sm text-gray-600">只有新人可以看到</div>
-              </div>
-            </label>
           </div>
         </div>
 
