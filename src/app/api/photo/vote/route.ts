@@ -1,17 +1,72 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseAdmin } from '@/lib/supabase-server'
 
+// 處理取消投票
+async function handleUnvote(supabase: any, photoId: number, voterLineId: string) {
+  // 檢查是否有投票記錄
+  const { data: existingVote, error: checkError } = await supabase
+    .from('votes')
+    .select('id')
+    .eq('voter_line_id', voterLineId)
+    .eq('photo_id', photoId)
+    .limit(1)
+    .single()
+
+  if (checkError || !existingVote) {
+    return NextResponse.json({ 
+      error: '您尚未對此照片投票' 
+    }, { status: 400 })
+  }
+
+  // 刪除投票記錄（只刪除一筆）
+  const { error: deleteError } = await supabase
+    .from('votes')
+    .delete()
+    .eq('id', existingVote.id)
+
+  if (deleteError) {
+    console.error('❌ 取消投票失敗:', deleteError)
+    return NextResponse.json({ 
+      error: '取消投票失敗',
+      details: deleteError.message 
+    }, { status: 500 })
+  }
+
+  // 獲取更新後的照片投票數
+  const { data: updatedPhoto } = await supabase
+    .from('photos')
+    .select('vote_count')
+    .eq('id', photoId)
+    .single()
+
+  console.log(`✅ 取消投票成功！照片 ${photoId} 新票數: ${updatedPhoto?.vote_count || 'N/A'}`)
+
+  return NextResponse.json({
+    success: true,
+    message: '已取消投票',
+    data: {
+      photoId,
+      newVoteCount: updatedPhoto?.vote_count || 0
+    }
+  })
+}
+
 export async function POST(request: NextRequest) {
   try {
     const supabase = createSupabaseAdmin()
     const body = await request.json()
     
-    const { photoId, voterLineId } = body
+    const { photoId, voterLineId, action } = body
     
     if (!photoId || !voterLineId) {
       return NextResponse.json({ 
         error: '缺少必要參數：photoId 和 voterLineId' 
       }, { status: 400 })
+    }
+    
+    // 如果是取消投票
+    if (action === 'unvote') {
+      return await handleUnvote(supabase, photoId, voterLineId)
     }
 
     // 檢查投票設定

@@ -189,9 +189,11 @@ export default function PhotoWallPage() {
     if (e) e.stopPropagation()
     if (!profile || !votingEnabled) return
 
+    const hasVoted = userVotes[photoId] > 0
     const totalUsedVotes = Object.values(userVotes).reduce((sum, count) => sum + count, 0)
     
-    if (totalUsedVotes >= availableVotes) {
+    // 如果沒投過票，檢查是否還有額度
+    if (!hasVoted && totalUsedVotes >= availableVotes) {
       alert('您的投票額度已用完！')
       return
     }
@@ -204,36 +206,55 @@ export default function PhotoWallPage() {
         },
         body: JSON.stringify({
           photoId,
-          voterLineId: profile.userId
+          voterLineId: profile.userId,
+          action: hasVoted ? 'unvote' : 'vote' // 新增：指定是投票還是取消
         })
       })
 
       const result = await response.json()
 
       if (!result.success) {
-        throw new Error(result.error || '投票失敗')
+        throw new Error(result.error || '操作失敗')
       }
 
       // 更新本地狀態
-      setUserVotes(prev => ({
-        ...prev,
-        [photoId]: (prev[photoId] || 0) + 1
-      }))
-
-      // 更新照片列表中的票數
-      setPhotos(prev => prev.map(p => 
-        p.id === photoId ? { ...p, vote_count: p.vote_count + 1 } : p
-      ))
-      setDisplayedPhotos(prev => prev.map(p => 
-        p.id === photoId ? { ...p, vote_count: p.vote_count + 1 } : p
-      ))
-      if (selectedPhoto?.id === photoId) {
-        setSelectedPhoto(prev => prev ? { ...prev, vote_count: prev.vote_count + 1 } : null)
+      if (hasVoted) {
+        // 取消投票
+        setUserVotes(prev => ({
+          ...prev,
+          [photoId]: 0
+        }))
+        // 更新照片票數 -1
+        setPhotos(prev => prev.map(p => 
+          p.id === photoId ? { ...p, vote_count: p.vote_count - 1 } : p
+        ))
+        setDisplayedPhotos(prev => prev.map(p => 
+          p.id === photoId ? { ...p, vote_count: p.vote_count - 1 } : p
+        ))
+        if (selectedPhoto?.id === photoId) {
+          setSelectedPhoto(prev => prev ? { ...prev, vote_count: prev.vote_count - 1 } : null)
+        }
+      } else {
+        // 投票
+        setUserVotes(prev => ({
+          ...prev,
+          [photoId]: 1
+        }))
+        // 更新照片票數 +1
+        setPhotos(prev => prev.map(p => 
+          p.id === photoId ? { ...p, vote_count: p.vote_count + 1 } : p
+        ))
+        setDisplayedPhotos(prev => prev.map(p => 
+          p.id === photoId ? { ...p, vote_count: p.vote_count + 1 } : p
+        ))
+        if (selectedPhoto?.id === photoId) {
+          setSelectedPhoto(prev => prev ? { ...prev, vote_count: prev.vote_count + 1 } : null)
+        }
       }
 
     } catch (error) {
       console.error('Error voting:', error)
-      alert(error instanceof Error ? error.message : '投票失敗，請稍後再試')
+      alert(error instanceof Error ? error.message : '操作失敗，請稍後再試')
     }
   }
 
@@ -422,30 +443,29 @@ export default function PhotoWallPage() {
                         loading="lazy"
                       />
                       
-                      {/* 懸停遮罩 */}
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-300">
-                        {/* 投票按鈕 */}
-                        {votingEnabled && (
-                          <button
-                            onClick={(e) => handleVote(photo.id, e)}
-                            disabled={getRemainingVotes() <= 0}
-                            className={`absolute top-2 right-2 sm:top-3 sm:right-3 p-1.5 sm:p-2 rounded-full shadow-lg transition-all duration-200 opacity-0 group-hover:opacity-100 ${
-                              getRemainingVotes() <= 0
-                                ? 'bg-gray-300 cursor-not-allowed'
-                                : 'bg-white hover:bg-pink-50 hover:scale-110'
-                            }`}
-                          >
-                            <Heart className={`w-4 h-4 sm:w-5 sm:h-5 ${
-                              userVotes[photo.id] > 0 ? 'text-red-500 fill-current' : 'text-gray-600'
-                            }`} />
-                          </button>
-                        )}
+                      {/* 投票按鈕 - 固定在右上角 */}
+                      {votingEnabled && (
+                        <button
+                          onClick={(e) => handleVote(photo.id, e)}
+                          disabled={!userVotes[photo.id] && getRemainingVotes() <= 0}
+                          className={`absolute top-2 right-2 sm:top-3 sm:right-3 p-2 sm:p-2.5 rounded-full shadow-lg transition-all duration-200 backdrop-blur-sm ${
+                            !userVotes[photo.id] && getRemainingVotes() <= 0
+                              ? 'bg-white/60 cursor-not-allowed'
+                              : 'bg-white/80 hover:bg-white hover:scale-110'
+                          }`}
+                        >
+                          <Heart className={`w-5 h-5 sm:w-6 sm:h-6 transition-all ${
+                            userVotes[photo.id] > 0 
+                              ? 'text-red-500 fill-current drop-shadow-lg' 
+                              : 'text-gray-400 hover:text-pink-500'
+                          }`} />
+                        </button>
+                      )}
 
-                        {/* 票數顯示 */}
-                        <div className="absolute bottom-2 left-2 sm:bottom-3 sm:left-3 bg-black/70 text-white px-2 py-1 sm:px-3 sm:py-1.5 rounded-full flex items-center space-x-1">
-                          <Heart className="w-3 h-3 sm:w-4 sm:h-4 fill-current" />
-                          <span className="text-xs sm:text-sm font-semibold">{photo.vote_count}</span>
-                        </div>
+                      {/* 票數顯示 */}
+                      <div className="absolute bottom-2 left-2 sm:bottom-3 sm:left-3 bg-black/70 text-white px-2 py-1 sm:px-3 sm:py-1.5 rounded-full flex items-center space-x-1">
+                        <Heart className="w-3 h-3 sm:w-4 sm:h-4 fill-current" />
+                        <span className="text-xs sm:text-sm font-semibold">{photo.vote_count}</span>
                       </div>
                     </div>
 
