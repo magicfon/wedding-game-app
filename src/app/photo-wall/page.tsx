@@ -443,25 +443,6 @@ export default function PhotoWallPage() {
                         loading="lazy"
                       />
                       
-                      {/* 投票按鈕 - 固定在右上角 */}
-                      {votingEnabled && (
-                        <button
-                          onClick={(e) => handleVote(photo.id, e)}
-                          disabled={!userVotes[photo.id] && getRemainingVotes() <= 0}
-                          className={`absolute top-2 right-2 sm:top-3 sm:right-3 p-2 sm:p-2.5 rounded-full shadow-lg transition-all duration-200 backdrop-blur-sm ${
-                            !userVotes[photo.id] && getRemainingVotes() <= 0
-                              ? 'bg-white/60 cursor-not-allowed'
-                              : 'bg-white/80 hover:bg-white hover:scale-110'
-                          }`}
-                        >
-                          <Heart className={`w-5 h-5 sm:w-6 sm:h-6 transition-all ${
-                            userVotes[photo.id] > 0 
-                              ? 'text-red-500 fill-current drop-shadow-lg' 
-                              : 'text-gray-400 hover:text-pink-500'
-                          }`} />
-                        </button>
-                      )}
-
                       {/* 票數顯示 */}
                       <div className="absolute bottom-2 left-2 sm:bottom-3 sm:left-3 bg-black/70 text-white px-2 py-1 sm:px-3 sm:py-1.5 rounded-full flex items-center space-x-1">
                         <Heart className="w-3 h-3 sm:w-4 sm:h-4 fill-current" />
@@ -558,6 +539,28 @@ export default function PhotoWallPage() {
                 className="max-w-full max-h-[70vh] object-contain rounded-lg shadow-2xl"
                 onClick={(e) => e.stopPropagation()}
               />
+              
+              {/* 投票按鈕 - 右上角 */}
+              {votingEnabled && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleVote(selectedPhoto.id)
+                  }}
+                  disabled={!userVotes[selectedPhoto.id] && getRemainingVotes() <= 0}
+                  className={`absolute top-4 right-4 p-3 rounded-full shadow-2xl transition-all duration-200 backdrop-blur-sm ${
+                    !userVotes[selectedPhoto.id] && getRemainingVotes() <= 0
+                      ? 'bg-white/60 cursor-not-allowed'
+                      : 'bg-white/90 hover:bg-white hover:scale-110'
+                  }`}
+                >
+                  <Heart className={`w-8 h-8 transition-all ${
+                    userVotes[selectedPhoto.id] > 0 
+                      ? 'text-red-500 fill-current drop-shadow-lg' 
+                      : 'text-gray-400 hover:text-pink-500'
+                  }`} />
+                </button>
+              )}
             </div>
 
             {/* 底部資訊列 */}
@@ -565,56 +568,29 @@ export default function PhotoWallPage() {
               className="bg-white/10 backdrop-blur-md rounded-2xl p-6 mt-4 text-white"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-4 sm:space-y-0">
-                {/* 左側資訊 */}
-                <div className="space-y-3 flex-1">
-                  {/* 得票數 */}
-                  <div className="flex items-center space-x-3">
-                    <div className="bg-pink-500 px-4 py-2 rounded-full flex items-center space-x-2">
-                      <Heart className="w-5 h-5 fill-current" />
-                      <span className="font-semibold">{selectedPhoto.vote_count} 票</span>
-                    </div>
-                    {userVotes[selectedPhoto.id] > 0 && (
-                      <span className="bg-red-500/80 px-3 py-1 rounded-full text-sm">
-                        您投了 {userVotes[selectedPhoto.id]} 票
-                      </span>
-                    )}
-                  </div>
-
-                  {/* 祝福訊息 */}
-                  {selectedPhoto.blessing_message && (
-                    <div className="flex items-start space-x-2">
-                      <MessageSquare className="w-5 h-5 mt-0.5 flex-shrink-0 text-pink-300" />
-                      <p className="text-white/90 leading-relaxed">
-                        {selectedPhoto.blessing_message}
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {/* 右側按鈕 */}
+              <div className="space-y-3">
+                {/* 得票數 */}
                 <div className="flex items-center space-x-3">
-                  {/* 投票按鈕 */}
-                  {votingEnabled && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleVote(selectedPhoto.id)
-                      }}
-                      disabled={getRemainingVotes() <= 0}
-                      className={`flex items-center space-x-2 px-6 py-3 rounded-full font-semibold transition-all duration-200 ${
-                        getRemainingVotes() <= 0
-                          ? 'bg-gray-500 cursor-not-allowed'
-                          : userVotes[selectedPhoto.id] > 0
-                          ? 'bg-red-500 hover:bg-red-600'
-                          : 'bg-pink-500 hover:bg-pink-600'
-                      }`}
-                    >
-                      <Heart className={`w-5 h-5 ${userVotes[selectedPhoto.id] > 0 ? 'fill-current' : ''}`} />
-                      <span>投票</span>
-                    </button>
+                  <div className="bg-pink-500 px-4 py-2 rounded-full flex items-center space-x-2">
+                    <Heart className="w-5 h-5 fill-current" />
+                    <span className="font-semibold">{selectedPhoto.vote_count} 票</span>
+                  </div>
+                  {userVotes[selectedPhoto.id] > 0 && (
+                    <span className="bg-red-500/80 px-3 py-1 rounded-full text-sm">
+                      已投票 ❤
+                    </span>
                   )}
                 </div>
+
+                {/* 祝福訊息 */}
+                {selectedPhoto.blessing_message && (
+                  <div className="flex items-start space-x-2">
+                    <MessageSquare className="w-5 h-5 mt-0.5 flex-shrink-0 text-pink-300" />
+                    <p className="text-white/90 leading-relaxed">
+                      {selectedPhoto.blessing_message}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
