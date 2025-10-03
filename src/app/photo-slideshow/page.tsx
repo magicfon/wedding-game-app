@@ -299,13 +299,10 @@ export default function PhotoSlideshowPage() {
 
             {/* 祝福訊息 */}
             {currentPhoto.blessing_message && (
-              <div className="flex items-start justify-center space-x-3">
-                <MessageSquare className="w-8 h-8 text-white drop-shadow-lg mt-1 flex-shrink-0" />
-                <div className="w-80 text-center">
-                  <p className="text-2xl text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)] leading-relaxed font-medium break-words">
-                    {currentPhoto.blessing_message}
-                  </p>
-                </div>
+              <div className="w-80 text-center">
+                <p className="text-2xl text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)] leading-relaxed font-medium break-words">
+                  {currentPhoto.blessing_message}
+                </p>
               </div>
             )}
           </div>
