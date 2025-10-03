@@ -299,7 +299,7 @@ export default function PhotoSlideshowPage() {
 
             {/* 祝福訊息 */}
             {currentPhoto.blessing_message && (
-              <div className="w-80 text-center">
+              <div className="text-center">
                 <p className="text-2xl text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)] leading-relaxed font-medium break-words">
                   {currentPhoto.blessing_message}
                 </p>
