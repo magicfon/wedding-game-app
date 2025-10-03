@@ -167,6 +167,13 @@ export default function AdminDashboard() {
       color: 'bg-yellow-500'
     },
     {
+      title: '投票設定',
+      description: '管理照片投票功能',
+      icon: Trophy,
+      href: '/admin/voting-settings',
+      color: 'bg-orange-500'
+    },
+    {
       title: '統計報告',
       description: '查看詳細統計',
       icon: BarChart3,
