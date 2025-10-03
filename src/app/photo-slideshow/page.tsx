@@ -125,53 +125,6 @@ export default function PhotoSlideshowPage() {
     setCurrentIndex(prev => (prev + 1) % photos.length)
   }
 
-  const handleVote = async (photoId: number) => {
-    try {
-      // 需要先獲取用戶身份
-      const { data: { user } } = await supabase.auth.getUser()
-      
-      if (!user) {
-        alert('請先登入才能投票')
-        return
-      }
-
-      const response = await fetch('/api/photo/vote', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          photoId,
-          voterLineId: user.id
-        })
-      })
-
-      const result = await response.json()
-
-      if (!result.success) {
-        // 如果是投票額度用完，顯示友善訊息
-        if (result.error.includes('投票額度已用完')) {
-          alert('您的投票額度已用完！感謝您的參與 ❤️')
-        } else {
-          alert(result.error || '投票失敗')
-        }
-        return
-      }
-
-      // 投票成功的視覺回饋
-      const button = document.querySelector(`[data-photo-id="${photoId}"]`)
-      if (button) {
-        button.classList.add('animate-pulse')
-        setTimeout(() => {
-          button.classList.remove('animate-pulse')
-        }, 1000)
-      }
-
-    } catch (error) {
-      console.error('Error voting:', error)
-      alert('投票失敗，請稍後再試')
-    }
-  }
 
   if (loading) {
     return (
@@ -258,14 +211,6 @@ export default function PhotoSlideshowPage() {
             <ChevronRight className="w-8 h-8 text-gray-700" />
           </button>
 
-          {/* 投票按鈕 */}
-          <button
-            onClick={() => handleVote(currentPhoto.id)}
-            data-photo-id={currentPhoto.id}
-            className="bg-white/90 backdrop-blur-sm p-4 rounded-full shadow-2xl hover:bg-white hover:scale-110 transition-all duration-200"
-          >
-            <Heart className="w-8 h-8 text-red-500" />
-          </button>
         </div>
 
         {/* 反彈移動的資訊卡片 */}
