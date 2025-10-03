@@ -277,7 +277,7 @@ export default function PhotoSlideshowPage() {
             transform: 'translate(-50%, -50%)'
           }}
         >
-          <div className="max-w-4xl text-center pointer-events-auto">
+          <div className="w-96 text-center pointer-events-auto">
             {/* 上傳者資訊 */}
             <div className="flex flex-col items-center space-y-3 mb-6">
               <img
@@ -301,9 +301,11 @@ export default function PhotoSlideshowPage() {
             {currentPhoto.blessing_message && (
               <div className="flex items-start justify-center space-x-3">
                 <MessageSquare className="w-8 h-8 text-white drop-shadow-lg mt-1 flex-shrink-0" />
-                <p className="text-3xl text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)] leading-relaxed font-medium max-w-3xl">
-                  {currentPhoto.blessing_message}
-                </p>
+                <div className="w-80 text-left">
+                  <p className="text-2xl text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)] leading-relaxed font-medium break-words">
+                    {currentPhoto.blessing_message}
+                  </p>
+                </div>
               </div>
             )}
           </div>
