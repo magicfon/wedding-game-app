@@ -160,30 +160,31 @@ export default function PhotoWallPage() {
     fetchUserVotes()
     fetchPhotos()
 
-    // 訂閱照片變化
+    // 訂閱照片變化（但不自動刷新投票，避免衝突）
     const photosSubscription = supabase
       .channel('photos_changes')
       .on('postgres_changes', {
-        event: '*',
+        event: 'INSERT',
         schema: 'public',
         table: 'photos'
       }, () => {
+        // 只在新增照片時刷新列表
         fetchPhotos()
       })
       .on('postgres_changes', {
-        event: '*',
+        event: 'DELETE',
         schema: 'public',
-        table: 'votes'
+        table: 'photos'
       }, () => {
+        // 只在刪除照片時刷新列表
         fetchPhotos()
-        fetchUserVotes()
       })
       .subscribe()
 
     return () => {
       photosSubscription.unsubscribe()
     }
-  }, [profile, sortBy, fetchPhotos, fetchUserVotes, fetchVotingSettings, supabase])
+  }, [profile, sortBy, fetchPhotos, fetchVotingSettings, supabase])
 
   const handleVote = async (photoId: number, e?: React.MouseEvent) => {
     if (e) e.stopPropagation()
@@ -207,7 +208,7 @@ export default function PhotoWallPage() {
         body: JSON.stringify({
           photoId,
           voterLineId: profile.userId,
-          action: hasVoted ? 'unvote' : 'vote' // 新增：指定是投票還是取消
+          action: hasVoted ? 'unvote' : 'vote'
         })
       })
 
@@ -217,40 +218,35 @@ export default function PhotoWallPage() {
         throw new Error(result.error || '操作失敗')
       }
 
-      // 更新本地狀態
+      // 使用 API 返回的最新票數更新本地狀態
+      const newVoteCount = result.data.newVoteCount
+
       if (hasVoted) {
-        // 取消投票
+        // 取消投票：將此照片的用戶投票數設為 0
         setUserVotes(prev => ({
           ...prev,
           [photoId]: 0
         }))
-        // 更新照片票數 -1
-        setPhotos(prev => prev.map(p => 
-          p.id === photoId ? { ...p, vote_count: p.vote_count - 1 } : p
-        ))
-        setDisplayedPhotos(prev => prev.map(p => 
-          p.id === photoId ? { ...p, vote_count: p.vote_count - 1 } : p
-        ))
-        if (selectedPhoto?.id === photoId) {
-          setSelectedPhoto(prev => prev ? { ...prev, vote_count: prev.vote_count - 1 } : null)
-        }
       } else {
-        // 投票
+        // 投票：將此照片的用戶投票數設為 1
         setUserVotes(prev => ({
           ...prev,
-          [photoId]: 1
+          [photoId]: (prev[photoId] || 0) + 1
         }))
-        // 更新照片票數 +1
-        setPhotos(prev => prev.map(p => 
-          p.id === photoId ? { ...p, vote_count: p.vote_count + 1 } : p
-        ))
-        setDisplayedPhotos(prev => prev.map(p => 
-          p.id === photoId ? { ...p, vote_count: p.vote_count + 1 } : p
-        ))
-        if (selectedPhoto?.id === photoId) {
-          setSelectedPhoto(prev => prev ? { ...prev, vote_count: prev.vote_count + 1 } : null)
-        }
       }
+
+      // 使用 API 返回的確切票數更新照片
+      setPhotos(prev => prev.map(p => 
+        p.id === photoId ? { ...p, vote_count: newVoteCount } : p
+      ))
+      setDisplayedPhotos(prev => prev.map(p => 
+        p.id === photoId ? { ...p, vote_count: newVoteCount } : p
+      ))
+      if (selectedPhoto?.id === photoId) {
+        setSelectedPhoto(prev => prev ? { ...prev, vote_count: newVoteCount } : null)
+      }
+
+      console.log(`✅ ${hasVoted ? '取消投票' : '投票'}成功！照片 ${photoId} 最新票數: ${newVoteCount}`)
 
     } catch (error) {
       console.error('Error voting:', error)
