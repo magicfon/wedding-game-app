@@ -79,17 +79,17 @@ USING (true);
 -- 7. 創建查詢符合資格用戶的函數
 CREATE OR REPLACE FUNCTION get_lottery_eligible_users()
 RETURNS TABLE (
-    line_id VARCHAR(255),
-    display_name VARCHAR(255),
+    line_id TEXT,
+    display_name TEXT,
     avatar_url TEXT,
     photo_count BIGINT
 ) AS $$
 BEGIN
     RETURN QUERY
     SELECT 
-        u.line_id,
-        u.display_name,
-        u.avatar_url,
+        u.line_id::TEXT,
+        u.display_name::TEXT,
+        u.avatar_url::TEXT,
         COUNT(p.id) as photo_count
     FROM users u
     INNER JOIN photos p ON u.line_id = p.user_id  -- 使用正確的欄位名稱
