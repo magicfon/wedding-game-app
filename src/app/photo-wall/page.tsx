@@ -625,17 +625,23 @@ export default function PhotoWallPage() {
                 <button
                   onClick={(e) => {
                     e.stopPropagation()
+                    // 檢查是否已經沒有票數
+                    const hasVoted = userVotes[selectedPhoto.id] > 0
+                    const totalUsedVotes = Object.values(userVotes).reduce((sum, count) => sum + count, 0)
+                    
+                    if (!hasVoted && totalUsedVotes >= availableVotes) {
+                      alert(`您的投票額度已用完！\n\n您已使用：${totalUsedVotes} 票\n總額度：${availableVotes} 票\n\n如需投票給這張照片，請先取消其他照片的投票。`)
+                      return
+                    }
+                    
                     handleVote(selectedPhoto.id)
                   }}
-                  disabled={
-                    votingInProgress.has(selectedPhoto.id) || 
-                    (!userVotes[selectedPhoto.id] && getRemainingVotes() <= 0)
-                  }
+                  disabled={votingInProgress.has(selectedPhoto.id)}
                   className={`absolute top-4 right-4 p-3 rounded-full shadow-2xl transition-all duration-200 backdrop-blur-sm ${
                     votingInProgress.has(selectedPhoto.id)
                       ? 'bg-white/60 cursor-wait'
                       : (!userVotes[selectedPhoto.id] && getRemainingVotes() <= 0)
-                      ? 'bg-white/60 cursor-not-allowed'
+                      ? 'bg-white/80 cursor-not-allowed'
                       : 'bg-white/90 hover:bg-white hover:scale-110'
                   }`}
                 >
@@ -644,6 +650,8 @@ export default function PhotoWallPage() {
                       ? 'text-gray-400 animate-pulse'
                       : userVotes[selectedPhoto.id] > 0 
                       ? 'text-red-500 fill-current drop-shadow-lg' 
+                      : getRemainingVotes() <= 0
+                      ? 'text-gray-400'
                       : 'text-gray-400 hover:text-pink-500'
                   }`} />
                 </button>
