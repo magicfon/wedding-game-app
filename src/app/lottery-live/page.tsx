@@ -40,7 +40,31 @@ export default function LotteryLivePage() {
   const [isAnimating, setIsAnimating] = useState(false)
   const [animationSpeed, setAnimationSpeed] = useState(0.5)
   const [celebrating, setCelebrating] = useState(false)
+  const [scale, setScale] = useState(1)
   const supabase = createSupabaseBrowser()
+
+  // 固定設計尺寸 (基準: 1920x1080)
+  const DESIGN_WIDTH = 1920
+  const DESIGN_HEIGHT = 1080
+
+  // 計算縮放比例以適應視窗大小
+  useEffect(() => {
+    const updateScale = () => {
+      const windowWidth = window.innerWidth
+      const windowHeight = window.innerHeight
+      
+      // 計算寬高比例，取較小的以確保完整顯示
+      const scaleX = windowWidth / DESIGN_WIDTH
+      const scaleY = windowHeight / DESIGN_HEIGHT
+      const newScale = Math.min(scaleX, scaleY, 1) // 最大不超過 1
+      
+      setScale(newScale)
+    }
+
+    updateScale()
+    window.addEventListener('resize', updateScale)
+    return () => window.removeEventListener('resize', updateScale)
+  }, [])
 
   // 載入初始資料
   useEffect(() => {
@@ -209,7 +233,18 @@ export default function LotteryLivePage() {
   const carouselItems = getCarouselItems()
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-600 via-pink-500 to-orange-500 flex flex-col items-center justify-center overflow-hidden relative">
+    <div className="min-h-screen bg-black flex items-center justify-center overflow-hidden">
+      {/* 固定尺寸容器 + 縮放 */}
+      <div 
+        className="bg-gradient-to-br from-purple-600 via-pink-500 to-orange-500 flex flex-col items-center justify-center overflow-hidden relative"
+        style={{
+          width: `${DESIGN_WIDTH}px`,
+          height: `${DESIGN_HEIGHT}px`,
+          transform: `scale(${scale})`,
+          transformOrigin: 'center center',
+          transition: 'transform 0.3s ease-out'
+        }}
+      >
       {/* 背景動畫 */}
       <div className="absolute inset-0">
         {[...Array(30)].map((_, i) => (
@@ -319,8 +354,8 @@ export default function LotteryLivePage() {
               animationDuration: isAnimating ? `${animationSpeed}s` : 'none',
               animationTimingFunction: 'linear',
               animationPlayState: isAnimating ? 'running' : 'paused',
-              // 停止時，確保中獎照片在中間
-              transform: !isAnimating && winnerPhoto ? `translateX(calc(50vw - ${
+              // 停止時，確保中獎照片在中間（使用固定寬度，不受視窗縮放影響）
+              transform: !isAnimating && winnerPhoto ? `translateX(calc(${DESIGN_WIDTH / 2}px - ${
                 (carouselItems.findIndex(p => p.id === winnerPhoto.id) % carouselItems.length) * 320
               }px - 144px))` : undefined,
               transition: !isAnimating ? 'transform 0.5s ease-out' : undefined
@@ -380,6 +415,7 @@ export default function LotteryLivePage() {
             🎊 恭喜獲得精美禮品！ 🎊
           </p>
         )}
+      </div>
       </div>
     </div>
   )
