@@ -127,28 +127,33 @@ export default function LotteryLivePage() {
 
   const startCarouselAnimation = (winner: CurrentDraw) => {
     setIsAnimating(true)
-    setAnimationSpeed(0.5) // 快速開始
+    setAnimationSpeed(0.3) // 更快開始
     
-    // 階段 1: 快速滾動 (2秒)
+    // 階段 1: 快速滾動 (3秒)
     setTimeout(() => {
-      setAnimationSpeed(1)
-    }, 2000)
-    
-    // 階段 2: 減速 (1秒)
-    setTimeout(() => {
-      setAnimationSpeed(2)
+      setAnimationSpeed(0.6)
     }, 3000)
     
-    // 階段 3: 慢速 (1秒)
+    // 階段 2: 減速 (2秒)
     setTimeout(() => {
-      setAnimationSpeed(4)
-    }, 4000)
+      setAnimationSpeed(1.2)
+    }, 5000)
     
-    // 階段 4: 停止 (5秒後)
+    // 階段 3: 更慢 (2秒)
+    setTimeout(() => {
+      setAnimationSpeed(2.5)
+    }, 7000)
+    
+    // 階段 4: 很慢 (2秒)
+    setTimeout(() => {
+      setAnimationSpeed(5)
+    }, 9000)
+    
+    // 階段 5: 停止 (10秒後)
     setTimeout(() => {
       setIsAnimating(false)
       startCelebration()
-    }, 5000)
+    }, 10000)
   }
 
   const startCelebration = () => {
@@ -313,7 +318,12 @@ export default function LotteryLivePage() {
             style={{
               animationDuration: isAnimating ? `${animationSpeed}s` : 'none',
               animationTimingFunction: 'linear',
-              animationPlayState: isAnimating ? 'running' : 'paused'
+              animationPlayState: isAnimating ? 'running' : 'paused',
+              // 停止時，確保中獎照片在中間
+              transform: !isAnimating && winnerPhoto ? `translateX(calc(50vw - ${
+                (carouselItems.findIndex(p => p.id === winnerPhoto.id) % carouselItems.length) * 320
+              }px - 144px))` : undefined,
+              transition: !isAnimating ? 'transform 0.5s ease-out' : undefined
             }}
           >
             {carouselItems.map((photo, index) => (
@@ -321,7 +331,11 @@ export default function LotteryLivePage() {
                 key={`${photo.id}-${index}`}
                 className="flex-shrink-0 w-72"
               >
-                <div className="bg-white rounded-3xl shadow-2xl p-4 transform transition-all">
+                <div className={`bg-white rounded-3xl shadow-2xl p-4 transform transition-all ${
+                  !isAnimating && winnerPhoto && photo.id === winnerPhoto.id 
+                    ? 'scale-105 ring-4 ring-green-400' 
+                    : ''
+                }`}>
                   <div className="relative">
                     <img
                       src={photo.image_url}
