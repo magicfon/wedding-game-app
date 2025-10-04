@@ -566,16 +566,6 @@ export default function PhotoWallPage() {
             )}
           </>
         )}
-
-        {/* 底部提示 */}
-        <div className="bg-blue-50 rounded-xl p-4 mt-8 text-center">
-          <p className="text-blue-700 text-sm">
-            💡 {votingEnabled 
-              ? `每人有 ${availableVotes} 票，可以投給不同照片或同一張照片多次投票`
-              : '投票功能目前關閉中，請等待主持人開啟'
-            }
-          </p>
-        </div>
       </div>
 
       {/* 照片放大檢視模態框 */}
