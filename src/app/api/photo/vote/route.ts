@@ -32,21 +32,37 @@ async function handleUnvote(supabase: any, photoId: number, voterLineId: string)
     }, { status: 500 })
   }
 
-  // 獲取更新後的照片投票數
+  console.log(`✅ 投票記錄已刪除 (vote_id: ${existingVote.id})`)
+
+  // 短暫延遲，確保 trigger 執行完成（10ms）
+  await new Promise(resolve => setTimeout(resolve, 10))
+
+  // 獲取更新後的照片投票數（使用 COUNT 確保準確）
+  const { data: voteCountData } = await supabase
+    .from('votes')
+    .select('id', { count: 'exact' })
+    .eq('photo_id', photoId)
+
+  const actualVoteCount = voteCountData?.length || 0
+
+  console.log(`📊 照片 ${photoId} 實際票數（從 votes 表計算）: ${actualVoteCount}`)
+
+  // 同時獲取照片表中的 vote_count
   const { data: updatedPhoto } = await supabase
     .from('photos')
     .select('vote_count')
     .eq('id', photoId)
     .single()
 
-  console.log(`✅ 取消投票成功！照片 ${photoId} 新票數: ${updatedPhoto?.vote_count || 'N/A'}`)
+  console.log(`📊 照片 ${photoId} 票數（從 photos 表）: ${updatedPhoto?.vote_count || 0}`)
+  console.log(`✅ 取消投票成功！照片 ${photoId} 新票數: ${actualVoteCount}`)
 
   return NextResponse.json({
     success: true,
     message: '已取消投票',
     data: {
       photoId,
-      newVoteCount: updatedPhoto?.vote_count || 0
+      newVoteCount: actualVoteCount
     }
   })
 }
@@ -146,12 +162,29 @@ export async function POST(request: NextRequest) {
       }, { status: 500 })
     }
 
-    // 獲取更新後的照片投票數
+    console.log(`✅ 投票記錄已新增 (vote_id: ${voteData.id})`)
+
+    // 短暫延遲，確保 trigger 執行完成（10ms）
+    await new Promise(resolve => setTimeout(resolve, 10))
+
+    // 獲取更新後的照片投票數（使用 COUNT 確保準確）
+    const { data: voteCountData, error: voteCountError } = await supabase
+      .from('votes')
+      .select('id', { count: 'exact' })
+      .eq('photo_id', photoId)
+
+    const actualVoteCount = voteCountData?.length || 0
+
+    console.log(`📊 照片 ${photoId} 實際票數（從 votes 表計算）: ${actualVoteCount}`)
+
+    // 同時獲取照片表中的 vote_count
     const { data: updatedPhoto, error: updatedPhotoError } = await supabase
       .from('photos')
       .select('vote_count')
       .eq('id', photoId)
       .single()
+
+    console.log(`📊 照片 ${photoId} 票數（從 photos 表）: ${updatedPhoto?.vote_count || 0}`)
 
     if (updatedPhotoError) {
       console.error('❌ 獲取更新後投票數失敗:', updatedPhotoError)
@@ -166,7 +199,10 @@ export async function POST(request: NextRequest) {
     const usedVotes = remainingVotes?.length || 0
     const remainingVoteCount = Math.max(0, gameState.votes_per_user - usedVotes)
 
-    console.log(`✅ 投票成功！照片 ${photoId} 新票數: ${updatedPhoto?.vote_count || 'N/A'}`)
+    // 使用實際計算的票數（更可靠）
+    const finalVoteCount = actualVoteCount
+
+    console.log(`✅ 投票成功！照片 ${photoId} 新票數: ${finalVoteCount}`)
 
     return NextResponse.json({
       success: true,
@@ -174,7 +210,7 @@ export async function POST(request: NextRequest) {
       data: {
         voteId: voteData.id,
         photoId,
-        newVoteCount: updatedPhoto?.vote_count || 0,
+        newVoteCount: finalVoteCount,
         remainingVotes: remainingVoteCount,
         usedVotes
       }
