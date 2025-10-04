@@ -202,7 +202,7 @@ export default function PhotoWallPage() {
     
     // 如果沒投過票，檢查是否還有額度
     if (!hasVoted && totalUsedVotes >= availableVotes) {
-      alert('您的投票額度已用完！')
+      alert(`您的投票額度已用完！\n\n您已使用：${totalUsedVotes} 票\n總額度：${availableVotes} 票\n\n如需投票給這張照片，請先取消其他照片的投票。`)
       return
     }
 
@@ -419,11 +419,43 @@ export default function PhotoWallPage() {
             <div className="flex items-center space-x-4">
               {/* 投票狀態 */}
               {votingEnabled && (
-                <div className="flex items-center space-x-2 bg-blue-50 px-3 py-2 rounded-lg">
-                  <Trophy className="w-5 h-5 text-blue-600" />
-                  <span className="text-blue-700 font-medium">
-                    剩餘票數: {getRemainingVotes()}
-                  </span>
+                <div className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+                  getRemainingVotes() === 0 
+                    ? 'bg-red-50 border-2 border-red-200' 
+                    : getRemainingVotes() <= 2
+                    ? 'bg-orange-50 border-2 border-orange-200'
+                    : 'bg-blue-50 border-2 border-blue-200'
+                }`}>
+                  <Trophy className={`w-5 h-5 ${
+                    getRemainingVotes() === 0 
+                      ? 'text-red-600' 
+                      : getRemainingVotes() <= 2
+                      ? 'text-orange-600'
+                      : 'text-blue-600'
+                  }`} />
+                  <div className="flex flex-col">
+                    <span className={`font-bold text-lg ${
+                      getRemainingVotes() === 0 
+                        ? 'text-red-700' 
+                        : getRemainingVotes() <= 2
+                        ? 'text-orange-700'
+                        : 'text-blue-700'
+                    }`}>
+                      {getRemainingVotes()} 票
+                    </span>
+                    <span className={`text-xs ${
+                      getRemainingVotes() === 0 
+                        ? 'text-red-600' 
+                        : getRemainingVotes() <= 2
+                        ? 'text-orange-600'
+                        : 'text-blue-600'
+                    }`}>
+                      {getRemainingVotes() === 0 
+                        ? '額度已用完' 
+                        : `共 ${availableVotes} 票`
+                      }
+                    </span>
+                  </div>
                 </div>
               )}
 
