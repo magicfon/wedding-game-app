@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createSupabaseBrowser } from '@/lib/supabase'
 import { Gift, Users, Trophy, Sparkles } from 'lucide-react'
 
@@ -18,6 +18,14 @@ interface CurrentDraw {
   photo_count: number
   draw_time: string
   participants_count: number
+  participants_snapshot?: string
+}
+
+interface Participant {
+  line_id: string
+  display_name: string
+  avatar_url: string
+  photo_count: number
 }
 
 export default function LotteryLivePage() {
@@ -27,14 +35,18 @@ export default function LotteryLivePage() {
     current_draw_id: null
   })
   const [currentDraw, setCurrentDraw] = useState<CurrentDraw | null>(null)
-  const [countdown, setCountdown] = useState(5)
+  const [participants, setParticipants] = useState<Participant[]>([])
+  const [isAnimating, setIsAnimating] = useState(false)
+  const [animationSpeed, setAnimationSpeed] = useState(0.5) // 初始速度（秒）
   const [showWinner, setShowWinner] = useState(false)
   const [celebrating, setCelebrating] = useState(false)
+  const carouselRef = useRef<HTMLDivElement>(null)
   const supabase = createSupabaseBrowser()
 
   // 載入初始資料
   useEffect(() => {
     fetchLotteryState()
+    fetchEligibleUsers()
   }, [])
 
   // 訂閱 Realtime 更新
@@ -72,16 +84,6 @@ export default function LotteryLivePage() {
     }
   }, [supabase])
 
-  // 倒數計時效果
-  useEffect(() => {
-    if (lotteryState.is_drawing && countdown > 0) {
-      const timer = setTimeout(() => {
-        setCountdown(countdown - 1)
-      }, 1000)
-      return () => clearTimeout(timer)
-    }
-  }, [lotteryState.is_drawing, countdown])
-
   const fetchLotteryState = async () => {
     try {
       const response = await fetch('/api/lottery/control')
@@ -92,8 +94,11 @@ export default function LotteryLivePage() {
         
         if (data.current_draw && data.current_draw.id !== currentDraw?.id) {
           setCurrentDraw(data.current_draw)
-          setShowWinner(true)
-          startCelebration()
+          // 如果已經有中獎者，直接顯示結果
+          if (!isAnimating) {
+            setShowWinner(true)
+            startCelebration()
+          }
         }
       }
     } catch (error) {
@@ -101,13 +106,61 @@ export default function LotteryLivePage() {
     }
   }
 
+  const fetchEligibleUsers = async () => {
+    try {
+      const response = await fetch('/api/lottery/check-eligibility')
+      const data = await response.json()
+      
+      if (data.success && data.eligible_users) {
+        setParticipants(data.eligible_users)
+      }
+    } catch (error) {
+      console.error('獲取符合資格用戶失敗:', error)
+    }
+  }
+
   const handleNewDraw = (newDraw: CurrentDraw) => {
     setCurrentDraw(newDraw)
-    setCountdown(5)
     setShowWinner(false)
     
-    // 倒數後顯示中獎者
+    // 解析參與者資料
+    if (newDraw.participants_snapshot) {
+      try {
+        const snapshot = typeof newDraw.participants_snapshot === 'string' 
+          ? JSON.parse(newDraw.participants_snapshot)
+          : newDraw.participants_snapshot
+        setParticipants(snapshot)
+      } catch (e) {
+        console.error('解析參與者資料失敗:', e)
+      }
+    }
+    
+    // 開始跑馬燈動畫
+    startCarouselAnimation(newDraw)
+  }
+
+  const startCarouselAnimation = (winner: CurrentDraw) => {
+    setIsAnimating(true)
+    setAnimationSpeed(0.5) // 快速開始
+    
+    // 階段 1: 快速滾動 (2秒)
     setTimeout(() => {
+      setAnimationSpeed(1) // 稍微減速
+    }, 2000)
+    
+    // 階段 2: 減速 (1秒)
+    setTimeout(() => {
+      setAnimationSpeed(2) // 繼續減速
+    }, 3000)
+    
+    // 階段 3: 慢速 (1秒)
+    setTimeout(() => {
+      setAnimationSpeed(4) // 很慢
+    }, 4000)
+    
+    // 階段 4: 停止並顯示中獎者 (5秒後)
+    setTimeout(() => {
+      setIsAnimating(false)
       setShowWinner(true)
       startCelebration()
     }, 5000)
@@ -118,6 +171,13 @@ export default function LotteryLivePage() {
     setTimeout(() => {
       setCelebrating(false)
     }, 5000)
+  }
+
+  // 生成重複的參與者陣列以形成無限輪播效果
+  const getCarouselItems = () => {
+    if (participants.length === 0) return []
+    // 重複3次以確保流暢的輪播
+    return [...participants, ...participants, ...participants]
   }
 
   // 待機畫面
@@ -133,13 +193,15 @@ export default function LotteryLivePage() {
     )
   }
 
-  // 抽獎中 - 倒數階段
-  if (lotteryState.is_drawing && !showWinner) {
+  // 跑馬燈抽獎動畫
+  if (isAnimating && participants.length > 0) {
+    const carouselItems = getCarouselItems()
+    
     return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-500 via-purple-500 to-indigo-500 flex items-center justify-center relative overflow-hidden">
+      <div className="min-h-screen bg-gradient-to-br from-purple-600 via-pink-500 to-orange-500 flex flex-col items-center justify-center overflow-hidden relative">
         {/* 背景動畫 */}
         <div className="absolute inset-0">
-          {[...Array(20)].map((_, i) => (
+          {[...Array(30)].map((_, i) => (
             <div
               key={i}
               className="absolute animate-float"
@@ -150,19 +212,80 @@ export default function LotteryLivePage() {
                 animationDuration: `${3 + Math.random() * 2}s`
               }}
             >
-              <Sparkles className="w-8 h-8 text-white opacity-30" />
+              <Sparkles className="w-6 h-6 text-white opacity-30" />
             </div>
           ))}
         </div>
 
-        {/* 倒數計時 */}
-        <div className="text-center z-10">
-          <Gift className="w-32 h-32 text-white mx-auto mb-12 animate-bounce" />
-          <h1 className="text-6xl font-bold text-white mb-8">準備抽獎</h1>
-          <div className="text-9xl font-bold text-white mb-8 animate-pulse">
-            {countdown}
+        {/* 標題 */}
+        <div className="text-center mb-12 z-10">
+          <h1 className="text-6xl font-bold text-white mb-4 animate-pulse">
+            🎰 抽獎中 🎰
+          </h1>
+          <p className="text-2xl text-white opacity-90">
+            參與人數：{participants.length} 人
+          </p>
+        </div>
+
+        {/* 跑馬燈容器 */}
+        <div className="relative w-full max-w-6xl z-10">
+          {/* 中間高亮框 */}
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-80 z-20 pointer-events-none">
+            <div className="w-full h-full border-8 border-yellow-400 rounded-2xl shadow-2xl animate-pulse">
+              <div className="absolute inset-0 bg-yellow-400 opacity-20 rounded-2xl"></div>
+            </div>
+            <div className="absolute -top-12 left-1/2 -translate-x-1/2 text-3xl font-bold text-yellow-300 whitespace-nowrap">
+              ⬇️ 中獎者 ⬇️
+            </div>
           </div>
-          <p className="text-3xl text-white opacity-90">敬請期待...</p>
+
+          {/* 跑馬燈照片輪播 */}
+          <div className="overflow-hidden py-8">
+            <div 
+              ref={carouselRef}
+              className="flex space-x-8 carousel-scroll"
+              style={{
+                animationDuration: `${animationSpeed}s`,
+                animationTimingFunction: 'linear'
+              }}
+            >
+              {carouselItems.map((participant, index) => (
+                <div
+                  key={`${participant.line_id}-${index}`}
+                  className="flex-shrink-0 w-56"
+                >
+                  <div className="bg-white rounded-2xl shadow-2xl p-4 transform transition-all">
+                    <div className="relative">
+                      <img
+                        src={participant.avatar_url || '/default-avatar.png'}
+                        alt={participant.display_name}
+                        className="w-48 h-48 rounded-xl object-cover mx-auto"
+                      />
+                      <div className="absolute top-2 right-2 bg-pink-500 text-white px-3 py-1 rounded-full text-sm font-bold">
+                        {participant.photo_count} 張
+                      </div>
+                    </div>
+                    <div className="mt-4 text-center">
+                      <h3 className="text-xl font-bold text-gray-800 truncate">
+                        {participant.display_name}
+                      </h3>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 左右漸變遮罩 */}
+          <div className="absolute left-0 top-0 bottom-0 w-64 bg-gradient-to-r from-purple-600 to-transparent pointer-events-none z-10"></div>
+          <div className="absolute right-0 top-0 bottom-0 w-64 bg-gradient-to-l from-orange-500 to-transparent pointer-events-none z-10"></div>
+        </div>
+
+        {/* 提示文字 */}
+        <div className="text-center mt-12 z-10">
+          <p className="text-3xl text-white font-bold animate-bounce">
+            ✨ 敬請期待... ✨
+          </p>
         </div>
       </div>
     )
@@ -175,7 +298,7 @@ export default function LotteryLivePage() {
         {/* 慶祝動畫 */}
         {celebrating && (
           <div className="absolute inset-0 pointer-events-none">
-            {[...Array(50)].map((_, i) => (
+            {[...Array(100)].map((_, i) => (
               <div
                 key={i}
                 className="absolute animate-confetti"
@@ -269,4 +392,3 @@ export default function LotteryLivePage() {
     </div>
   )
 }
-

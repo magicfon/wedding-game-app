@@ -98,10 +98,25 @@ body {
   }
 }
 
+/* 跑馬燈滾動動畫 */
+@keyframes carousel-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-33.333%);
+  }
+}
+
 .animate-float {
   animation: float 3s ease-in-out infinite;
 }
 
 .animate-confetti {
   animation: confetti 3s ease-out forwards;
+}
+
+.carousel-scroll {
+  animation: carousel-scroll linear infinite;
+  will-change: transform;
 }
