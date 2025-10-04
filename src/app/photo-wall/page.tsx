@@ -33,6 +33,7 @@ export default function PhotoWallPage() {
   const [pullDistance, setPullDistance] = useState(0)
   const containerRef = useRef<HTMLDivElement | null>(null)
   const [votingInProgress, setVotingInProgress] = useState<Set<number>>(new Set())
+  const [showVoteLimitModal, setShowVoteLimitModal] = useState(false)
   
   const router = useRouter()
   const supabase = createSupabaseBrowser()
@@ -202,7 +203,7 @@ export default function PhotoWallPage() {
     
     // 如果沒投過票，檢查是否還有額度
     if (!hasVoted && totalUsedVotes >= availableVotes) {
-      alert(`您的投票額度已用完！\n\n您已使用：${totalUsedVotes} 票\n總額度：${availableVotes} 票\n\n如需投票給這張照片，請先取消其他照片的投票。`)
+      setShowVoteLimitModal(true)
       return
     }
 
@@ -633,16 +634,16 @@ export default function PhotoWallPage() {
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
-                      // 檢查是否已經沒有票數
-                      const hasVoted = userVotes[selectedPhoto.id] > 0
-                      const totalUsedVotes = Object.values(userVotes).reduce((sum, count) => sum + count, 0)
-                      
-                      if (!hasVoted && totalUsedVotes >= availableVotes) {
-                        alert(`您的投票額度已用完！\n\n您已使用：${totalUsedVotes} 票\n總額度：${availableVotes} 票\n\n如需投票給這張照片，請先取消其他照片的投票。`)
-                        return
-                      }
-                      
-                      handleVote(selectedPhoto.id)
+                    // 檢查是否已經沒有票數
+                    const hasVoted = userVotes[selectedPhoto.id] > 0
+                    const totalUsedVotes = Object.values(userVotes).reduce((sum, count) => sum + count, 0)
+                    
+                    if (!hasVoted && totalUsedVotes >= availableVotes) {
+                      setShowVoteLimitModal(true)
+                      return
+                    }
+                    
+                    handleVote(selectedPhoto.id)
                     }}
                     disabled={votingInProgress.has(selectedPhoto.id)}
                     className={`p-3 rounded-full shadow-2xl transition-all duration-200 backdrop-blur-sm ${
@@ -681,6 +682,83 @@ export default function PhotoWallPage() {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* 投票額度用完提示 Modal */}
+      {showVoteLimitModal && (
+        <div 
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+          onClick={() => setShowVoteLimitModal(false)}
+        >
+          <div 
+            className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden transform transition-all"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* 頭部 */}
+            <div className="bg-gradient-to-r from-red-500 to-pink-500 px-6 py-8 text-center">
+              <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4">
+                <Trophy className="w-12 h-12 text-red-500" />
+              </div>
+              <h2 className="text-2xl font-bold text-white mb-2">投票額度已用完</h2>
+              <p className="text-white/90 text-sm">You've used all your votes</p>
+            </div>
+
+            {/* 內容 */}
+            <div className="px-8 py-6 space-y-6">
+              {/* 統計卡片 */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-gradient-to-br from-pink-50 to-red-50 rounded-2xl p-4 text-center border-2 border-pink-200">
+                  <div className="text-3xl font-bold text-pink-600 mb-1">
+                    {Object.values(userVotes).reduce((sum, count) => sum + count, 0)}
+                  </div>
+                  <div className="text-sm text-gray-600">已使用</div>
+                </div>
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-4 text-center border-2 border-blue-200">
+                  <div className="text-3xl font-bold text-blue-600 mb-1">
+                    {availableVotes}
+                  </div>
+                  <div className="text-sm text-gray-600">總額度</div>
+                </div>
+              </div>
+
+              {/* 提示訊息 */}
+              <div className="bg-yellow-50 border-2 border-yellow-200 rounded-2xl p-4">
+                <div className="flex items-start space-x-3">
+                  <div className="w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-white text-sm font-bold">!</span>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-gray-700 leading-relaxed text-base">
+                      如需投票給這張照片，請先<span className="font-bold text-pink-600">取消其他照片的投票</span>。
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* 操作說明 */}
+              <div className="space-y-2 text-sm text-gray-600">
+                <p className="flex items-center space-x-2">
+                  <span className="w-2 h-2 bg-pink-500 rounded-full"></span>
+                  <span>點擊已投票照片的<span className="text-red-500 font-semibold">實心愛心 ❤</span> 可取消投票</span>
+                </p>
+                <p className="flex items-center space-x-2">
+                  <span className="w-2 h-2 bg-pink-500 rounded-full"></span>
+                  <span>取消後即可將票投給其他照片</span>
+                </p>
+              </div>
+            </div>
+
+            {/* 底部按鈕 */}
+            <div className="px-8 pb-8">
+              <button
+                onClick={() => setShowVoteLimitModal(false)}
+                className="w-full bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600 text-white font-bold py-4 rounded-2xl transition-all duration-200 transform hover:scale-[1.02] shadow-lg text-lg"
+              >
+                我知道了
+              </button>
+            </div>
           </div>
         </div>
       )}
