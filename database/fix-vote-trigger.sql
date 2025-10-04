@@ -107,7 +107,8 @@ ORDER BY p.id;
 DO $$
 DECLARE
     test_photo_id INTEGER;
-    test_voter_id TEXT := 'test_trigger_voter_' || extract(epoch from now())::text;
+    test_voter_id TEXT;
+    test_user_display_name TEXT := 'Trigger測試用戶';
     initial_count INTEGER;
     after_insert_count INTEGER;
     after_delete_count INTEGER;
@@ -119,6 +120,15 @@ BEGIN
         RAISE NOTICE '❌ 沒有照片可供測試';
         RETURN;
     END IF;
+    
+    -- 生成測試用戶 ID
+    test_voter_id := 'test_trigger_voter_' || extract(epoch from now())::text;
+    
+    -- 創建測試用戶（因為有外鍵約束）
+    INSERT INTO users (line_id, display_name)
+    VALUES (test_voter_id, test_user_display_name);
+    
+    RAISE NOTICE '✅ 已創建測試用戶: %', test_voter_id;
     
     -- 獲取初始票數
     SELECT vote_count INTO initial_count 
@@ -153,7 +163,10 @@ BEGIN
         RAISE NOTICE '❌ DELETE 測試失敗！期望 %，實際 %', initial_count, after_delete_count;
     END IF;
     
-    RAISE NOTICE '🧹 測試完成';
+    -- 清理測試用戶
+    DELETE FROM users WHERE line_id = test_voter_id;
+    
+    RAISE NOTICE '🧹 測試完成，測試資料已清理';
 END $$;
 
 -- 9. 最終檢查
