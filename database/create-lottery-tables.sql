@@ -17,6 +17,9 @@ CREATE TABLE IF NOT EXISTS lottery_history (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- 注意：lottery_history 使用 winner_line_id 沒問題，
+-- 因為它只是存儲中獎者資訊，不需要關聯 photos 表
+
 -- 2. 創建抽獎狀態表
 CREATE TABLE IF NOT EXISTS lottery_state (
     id SERIAL PRIMARY KEY,
@@ -89,7 +92,7 @@ BEGIN
         u.avatar_url,
         COUNT(p.id) as photo_count
     FROM users u
-    INNER JOIN photos p ON u.line_id = p.uploader_line_id
+    INNER JOIN photos p ON u.line_id = p.user_id  -- 使用正確的欄位名稱
     WHERE p.is_public = TRUE
     GROUP BY u.line_id, u.display_name, u.avatar_url
     HAVING COUNT(p.id) >= 1
