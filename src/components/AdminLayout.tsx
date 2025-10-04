@@ -13,7 +13,8 @@ import {
   Home,
   Menu,
   X,
-  HardDrive
+  HardDrive,
+  Gift
 } from 'lucide-react'
 
 interface AdminLayoutProps {
@@ -35,6 +36,7 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
     { name: '計分規則', href: '/admin/scoring-rules', icon: Settings },
     { name: 'LINE 選單', href: '/admin/line-menu', icon: Settings },
     { name: '媒體清理', href: '/admin/media-cleanup', icon: HardDrive },
+    { name: '照片摸彩', href: '/admin/lottery', icon: Gift },
     { name: '用戶管理', href: '/admin/users', icon: Users },
     { name: '照片管理', href: '/admin/photos', icon: Camera },
     { name: '系統設定', href: '/admin/settings', icon: Settings },
