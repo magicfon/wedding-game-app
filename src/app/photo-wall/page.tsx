@@ -32,6 +32,7 @@ export default function PhotoWallPage() {
   const [pullStartY, setPullStartY] = useState(0)
   const [pullDistance, setPullDistance] = useState(0)
   const containerRef = useRef<HTMLDivElement | null>(null)
+  const [votingInProgress, setVotingInProgress] = useState<Set<number>>(new Set())
   
   const router = useRouter()
   const supabase = createSupabaseBrowser()
@@ -190,6 +191,12 @@ export default function PhotoWallPage() {
     if (e) e.stopPropagation()
     if (!profile || !votingEnabled) return
 
+    // 防止重複點擊（防抖）
+    if (votingInProgress.has(photoId)) {
+      console.log('⏳ 投票處理中，請稍候...')
+      return
+    }
+
     const hasVoted = userVotes[photoId] > 0
     const totalUsedVotes = Object.values(userVotes).reduce((sum, count) => sum + count, 0)
     
@@ -199,7 +206,52 @@ export default function PhotoWallPage() {
       return
     }
 
+    // 標記此照片正在投票中
+    setVotingInProgress(prev => new Set(prev).add(photoId))
+
+    // 樂觀更新 UI（先更新介面，再發送請求）
+    const previousUserVotes = { ...userVotes }
+    const previousPhotos = [...photos]
+    const previousDisplayedPhotos = [...displayedPhotos]
+    const previousSelectedPhoto = selectedPhoto ? { ...selectedPhoto } : null
+
     try {
+      // 立即更新本地狀態（樂觀更新）
+      if (hasVoted) {
+        // 取消投票
+        setUserVotes(prev => ({
+          ...prev,
+          [photoId]: 0
+        }))
+        // 立即減少票數
+        const updatePhotoCount = (p: any) => 
+          p.id === photoId ? { ...p, vote_count: Math.max(0, p.vote_count - 1) } : p
+        
+        setPhotos(prev => prev.map(updatePhotoCount))
+        setDisplayedPhotos(prev => prev.map(updatePhotoCount))
+        if (selectedPhoto?.id === photoId) {
+          setSelectedPhoto(prev => prev ? { ...prev, vote_count: Math.max(0, prev.vote_count - 1) } : null)
+        }
+      } else {
+        // 投票
+        setUserVotes(prev => ({
+          ...prev,
+          [photoId]: (prev[photoId] || 0) + 1
+        }))
+        // 立即增加票數
+        const updatePhotoCount = (p: any) => 
+          p.id === photoId ? { ...p, vote_count: p.vote_count + 1 } : p
+        
+        setPhotos(prev => prev.map(updatePhotoCount))
+        setDisplayedPhotos(prev => prev.map(updatePhotoCount))
+        if (selectedPhoto?.id === photoId) {
+          setSelectedPhoto(prev => prev ? { ...prev, vote_count: prev.vote_count + 1 } : null)
+        }
+      }
+
+      console.log(`🔄 正在${hasVoted ? '取消投票' : '投票'}...`)
+
+      // 發送 API 請求
       const response = await fetch('/api/photo/vote', {
         method: 'POST',
         headers: {
@@ -218,24 +270,12 @@ export default function PhotoWallPage() {
         throw new Error(result.error || '操作失敗')
       }
 
-      // 使用 API 返回的最新票數更新本地狀態
+      // 使用 API 返回的確切票數校正本地狀態
       const newVoteCount = result.data.newVoteCount
 
-      if (hasVoted) {
-        // 取消投票：將此照片的用戶投票數設為 0
-        setUserVotes(prev => ({
-          ...prev,
-          [photoId]: 0
-        }))
-      } else {
-        // 投票：將此照片的用戶投票數設為 1
-        setUserVotes(prev => ({
-          ...prev,
-          [photoId]: (prev[photoId] || 0) + 1
-        }))
-      }
+      console.log(`✅ ${hasVoted ? '取消投票' : '投票'}成功！照片 ${photoId} 確切票數: ${newVoteCount}`)
 
-      // 使用 API 返回的確切票數更新照片
+      // 用 API 返回的確切值更新票數（校正）
       setPhotos(prev => prev.map(p => 
         p.id === photoId ? { ...p, vote_count: newVoteCount } : p
       ))
@@ -246,11 +286,23 @@ export default function PhotoWallPage() {
         setSelectedPhoto(prev => prev ? { ...prev, vote_count: newVoteCount } : null)
       }
 
-      console.log(`✅ ${hasVoted ? '取消投票' : '投票'}成功！照片 ${photoId} 最新票數: ${newVoteCount}`)
-
     } catch (error) {
-      console.error('Error voting:', error)
+      console.error('❌ 投票錯誤:', error)
+      
+      // 回滾狀態（恢復到投票前）
+      setUserVotes(previousUserVotes)
+      setPhotos(previousPhotos)
+      setDisplayedPhotos(previousDisplayedPhotos)
+      setSelectedPhoto(previousSelectedPhoto)
+      
       alert(error instanceof Error ? error.message : '操作失敗，請稍後再試')
+    } finally {
+      // 移除投票中標記
+      setVotingInProgress(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(photoId)
+        return newSet
+      })
     }
   }
 
@@ -543,15 +595,22 @@ export default function PhotoWallPage() {
                     e.stopPropagation()
                     handleVote(selectedPhoto.id)
                   }}
-                  disabled={!userVotes[selectedPhoto.id] && getRemainingVotes() <= 0}
+                  disabled={
+                    votingInProgress.has(selectedPhoto.id) || 
+                    (!userVotes[selectedPhoto.id] && getRemainingVotes() <= 0)
+                  }
                   className={`absolute top-4 right-4 p-3 rounded-full shadow-2xl transition-all duration-200 backdrop-blur-sm ${
-                    !userVotes[selectedPhoto.id] && getRemainingVotes() <= 0
+                    votingInProgress.has(selectedPhoto.id)
+                      ? 'bg-white/60 cursor-wait'
+                      : (!userVotes[selectedPhoto.id] && getRemainingVotes() <= 0)
                       ? 'bg-white/60 cursor-not-allowed'
                       : 'bg-white/90 hover:bg-white hover:scale-110'
                   }`}
                 >
                   <Heart className={`w-8 h-8 transition-all ${
-                    userVotes[selectedPhoto.id] > 0 
+                    votingInProgress.has(selectedPhoto.id)
+                      ? 'text-gray-400 animate-pulse'
+                      : userVotes[selectedPhoto.id] > 0 
                       ? 'text-red-500 fill-current drop-shadow-lg' 
                       : 'text-gray-400 hover:text-pink-500'
                   }`} />
