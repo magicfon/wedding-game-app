@@ -4,13 +4,15 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLiff } from '@/hooks/useLiff'
 import AdminLayout from '@/components/AdminLayout'
-import { Trophy, Save, RefreshCw, CheckCircle, XCircle } from 'lucide-react'
+import { Trophy, Save, RefreshCw, CheckCircle, XCircle, RotateCcw, AlertTriangle } from 'lucide-react'
 
 export default function VotingSettingsPage() {
   const [votingEnabled, setVotingEnabled] = useState(false)
   const [votesPerUser, setVotesPerUser] = useState(3)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [resetting, setResetting] = useState(false)
+  const [showResetConfirm, setShowResetConfirm] = useState(false)
   const [message, setMessage] = useState<{type: 'success' | 'error', text: string} | null>(null)
   const [stats, setStats] = useState({
     totalVotes: 0,
@@ -99,6 +101,30 @@ export default function VotingSettingsPage() {
   const showMessage = (type: 'success' | 'error', text: string) => {
     setMessage({ type, text })
     setTimeout(() => setMessage(null), 3000)
+  }
+
+  const resetAllVotes = async () => {
+    setResetting(true)
+    try {
+      const response = await fetch('/api/admin/voting-settings/reset', {
+        method: 'POST'
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        showMessage('success', '已成功重置所有投票！')
+        loadStats() // 重新載入統計
+        setShowResetConfirm(false)
+      } else {
+        showMessage('error', data.error || '重置失敗')
+      }
+    } catch (error) {
+      console.error('重置投票失敗:', error)
+      showMessage('error', '重置投票失敗')
+    } finally {
+      setResetting(false)
+    }
   }
 
   if (loading || liffLoading) {
@@ -263,6 +289,70 @@ export default function VotingSettingsPage() {
           </div>
         </div>
 
+        {/* 危險操作區域 */}
+        <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-6 mt-6">
+          <div className="flex items-center space-x-2 mb-4">
+            <AlertTriangle className="w-6 h-6 text-red-600" />
+            <h3 className="font-semibold text-red-900">危險操作</h3>
+          </div>
+          
+          <div className="bg-white rounded-xl p-4 mb-4">
+            <h4 className="font-medium text-gray-800 mb-2">重置所有投票</h4>
+            <p className="text-sm text-gray-600 mb-4">
+              此操作會刪除所有賓客的投票記錄，並將所有照片的票數歸零。此操作無法復原！
+            </p>
+            
+            {!showResetConfirm ? (
+              <button
+                onClick={() => setShowResetConfirm(true)}
+                className="flex items-center space-x-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors"
+              >
+                <RotateCcw className="w-4 h-4" />
+                <span>重置所有投票</span>
+              </button>
+            ) : (
+              <div className="space-y-3">
+                <div className="bg-yellow-50 border border-yellow-300 rounded-lg p-3">
+                  <p className="text-sm text-yellow-800 font-medium">
+                    ⚠️ 確定要重置所有投票嗎？
+                  </p>
+                  <p className="text-sm text-yellow-700 mt-1">
+                    目前有 <strong>{stats.totalVotes}</strong> 筆投票記錄，來自 <strong>{stats.activeVoters}</strong> 位賓客
+                  </p>
+                </div>
+                
+                <div className="flex items-center space-x-3">
+                  <button
+                    onClick={resetAllVotes}
+                    disabled={resetting}
+                    className="flex items-center space-x-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg transition-colors font-semibold"
+                  >
+                    {resetting ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        <span>重置中...</span>
+                      </>
+                    ) : (
+                      <>
+                        <RotateCcw className="w-4 h-4" />
+                        <span>確認重置</span>
+                      </>
+                    )}
+                  </button>
+                  
+                  <button
+                    onClick={() => setShowResetConfirm(false)}
+                    disabled={resetting}
+                    className="px-4 py-2 bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 text-gray-700 rounded-lg transition-colors"
+                  >
+                    取消
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* 說明卡片 */}
         <div className="bg-blue-50 rounded-xl p-6 mt-6">
           <h3 className="font-semibold text-blue-900 mb-3">💡 使用說明</h3>
@@ -272,6 +362,7 @@ export default function VotingSettingsPage() {
             <li>• 投票數會即時更新在照片牆和快門傳情頁面</li>
             <li>• 關閉投票功能後，投票按鈕會隱藏但已投的票數仍會保留</li>
             <li>• 可隨時調整每人票數，新設定會立即生效</li>
+            <li>• 如需測試投票功能，可使用「重置所有投票」清空所有記錄</li>
           </ul>
         </div>
       </div>
