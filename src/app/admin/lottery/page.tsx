@@ -155,9 +155,6 @@ export default function LotteryManagePage() {
       if (data.success) {
         showMessage('success', data.message || '抽獎完成！')
         
-        // 在新視窗開啟大螢幕顯示
-        window.open('/lottery-live', '_blank', 'width=1920,height=1080,fullscreen=yes')
-        
         // 重新載入資料
         await fetchData()
       } else {
