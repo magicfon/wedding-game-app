@@ -620,74 +620,67 @@ export default function PhotoWallPage() {
                 onClick={(e) => e.stopPropagation()}
               />
               
-              {/* 投票按鈕 - 右上角 */}
+              {/* 投票區域 - 右上角 */}
               {votingEnabled && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    // 檢查是否已經沒有票數
-                    const hasVoted = userVotes[selectedPhoto.id] > 0
-                    const totalUsedVotes = Object.values(userVotes).reduce((sum, count) => sum + count, 0)
-                    
-                    if (!hasVoted && totalUsedVotes >= availableVotes) {
-                      alert(`您的投票額度已用完！\n\n您已使用：${totalUsedVotes} 票\n總額度：${availableVotes} 票\n\n如需投票給這張照片，請先取消其他照片的投票。`)
-                      return
-                    }
-                    
-                    handleVote(selectedPhoto.id)
-                  }}
-                  disabled={votingInProgress.has(selectedPhoto.id)}
-                  className={`absolute top-4 right-4 p-3 rounded-full shadow-2xl transition-all duration-200 backdrop-blur-sm ${
-                    votingInProgress.has(selectedPhoto.id)
-                      ? 'bg-white/60 cursor-wait'
-                      : (!userVotes[selectedPhoto.id] && getRemainingVotes() <= 0)
-                      ? 'bg-white/80 cursor-not-allowed'
-                      : 'bg-white/90 hover:bg-white hover:scale-110'
-                  }`}
-                >
-                  <Heart className={`w-8 h-8 transition-all ${
-                    votingInProgress.has(selectedPhoto.id)
-                      ? 'text-gray-400 animate-pulse'
-                      : userVotes[selectedPhoto.id] > 0 
-                      ? 'text-red-500 fill-current drop-shadow-lg' 
-                      : getRemainingVotes() <= 0
-                      ? 'text-gray-400'
-                      : 'text-gray-400 hover:text-pink-500'
-                  }`} />
-                </button>
+                <div className="absolute top-4 right-4 flex items-center space-x-3">
+                  {/* 得票數顯示 */}
+                  <div className="bg-pink-500/90 backdrop-blur-sm px-4 py-2 rounded-full flex items-center space-x-2 shadow-lg">
+                    <Heart className="w-5 h-5 fill-current text-white" />
+                    <span className="font-semibold text-white">{selectedPhoto.vote_count}</span>
+                  </div>
+                  
+                  {/* 投票按鈕 */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      // 檢查是否已經沒有票數
+                      const hasVoted = userVotes[selectedPhoto.id] > 0
+                      const totalUsedVotes = Object.values(userVotes).reduce((sum, count) => sum + count, 0)
+                      
+                      if (!hasVoted && totalUsedVotes >= availableVotes) {
+                        alert(`您的投票額度已用完！\n\n您已使用：${totalUsedVotes} 票\n總額度：${availableVotes} 票\n\n如需投票給這張照片，請先取消其他照片的投票。`)
+                        return
+                      }
+                      
+                      handleVote(selectedPhoto.id)
+                    }}
+                    disabled={votingInProgress.has(selectedPhoto.id)}
+                    className={`p-3 rounded-full shadow-2xl transition-all duration-200 backdrop-blur-sm ${
+                      votingInProgress.has(selectedPhoto.id)
+                        ? 'bg-white/60 cursor-wait'
+                        : (!userVotes[selectedPhoto.id] && getRemainingVotes() <= 0)
+                        ? 'bg-white/80 cursor-not-allowed'
+                        : 'bg-white/90 hover:bg-white hover:scale-110'
+                    }`}
+                  >
+                    <Heart className={`w-8 h-8 transition-all ${
+                      votingInProgress.has(selectedPhoto.id)
+                        ? 'text-gray-400 animate-pulse'
+                        : userVotes[selectedPhoto.id] > 0 
+                        ? 'text-red-500 fill-current drop-shadow-lg' 
+                        : getRemainingVotes() <= 0
+                        ? 'text-gray-400'
+                        : 'text-gray-400 hover:text-pink-500'
+                    }`} />
+                  </button>
+                </div>
               )}
             </div>
 
-            {/* 底部資訊列 */}
-            <div 
-              className="bg-white/10 backdrop-blur-md rounded-2xl p-6 mt-4 text-white"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="space-y-3">
-                {/* 得票數 */}
-                <div className="flex items-center space-x-3">
-                  <div className="bg-pink-500 px-4 py-2 rounded-full flex items-center space-x-2">
-                    <Heart className="w-5 h-5 fill-current" />
-                    <span className="font-semibold">{selectedPhoto.vote_count} 票</span>
-                  </div>
-                  {userVotes[selectedPhoto.id] > 0 && (
-                    <span className="bg-red-500/80 px-3 py-1 rounded-full text-sm">
-                      已投票 ❤
-                    </span>
-                  )}
+            {/* 底部資訊列 - 祝福訊息 */}
+            {selectedPhoto.blessing_message && (
+              <div 
+                className="bg-white/10 backdrop-blur-md rounded-2xl p-6 mt-4 text-white"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-start space-x-3">
+                  <MessageSquare className="w-6 h-6 mt-0.5 flex-shrink-0 text-pink-300" />
+                  <p className="text-white/90 leading-relaxed text-lg">
+                    {selectedPhoto.blessing_message}
+                  </p>
                 </div>
-
-                {/* 祝福訊息 */}
-                {selectedPhoto.blessing_message && (
-                  <div className="flex items-start space-x-2">
-                    <MessageSquare className="w-5 h-5 mt-0.5 flex-shrink-0 text-pink-300" />
-                    <p className="text-white/90 leading-relaxed">
-                      {selectedPhoto.blessing_message}
-                    </p>
-                  </div>
-                )}
               </div>
-            </div>
+            )}
           </div>
         </div>
       )}
