@@ -40,10 +40,13 @@ export default function LotteryLivePage() {
   const [isAnimating, setIsAnimating] = useState(false)
   const [celebrating, setCelebrating] = useState(false)
   const [showingWinner, setShowingWinner] = useState(false) // 新增：顯示中獎者特寫
+  const [zoomingWinner, setZoomingWinner] = useState(false) // 新增：正在放大動畫
+  const [winnerPhotoRect, setWinnerPhotoRect] = useState<DOMRect | null>(null) // 中獎照片原始位置
   const [scale, setScale] = useState(1)
   const [highlightedIndex, setHighlightedIndex] = useState(-1)
   
   const animationFrameRef = useRef<number | null>(null)
+  const winnerPhotoRef = useRef<HTMLDivElement>(null) // 中獎照片的 ref
   const supabase = createSupabaseBrowser()
 
   // 固定設計尺寸 (基準: 1920x1080)
@@ -154,6 +157,8 @@ export default function LotteryLivePage() {
     setCurrentDraw(newDraw)
     setCelebrating(false)
     setShowingWinner(false) // 重置放大狀態
+    setZoomingWinner(false) // 重置縮放動畫狀態
+    setWinnerPhotoRect(null) // 重置位置
     
     console.log('🎰 收到新的抽獎記錄')
     console.log('當前照片數量:', photos.length)
@@ -295,7 +300,22 @@ export default function LotteryLivePage() {
     // 1.5秒後開始放大中獎照片（讓大家先看清楚中獎的是哪張）
     setTimeout(() => {
       console.log('🔍 開始放大中獎照片')
-      setShowingWinner(true)
+      
+      // 獲取中獎照片的位置
+      if (winnerPhotoRef.current) {
+        const rect = winnerPhotoRef.current.getBoundingClientRect()
+        setWinnerPhotoRect(rect)
+        console.log('📍 中獎照片位置:', rect)
+      }
+      
+      // 先觸發縮放動畫
+      setZoomingWinner(true)
+      
+      // 500ms 後（縮放動畫完成）切換到完整顯示
+      setTimeout(() => {
+        setShowingWinner(true)
+        setZoomingWinner(false)
+      }, 800)
     }, 1500)
     
     // 慶祝效果持續 10 秒
@@ -303,6 +323,7 @@ export default function LotteryLivePage() {
       console.log('✅ 慶祝結束')
       setCelebrating(false)
       setShowingWinner(false)
+      setZoomingWinner(false)
     }, 10000)
   }
 
@@ -426,7 +447,7 @@ export default function LotteryLivePage() {
       </div>
 
       {/* 照片 Grid 顯示 */}
-      <div className={`relative z-10 px-10 transition-opacity duration-1000 ${showingWinner ? 'opacity-0' : 'opacity-100'}`}>
+      <div className={`relative z-10 px-10 transition-opacity duration-1000 ${showingWinner || zoomingWinner ? 'opacity-0' : 'opacity-100'}`}>
         <div 
           className="grid gap-5 justify-center items-center"
           style={{
@@ -439,6 +460,7 @@ export default function LotteryLivePage() {
             return (
               <div
                 key={photo.id}
+                ref={isWinner ? winnerPhotoRef : null}
                 className="relative"
                 style={{
                   width: `${gridLayout.size}px`,
@@ -497,12 +519,60 @@ export default function LotteryLivePage() {
         </div>
       </div>
 
+      {/* 中獎照片放大動畫 - 從原位置放大到中央 */}
+      {!isAnimating && zoomingWinner && winnerPhoto && winnerPhotoRect && (() => {
+        // 計算中心位置（考慮縮放後的容器）
+        const centerX = window.innerWidth / 2
+        const centerY = window.innerHeight / 2
+        
+        // 目標尺寸
+        const targetSize = 600
+        
+        // 計算需要移動的距離（到達螢幕中央）
+        const currentCenterX = winnerPhotoRect.left + winnerPhotoRect.width / 2
+        const currentCenterY = winnerPhotoRect.top + winnerPhotoRect.height / 2
+        
+        const translateX = centerX - currentCenterX
+        const translateY = centerY - currentCenterY
+        
+        // 計算縮放比例
+        const scaleFactor = targetSize / winnerPhotoRect.width
+        
+        return (
+          <div 
+            className="fixed z-50 pointer-events-none"
+            style={{
+              left: `${winnerPhotoRect.left}px`,
+              top: `${winnerPhotoRect.top}px`,
+              width: `${winnerPhotoRect.width}px`,
+              height: `${winnerPhotoRect.height}px`,
+              '--translate-x': `${translateX}px`,
+              '--translate-y': `${translateY}px`,
+              '--scale-factor': scaleFactor,
+              animation: 'zoomToCenter 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards'
+            } as React.CSSProperties}
+          >
+            <div className="relative w-full h-full">
+              <div className="absolute -inset-4 bg-gradient-to-r from-yellow-400 via-orange-400 to-pink-400 rounded-3xl animate-pulse blur-xl opacity-75"></div>
+              <img
+                src={winnerPhoto.image_url}
+                alt={winnerPhoto.display_name}
+                className="relative w-full h-full object-cover rounded-3xl border-8 border-white shadow-2xl"
+                onError={(e) => {
+                  e.currentTarget.src = '/default-avatar.png'
+                }}
+              />
+            </div>
+          </div>
+        )
+      })()}
+
       {/* 中獎照片放大特寫 - 只有在動畫結束且慶祝時才顯示 */}
-      {!isAnimating && showingWinner && winnerPhoto && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm animate-in fade-in duration-1000">
-          <div className="text-center animate-in zoom-in duration-1000">
+      {!isAnimating && showingWinner && !zoomingWinner && winnerPhoto && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm animate-in fade-in duration-500">
+          <div className="text-center">
             {/* 中獎照片 */}
-            <div className="relative mb-8 animate-in slide-in-from-bottom-10 duration-1000">
+            <div className="relative mb-8">
               <div className="absolute -inset-4 bg-gradient-to-r from-yellow-400 via-orange-400 to-pink-400 rounded-3xl animate-pulse blur-xl opacity-75"></div>
               <img
                 src={winnerPhoto.image_url}
@@ -515,7 +585,7 @@ export default function LotteryLivePage() {
             </div>
 
             {/* 中獎者資訊 */}
-            <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl p-10 max-w-3xl mx-auto animate-in slide-in-from-bottom-8 duration-1000 delay-300">
+            <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl p-10 max-w-3xl mx-auto animate-in slide-in-from-bottom-8 duration-500">
               <div className="flex items-center justify-center space-x-8">
                 <img
                   src={winnerPhoto.avatar_url || '/default-avatar.png'}
@@ -542,7 +612,7 @@ export default function LotteryLivePage() {
             </div>
 
             {/* 恭喜文字 */}
-            <div className="mt-8 animate-in slide-in-from-bottom-6 duration-1000 delay-500">
+            <div className="mt-8 animate-in slide-in-from-bottom-6 duration-500">
               <h1 className="text-8xl font-bold text-white drop-shadow-2xl animate-pulse">
                 🎉 恭喜中獎 🎉
               </h1>

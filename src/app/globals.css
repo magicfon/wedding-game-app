@@ -161,3 +161,15 @@ body:has([data-lottery-live]) {
   animation: carousel-scroll linear infinite;
   will-change: transform;
 }
+
+/* 中獎照片從原位置放大到中央的動畫 */
+@keyframes zoomToCenter {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--translate-x), var(--translate-y)) scale(var(--scale-factor));
+    opacity: 1;
+  }
+}
