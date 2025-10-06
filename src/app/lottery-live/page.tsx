@@ -121,7 +121,14 @@ export default function LotteryLivePage() {
       const data = await response.json()
       
       if (data.success) {
+        const prevState = lotteryState
         setLotteryState(data.state)
+        
+        // 檢測重置操作：is_drawing 從 true 變為 false，且沒有 current_draw_id
+        if (prevState.is_drawing && !data.state.is_drawing && !data.state.current_draw_id) {
+          console.log('🔄 檢測到重置操作')
+          resetToInitialState()
+        }
         
         // 注意：不在這裡調用 startCelebration()
         // 慶祝效果只應該在動畫結束時觸發（由 animateSelection 控制）
@@ -153,12 +160,28 @@ export default function LotteryLivePage() {
     }
   }
 
-  const handleNewDraw = async (newDraw: CurrentDraw) => {
-    setCurrentDraw(newDraw)
+  const resetToInitialState = () => {
+    console.log('🔄 重置到初始狀態')
+    setCurrentDraw(null)
     setCelebrating(false)
-    setShowingWinner(false) // 重置放大狀態
-    setZoomingWinner(false) // 重置縮放動畫狀態
-    setWinnerPhotoRect(null) // 重置位置
+    setShowingWinner(false)
+    setZoomingWinner(false)
+    setWinnerPhotoRect(null)
+    setHighlightedIndex(-1) // 移除黃框
+    setIsAnimating(false)
+    
+    // 取消任何進行中的動畫
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current)
+      animationFrameRef.current = null
+    }
+  }
+
+  const handleNewDraw = async (newDraw: CurrentDraw) => {
+    // 先重置所有狀態
+    resetToInitialState()
+    
+    setCurrentDraw(newDraw)
     
     console.log('🎰 收到新的抽獎記錄')
     console.log('當前照片數量:', photos.length)
