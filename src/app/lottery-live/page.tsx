@@ -47,7 +47,14 @@ export default function LotteryLivePage() {
   
   const animationFrameRef = useRef<number | null>(null)
   const winnerPhotoRef = useRef<HTMLDivElement>(null) // 中獎照片的 ref
+  const currentDrawRef = useRef<CurrentDraw | null>(null) // 追蹤最新的 currentDraw 值
   const supabase = createSupabaseBrowser()
+  
+  // 同步 currentDraw 到 ref
+  useEffect(() => {
+    currentDrawRef.current = currentDraw
+    console.log('🔄 currentDrawRef 更新:', currentDraw?.id || null)
+  }, [currentDraw])
 
   // 固定設計尺寸 (基準: 1920x1080)
   const DESIGN_WIDTH = 1920
@@ -120,18 +127,28 @@ export default function LotteryLivePage() {
       const response = await fetch('/api/lottery/control')
       const data = await response.json()
       
+      const latestCurrentDraw = currentDrawRef.current
+      
+      console.log('📡 fetchLotteryState:', {
+        current_draw_id: data.state?.current_draw_id,
+        latestCurrentDraw_id: latestCurrentDraw?.id || null,
+        has_current_draw: !!data.current_draw,
+        will_reset: !data.state.current_draw_id && latestCurrentDraw !== null
+      })
+      
       if (data.success) {
-        setLotteryState(data.state)
-        
         // 檢測重置操作：沒有 current_draw_id 且我們之前有 currentDraw
-        if (!data.state.current_draw_id && currentDraw !== null) {
+        if (!data.state.current_draw_id && latestCurrentDraw !== null) {
           console.log('🔄 檢測到重置操作 - 清除中獎狀態')
           resetToInitialState()
         }
         
+        setLotteryState(data.state)
+        
         // 注意：不在這裡調用 startCelebration()
         // 慶祝效果只應該在動畫結束時觸發（由 animateSelection 控制）
-        if (data.current_draw && data.current_draw.id !== currentDraw?.id) {
+        if (data.current_draw && data.current_draw.id !== latestCurrentDraw?.id) {
+          console.log('📝 更新 currentDraw:', data.current_draw)
           setCurrentDraw(data.current_draw)
         }
       }
