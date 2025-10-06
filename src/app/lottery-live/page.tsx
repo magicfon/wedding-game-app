@@ -184,11 +184,17 @@ export default function LotteryLivePage() {
   }
 
   const animateSelection = (targetIndex: number) => {
+    console.log('🎯 開始跳動動畫，目標索引:', targetIndex, '照片總數:', photos.length)
+    
     // 動畫參數
     const startTime = Date.now()
     const duration = 10000 // 10秒
-    let lastJumpTime = startTime
+    let lastJumpTime = startTime - 100 // 立即觸發第一次跳動
     let currentIndex = Math.floor(Math.random() * photos.length)
+    
+    // 立即顯示第一個框框
+    setHighlightedIndex(currentIndex)
+    console.log('📍 初始框框位置:', currentIndex)
     
     // 跳動間隔函數 (越來越慢)
     const getJumpInterval = (progress: number) => {
@@ -218,6 +224,7 @@ export default function LotteryLivePage() {
           }
         }
         
+        console.log(`📍 跳到索引 ${currentIndex}，進度: ${(progress * 100).toFixed(1)}%`)
         setHighlightedIndex(currentIndex)
       }
 
@@ -226,6 +233,7 @@ export default function LotteryLivePage() {
         animationFrameRef.current = requestAnimationFrame(animate)
       } else {
         // 動畫結束，確保停在目標位置
+        console.log('🎉 動畫結束，停在索引:', targetIndex)
         setHighlightedIndex(targetIndex)
         setIsAnimating(false)
         startCelebration()
