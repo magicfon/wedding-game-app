@@ -52,6 +52,14 @@ export async function POST(request: NextRequest) {
     
     console.log(`📊 共有 ${eligibleUsers.length} 位符合資格的用戶`)
     
+    // 定義用戶類型
+    interface EligibleUser {
+      line_id: string
+      display_name: string
+      avatar_url: string
+      photo_count: number
+    }
+    
     // 3. 排除已經中獎過的用戶
     const { data: previousWinners, error: winnersError } = await supabase
       .from('lottery_history')
@@ -65,8 +73,8 @@ export async function POST(request: NextRequest) {
       previousWinners?.map(w => w.winner_line_id) || []
     )
     
-    const availableUsers = eligibleUsers.filter(
-      user => !previousWinnerIds.has(user.line_id)
+    const availableUsers = (eligibleUsers as EligibleUser[]).filter(
+      (user: EligibleUser) => !previousWinnerIds.has(user.line_id)
     )
     
     console.log(`📊 排除已中獎者後，剩餘 ${availableUsers.length} 位可抽獎用戶`)
