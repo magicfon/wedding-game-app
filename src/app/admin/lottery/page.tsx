@@ -252,6 +252,35 @@ export default function LotteryManagePage() {
     }
   }
 
+  const handleClearAllHistory = async () => {
+    if (!confirm('⚠️ 確定要清除所有抽獎歷史記錄嗎？\n此操作無法復原！')) return
+
+    try {
+      const response = await fetch('/api/lottery/history', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          clear_all: true,
+          admin_id: profile?.userId
+        }),
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        showMessage('success', '所有抽獎記錄已清除')
+        await fetchLotteryHistory()
+      } else {
+        showMessage('error', data.error || '清除失敗')
+      }
+    } catch (error) {
+      console.error('清除失敗:', error)
+      showMessage('error', '清除失敗')
+    }
+  }
+
   const showMessage = (type: 'success' | 'error', text: string) => {
     setMessage({ type, text })
     setTimeout(() => setMessage(null), 5000)
@@ -412,6 +441,15 @@ export default function LotteryManagePage() {
                   抽獎歷史 ({lotteryHistory.length})
                 </h3>
               </div>
+              {lotteryHistory.length > 0 && (
+                <button
+                  onClick={handleClearAllHistory}
+                  className="flex items-center space-x-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors font-medium"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>清除所有記錄</span>
+                </button>
+              )}
             </div>
 
             {lotteryHistory.length === 0 ? (

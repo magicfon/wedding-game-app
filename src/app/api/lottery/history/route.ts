@@ -53,8 +53,34 @@ export async function DELETE(request: NextRequest) {
     const supabase = await createSupabaseServer()
     const body = await request.json()
     
-    const { lottery_id, admin_id } = body
+    const { lottery_id, admin_id, clear_all } = body
     
+    // 清除所有歷史記錄
+    if (clear_all) {
+      console.log(`🗑️ 清除所有抽獎歷史記錄 (管理員: ${admin_id})`)
+      
+      const { error } = await supabase
+        .from('lottery_history')
+        .delete()
+        .neq('id', 0) // 刪除所有記錄的技巧（id 不等於 0，即所有記錄）
+      
+      if (error) {
+        console.error('❌ 清除所有抽獎記錄失敗:', error)
+        return NextResponse.json({ 
+          error: '清除所有抽獎記錄失敗',
+          details: error.message 
+        }, { status: 500 })
+      }
+      
+      console.log('✅ 所有抽獎記錄已清除')
+      
+      return NextResponse.json({
+        success: true,
+        message: '所有抽獎記錄已清除'
+      })
+    }
+    
+    // 刪除單筆記錄
     if (!lottery_id) {
       return NextResponse.json({ 
         error: '缺少 lottery_id 參數' 
