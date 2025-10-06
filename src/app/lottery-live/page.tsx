@@ -166,10 +166,26 @@ export default function LotteryLivePage() {
 
     setIsAnimating(true)
     
+    // 詳細 log 除錯
+    console.log('開始抽獎動畫')
+    console.log('中獎者資料:', winner)
+    console.log('中獎者 LINE ID:', winner.winner_line_id)
+    console.log('照片列表:', photos.map(p => ({
+      id: p.id,
+      user_id: p.user_id,
+      display_name: p.display_name
+    })))
+    
     // 找到中獎照片的索引（在原始列表中）
-    const winnerIndex = photos.findIndex(p => p.user_id === winner.winner_line_id)
+    const winnerIndex = photos.findIndex(p => {
+      console.log(`比對: ${p.user_id} === ${winner.winner_line_id} ?`, p.user_id === winner.winner_line_id)
+      return p.user_id === winner.winner_line_id
+    })
+    
     if (winnerIndex === -1) {
-      console.error('找不到中獎照片', winner)
+      console.error('找不到中獎照片！')
+      console.error('中獎者 ID:', winner.winner_line_id)
+      console.error('所有照片的 user_id:', photos.map(p => p.user_id))
       return
     }
 
