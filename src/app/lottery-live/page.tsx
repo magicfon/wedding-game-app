@@ -587,15 +587,15 @@ export default function LotteryLivePage() {
 
       {/* 中獎照片放大特寫 - 只有在動畫結束且慶祝時才顯示 */}
       {!isAnimating && showingWinner && !zoomingWinner && winnerPhoto && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm animate-in fade-in duration-500">
-          <div className="text-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm animate-in fade-in duration-500 p-4 overflow-y-auto">
+          <div className="text-center max-w-[95vw] my-auto">
             {/* 中獎照片 */}
-            <div className="relative mb-8">
+            <div className="relative mb-6">
               <div className="absolute -inset-4 bg-gradient-to-r from-yellow-400 via-orange-400 to-pink-400 rounded-3xl animate-pulse blur-xl opacity-75"></div>
               <img
                 src={winnerPhoto.image_url}
                 alt={winnerPhoto.display_name}
-                className="relative w-[600px] h-[600px] object-cover rounded-3xl border-8 border-white shadow-2xl"
+                className="relative w-[600px] h-[600px] max-w-[90vw] max-h-[50vh] object-cover rounded-3xl border-8 border-white shadow-2xl mx-auto"
                 onError={(e) => {
                   e.currentTarget.src = '/default-avatar.png'
                 }}
@@ -603,26 +603,28 @@ export default function LotteryLivePage() {
             </div>
 
             {/* 中獎者資訊 */}
-            <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl p-10 max-w-3xl mx-auto animate-in slide-in-from-bottom-8 duration-500">
-              <div className="flex items-center justify-center space-x-8">
+            <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl p-6 md:p-10 max-w-5xl mx-auto animate-in slide-in-from-bottom-8 duration-500">
+              <div className="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-8">
                 <img
                   src={winnerPhoto.avatar_url || '/default-avatar.png'}
                   alt={winnerPhoto.display_name}
-                  className="w-32 h-32 rounded-full border-8 border-green-400 shadow-lg"
+                  className="w-24 h-24 md:w-32 md:h-32 rounded-full border-8 border-green-400 shadow-lg flex-shrink-0"
                 />
-                <div className="flex-1 text-left">
-                  <div className="flex items-center space-x-4 mb-4">
-                    <Gift className="w-12 h-12 text-green-500" />
-                    <h2 className="text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-500 to-emerald-500">
+                <div className="flex-1 text-center md:text-left max-w-full">
+                  <div className="flex flex-col md:flex-row items-center md:items-center gap-3 md:gap-4 mb-4">
+                    <Gift className="w-10 h-10 md:w-12 md:h-12 text-green-500 flex-shrink-0" />
+                    <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-500 to-emerald-500 break-words">
                       {winnerPhoto.display_name}
                     </h2>
                   </div>
                   {winnerPhoto.blessing_message && (
-                    <div className="flex items-start space-x-3">
-                      <Heart className="w-8 h-8 text-red-500 mt-1 flex-shrink-0" />
-                      <p className="text-2xl text-gray-700 italic leading-relaxed">
-                        「{winnerPhoto.blessing_message}」
-                      </p>
+                    <div className="flex items-start gap-3 mt-4">
+                      <Heart className="w-6 h-6 md:w-8 md:h-8 text-red-500 mt-1 flex-shrink-0" />
+                      <div className="flex-1 max-w-full overflow-hidden">
+                        <p className="text-lg md:text-xl lg:text-2xl text-gray-700 italic leading-relaxed break-words whitespace-pre-wrap max-h-[30vh] overflow-y-auto pr-2 text-left">
+                          「{winnerPhoto.blessing_message}」
+                        </p>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -630,8 +632,8 @@ export default function LotteryLivePage() {
             </div>
 
             {/* 恭喜文字 */}
-            <div className="mt-8 animate-in slide-in-from-bottom-6 duration-500">
-              <h1 className="text-8xl font-bold text-white drop-shadow-2xl animate-pulse">
+            <div className="mt-6 animate-in slide-in-from-bottom-6 duration-500">
+              <h1 className="text-5xl md:text-6xl lg:text-8xl font-bold text-white drop-shadow-2xl animate-pulse">
                 🎉 恭喜中獎 🎉
               </h1>
             </div>
