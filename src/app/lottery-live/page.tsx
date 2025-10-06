@@ -120,12 +120,10 @@ export default function LotteryLivePage() {
       if (data.success) {
         setLotteryState(data.state)
         
+        // 注意：不在這裡調用 startCelebration()
+        // 慶祝效果只應該在動畫結束時觸發（由 animateSelection 控制）
         if (data.current_draw && data.current_draw.id !== currentDraw?.id) {
           setCurrentDraw(data.current_draw)
-          // 如果已經有中獎者但沒在動畫中，顯示慶祝效果
-          if (!isAnimating) {
-            startCelebration()
-          }
         }
       }
     } catch (error) {
