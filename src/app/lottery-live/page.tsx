@@ -229,8 +229,9 @@ export default function LotteryLivePage() {
     // 動畫參數
     const startTime = Date.now()
     const duration = 10000 // 10秒
-    let lastJumpTime = startTime - 100 // 立即觸發第一次跳動
+    let lastJumpTime = startTime - 100
     let currentIndex = Math.floor(Math.random() * photoCount)
+    let lastIndex = currentIndex // 記錄上一次的索引，避免重複
     
     // 立即顯示第一個框框
     setHighlightedIndex(currentIndex)
@@ -238,8 +239,18 @@ export default function LotteryLivePage() {
     
     // 跳動間隔函數 (越來越慢)
     const getJumpInterval = (progress: number) => {
-      // 從 50ms 逐漸變慢到 1000ms
-      return 50 + progress * progress * 950
+      // 開始很快 (30ms)，結束很慢 (800ms)
+      return 30 + progress * progress * 770
+    }
+
+    // 生成不重複的隨機索引
+    const getNextRandomIndex = (current: number, count: number): number => {
+      if (count <= 1) return current
+      let next
+      do {
+        next = Math.floor(Math.random() * count)
+      } while (next === current)
+      return next
     }
 
     const animate = () => {
@@ -252,15 +263,21 @@ export default function LotteryLivePage() {
       
       if (now - lastJumpTime >= jumpInterval) {
         lastJumpTime = now
+        lastIndex = currentIndex
         
-        if (progress < 0.95) {
-          // 還沒接近結束，隨機跳動
-          currentIndex = Math.floor(Math.random() * photoCount)
+        if (progress < 0.92) {
+          // 還沒接近結束，隨機跳動（但不重複上一張）
+          currentIndex = getNextRandomIndex(lastIndex, photoCount)
         } else {
           // 接近結束，逐步接近目標
           const distance = targetIndex - currentIndex
           if (distance !== 0) {
-            currentIndex += distance > 0 ? 1 : -1
+            // 根據距離決定移動方向
+            if (Math.abs(distance) === 1) {
+              currentIndex = targetIndex
+            } else {
+              currentIndex += distance > 0 ? 1 : -1
+            }
           }
         }
         
@@ -470,13 +487,13 @@ export default function LotteryLivePage() {
                 {/* 照片 */}
                 <div className={`
                   relative w-full h-full bg-white rounded-2xl shadow-xl overflow-hidden
-                  transition-all duration-300
+                  transition-all duration-150 ease-out
                   ${highlightedIndex === index 
                     ? 'ring-8 ring-yellow-400 scale-110 z-20' 
                     : 'scale-100'
                   }
                   ${isWinner
-                    ? 'ring-green-400 scale-110' 
+                    ? 'ring-green-400 scale-110 !duration-500' 
                     : ''
                   }
                 `}>
@@ -503,15 +520,16 @@ export default function LotteryLivePage() {
                     </div>
                   </div>
 
-                  {/* 動畫中的高亮框 */}
-                  {highlightedIndex === index && (
-                    <div className={`
-                      absolute inset-0 
-                      ${isAnimating ? 'bg-yellow-400/30' : 'bg-green-400/30'}
-                      pointer-events-none
-                      animate-pulse
-                    `} />
-                  )}
+                {/* 動畫中的高亮框 */}
+                {highlightedIndex === index && (
+                  <div className={`
+                    absolute inset-0 
+                    ${isAnimating ? 'bg-yellow-400/40' : 'bg-green-400/40'}
+                    pointer-events-none
+                    transition-colors duration-150
+                    ${isAnimating ? 'animate-pulse' : ''}
+                  `} />
+                )}
                 </div>
               </div>
             )
