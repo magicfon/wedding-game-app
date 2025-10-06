@@ -134,20 +134,37 @@ export default function LotteryLivePage() {
 
   const fetchPhotos = async () => {
     try {
+      console.log('📸 開始載入照片...')
       const response = await fetch('/api/lottery/photos')
       const data = await response.json()
       
+      console.log('📸 API 回應:', data)
+      
       if (data.success && data.photos) {
+        console.log(`✅ 成功載入 ${data.photos.length} 張照片`)
         setPhotos(data.photos)
+      } else {
+        console.error('❌ 照片載入失敗:', data)
       }
     } catch (error) {
-      console.error('獲取照片失敗:', error)
+      console.error('❌ 獲取照片失敗:', error)
     }
   }
 
-  const handleNewDraw = (newDraw: CurrentDraw) => {
+  const handleNewDraw = async (newDraw: CurrentDraw) => {
     setCurrentDraw(newDraw)
     setCelebrating(false)
+    
+    console.log('🎰 收到新的抽獎記錄')
+    console.log('當前照片數量:', photos.length)
+    
+    // 如果照片還沒載入，先載入照片
+    if (photos.length === 0) {
+      console.log('⚠️ 照片尚未載入，現在載入...')
+      await fetchPhotos()
+      // 等待 state 更新
+      await new Promise(resolve => setTimeout(resolve, 100))
+    }
     
     // 開始跑馬燈動畫
     startCarouselAnimation(newDraw)
