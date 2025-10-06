@@ -42,9 +42,9 @@ export default function LotteryLivePage() {
   const [scale, setScale] = useState(1)
   const [carouselOffset, setCarouselOffset] = useState(0)
   
-  const animationFrameRef = useRef<number>()
-  const velocityRef = useRef(0)
-  const positionRef = useRef(0)
+  const animationFrameRef = useRef<number | null>(null)
+  const velocityRef = useRef<number>(0)
+  const positionRef = useRef<number>(0)
   const carouselRef = useRef<HTMLDivElement>(null)
   
   const supabase = createSupabaseBrowser()
