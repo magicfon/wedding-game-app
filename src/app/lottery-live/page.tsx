@@ -169,13 +169,11 @@ export default function LotteryLivePage() {
     // 找到中獎照片的索引（在原始列表中）
     const winnerIndex = photos.findIndex(p => p.user_id === winner.winner_line_id)
     if (winnerIndex === -1) {
-      console.error('找不到中獎照片')
+      console.error('找不到中獎照片', winner)
       return
     }
 
     // 計算目標位置：讓中獎照片停在正中央
-    // 中心位置是 DESIGN_WIDTH / 2
-    // 減去中獎照片應該在的位置
     const centerPosition = DESIGN_WIDTH / 2 - ITEM_WIDTH / 2
     const targetPosition = -(winnerIndex * ITEM_WIDTH) + centerPosition
     
@@ -184,10 +182,18 @@ export default function LotteryLivePage() {
     const extraDistance = photos.length * ITEM_WIDTH * 5
     const finalTarget = targetPosition - extraDistance
 
+    console.log('Animation start:', {
+      winnerIndex,
+      centerPosition,
+      targetPosition,
+      finalTarget,
+      photosLength: photos.length
+    })
+
     // 動畫參數
     const startTime = Date.now()
     const duration = 10000 // 10秒
-    let currentPosition = positionRef.current
+    const startPosition = 0 // 總是從0開始
 
     const animate = () => {
       const elapsed = Date.now() - startTime
@@ -196,18 +202,18 @@ export default function LotteryLivePage() {
       // 使用緩出函數 (ease-out cubic)
       const easeOutCubic = 1 - Math.pow(1 - progress, 3)
       
-      // 計算當前位置
-      currentPosition = easeOutCubic * (finalTarget - positionRef.current) + positionRef.current
+      // 計算當前位置（從 startPosition 到 finalTarget）
+      const currentPosition = startPosition + easeOutCubic * (finalTarget - startPosition)
       
       // 更新位置
-      positionRef.current = currentPosition
       setCarouselOffset(currentPosition)
 
       if (progress < 1) {
         // 繼續動畫
         animationFrameRef.current = requestAnimationFrame(animate)
       } else {
-        // 動畫結束
+        // 動畫結束，儲存最終位置
+        positionRef.current = finalTarget
         setIsAnimating(false)
         startCelebration()
       }
