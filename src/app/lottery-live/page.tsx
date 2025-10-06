@@ -155,6 +155,7 @@ export default function LotteryLivePage() {
   const handleNewDraw = async (newDraw: CurrentDraw) => {
     setCurrentDraw(newDraw)
     setCelebrating(false)
+    setShowingWinner(false) // 重置放大狀態
     
     console.log('🎰 收到新的抽獎記錄')
     console.log('當前照片數量:', photos.length)
@@ -290,15 +291,18 @@ export default function LotteryLivePage() {
   }, [])
 
   const startCelebration = () => {
+    console.log('🎊 開始慶祝動畫')
     setCelebrating(true)
     
-    // 1秒後開始放大中獎照片
+    // 1.5秒後開始放大中獎照片（讓大家先看清楚中獎的是哪張）
     setTimeout(() => {
+      console.log('🔍 開始放大中獎照片')
       setShowingWinner(true)
-    }, 1000)
+    }, 1500)
     
     // 慶祝效果持續 10 秒
     setTimeout(() => {
+      console.log('✅ 慶祝結束')
       setCelebrating(false)
       setShowingWinner(false)
     }, 10000)
@@ -495,8 +499,8 @@ export default function LotteryLivePage() {
         </div>
       </div>
 
-      {/* 中獎照片放大特寫 */}
-      {showingWinner && winnerPhoto && (
+      {/* 中獎照片放大特寫 - 只有在動畫結束且慶祝時才顯示 */}
+      {!isAnimating && showingWinner && winnerPhoto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm animate-in fade-in duration-1000">
           <div className="text-center animate-in zoom-in duration-1000">
             {/* 中獎照片 */}
