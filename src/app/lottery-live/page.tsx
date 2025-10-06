@@ -141,6 +141,9 @@ export default function LotteryLivePage() {
         if (!data.state.current_draw_id && latestCurrentDraw !== null) {
           console.log('🔄 檢測到重置操作 - 清除中獎狀態')
           resetToInitialState()
+          // 重置後直接返回，不再執行後續狀態更新
+          setLotteryState(data.state)
+          return
         }
         
         setLotteryState(data.state)
@@ -178,6 +181,15 @@ export default function LotteryLivePage() {
 
   const resetToInitialState = () => {
     console.log('🔄 重置到初始狀態')
+    console.log('重置前狀態:', {
+      currentDraw: currentDraw?.id,
+      celebrating,
+      showingWinner,
+      zoomingWinner,
+      highlightedIndex,
+      isAnimating
+    })
+    
     setCurrentDraw(null)
     setCelebrating(false)
     setShowingWinner(false)
@@ -191,6 +203,8 @@ export default function LotteryLivePage() {
       cancelAnimationFrame(animationFrameRef.current)
       animationFrameRef.current = null
     }
+    
+    console.log('✅ 重置完成')
   }
 
   const handleNewDraw = async (newDraw: CurrentDraw) => {
@@ -388,6 +402,20 @@ export default function LotteryLivePage() {
   }
 
   const winnerPhoto = getWinnerPhoto()
+  
+  // 調試：記錄渲染狀態
+  useEffect(() => {
+    console.log('🎨 渲染狀態:', {
+      currentDraw: currentDraw?.id || null,
+      showingWinner,
+      zoomingWinner,
+      celebrating,
+      isAnimating,
+      highlightedIndex,
+      winnerPhoto: winnerPhoto ? '有' : '無',
+      shouldShowWinnerScreen: !isAnimating && showingWinner && !zoomingWinner && !!winnerPhoto
+    })
+  }, [currentDraw, showingWinner, zoomingWinner, celebrating, isAnimating, highlightedIndex, winnerPhoto])
 
   // 計算每張照片的大小（自動填滿螢幕）
   const getPhotoGridLayout = () => {
