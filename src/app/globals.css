@@ -31,13 +31,20 @@ html, body {
   overflow-y: auto;
 }
 
-/* 抽獎頁面：完全隱藏滾動條 */
+/* 抽獎頁面：完全隱藏滾動條並移除黑邊 */
 body:has([data-lottery-live]) {
-  overflow: hidden;
-  width: 100vw;
-  height: 100vh;
-  margin: 0;
-  padding: 0;
+  overflow: hidden !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* 確保抽獎頁面沒有黑邊 */
+[data-lottery-live] {
+  background: black !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 /* 照片牆動畫 */
