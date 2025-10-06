@@ -605,57 +605,59 @@ export default function LotteryLivePage() {
         )
       })()}
 
-      {/* 中獎照片放大特寫 - 只有在動畫結束且慶祝時才顯示 */}
+      {/* 中獎照片放大特寫 - 左右分欄布局 */}
       {!isAnimating && showingWinner && !zoomingWinner && winnerPhoto && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm animate-in fade-in duration-500 px-8 py-4 overflow-y-auto">
-          <div className="text-center w-full max-w-[1600px] my-auto">
-            {/* 中獎照片 */}
-            <div className="relative mb-6">
-              <div className="absolute -inset-4 bg-gradient-to-r from-yellow-400 via-orange-400 to-pink-400 rounded-3xl animate-pulse blur-xl opacity-75"></div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm animate-in fade-in duration-500">
+          <div className="flex items-center justify-center gap-12 px-8" style={{ width: `${DESIGN_WIDTH}px`, height: `${DESIGN_HEIGHT}px` }}>
+            {/* 左側：中獎照片 */}
+            <div className="relative flex-shrink-0 animate-in zoom-in duration-500">
+              <div className="absolute -inset-6 bg-gradient-to-r from-yellow-400 via-orange-400 to-pink-400 rounded-3xl animate-pulse blur-2xl opacity-75"></div>
               <img
                 src={winnerPhoto.image_url}
                 alt={winnerPhoto.display_name}
-                className="relative w-[600px] h-[600px] max-w-[85vw] max-h-[45vh] object-cover rounded-3xl border-8 border-white shadow-2xl mx-auto"
+                className="relative w-[900px] h-[900px] object-cover rounded-3xl border-8 border-white shadow-2xl"
                 onError={(e) => {
                   e.currentTarget.src = '/default-avatar.png'
                 }}
               />
             </div>
 
-            {/* 中獎者資訊 */}
-            <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl p-8 md:p-12 w-full mx-auto animate-in slide-in-from-bottom-8 duration-500">
-              <div className="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-10">
-                <img
-                  src={winnerPhoto.avatar_url || '/default-avatar.png'}
-                  alt={winnerPhoto.display_name}
-                  className="w-28 h-28 md:w-36 md:h-36 rounded-full border-8 border-green-400 shadow-lg flex-shrink-0"
-                />
-                <div className="flex-1 text-center md:text-left w-full min-w-0">
-                  <div className="flex flex-col md:flex-row items-center md:items-center gap-4 md:gap-5 mb-6">
-                    <Gift className="w-12 h-12 md:w-14 md:h-14 text-green-500 flex-shrink-0" />
-                    <h2 className="text-5xl md:text-6xl lg:text-7xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-500 to-emerald-500 break-words leading-tight">
+            {/* 右側：恭喜文字 + 資訊卡片 */}
+            <div className="flex flex-col justify-center gap-8 flex-1 max-w-[880px]">
+              {/* 恭喜文字 */}
+              <div className="text-center animate-in slide-in-from-right duration-500">
+                <h1 className="text-8xl font-bold text-white drop-shadow-2xl animate-pulse leading-tight mb-4">
+                  🎉 恭喜中獎 🎉
+                </h1>
+              </div>
+
+              {/* 中獎者資訊卡片 */}
+              <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl p-10 animate-in slide-in-from-right duration-500 delay-150">
+                <div className="flex items-center gap-8 mb-8">
+                  <img
+                    src={winnerPhoto.avatar_url || '/default-avatar.png'}
+                    alt={winnerPhoto.display_name}
+                    className="w-32 h-32 rounded-full border-8 border-green-400 shadow-lg flex-shrink-0"
+                  />
+                  <div className="flex items-center gap-4 flex-1 min-w-0">
+                    <Gift className="w-12 h-12 text-green-500 flex-shrink-0" />
+                    <h2 className="text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-500 to-emerald-500 break-words leading-tight">
                       {winnerPhoto.display_name}
                     </h2>
                   </div>
-                  {winnerPhoto.blessing_message && (
-                    <div className="flex items-start gap-4 mt-6">
-                      <Heart className="w-8 h-8 md:w-10 md:h-10 text-red-500 mt-1 flex-shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xl md:text-2xl lg:text-3xl text-gray-700 italic leading-relaxed break-words whitespace-pre-wrap max-h-[25vh] overflow-y-auto pr-3 text-left">
-                          「{winnerPhoto.blessing_message}」
-                        </p>
-                      </div>
-                    </div>
-                  )}
                 </div>
+                
+                {winnerPhoto.blessing_message && (
+                  <div className="flex items-start gap-4">
+                    <Heart className="w-10 h-10 text-red-500 mt-1 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-3xl text-gray-700 italic leading-relaxed break-words whitespace-pre-wrap max-h-[400px] overflow-y-auto pr-3">
+                        「{winnerPhoto.blessing_message}」
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
-
-            {/* 恭喜文字 */}
-            <div className="mt-8 px-4 animate-in slide-in-from-bottom-6 duration-500">
-              <h1 className="text-6xl md:text-7xl lg:text-8xl font-bold text-white drop-shadow-2xl animate-pulse break-words leading-tight">
-                🎉 恭喜中獎 🎉
-              </h1>
             </div>
           </div>
         </div>
