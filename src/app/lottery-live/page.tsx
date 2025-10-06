@@ -39,6 +39,7 @@ export default function LotteryLivePage() {
   const [photos, setPhotos] = useState<Photo[]>([])
   const [isAnimating, setIsAnimating] = useState(false)
   const [celebrating, setCelebrating] = useState(false)
+  const [showingWinner, setShowingWinner] = useState(false) // 新增：顯示中獎者特寫
   const [scale, setScale] = useState(1)
   const [highlightedIndex, setHighlightedIndex] = useState(-1)
   
@@ -290,10 +291,17 @@ export default function LotteryLivePage() {
 
   const startCelebration = () => {
     setCelebrating(true)
-    // 慶祝效果持續 8 秒
+    
+    // 1秒後開始放大中獎照片
+    setTimeout(() => {
+      setShowingWinner(true)
+    }, 1000)
+    
+    // 慶祝效果持續 10 秒
     setTimeout(() => {
       setCelebrating(false)
-    }, 8000)
+      setShowingWinner(false)
+    }, 10000)
   }
 
   // 找出中獎照片
@@ -416,99 +424,130 @@ export default function LotteryLivePage() {
       </div>
 
       {/* 照片 Grid 顯示 */}
-      <div className="relative z-10 px-10">
+      <div className={`relative z-10 px-10 transition-opacity duration-1000 ${showingWinner ? 'opacity-0' : 'opacity-100'}`}>
         <div 
           className="grid gap-5 justify-center items-center"
           style={{
             gridTemplateColumns: `repeat(${gridLayout.cols}, ${gridLayout.size}px)`
           }}
         >
-          {photos.map((photo, index) => (
-            <div
-              key={photo.id}
-              className="relative"
-              style={{
-                width: `${gridLayout.size}px`,
-                height: `${gridLayout.size}px`
-              }}
-            >
-              {/* 照片 */}
-              <div className={`
-                relative w-full h-full bg-white rounded-2xl shadow-xl overflow-hidden
-                transition-all duration-300
-                ${highlightedIndex === index 
-                  ? 'ring-8 ring-yellow-400 scale-110 z-20' 
-                  : 'scale-100'
-                }
-                ${!isAnimating && highlightedIndex === index 
-                  ? 'ring-green-400 scale-110' 
-                  : ''
-                }
-              `}>
-                <img
-                  src={photo.image_url}
-                  alt={photo.display_name}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.currentTarget.src = '/default-avatar.png'
-                  }}
-                />
-                
-                {/* 照片資訊 */}
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
-                  <div className="flex items-center space-x-2">
-                    <img
-                      src={photo.avatar_url || '/default-avatar.png'}
-                      alt={photo.display_name}
-                      className="w-8 h-8 rounded-full border-2 border-white"
-                    />
-                    <span className="text-white text-sm font-medium truncate">
-                      {photo.display_name}
-                    </span>
+          {photos.map((photo, index) => {
+            const isWinner = highlightedIndex === index && !isAnimating
+            
+            return (
+              <div
+                key={photo.id}
+                className="relative"
+                style={{
+                  width: `${gridLayout.size}px`,
+                  height: `${gridLayout.size}px`
+                }}
+              >
+                {/* 照片 */}
+                <div className={`
+                  relative w-full h-full bg-white rounded-2xl shadow-xl overflow-hidden
+                  transition-all duration-300
+                  ${highlightedIndex === index 
+                    ? 'ring-8 ring-yellow-400 scale-110 z-20' 
+                    : 'scale-100'
+                  }
+                  ${isWinner
+                    ? 'ring-green-400 scale-110' 
+                    : ''
+                  }
+                `}>
+                  <img
+                    src={photo.image_url}
+                    alt={photo.display_name}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.src = '/default-avatar.png'
+                    }}
+                  />
+                  
+                  {/* 照片資訊 */}
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
+                    <div className="flex items-center space-x-2">
+                      <img
+                        src={photo.avatar_url || '/default-avatar.png'}
+                        alt={photo.display_name}
+                        className="w-8 h-8 rounded-full border-2 border-white"
+                      />
+                      <span className="text-white text-sm font-medium truncate">
+                        {photo.display_name}
+                      </span>
+                    </div>
                   </div>
-                </div>
 
-                {/* 動畫中的高亮框 */}
-                {highlightedIndex === index && (
-                  <div className={`
-                    absolute inset-0 
-                    ${isAnimating ? 'bg-yellow-400/30' : 'bg-green-400/30'}
-                    pointer-events-none
-                    animate-pulse
-                  `} />
-                )}
+                  {/* 動畫中的高亮框 */}
+                  {highlightedIndex === index && (
+                    <div className={`
+                      absolute inset-0 
+                      ${isAnimating ? 'bg-yellow-400/30' : 'bg-green-400/30'}
+                      pointer-events-none
+                      animate-pulse
+                    `} />
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* 中獎照片放大特寫 */}
+      {showingWinner && winnerPhoto && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm animate-in fade-in duration-1000">
+          <div className="text-center animate-in zoom-in duration-1000">
+            {/* 中獎照片 */}
+            <div className="relative mb-8 animate-in slide-in-from-bottom-10 duration-1000">
+              <div className="absolute -inset-4 bg-gradient-to-r from-yellow-400 via-orange-400 to-pink-400 rounded-3xl animate-pulse blur-xl opacity-75"></div>
+              <img
+                src={winnerPhoto.image_url}
+                alt={winnerPhoto.display_name}
+                className="relative w-[600px] h-[600px] object-cover rounded-3xl border-8 border-white shadow-2xl"
+                onError={(e) => {
+                  e.currentTarget.src = '/default-avatar.png'
+                }}
+              />
+            </div>
+
+            {/* 中獎者資訊 */}
+            <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl p-10 max-w-3xl mx-auto animate-in slide-in-from-bottom-8 duration-1000 delay-300">
+              <div className="flex items-center justify-center space-x-8">
+                <img
+                  src={winnerPhoto.avatar_url || '/default-avatar.png'}
+                  alt={winnerPhoto.display_name}
+                  className="w-32 h-32 rounded-full border-8 border-green-400 shadow-lg"
+                />
+                <div className="flex-1 text-left">
+                  <div className="flex items-center space-x-4 mb-4">
+                    <Gift className="w-12 h-12 text-green-500" />
+                    <h2 className="text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-500 to-emerald-500">
+                      {winnerPhoto.display_name}
+                    </h2>
+                  </div>
+                  {winnerPhoto.blessing_message && (
+                    <div className="flex items-start space-x-3">
+                      <Heart className="w-8 h-8 text-red-500 mt-1 flex-shrink-0" />
+                      <p className="text-2xl text-gray-700 italic leading-relaxed">
+                        「{winnerPhoto.blessing_message}」
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-          ))}
-        </div>
 
-        {/* 中獎者資訊卡片 */}
-        {!isAnimating && winnerPhoto && highlightedIndex !== -1 && (
-          <div className="mt-10 bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl p-8 max-w-2xl mx-auto">
-            <div className="flex items-center space-x-6">
-              <img
-                src={winnerPhoto.avatar_url || '/default-avatar.png'}
-                alt={winnerPhoto.display_name}
-                className="w-24 h-24 rounded-full border-8 border-green-400 shadow-lg"
-              />
-              <div className="flex-1">
-                <div className="flex items-center space-x-3 mb-2">
-                  <Gift className="w-8 h-8 text-green-500" />
-                  <h2 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-500 to-emerald-500">
-                    {winnerPhoto.display_name}
-                  </h2>
-                </div>
-                {winnerPhoto.blessing_message && (
-                  <p className="text-lg text-gray-600 italic">
-                    「{winnerPhoto.blessing_message}」
-                  </p>
-                )}
-              </div>
-              <Heart className="w-12 h-12 text-red-500 animate-pulse" />
+            {/* 恭喜文字 */}
+            <div className="mt-8 animate-in slide-in-from-bottom-6 duration-1000 delay-500">
+              <h1 className="text-8xl font-bold text-white drop-shadow-2xl animate-pulse">
+                🎉 恭喜中獎 🎉
+              </h1>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
       </div>
     </div>
   )
