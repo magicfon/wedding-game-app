@@ -328,20 +328,18 @@ export default function LotteryLivePage() {
       // 先觸發縮放動畫
       setZoomingWinner(true)
       
-      // 500ms 後（縮放動畫完成）切換到完整顯示
+      // 800ms 後（縮放動畫完成）切換到完整顯示
       setTimeout(() => {
         setShowingWinner(true)
         setZoomingWinner(false)
+        console.log('✅ 中獎畫面顯示完成，等待管理員操作...')
       }, 800)
     }, 1500)
     
-    // 慶祝效果持續 10 秒
-    setTimeout(() => {
-      console.log('✅ 慶祝結束')
-      setCelebrating(false)
-      setShowingWinner(false)
-      setZoomingWinner(false)
-    }, 10000)
+    // 不再自動關閉，畫面會持續顯示直到：
+    // 1. 管理員點擊「重置狀態」
+    // 2. 管理員開始新的抽獎
+    // 這些操作會觸發 handleNewDraw，自動重置所有狀態
   }
 
   // 找出中獎照片
