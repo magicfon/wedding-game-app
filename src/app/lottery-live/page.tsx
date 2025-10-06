@@ -557,24 +557,45 @@ export default function LotteryLivePage() {
         </div>
       </div>
 
-      {/* 中獎照片放大動畫 - 從原位置放大到中央 */}
+      {/* 中獎照片放大動畫 - 從原位置放大到左側900x900位置 */}
       {!isAnimating && zoomingWinner && winnerPhoto && winnerPhotoRect && (() => {
-        // 計算中心位置（考慮縮放後的容器）
-        const centerX = window.innerWidth / 2
-        const centerY = window.innerHeight / 2
+        // 目標尺寸（左側大照片）
+        const targetSize = 900
         
-        // 目標尺寸
-        const targetSize = 600
+        // 計算目標位置（左側照片的中心位置）
+        // 設計尺寸: 1920x1080, padding: 32px
+        // 左側照片位置: 32px + 900px/2 = 482px (從設計稿左側算)
+        const designLeftPhotoCenter = 32 + targetSize / 2  // 482px
         
-        // 計算需要移動的距離（到達螢幕中央）
+        // 考慮縮放比例，計算實際螢幕上的位置
+        const screenCenterY = window.innerHeight / 2
+        
+        // 計算左側照片在實際螢幕上的中心 X 位置
+        // 使用 scale 來計算實際位置
+        const scaledDesignWidth = DESIGN_WIDTH * scale
+        const screenOffsetX = (window.innerWidth - scaledDesignWidth) / 2
+        const targetCenterX = screenOffsetX + designLeftPhotoCenter * scale
+        
+        // 計算當前照片的中心位置
         const currentCenterX = winnerPhotoRect.left + winnerPhotoRect.width / 2
         const currentCenterY = winnerPhotoRect.top + winnerPhotoRect.height / 2
         
-        const translateX = centerX - currentCenterX
-        const translateY = centerY - currentCenterY
+        // 計算需要移動的距離
+        const translateX = targetCenterX - currentCenterX
+        const translateY = screenCenterY - currentCenterY
         
         // 計算縮放比例
-        const scaleFactor = targetSize / winnerPhotoRect.width
+        const scaleFactor = (targetSize * scale) / winnerPhotoRect.width
+        
+        console.log('🎬 放大動畫參數:', {
+          targetSize,
+          scale,
+          targetCenterX,
+          currentCenterX,
+          translateX,
+          translateY,
+          scaleFactor
+        })
         
         return (
           <div 
@@ -591,7 +612,7 @@ export default function LotteryLivePage() {
             } as React.CSSProperties}
           >
             <div className="relative w-full h-full">
-              <div className="absolute -inset-4 bg-gradient-to-r from-yellow-400 via-orange-400 to-pink-400 rounded-3xl animate-pulse blur-xl opacity-75"></div>
+              <div className="absolute -inset-6 bg-gradient-to-r from-yellow-400 via-orange-400 to-pink-400 rounded-3xl animate-pulse blur-2xl opacity-75"></div>
               <img
                 src={winnerPhoto.image_url}
                 alt={winnerPhoto.display_name}
