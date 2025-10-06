@@ -307,8 +307,6 @@ export default function LotteryLivePage() {
     )
   }
 
-  const carouselItems = getCarouselItems()
-
   return (
     <div data-lottery-live className="w-screen h-screen bg-black flex items-center justify-center overflow-hidden fixed inset-0">
       {/* 固定尺寸容器 + 縮放 */}
