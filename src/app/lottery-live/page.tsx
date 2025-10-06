@@ -40,19 +40,14 @@ export default function LotteryLivePage() {
   const [isAnimating, setIsAnimating] = useState(false)
   const [celebrating, setCelebrating] = useState(false)
   const [scale, setScale] = useState(1)
-  const [carouselOffset, setCarouselOffset] = useState(0)
+  const [highlightedIndex, setHighlightedIndex] = useState(-1)
   
   const animationFrameRef = useRef<number | null>(null)
-  const velocityRef = useRef<number>(0)
-  const positionRef = useRef<number>(0)
-  const carouselRef = useRef<HTMLDivElement>(null)
-  
   const supabase = createSupabaseBrowser()
 
   // 固定設計尺寸 (基準: 1920x1080)
   const DESIGN_WIDTH = 1920
   const DESIGN_HEIGHT = 1080
-  const ITEM_WIDTH = 320 // 照片寬度 (288px) + 間距 (32px)
 
   // 計算縮放比例以適應視窗大小（針對全螢幕播放優化）
   useEffect(() => {
@@ -165,71 +160,73 @@ export default function LotteryLivePage() {
     }
 
     setIsAnimating(true)
+    setHighlightedIndex(-1)
     
-    // 詳細 log 除錯
-    console.log('開始抽獎動畫')
-    console.log('中獎者資料:', winner)
+    console.log('🎰 開始抽獎動畫')
+    console.log('中獎者:', winner.winner_display_name)
     console.log('中獎者 LINE ID:', winner.winner_line_id)
-    console.log('照片列表:', photos.map(p => ({
-      id: p.id,
-      user_id: p.user_id,
-      display_name: p.display_name
-    })))
     
-    // 找到中獎照片的索引（在原始列表中）
-    const winnerIndex = photos.findIndex(p => {
-      console.log(`比對: ${p.user_id} === ${winner.winner_line_id} ?`, p.user_id === winner.winner_line_id)
-      return p.user_id === winner.winner_line_id
-    })
+    // 找到中獎照片的索引
+    const winnerIndex = photos.findIndex(p => p.user_id === winner.winner_line_id)
     
     if (winnerIndex === -1) {
-      console.error('找不到中獎照片！')
+      console.error('❌ 找不到中獎照片！')
       console.error('中獎者 ID:', winner.winner_line_id)
-      console.error('所有照片的 user_id:', photos.map(p => p.user_id))
+      console.error('照片列表:', photos.map(p => ({ id: p.id, user_id: p.user_id, name: p.display_name })))
+      // 即使找不到，也隨機顯示一張
+      const randomIndex = Math.floor(Math.random() * photos.length)
+      animateSelection(randomIndex)
       return
     }
 
-    // 計算目標位置：讓中獎照片停在正中央
-    const centerPosition = DESIGN_WIDTH / 2 - ITEM_WIDTH / 2
-    const targetPosition = -(winnerIndex * ITEM_WIDTH) + centerPosition
-    
-    // 為了讓動畫看起來轉了很多圈，加上額外的距離
-    // 至少轉 5 圈（5 * photos.length * ITEM_WIDTH）
-    const extraDistance = photos.length * ITEM_WIDTH * 5
-    const finalTarget = targetPosition - extraDistance
+    console.log('✅ 找到中獎照片，索引:', winnerIndex)
+    animateSelection(winnerIndex)
+  }
 
-    console.log('Animation start:', {
-      winnerIndex,
-      centerPosition,
-      targetPosition,
-      finalTarget,
-      photosLength: photos.length
-    })
-
+  const animateSelection = (targetIndex: number) => {
     // 動畫參數
     const startTime = Date.now()
     const duration = 10000 // 10秒
-    const startPosition = 0 // 總是從0開始
+    let lastJumpTime = startTime
+    let currentIndex = Math.floor(Math.random() * photos.length)
+    
+    // 跳動間隔函數 (越來越慢)
+    const getJumpInterval = (progress: number) => {
+      // 從 50ms 逐漸變慢到 1000ms
+      return 50 + progress * progress * 950
+    }
 
     const animate = () => {
       const elapsed = Date.now() - startTime
       const progress = Math.min(elapsed / duration, 1)
+      const now = Date.now()
 
-      // 使用緩出函數 (ease-out cubic)
-      const easeOutCubic = 1 - Math.pow(1 - progress, 3)
+      // 檢查是否該跳到下一張照片
+      const jumpInterval = getJumpInterval(progress)
       
-      // 計算當前位置（從 startPosition 到 finalTarget）
-      const currentPosition = startPosition + easeOutCubic * (finalTarget - startPosition)
-      
-      // 更新位置
-      setCarouselOffset(currentPosition)
+      if (now - lastJumpTime >= jumpInterval) {
+        lastJumpTime = now
+        
+        if (progress < 0.95) {
+          // 還沒接近結束，隨機跳動
+          currentIndex = Math.floor(Math.random() * photos.length)
+        } else {
+          // 接近結束，逐步接近目標
+          const distance = targetIndex - currentIndex
+          if (distance !== 0) {
+            currentIndex += distance > 0 ? 1 : -1
+          }
+        }
+        
+        setHighlightedIndex(currentIndex)
+      }
 
       if (progress < 1) {
         // 繼續動畫
         animationFrameRef.current = requestAnimationFrame(animate)
       } else {
-        // 動畫結束，儲存最終位置
-        positionRef.current = finalTarget
+        // 動畫結束，確保停在目標位置
+        setHighlightedIndex(targetIndex)
         setIsAnimating(false)
         startCelebration()
       }
@@ -370,113 +367,98 @@ export default function LotteryLivePage() {
         </p>
       </div>
 
-      {/* 跑馬燈容器 */}
-      <div className="relative w-full max-w-7xl z-10">
-        {/* 中間高亮框 */}
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-96 z-20 pointer-events-none">
-          <div className={`w-full h-full border-8 rounded-3xl shadow-2xl ${
-            isAnimating 
-              ? 'border-yellow-400 animate-pulse' 
-              : 'border-green-400 scale-110'
-          }`}>
-            <div className={`absolute inset-0 rounded-3xl ${
-              isAnimating 
-                ? 'bg-yellow-400 opacity-20' 
-                : 'bg-green-400 opacity-30'
-            }`}></div>
-          </div>
-          <div className={`absolute -top-16 left-1/2 -translate-x-1/2 text-4xl font-bold whitespace-nowrap ${
-            isAnimating 
-              ? 'text-yellow-300' 
-              : 'text-green-300 animate-bounce'
-          }`}>
-            {isAnimating ? '⬇️ 中獎照片 ⬇️' : '✨ 得獎者 ✨'}
-          </div>
-          
-          {/* 停止後顯示中獎者資訊 */}
-          {!isAnimating && winnerPhoto && (
-            <div className="absolute -bottom-24 left-1/2 -translate-x-1/2 bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl p-6 min-w-[400px]">
-              <div className="flex items-center space-x-4">
+      {/* 照片 Grid 顯示 */}
+      <div className="relative z-10 px-10">
+        <div 
+          className="grid gap-5 justify-center items-center"
+          style={{
+            gridTemplateColumns: `repeat(${gridLayout.cols}, ${gridLayout.size}px)`
+          }}
+        >
+          {photos.map((photo, index) => (
+            <div
+              key={photo.id}
+              className="relative"
+              style={{
+                width: `${gridLayout.size}px`,
+                height: `${gridLayout.size}px`
+              }}
+            >
+              {/* 照片 */}
+              <div className={`
+                relative w-full h-full bg-white rounded-2xl shadow-xl overflow-hidden
+                transition-all duration-300
+                ${highlightedIndex === index 
+                  ? 'ring-8 ring-yellow-400 scale-110 z-20' 
+                  : 'scale-100'
+                }
+                ${!isAnimating && highlightedIndex === index 
+                  ? 'ring-green-400 scale-110' 
+                  : ''
+                }
+              `}>
                 <img
-                  src={winnerPhoto.avatar_url || '/default-avatar.png'}
-                  alt={winnerPhoto.display_name}
-                  className="w-16 h-16 rounded-full border-4 border-green-400"
+                  src={photo.image_url}
+                  alt={photo.display_name}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.src = '/default-avatar.png'
+                  }}
                 />
-                <div className="flex-1">
-                  <h3 className="text-2xl font-bold text-gray-800">
-                    {winnerPhoto.display_name}
-                  </h3>
-                  {winnerPhoto.blessing_message && (
-                    <p className="text-sm text-gray-600 mt-1">
-                      {winnerPhoto.blessing_message}
-                    </p>
-                  )}
-                </div>
-                <Heart className="w-8 h-8 text-red-500 animate-pulse" />
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* 跑馬燈照片輪播 */}
-        <div className="overflow-hidden py-8">
-          <div 
-            ref={carouselRef}
-            className="flex space-x-8"
-            style={{
-              transform: `translateX(${carouselOffset}px)`,
-              willChange: 'transform'
-            }}
-          >
-            {carouselItems.map((photo, index) => (
-              <div
-                key={`${photo.id}-${index}`}
-                className="flex-shrink-0 w-72"
-              >
-                <div className="bg-white rounded-3xl shadow-2xl p-4 transform transition-all">
-                  <div className="relative">
+                
+                {/* 照片資訊 */}
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
+                  <div className="flex items-center space-x-2">
                     <img
-                      src={photo.image_url}
+                      src={photo.avatar_url || '/default-avatar.png'}
                       alt={photo.display_name}
-                      className="w-64 h-64 rounded-2xl object-cover mx-auto"
-                      onError={(e) => {
-                        e.currentTarget.src = '/default-avatar.png'
-                      }}
+                      className="w-8 h-8 rounded-full border-2 border-white"
                     />
-                    <div className="absolute bottom-2 left-2 right-2 bg-black/60 backdrop-blur-sm rounded-xl p-2">
-                      <div className="flex items-center space-x-2">
-                        <img
-                          src={photo.avatar_url || '/default-avatar.png'}
-                          alt={photo.display_name}
-                          className="w-8 h-8 rounded-full border-2 border-white"
-                        />
-                        <span className="text-white text-sm font-medium truncate">
-                          {photo.display_name}
-                        </span>
-                      </div>
-                    </div>
+                    <span className="text-white text-sm font-medium truncate">
+                      {photo.display_name}
+                    </span>
                   </div>
                 </div>
+
+                {/* 動畫中的高亮框 */}
+                {highlightedIndex === index && (
+                  <div className={`
+                    absolute inset-0 
+                    ${isAnimating ? 'bg-yellow-400/30' : 'bg-green-400/30'}
+                    pointer-events-none
+                    animate-pulse
+                  `} />
+                )}
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
 
-        {/* 左右漸變遮罩 */}
-        <div className="absolute left-0 top-0 bottom-0 w-64 bg-gradient-to-r from-purple-600 to-transparent pointer-events-none z-10"></div>
-        <div className="absolute right-0 top-0 bottom-0 w-64 bg-gradient-to-l from-orange-500 to-transparent pointer-events-none z-10"></div>
-      </div>
-
-      {/* 底部提示文字 */}
-      <div className="text-center mt-8 z-10">
-        {isAnimating ? (
-          <p className="text-3xl text-white font-bold animate-bounce">
-            ✨ 敬請期待... ✨
-          </p>
-        ) : winnerPhoto && (
-          <p className="text-4xl text-white font-bold animate-pulse">
-            🎊 恭喜獲得精美禮品！ 🎊
-          </p>
+        {/* 中獎者資訊卡片 */}
+        {!isAnimating && winnerPhoto && highlightedIndex !== -1 && (
+          <div className="mt-10 bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl p-8 max-w-2xl mx-auto">
+            <div className="flex items-center space-x-6">
+              <img
+                src={winnerPhoto.avatar_url || '/default-avatar.png'}
+                alt={winnerPhoto.display_name}
+                className="w-24 h-24 rounded-full border-8 border-green-400 shadow-lg"
+              />
+              <div className="flex-1">
+                <div className="flex items-center space-x-3 mb-2">
+                  <Gift className="w-8 h-8 text-green-500" />
+                  <h2 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-500 to-emerald-500">
+                    {winnerPhoto.display_name}
+                  </h2>
+                </div>
+                {winnerPhoto.blessing_message && (
+                  <p className="text-lg text-gray-600 italic">
+                    「{winnerPhoto.blessing_message}」
+                  </p>
+                )}
+              </div>
+              <Heart className="w-12 h-12 text-red-500 animate-pulse" />
+            </div>
+          </div>
         )}
       </div>
       </div>
