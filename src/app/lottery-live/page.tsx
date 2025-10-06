@@ -47,16 +47,18 @@ export default function LotteryLivePage() {
   const DESIGN_WIDTH = 1920
   const DESIGN_HEIGHT = 1080
 
-  // 計算縮放比例以適應視窗大小
+  // 計算縮放比例以適應視窗大小（針對全螢幕播放優化）
   useEffect(() => {
     const updateScale = () => {
       const windowWidth = window.innerWidth
       const windowHeight = window.innerHeight
       
-      // 計算寬高比例，取較小的以確保完整顯示
+      // 計算寬高比例
       const scaleX = windowWidth / DESIGN_WIDTH
       const scaleY = windowHeight / DESIGN_HEIGHT
-      const newScale = Math.min(scaleX, scaleY, 1) // 最大不超過 1
+      
+      // 針對 16:9 全螢幕：使用較大的比例填滿畫面
+      const newScale = Math.max(scaleX, scaleY)
       
       setScale(newScale)
     }
@@ -233,7 +235,7 @@ export default function LotteryLivePage() {
   const carouselItems = getCarouselItems()
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center overflow-hidden">
+    <div data-lottery-live className="w-screen h-screen bg-black flex items-center justify-center overflow-hidden fixed inset-0">
       {/* 固定尺寸容器 + 縮放 */}
       <div 
         className="bg-gradient-to-br from-purple-600 via-pink-500 to-orange-500 flex flex-col items-center justify-center overflow-hidden relative"
@@ -241,8 +243,7 @@ export default function LotteryLivePage() {
           width: `${DESIGN_WIDTH}px`,
           height: `${DESIGN_HEIGHT}px`,
           transform: `scale(${scale})`,
-          transformOrigin: 'center center',
-          transition: 'transform 0.3s ease-out'
+          transformOrigin: 'center center'
         }}
       >
       {/* 背景動畫 */}
