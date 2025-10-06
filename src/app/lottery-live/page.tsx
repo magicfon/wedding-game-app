@@ -477,7 +477,7 @@ export default function LotteryLivePage() {
       {/* 標題 */}
       <div className="text-center mb-8 z-10">
         <h1 className={`text-6xl font-bold text-white mb-4 ${isAnimating ? 'animate-pulse' : ''}`}>
-          {isAnimating ? '🎰 抽獎中 🎰' : '🎉 恭喜中獎 🎉'}
+          {isAnimating ? '🎰 抽獎中 🎰' : (currentDraw ? '🎉 恭喜中獎 🎉' : '📸 照片摸彩 📸')}
         </h1>
         <p className="text-2xl text-white opacity-90">
           參與照片數：{photos.length} 張
