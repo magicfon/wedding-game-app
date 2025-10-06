@@ -162,52 +162,70 @@ export default function LotteryLivePage() {
     if (photos.length === 0) {
       console.log('⚠️ 照片尚未載入，現在載入...')
       await fetchPhotos()
-      // 等待 state 更新
-      await new Promise(resolve => setTimeout(resolve, 100))
+      // 等待一下讓 state 更新
+      await new Promise(resolve => setTimeout(resolve, 200))
     }
     
-    // 開始跑馬燈動畫
-    startCarouselAnimation(newDraw)
+    // 重新獲取最新的照片列表
+    const response = await fetch('/api/lottery/photos')
+    const data = await response.json()
+    
+    if (data.success && data.photos && data.photos.length > 0) {
+      const currentPhotos = data.photos
+      console.log(`📸 使用 ${currentPhotos.length} 張照片進行抽獎`)
+      
+      // 找到中獎照片的索引
+      const winnerIndex = currentPhotos.findIndex((p: Photo) => p.user_id === newDraw.winner_line_id)
+      
+      if (winnerIndex === -1) {
+        console.error('❌ 找不到中獎照片！')
+        console.error('中獎者 ID:', newDraw.winner_line_id)
+        console.error('照片列表:', currentPhotos.map((p: Photo) => ({ id: p.id, user_id: p.user_id, name: p.display_name })))
+        // 即使找不到，也隨機顯示一張
+        const randomIndex = Math.floor(Math.random() * currentPhotos.length)
+        startCarouselAnimationWithPhotos(currentPhotos, randomIndex)
+        return
+      }
+      
+      console.log('✅ 找到中獎照片，索引:', winnerIndex)
+      startCarouselAnimationWithPhotos(currentPhotos, winnerIndex)
+    } else {
+      console.error('❌ 無法載入照片進行抽獎')
+    }
   }
 
-  const startCarouselAnimation = (winner: CurrentDraw) => {
+  const startCarouselAnimationWithPhotos = (photosToUse: Photo[], targetIndex: number) => {
     // 取消之前的動畫
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current)
     }
 
+    // 確保 photos state 也是最新的
+    setPhotos(photosToUse)
     setIsAnimating(true)
     setHighlightedIndex(-1)
     
     console.log('🎰 開始抽獎動畫')
-    console.log('中獎者:', winner.winner_display_name)
-    console.log('中獎者 LINE ID:', winner.winner_line_id)
+    console.log('使用照片數:', photosToUse.length)
+    console.log('目標索引:', targetIndex)
     
-    // 找到中獎照片的索引
-    const winnerIndex = photos.findIndex(p => p.user_id === winner.winner_line_id)
-    
-    if (winnerIndex === -1) {
-      console.error('❌ 找不到中獎照片！')
-      console.error('中獎者 ID:', winner.winner_line_id)
-      console.error('照片列表:', photos.map(p => ({ id: p.id, user_id: p.user_id, name: p.display_name })))
-      // 即使找不到，也隨機顯示一張
-      const randomIndex = Math.floor(Math.random() * photos.length)
-      animateSelection(randomIndex)
-      return
-    }
-
-    console.log('✅ 找到中獎照片，索引:', winnerIndex)
-    animateSelection(winnerIndex)
+    animateSelection(targetIndex, photosToUse)
   }
 
-  const animateSelection = (targetIndex: number) => {
-    console.log('🎯 開始跳動動畫，目標索引:', targetIndex, '照片總數:', photos.length)
+  const animateSelection = (targetIndex: number, photosToUse: Photo[]) => {
+    const photoCount = photosToUse.length
+    console.log('🎯 開始跳動動畫，目標索引:', targetIndex, '照片總數:', photoCount)
+    
+    if (photoCount === 0) {
+      console.error('❌ 沒有照片可以進行動畫！')
+      return
+    }
     
     // 動畫參數
     const startTime = Date.now()
     const duration = 10000 // 10秒
     let lastJumpTime = startTime - 100 // 立即觸發第一次跳動
-    let currentIndex = Math.floor(Math.random() * photos.length)
+    let currentIndex = Math.floor(Math.random() * photoCount)
     
     // 立即顯示第一個框框
     setHighlightedIndex(currentIndex)
@@ -232,7 +250,7 @@ export default function LotteryLivePage() {
         
         if (progress < 0.95) {
           // 還沒接近結束，隨機跳動
-          currentIndex = Math.floor(Math.random() * photos.length)
+          currentIndex = Math.floor(Math.random() * photoCount)
         } else {
           // 接近結束，逐步接近目標
           const distance = targetIndex - currentIndex
