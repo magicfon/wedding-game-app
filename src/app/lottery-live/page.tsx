@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createSupabaseBrowser } from '@/lib/supabase'
 import { Gift, Sparkles, Heart } from 'lucide-react'
 
@@ -38,14 +38,21 @@ export default function LotteryLivePage() {
   const [currentDraw, setCurrentDraw] = useState<CurrentDraw | null>(null)
   const [photos, setPhotos] = useState<Photo[]>([])
   const [isAnimating, setIsAnimating] = useState(false)
-  const [animationSpeed, setAnimationSpeed] = useState(0.5)
   const [celebrating, setCelebrating] = useState(false)
   const [scale, setScale] = useState(1)
+  const [carouselOffset, setCarouselOffset] = useState(0)
+  
+  const animationFrameRef = useRef<number>()
+  const velocityRef = useRef(0)
+  const positionRef = useRef(0)
+  const carouselRef = useRef<HTMLDivElement>(null)
+  
   const supabase = createSupabaseBrowser()
 
   // 固定設計尺寸 (基準: 1920x1080)
   const DESIGN_WIDTH = 1920
   const DESIGN_HEIGHT = 1080
+  const ITEM_WIDTH = 320 // 照片寬度 (288px) + 間距 (32px)
 
   // 計算縮放比例以適應視窗大小（針對全螢幕播放優化）
   useEffect(() => {
@@ -152,35 +159,72 @@ export default function LotteryLivePage() {
   }
 
   const startCarouselAnimation = (winner: CurrentDraw) => {
+    // 取消之前的動畫
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current)
+    }
+
     setIsAnimating(true)
-    setAnimationSpeed(0.3) // 更快開始
     
-    // 階段 1: 快速滾動 (3秒)
-    setTimeout(() => {
-      setAnimationSpeed(0.6)
-    }, 3000)
+    // 找到中獎照片的索引（在原始列表中）
+    const winnerIndex = photos.findIndex(p => p.user_id === winner.winner_line_id)
+    if (winnerIndex === -1) {
+      console.error('找不到中獎照片')
+      return
+    }
+
+    // 計算目標位置：讓中獎照片停在正中央
+    // 中心位置是 DESIGN_WIDTH / 2
+    // 減去中獎照片應該在的位置
+    const centerPosition = DESIGN_WIDTH / 2 - ITEM_WIDTH / 2
+    const targetPosition = -(winnerIndex * ITEM_WIDTH) + centerPosition
     
-    // 階段 2: 減速 (2秒)
-    setTimeout(() => {
-      setAnimationSpeed(1.2)
-    }, 5000)
-    
-    // 階段 3: 更慢 (2秒)
-    setTimeout(() => {
-      setAnimationSpeed(2.5)
-    }, 7000)
-    
-    // 階段 4: 很慢 (2秒)
-    setTimeout(() => {
-      setAnimationSpeed(5)
-    }, 9000)
-    
-    // 階段 5: 停止 (10秒後)
-    setTimeout(() => {
-      setIsAnimating(false)
-      startCelebration()
-    }, 10000)
+    // 為了讓動畫看起來轉了很多圈，加上額外的距離
+    // 至少轉 5 圈（5 * photos.length * ITEM_WIDTH）
+    const extraDistance = photos.length * ITEM_WIDTH * 5
+    const finalTarget = targetPosition - extraDistance
+
+    // 動畫參數
+    const startTime = Date.now()
+    const duration = 10000 // 10秒
+    let currentPosition = positionRef.current
+
+    const animate = () => {
+      const elapsed = Date.now() - startTime
+      const progress = Math.min(elapsed / duration, 1)
+
+      // 使用緩出函數 (ease-out cubic)
+      const easeOutCubic = 1 - Math.pow(1 - progress, 3)
+      
+      // 計算當前位置
+      currentPosition = easeOutCubic * (finalTarget - positionRef.current) + positionRef.current
+      
+      // 更新位置
+      positionRef.current = currentPosition
+      setCarouselOffset(currentPosition)
+
+      if (progress < 1) {
+        // 繼續動畫
+        animationFrameRef.current = requestAnimationFrame(animate)
+      } else {
+        // 動畫結束
+        setIsAnimating(false)
+        startCelebration()
+      }
+    }
+
+    // 開始動畫
+    animationFrameRef.current = requestAnimationFrame(animate)
   }
+
+  // 清理動畫
+  useEffect(() => {
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current)
+      }
+    }
+  }, [])
 
   const startCelebration = () => {
     setCelebrating(true)
@@ -193,8 +237,13 @@ export default function LotteryLivePage() {
   // 生成重複的照片陣列以形成無限輪播效果
   const getCarouselItems = () => {
     if (photos.length === 0) return []
-    // 重複3次以確保流暢的輪播
-    return [...photos, ...photos, ...photos]
+    // 重複多次以確保轉夠多圈（至少10圈）
+    const repeats = 10
+    const items = []
+    for (let i = 0; i < repeats; i++) {
+      items.push(...photos)
+    }
+    return items
   }
 
   // 找出中獎照片（停止時在中間的照片）
@@ -350,16 +399,11 @@ export default function LotteryLivePage() {
         {/* 跑馬燈照片輪播 */}
         <div className="overflow-hidden py-8">
           <div 
-            className={`flex space-x-8 ${isAnimating ? 'carousel-scroll' : ''}`}
+            ref={carouselRef}
+            className="flex space-x-8"
             style={{
-              animationDuration: isAnimating ? `${animationSpeed}s` : 'none',
-              animationTimingFunction: 'linear',
-              animationPlayState: isAnimating ? 'running' : 'paused',
-              // 停止時，確保中獎照片在中間（使用固定寬度，不受視窗縮放影響）
-              transform: !isAnimating && winnerPhoto ? `translateX(calc(${DESIGN_WIDTH / 2}px - ${
-                (carouselItems.findIndex(p => p.id === winnerPhoto.id) % carouselItems.length) * 320
-              }px - 144px))` : undefined,
-              transition: !isAnimating ? 'transform 0.5s ease-out' : undefined
+              transform: `translateX(${carouselOffset}px)`,
+              willChange: 'transform'
             }}
           >
             {carouselItems.map((photo, index) => (
@@ -367,11 +411,7 @@ export default function LotteryLivePage() {
                 key={`${photo.id}-${index}`}
                 className="flex-shrink-0 w-72"
               >
-                <div className={`bg-white rounded-3xl shadow-2xl p-4 transform transition-all ${
-                  !isAnimating && winnerPhoto && photo.id === winnerPhoto.id 
-                    ? 'scale-105 ring-4 ring-green-400' 
-                    : ''
-                }`}>
+                <div className="bg-white rounded-3xl shadow-2xl p-4 transform transition-all">
                   <div className="relative">
                     <img
                       src={photo.image_url}
