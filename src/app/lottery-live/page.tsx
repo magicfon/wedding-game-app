@@ -253,26 +253,33 @@ export default function LotteryLivePage() {
     }, 8000)
   }
 
-  // 生成重複的照片陣列以形成無限輪播效果
-  const getCarouselItems = () => {
-    if (photos.length === 0) return []
-    // 重複多次以確保轉夠多圈（至少10圈）
-    const repeats = 10
-    const items = []
-    for (let i = 0; i < repeats; i++) {
-      items.push(...photos)
-    }
-    return items
-  }
-
-  // 找出中獎照片（停止時在中間的照片）
+  // 找出中獎照片
   const getWinnerPhoto = () => {
     if (!currentDraw || photos.length === 0) return null
-    // 找出中獎者的照片
-    return photos.find(photo => photo.user_id === currentDraw.winner_line_id) || photos[0]
+    return photos.find(photo => photo.user_id === currentDraw.winner_line_id) || null
   }
 
   const winnerPhoto = getWinnerPhoto()
+
+  // 計算每張照片的大小（自動填滿螢幕）
+  const getPhotoGridLayout = () => {
+    const count = photos.length
+    if (count === 0) return { cols: 0, rows: 0, size: 0 }
+    
+    // 計算最佳的行列數
+    const ratio = DESIGN_WIDTH / DESIGN_HEIGHT
+    let cols = Math.ceil(Math.sqrt(count * ratio))
+    let rows = Math.ceil(count / cols)
+    
+    // 計算照片大小（留一些間距）
+    const photoWidth = (DESIGN_WIDTH - (cols + 1) * 20) / cols
+    const photoHeight = (DESIGN_HEIGHT - (rows + 1) * 20 - 200) / rows // 200px 留給標題
+    const size = Math.min(photoWidth, photoHeight, 300) // 最大300px
+    
+    return { cols, rows, size }
+  }
+
+  const gridLayout = getPhotoGridLayout()
 
   // 待機畫面
   if (!lotteryState.is_lottery_active) {
