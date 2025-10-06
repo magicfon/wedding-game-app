@@ -268,8 +268,8 @@ export default function LotteryLivePage() {
     
     // 計算最佳的行列數
     const ratio = DESIGN_WIDTH / DESIGN_HEIGHT
-    let cols = Math.ceil(Math.sqrt(count * ratio))
-    let rows = Math.ceil(count / cols)
+    const cols = Math.ceil(Math.sqrt(count * ratio))
+    const rows = Math.ceil(count / cols)
     
     // 計算照片大小（留一些間距）
     const photoWidth = (DESIGN_WIDTH - (cols + 1) * 20) / cols
