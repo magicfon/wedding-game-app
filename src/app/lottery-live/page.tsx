@@ -121,12 +121,11 @@ export default function LotteryLivePage() {
       const data = await response.json()
       
       if (data.success) {
-        const prevState = lotteryState
         setLotteryState(data.state)
         
-        // 檢測重置操作：is_drawing 從 true 變為 false，且沒有 current_draw_id
-        if (prevState.is_drawing && !data.state.is_drawing && !data.state.current_draw_id) {
-          console.log('🔄 檢測到重置操作')
+        // 檢測重置操作：沒有 current_draw_id 且我們之前有 currentDraw
+        if (!data.state.current_draw_id && currentDraw !== null) {
+          console.log('🔄 檢測到重置操作 - 清除中獎狀態')
           resetToInitialState()
         }
         
