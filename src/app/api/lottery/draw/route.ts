@@ -52,7 +52,32 @@ export async function POST(request: NextRequest) {
     
     console.log(`📊 共有 ${eligibleUsers.length} 位符合資格的用戶`)
     
-    // 3. 更新狀態為「抽獎中」
+    // 3. 排除已經中獎過的用戶
+    const { data: previousWinners, error: winnersError } = await supabase
+      .from('lottery_history')
+      .select('winner_line_id')
+    
+    if (winnersError) {
+      console.error('❌ 查詢歷史中獎者失敗:', winnersError)
+    }
+    
+    const previousWinnerIds = new Set(
+      previousWinners?.map(w => w.winner_line_id) || []
+    )
+    
+    const availableUsers = eligibleUsers.filter(
+      user => !previousWinnerIds.has(user.line_id)
+    )
+    
+    console.log(`📊 排除已中獎者後，剩餘 ${availableUsers.length} 位可抽獎用戶`)
+    
+    if (availableUsers.length === 0) {
+      return NextResponse.json({ 
+        error: '所有符合資格的用戶都已經中獎過了！請清除抽獎歷史記錄後再試。' 
+      }, { status: 400 })
+    }
+    
+    // 4. 更新狀態為「抽獎中」
     const { error: updateStateError } = await supabase
       .from('lottery_state')
       .update({
@@ -66,11 +91,50 @@ export async function POST(request: NextRequest) {
       console.error('❌ 更新抽獎狀態失敗:', updateStateError)
     }
     
-    // 4. 使用加密安全的隨機數生成器抽獎
-    const randomIndex = Math.floor(Math.random() * eligibleUsers.length)
-    const winner = eligibleUsers[randomIndex]
+    // 5. 使用加權抽獎（根據照片數量，設定上限）
+    const maxPhotos = currentState.max_photos_for_lottery || 5
+    console.log(`⚖️ 加權設定：每人最多計算 ${maxPhotos} 張照片`)
     
-    console.log('🎉 中獎者:', winner.display_name, '(照片數:', winner.photo_count, ')')
+    // 建立加權池
+    interface WeightedUser {
+      line_id: string
+      display_name: string
+      avatar_url: string
+      photo_count: number
+    }
+    
+    const weightedPool: WeightedUser[] = []
+    
+    if (maxPhotos === 0) {
+      // 平等機率模式：每人只算一次
+      console.log('📊 使用平等機率模式（不加權）')
+      weightedPool.push(...availableUsers)
+    } else {
+      // 加權模式：根據照片數量
+      console.log('📊 使用加權機率模式')
+      availableUsers.forEach(user => {
+        const effectiveCount = Math.min(user.photo_count, maxPhotos)
+        console.log(`  - ${user.display_name}: ${user.photo_count} 張照片，有效 ${effectiveCount} 次機會`)
+        for (let i = 0; i < effectiveCount; i++) {
+          weightedPool.push(user)
+        }
+      })
+    }
+    
+    console.log(`🎲 加權池總數: ${weightedPool.length}`)
+    
+    // 從加權池中隨機選擇
+    const randomIndex = Math.floor(Math.random() * weightedPool.length)
+    const winner = weightedPool[randomIndex]
+    
+    // 計算中獎機率
+    const winnerEffectiveCount = Math.min(winner.photo_count, maxPhotos || winner.photo_count)
+    const winProbability = ((winnerEffectiveCount / weightedPool.length) * 100).toFixed(2)
+    
+    console.log('🎉 中獎者:', winner.display_name)
+    console.log('   照片數:', winner.photo_count)
+    console.log('   有效機會:', winnerEffectiveCount)
+    console.log('   中獎機率:', `${winProbability}%`)
     
     // 5. 記錄抽獎結果
     const { data: lotteryRecord, error: recordError } = await supabase

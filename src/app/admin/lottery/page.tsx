@@ -40,6 +40,7 @@ interface LotteryState {
   is_lottery_active: boolean
   is_drawing: boolean
   current_draw_id: number | null
+  max_photos_for_lottery: number
 }
 
 export default function LotteryManagePage() {
@@ -48,12 +49,14 @@ export default function LotteryManagePage() {
   const [lotteryState, setLotteryState] = useState<LotteryState>({
     is_lottery_active: false,
     is_drawing: false,
-    current_draw_id: null
+    current_draw_id: null,
+    max_photos_for_lottery: 5
   })
   const [loading, setLoading] = useState(true)
   const [drawing, setDrawing] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
   const [message, setMessage] = useState<{type: 'success' | 'error', text: string} | null>(null)
+  const [maxPhotosInput, setMaxPhotosInput] = useState<number>(5)
   
   const { isLoggedIn, isAdmin, profile, loading: liffLoading, adminLoading } = useLiff()
   const router = useRouter()
@@ -105,6 +108,7 @@ export default function LotteryManagePage() {
       
       if (data.success) {
         setLotteryState(data.state)
+        setMaxPhotosInput(data.state.max_photos_for_lottery || 5)
       }
     } catch (error) {
       console.error('獲取抽獎狀態失敗:', error)
@@ -220,6 +224,38 @@ export default function LotteryManagePage() {
     } catch (error) {
       console.error('重置失敗:', error)
       showMessage('error', '重置失敗')
+    }
+  }
+
+  const handleUpdateMaxPhotos = async () => {
+    if (maxPhotosInput < 0) {
+      showMessage('error', '請輸入有效的數字（0 或以上）')
+      return
+    }
+
+    try {
+      const response = await fetch('/api/lottery/control', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          max_photos_for_lottery: maxPhotosInput,
+          admin_id: profile?.userId
+        }),
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        setLotteryState(data.state)
+        showMessage('success', data.message || '加權設定已更新')
+      } else {
+        showMessage('error', data.error || '更新失敗')
+      }
+    } catch (error) {
+      console.error('更新加權設定失敗:', error)
+      showMessage('error', '更新失敗')
     }
   }
 
@@ -383,6 +419,59 @@ export default function LotteryManagePage() {
               <History className="w-5 h-5" />
               <span>抽獎歷史</span>
             </button>
+          </div>
+
+          {/* 加權設定 */}
+          <div className="mt-6 border-t pt-6">
+            <h3 className="text-lg font-semibold text-gray-800 mb-3">⚖️ 加權抽獎設定</h3>
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4">
+              <div className="flex items-center gap-4">
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    每人最多計算照片數量
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={maxPhotosInput}
+                      onChange={(e) => setMaxPhotosInput(parseInt(e.target.value) || 0)}
+                      className="w-32 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    />
+                    <span className="text-gray-600">張</span>
+                    <button
+                      onClick={handleUpdateMaxPhotos}
+                      className="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors font-medium"
+                    >
+                      更新設定
+                    </button>
+                  </div>
+                  <p className="mt-2 text-xs text-gray-600">
+                    {maxPhotosInput === 0 ? (
+                      <>
+                        <span className="font-semibold text-orange-600">平等機率模式：</span>
+                        每人機率相同，不論上傳多少照片
+                      </>
+                    ) : (
+                      <>
+                        <span className="font-semibold text-blue-600">加權機率模式：</span>
+                        上傳越多照片，中獎機率越高（最多計算 {maxPhotosInput} 張）
+                      </>
+                    )}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm text-gray-600 mb-1">目前設定</div>
+                  <div className="text-3xl font-bold text-purple-600">
+                    {lotteryState.max_photos_for_lottery}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {lotteryState.max_photos_for_lottery === 0 ? '平等' : '加權'}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 

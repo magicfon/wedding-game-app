@@ -50,15 +50,15 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// 更新抽獎狀態（啟動/關閉抽獎模式）
+// 更新抽獎狀態（啟動/關閉抽獎模式，或更新加權設定）
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createSupabaseServer()
     const body = await request.json()
     
-    const { is_lottery_active, admin_id } = body
+    const { is_lottery_active, max_photos_for_lottery, admin_id } = body
     
-    console.log(`🎰 更新抽獎狀態: ${is_lottery_active ? '啟動' : '關閉'} (管理員: ${admin_id})`)
+    console.log(`🎰 更新抽獎設定 (管理員: ${admin_id})`)
     
     // 獲取當前狀態
     const { data: currentState } = await supabase
@@ -72,37 +72,60 @@ export async function POST(request: NextRequest) {
       }, { status: 404 })
     }
     
+    // 準備更新的欄位
+    const updateFields: any = {
+      updated_at: new Date().toISOString()
+    }
+    
+    // 如果提供了 is_lottery_active，更新它
+    if (typeof is_lottery_active === 'boolean') {
+      updateFields.is_lottery_active = is_lottery_active
+      console.log(`  - 抽獎模式: ${is_lottery_active ? '啟動' : '關閉'}`)
+    }
+    
+    // 如果提供了 max_photos_for_lottery，更新它
+    if (typeof max_photos_for_lottery === 'number') {
+      updateFields.max_photos_for_lottery = max_photos_for_lottery
+      console.log(`  - 加權上限: ${max_photos_for_lottery} 張照片${max_photos_for_lottery === 0 ? '（平等機率）' : ''}`)
+    }
+    
     // 更新狀態
     const { data: updatedState, error } = await supabase
       .from('lottery_state')
-      .update({
-        is_lottery_active: is_lottery_active,
-        updated_at: new Date().toISOString()
-      })
+      .update(updateFields)
       .eq('id', currentState.id)
       .select()
       .single()
     
     if (error) {
-      console.error('❌ 更新抽獎狀態失敗:', error)
+      console.error('❌ 更新抽獎設定失敗:', error)
       return NextResponse.json({ 
-        error: '更新抽獎狀態失敗',
+        error: '更新抽獎設定失敗',
         details: error.message 
       }, { status: 500 })
     }
     
-    console.log('✅ 抽獎狀態已更新')
+    console.log('✅ 抽獎設定已更新')
+    
+    let message = '設定已更新'
+    if (typeof is_lottery_active === 'boolean') {
+      message = is_lottery_active ? '抽獎模式已啟動' : '抽獎模式已關閉'
+    }
+    if (typeof max_photos_for_lottery === 'number') {
+      message += (typeof is_lottery_active === 'boolean' ? '，' : '') + 
+                 `加權上限已設為 ${max_photos_for_lottery} 張`
+    }
     
     return NextResponse.json({
       success: true,
       state: updatedState,
-      message: is_lottery_active ? '抽獎模式已啟動' : '抽獎模式已關閉'
+      message
     })
     
   } catch (error) {
-    console.error('❌ 更新抽獎狀態時發生錯誤:', error)
+    console.error('❌ 更新抽獎設定時發生錯誤:', error)
     return NextResponse.json({ 
-      error: '更新抽獎狀態時發生錯誤',
+      error: '更新抽獎設定時發生錯誤',
       details: error instanceof Error ? error.message : '未知錯誤'
     }, { status: 500 })
   }
