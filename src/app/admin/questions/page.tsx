@@ -506,10 +506,11 @@ ${diagnosis.recommendations?.join('\n') || '無建議'}
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         {/* Controls */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <h2 className="text-lg font-semibold text-gray-900">
+        <div className="bg-white rounded-2xl shadow-lg p-4 md:p-6 mb-6">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            {/* 左側：標題和篩選選項 */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 flex-wrap">
+              <h2 className="text-lg font-semibold text-gray-900 whitespace-nowrap">
                 問題列表 ({questions.length} 個問題)
               </h2>
               <label className="flex items-center space-x-2">
@@ -519,7 +520,7 @@ ${diagnosis.recommendations?.join('\n') || '無建議'}
                   onChange={(e) => setShowActiveOnly(e.target.checked)}
                   className="rounded border-gray-300"
                 />
-                <span className="text-sm text-gray-900">只顯示啟用的問題</span>
+                <span className="text-sm text-gray-900 whitespace-nowrap">只顯示啟用的問題</span>
               </label>
               
               {/* 視圖模式切換 */}
@@ -548,28 +549,30 @@ ${diagnosis.recommendations?.join('\n') || '無建議'}
                 </button>
               </div>
             </div>
-            <div className="flex items-center space-x-2">
+            
+            {/* 右側：操作按鈕 */}
+            <div className="flex items-center gap-2 flex-wrap">
               <button
                 onClick={handleMediaDiagnosis}
                 disabled={cleanupLoading}
-                className="flex items-center space-x-2 bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg transition-colors disabled:opacity-50 text-sm"
+                className="flex items-center space-x-2 bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg transition-colors disabled:opacity-50 text-sm whitespace-nowrap"
                 title="診斷媒體清理問題"
               >
                 <AlertCircle className="w-4 h-4" />
-                <span>診斷</span>
+                <span className="hidden sm:inline">診斷</span>
               </button>
               <button
                 onClick={handleMediaCleanup}
                 disabled={cleanupLoading}
-                className="flex items-center space-x-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition-colors disabled:opacity-50"
+                className="flex items-center space-x-2 bg-orange-500 hover:bg-orange-600 text-white px-3 md:px-4 py-2 rounded-lg transition-colors disabled:opacity-50 text-sm whitespace-nowrap"
                 title="清理未使用的媒體檔案"
               >
                 <HardDrive className="w-4 h-4" />
-                <span>{cleanupLoading ? '處理中...' : '媒體清理'}</span>
+                <span className="hidden sm:inline">{cleanupLoading ? '處理中...' : '媒體清理'}</span>
               </button>
               <button
                 onClick={() => setShowForm(true)}
-                className="flex items-center space-x-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors"
+                className="flex items-center space-x-2 bg-green-500 hover:bg-green-600 text-white px-3 md:px-4 py-2 rounded-lg transition-colors text-sm whitespace-nowrap"
               >
                 <Plus className="w-4 h-4" />
                 <span>新增問題</span>
