@@ -174,53 +174,70 @@ export default function AdminLineMenuPage() {
           </div>
 
           {/* 選單項目預覽 */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <span className="font-medium text-gray-900">🎮 遊戲實況</span>
-                <ExternalLink className="w-4 h-4 text-gray-500" />
+          <div className="bg-blue-50 p-4 rounded-lg mb-6">
+            <h3 className="font-semibold text-blue-900 mb-3">📱 LINE 用戶端選單項目</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="bg-white p-4 rounded-lg border border-blue-200">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-medium text-gray-900">🎮 遊戲實況</span>
+                  <ExternalLink className="w-4 h-4 text-blue-500" />
+                </div>
+                <p className="text-sm text-gray-600">/game-live</p>
               </div>
-              <p className="text-sm text-gray-600">https://liff.line.me/{'{LIFF_ID}'}/game-live</p>
+              
+              <div className="bg-white p-4 rounded-lg border border-blue-200">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-medium text-gray-900">❓ 快問快答</span>
+                  <ExternalLink className="w-4 h-4 text-blue-500" />
+                </div>
+                <p className="text-sm text-gray-600">/quiz</p>
+              </div>
+              
+              <div className="bg-white p-4 rounded-lg border border-blue-200">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-medium text-gray-900">📸 照片上傳</span>
+                  <ExternalLink className="w-4 h-4 text-blue-500" />
+                </div>
+                <p className="text-sm text-gray-600">/photo-upload</p>
+              </div>
+              
+              <div className="bg-white p-4 rounded-lg border border-blue-200">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-medium text-gray-900">🖼️ 照片牆</span>
+                  <ExternalLink className="w-4 h-4 text-blue-500" />
+                </div>
+                <p className="text-sm text-gray-600">/photo-wall</p>
+              </div>
+              
+              <div className="bg-white p-4 rounded-lg border border-blue-200">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-medium text-gray-900">🏆 排行榜</span>
+                  <ExternalLink className="w-4 h-4 text-blue-500" />
+                </div>
+                <p className="text-sm text-gray-600">/leaderboard</p>
+              </div>
+              
+              <div className="bg-white p-4 rounded-lg border border-blue-200">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-medium text-gray-900">📊 積分歷史</span>
+                  <ExternalLink className="w-4 h-4 text-blue-500" />
+                </div>
+                <p className="text-sm text-gray-600">/score-history</p>
+              </div>
             </div>
-            
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <span className="font-medium text-gray-900">❓ 快問快答</span>
-                <ExternalLink className="w-4 h-4 text-gray-500" />
-              </div>
-              <p className="text-sm text-gray-600">https://liff.line.me/{'{LIFF_ID}'}/quiz</p>
-            </div>
-            
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <span className="font-medium text-gray-900">📸 照片上傳</span>
-                <ExternalLink className="w-4 h-4 text-gray-500" />
-              </div>
-              <p className="text-sm text-gray-600">https://liff.line.me/{'{LIFF_ID}'}/photo-upload</p>
-            </div>
-            
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <span className="font-medium text-gray-900">🖼️ 照片牆</span>
-                <ExternalLink className="w-4 h-4 text-gray-500" />
-              </div>
-              <p className="text-sm text-gray-600">https://liff.line.me/{'{LIFF_ID}'}/photo-wall</p>
-            </div>
-            
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <span className="font-medium text-gray-900">🏆 排行榜</span>
-                <ExternalLink className="w-4 h-4 text-gray-500" />
-              </div>
-              <p className="text-sm text-gray-600">https://liff.line.me/{'{LIFF_ID}'}/leaderboard</p>
-            </div>
-            
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <span className="font-medium text-gray-900">📊 積分歷史</span>
-                <ExternalLink className="w-4 h-4 text-gray-500" />
-              </div>
-              <p className="text-sm text-gray-600">https://liff.line.me/{'{LIFF_ID}'}/score-history</p>
+          </div>
+
+          {/* 管理後台選單對照 */}
+          <div className="bg-green-50 p-4 rounded-lg">
+            <h3 className="font-semibold text-green-900 mb-3">🔧 管理後台選單對照</h3>
+            <div className="text-green-800 text-sm space-y-2">
+              <p>• 控制台 → 對應 LINE 選單的總入口</p>
+              <p>• 題目管理 → 管理快問快答內容</p>
+              <p>• 照片管理 → 管理照片上傳和照片牆內容</p>
+              <p>• 分數管理/積分歷史 → 對應排行榜和積分歷史</p>
+              <p>• 照片摸彩 → 額外功能，LINE 選單中未顯示</p>
+              <p>• 投票設定 → 照片相關功能設定</p>
+              <p>• LINE 選單 → 管理當前頁面的功能</p>
             </div>
           </div>
         </div>

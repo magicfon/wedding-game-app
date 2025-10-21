@@ -30,15 +30,15 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
   const adminMenuItems = [
     { name: '控制台', href: '/admin/dashboard', icon: BarChart3 },
     { name: '題目管理', href: '/admin/questions', icon: HelpCircle },
-    { name: '批量設定', href: '/admin/batch-settings', icon: Settings },
+    { name: '照片管理', href: '/admin/photos', icon: Camera },
     { name: '分數管理', href: '/admin/scores', icon: Trophy },
     { name: '積分歷史', href: '/admin/score-history', icon: Trophy },
-    { name: '計分規則', href: '/admin/scoring-rules', icon: Settings },
-    { name: 'LINE 選單', href: '/admin/line-menu', icon: Settings },
-    { name: '媒體清理', href: '/admin/media-cleanup', icon: HardDrive },
     { name: '照片摸彩', href: '/admin/lottery', icon: Gift },
-    { name: '用戶管理', href: '/admin/users', icon: Users },
-    { name: '照片管理', href: '/admin/photos', icon: Camera },
+    { name: '投票設定', href: '/admin/voting-settings', icon: Trophy },
+    { name: '批量設定', href: '/admin/batch-settings', icon: Settings },
+    { name: '計分規則', href: '/admin/scoring-rules', icon: Settings },
+    { name: '媒體清理', href: '/admin/media-cleanup', icon: HardDrive },
+    { name: 'LINE 選單', href: '/admin/line-menu', icon: Settings },
     { name: '系統設定', href: '/admin/settings', icon: Settings },
   ]
 
