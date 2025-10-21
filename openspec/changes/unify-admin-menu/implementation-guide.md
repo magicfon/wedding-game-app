@@ -2,11 +2,15 @@
 
 ## 問題總結
 
-所有使用 AdminLayout 的頁面都出現「左上右下」的問題：選單顯示在左上角，內容顯示在右下角，而不是並排顯示。經過多次嘗試，發現問題根源是 AdminLayout 組件的佈局結構存在根本性問題。
+所有使用 AdminLayout 的頁面都出現「左上右下」的問題：選單顯示在左上角，內容顯示在右下角，而不是並排顯示。經過多次嘗試，發現問題根源是 AdminLayout 組件的側邊欄設計存在根本性問題。
+
+## 發現的解決方案
+
+分析「照片上傳」頁面使用的 Layout 組件，發現它採用了覆蓋層（overlay）選單方式，這種方式簡單有效，沒有顯示問題。決定採用相同的方式重新設計 AdminLayout 組件。
 
 ## 解決方案
 
-### 步驟 1: 完全重寫 AdminLayout 組件
+### 步驟 1: 重寫 AdminLayout 組件（採用覆蓋層設計）
 
 替換 `src/components/AdminLayout.tsx` 的內容：
 
@@ -15,13 +19,13 @@
 
 import { useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
-import { 
-  Shield, 
-  HelpCircle, 
-  Users, 
-  Trophy, 
-  Camera, 
-  Settings, 
+import {
+  Shield,
+  HelpCircle,
+  Users,
+  Trophy,
+  Camera,
+  Settings,
   BarChart3,
   Home,
   Menu,
@@ -63,182 +67,104 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      {/* 桌面版佈局 */}
-      <div className="hidden lg:flex h-screen">
-        {/* 左側選單 */}
-        <div className="w-64 bg-white shadow-lg flex-shrink-0">
-          {/* 選單標題 */}
-          <div className="flex items-center justify-center h-16 bg-gradient-to-r from-pink-500 to-purple-600">
-            <div className="flex items-center space-x-2">
-              <Shield className="w-8 h-8 text-white" />
-              <span className="text-xl font-bold text-white">管理員</span>
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b sticky top-0 z-40">
+        <div className="px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between py-4">
+            <div className="flex items-center space-x-4">
+              {/* 漢堡選單按鈕 */}
+              <button
+                onClick={() => setIsMenuOpen(true)}
+                className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <Menu className="w-6 h-6 text-gray-700" />
+              </button>
+              
+              {/* Logo 和標題 */}
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex items-center justify-center">
+                  <Shield className="w-6 h-6 text-white" />
+                </div>
+                <h1 className="text-xl font-bold text-gray-800">
+                  {title || '管理員控制台'}
+                </h1>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-4">
+              <div className="text-sm text-gray-500">
+                {new Date().toLocaleDateString('zh-TW', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                  weekday: 'long'
+                })}
+              </div>
             </div>
           </div>
+        </div>
+      </header>
 
-          {/* 選單項目 */}
-          <nav className="mt-8">
-            <div className="px-4 space-y-2">
+      {/* 選單覆蓋層 */}
+      {isMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-50"
+          onClick={() => setIsMenuOpen(false)}
+        >
+          <div
+            className="fixed left-0 top-0 h-full w-80 bg-white shadow-xl transform transition-transform"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* 選單標題 */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex items-center justify-center">
+                  <Shield className="w-5 h-5 text-white" />
+                </div>
+                <h2 className="text-lg font-semibold text-gray-800">管理員選單</h2>
+              </div>
+              <button
+                onClick={() => setIsMenuOpen(false)}
+                className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <X className="w-6 h-6 text-gray-700" />
+              </button>
+            </div>
+
+            {/* 選單項目 */}
+            <nav className="p-4 space-y-2">
               {adminMenuItems.map((item) => (
                 <button
                   key={item.href}
                   onClick={() => handleMenuClick(item.href)}
-                  className={`w-full flex items-center space-x-3 px-4 py-3 text-left rounded-lg transition-colors ${
+                  className={`w-full flex items-center space-x-3 p-3 rounded-lg transition-colors text-left ${
                     pathname === item.href
-                      ? 'bg-pink-100 text-pink-700 border-r-4 border-pink-500'
-                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                      ? 'bg-pink-100 text-pink-700'
+                      : 'hover:bg-gray-100 text-gray-700'
                   }`}
                 >
                   <item.icon className="w-5 h-5" />
-                  <span className="font-medium">{item.name}</span>
+                  <span>{item.name}</span>
                 </button>
               ))}
-            </div>
 
-            <div className="mt-8 pt-8 border-t border-gray-200">
-              <div className="px-4 space-y-2">
-                <button
-                  onClick={() => handleMenuClick('/')}
-                  className="w-full flex items-center space-x-3 px-4 py-3 text-left rounded-lg transition-colors text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                >
-                  <Home className="w-5 h-5" />
-                  <span className="font-medium">回到首頁</span>
-                </button>
-              </div>
-            </div>
-          </nav>
-        </div>
-
-        {/* 右側內容區 */}
-        <div className="flex-1 flex flex-col">
-          {/* 頂部欄 */}
-          <header className="bg-white shadow-sm border-b">
-            <div className="px-4 sm:px-6 lg:px-8">
-              <div className="flex justify-between items-center py-4">
-                <div className="flex items-center space-x-4">
-                  <h1 className="text-2xl font-bold text-gray-900">
-                    {title || '管理員控制台'}
-                  </h1>
-                </div>
-                
-                <div className="flex items-center space-x-4">
-                  <div className="text-sm text-gray-500">
-                    {new Date().toLocaleDateString('zh-TW', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                      weekday: 'long'
-                    })}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </header>
-
-          {/* 頁面內容 */}
-          <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto">
-            {children}
-          </main>
-        </div>
-      </div>
-
-      {/* 移動版佈局 */}
-      <div className="lg:hidden">
-        {/* 漢堡選單按鈕 */}
-        <div className="fixed top-4 left-4 z-50">
-          <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="p-2 bg-white rounded-lg shadow-md hover:bg-gray-50 transition-colors"
-          >
-            {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
-        </div>
-
-        {/* 移動版選單覆蓋層 */}
-        {isMenuOpen && (
-          <div className="fixed inset-0 z-40 flex">
-            {/* 選單 */}
-            <div className="w-64 bg-white shadow-lg">
-              {/* 選單標題 */}
-              <div className="flex items-center justify-center h-16 bg-gradient-to-r from-pink-500 to-purple-600">
-                <div className="flex items-center space-x-2">
-                  <Shield className="w-8 h-8 text-white" />
-                  <span className="text-xl font-bold text-white">管理員</span>
-                </div>
-              </div>
-
-              {/* 選單項目 */}
-              <nav className="mt-8">
-                <div className="px-4 space-y-2">
-                  {adminMenuItems.map((item) => (
-                    <button
-                      key={item.href}
-                      onClick={() => handleMenuClick(item.href)}
-                      className={`w-full flex items-center space-x-3 px-4 py-3 text-left rounded-lg transition-colors ${
-                        pathname === item.href
-                          ? 'bg-pink-100 text-pink-700 border-r-4 border-pink-500'
-                          : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                      }`}
-                    >
-                      <item.icon className="w-5 h-5" />
-                      <span className="font-medium">{item.name}</span>
-                    </button>
-                  ))}
-                </div>
-
-                <div className="mt-8 pt-8 border-t border-gray-200">
-                  <div className="px-4 space-y-2">
-                    <button
-                      onClick={() => handleMenuClick('/')}
-                      className="w-full flex items-center space-x-3 px-4 py-3 text-left rounded-lg transition-colors text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                    >
-                      <Home className="w-5 h-5" />
-                      <span className="font-medium">回到首頁</span>
-                    </button>
-                  </div>
-                </div>
-              </nav>
-            </div>
-
-            {/* 遮罩層 */}
-            <div 
-              className="flex-1 bg-black bg-opacity-50"
-              onClick={() => setIsMenuOpen(false)}
-            />
+              {/* 回到首頁 */}
+              <button
+                onClick={() => handleMenuClick('/')}
+                className="w-full flex items-center space-x-3 p-3 rounded-lg transition-colors text-left hover:bg-gray-100 text-gray-700"
+              >
+                <Home className="w-5 h-5" />
+                <span>回到首頁</span>
+              </button>
+            </nav>
           </div>
-        )}
-
-        {/* 移動版內容 */}
-        <div className="min-h-screen">
-          {/* 頂部欄 */}
-          <header className="bg-white shadow-sm border-b">
-            <div className="px-4 sm:px-6 lg:px-8">
-              <div className="flex justify-between items-center py-4">
-                <div className="flex items-center space-x-4">
-                  <h1 className="text-2xl font-bold text-gray-900">
-                    {title || '管理員控制台'}
-                  </h1>
-                </div>
-                
-                <div className="flex items-center space-x-4">
-                  <div className="text-sm text-gray-500">
-                    {new Date().toLocaleDateString('zh-TW', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                      weekday: 'long'
-                    })}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </header>
-
-          {/* 頁面內容 */}
-          <main className="p-4 sm:p-6 lg:p-8">
-            {children}
-          </main>
         </div>
-      </div>
+      )}
+
+      {/* 主內容 */}
+      <main className="p-4 sm:p-6 lg:p-8">
+        {children}
+      </main>
     </div>
   )
 }

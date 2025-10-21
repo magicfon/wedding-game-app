@@ -3,12 +3,13 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLiff } from '@/hooks/useLiff'
-import { 
-  Users, 
-  HelpCircle, 
-  Camera, 
-  Settings, 
-  Play, 
+import AdminLayout from '@/components/AdminLayout'
+import {
+  Users,
+  HelpCircle,
+  Camera,
+  Settings,
+  Play,
   Trophy,
   BarChart3,
   Shield,
@@ -171,52 +172,8 @@ export default function SimpleDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-4">
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-                <Shield className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">管理控制台</h1>
-                <p className="text-sm text-gray-600">簡化版管理系統</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              {adminInfo && (
-                <div className="flex items-center space-x-2">
-                  <UserCheck className="w-5 h-5 text-green-500" />
-                  <span className="text-sm text-gray-700">
-                    {adminInfo.displayName || '管理員'}
-                  </span>
-                </div>
-              )}
-              
-              <button
-                onClick={() => router.push('/')}
-                className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
-              >
-                <Home className="w-4 h-4" />
-                <span className="text-sm">返回首頁</span>
-              </button>
-              
-              <button
-                onClick={() => router.push('/')}
-                className="flex items-center space-x-2 text-red-600 hover:text-red-700 px-3 py-2 rounded-lg hover:bg-red-50 transition-colors"
-              >
-                <LogOut className="w-4 h-4" />
-                <span className="text-sm">登出</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <AdminLayout title="簡化版管理控制台">
+      <div className="max-w-7xl mx-auto">
         {/* 統計卡片 */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div className="bg-white rounded-lg shadow p-6">
@@ -307,6 +264,6 @@ export default function SimpleDashboard() {
           </details>
         </div>
       </div>
-    </div>
+    </AdminLayout>
   )
 }

@@ -140,43 +140,8 @@ export default function MediaCleanupPage() {
   }
 
   return (
-    <AdminLayout>
-      <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200">
-        {/* Header */}
-        <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200">
-          <div className="container mx-auto px-4 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <button
-                  onClick={() => router.push('/admin/dashboard')}
-                  className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  <span className="text-sm">返回控制台</span>
-                </button>
-                <div className="w-10 h-10 bg-gradient-to-r from-red-500 to-orange-500 rounded-full flex items-center justify-center">
-                  <HardDrive className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-xl font-bold text-gray-900">媒體檔案清理</h1>
-                  <p className="text-sm text-gray-900">管理 Supabase Storage 空間使用</p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-4">
-                <button
-                  onClick={() => router.push('/')}
-                  className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
-                >
-                  <Home className="w-4 h-4" />
-                  <span className="text-sm">首頁</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </header>
-
-        {/* Main Content */}
-        <main className="container mx-auto px-4 py-8">
+    <AdminLayout title="媒體檔案清理">
+      <div className="max-w-7xl mx-auto">
           {/* 控制面板 */}
           <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
             <div className="flex items-center justify-between mb-4">
@@ -327,7 +292,6 @@ export default function MediaCleanupPage() {
               <p className="text-gray-600">所有媒體檔案都在使用中，無需清理</p>
             </div>
           )}
-        </main>
       </div>
     </AdminLayout>
   )

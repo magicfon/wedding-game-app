@@ -2,12 +2,14 @@
 
 import { useState, useEffect } from 'react'
 import { useLiff } from '@/hooks/useLiff'
-import { 
-  UserPlus, 
-  UserMinus, 
-  Users, 
-  Shield, 
-  Trash2, 
+import { useRouter } from 'next/navigation'
+import AdminLayout from '@/components/AdminLayout'
+import {
+  UserPlus,
+  UserMinus,
+  Users,
+  Shield,
+  Trash2,
   Plus,
   CheckCircle,
   XCircle,
@@ -34,7 +36,16 @@ export default function AdminSettingsPage() {
     displayName: '',
     notes: ''
   })
-  const { profile } = useLiff()
+  const { profile, isLoggedIn, isAdmin, loading: liffLoading, adminLoading } = useLiff()
+  const router = useRouter()
+
+  // 檢查管理員權限
+  useEffect(() => {
+    if (liffLoading || adminLoading) return
+    if (!isLoggedIn || !isAdmin) {
+      router.push('/')
+    }
+  }, [liffLoading, adminLoading, isLoggedIn, isAdmin, router])
 
   // 獲取管理員列表
   const fetchAdmins = async () => {
@@ -119,11 +130,24 @@ export default function AdminSettingsPage() {
   }
 
   useEffect(() => {
-    fetchAdmins()
-  }, [profile])
+    if (isLoggedIn && isAdmin) {
+      fetchAdmins()
+    }
+  }, [profile, isLoggedIn, isAdmin])
+
+  // 如果還在載入中，顯示載入畫面
+  if (liffLoading || adminLoading || loading) {
+    return (
+      <AdminLayout title="管理員設置">
+        <div className="flex justify-center items-center py-12">
+          <div className="text-gray-500">載入中...</div>
+        </div>
+      </AdminLayout>
+    )
+  }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4">
+    <AdminLayout title="管理員設置">
       <div className="max-w-4xl mx-auto">
         {/* 標題 */}
         <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
@@ -313,6 +337,6 @@ export default function AdminSettingsPage() {
           </div>
         </div>
       </div>
-    </div>
+    </AdminLayout>
   )
 }

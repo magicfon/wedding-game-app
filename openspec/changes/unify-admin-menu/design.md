@@ -30,37 +30,50 @@
 ## 技術分析
 
 ### 根本問題分析
-經過多次嘗試，發現問題的根源是 AdminLayout 組件的佈局結構存在根本性問題。所有使用 AdminLayout 的頁面都表現出「左上右下」的問題，表明問題不在特定頁面，而在 AdminLayout 組件本身。
+經過多次嘗試，發現問題的根源是 AdminLayout 組件的側邊欄設計存在根本性問題。所有使用 AdminLayout 的頁面都表現出「左上右下」的問題，表明問題不在特定頁面，而在 AdminLayout 組件本身。
 
-### 問題原因
-1. **固定定位衝突**: 選單使用 `fixed` 定位導致其脫離正常文檔流
-2. **Flexbox 上下文問題**: 根容器和選單的定位方式產生衝突
-3. **CSS 類別複雜性**: 過多的響應式類別組合導致不可預測的行為
-4. **Tailwind CSS 特定問題**: 某些 Tailwind 類別組合在 Chrome 中的渲染問題
+### 發現的解決方案
+分析「照片上傳」頁面使用的 Layout 組件，發現它採用了覆蓋層（overlay）選單方式，這種方式：
+1. **簡單有效**: 沒有複雜的定位問題
+2. **跨設備一致**: 在所有設備上都能正常工作
+3. **無顯示問題**: 不會出現「左上右下」問題
 
-### 新的修復策略
-1. **完全重寫佈局結構**: 使用最簡單直接的 HTML 結構
-2. **分離桌面和移動版**: 完全分離兩種版本的實現
-3. **避免複雜定位**: 使用最簡單的定位方式
-4. **測試驅動開發**: 每次修改後立即測試
+### 新的設計策略
+1. **採用覆蓋層設計**: 類似「照片上傳」頁面的 Layout 組件
+2. **移除側邊欄**: 不使用固定側邊欄設計
+3. **全屏選單**: 選單以全屏覆蓋層方式顯示
+4. **統一體驗**: 在所有設備上提供一致的選單體驗
 
-### 推薦的佈局結構
+### 推薦的佈局結構（基於 Layout 組件）
 ```jsx
-// 桌面版：簡單的兩列佈局
-<div className="flex h-screen">
-  <div className="w-64 bg-white shadow-lg"> {/* 選單 */} </div>
-  <div className="flex-1 bg-gray-100"> {/* 內容 */} </div>
-</div>
+// 主容器
+<div className="min-h-screen bg-gray-100">
+  {/* Header */}
+  <header className="bg-white shadow-sm border-b">
+    <div className="flex items-center justify-between">
+      {/* 漢堡選單按鈕 */}
+      <button onClick={() => setIsMenuOpen(true)}>
+        <Menu className="w-6 h-6" />
+      </button>
+      
+      {/* 頁面標題 */}
+      <h1>{title || '管理員控制台'}</h1>
+    </div>
+  </header>
 
-// 移動版：選單覆蓋層
-<div className="relative h-screen">
-  <div className="bg-gray-100 min-h-screen"> {/* 內容 */} </div>
+  {/* 選單覆蓋層 */}
   {isMenuOpen && (
-    <div className="fixed inset-0 z-50 flex">
-      <div className="w-64 bg-white shadow-lg"> {/* 選單 */} </div>
-      <div className="flex-1 bg-black bg-opacity-50" /> {/* 遮罩 */}
+    <div className="fixed inset-0 bg-black/50 z-50">
+      <div className="fixed left-0 top-0 h-full w-80 bg-white shadow-xl">
+        {/* 選單內容 */}
+      </div>
     </div>
   )}
+
+  {/* 主內容 */}
+  <main className="p-4 sm:p-6 lg:p-8">
+    {children}
+  </main>
 </div>
 ```
 
