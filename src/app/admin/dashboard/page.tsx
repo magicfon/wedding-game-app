@@ -483,43 +483,6 @@ export default function AdminDashboard() {
               <span>重置遊戲</span>
             </button>
 
-            {/* 調試按鈕 */}
-            <button
-              onClick={async () => {
-                try {
-                  const response = await fetch('/api/debug/game-control-test');
-                  const data = await response.json();
-                  console.log('遊戲控制調試結果:', data);
-                  alert('調試結果已輸出到控制台，請按 F12 查看');
-                } catch (err) {
-                  console.error('調試測試失敗:', err);
-                  alert('調試測試失敗，請檢查控制台');
-                }
-              }}
-              className="flex items-center space-x-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition-colors"
-            >
-              <Activity className="w-4 h-4" />
-              <span>調試測試</span>
-            </button>
-
-            {/* 遊戲狀態測試按鈕 */}
-            <button
-              onClick={async () => {
-                try {
-                  const response = await fetch('/api/debug/game-state-test');
-                  const data = await response.json();
-                  console.log('遊戲狀態測試結果:', data);
-                  alert('遊戲狀態測試結果已輸出到控制台，請按 F12 查看');
-                } catch (err) {
-                  console.error('遊戲狀態測試失敗:', err);
-                  alert('遊戲狀態測試失敗，請檢查控制台');
-                }
-              }}
-              className="flex items-center space-x-2 bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg transition-colors"
-            >
-              <Activity className="w-4 h-4" />
-              <span>狀態測試</span>
-            </button>
           </div>
 
           {gameError && (
