@@ -57,7 +57,7 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
       {/* Sidebar */}
       <div className={`fixed inset-y-0 left-0 z-40 w-64 bg-white shadow-lg transform ${
         isMenuOpen ? 'translate-x-0' : '-translate-x-full'
-      } lg:translate-x-0 transition-transform duration-300 ease-in-out lg:relative lg:inset-auto lg:left-auto lg:top-auto lg:transform-none`}>
+      } lg:translate-x-0 transition-transform duration-300 ease-in-out lg:static lg:inset-0`}>
         
         {/* Header */}
         <div className="flex items-center justify-center h-16 bg-gradient-to-r from-pink-500 to-purple-600">
@@ -115,7 +115,7 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
       )}
 
       {/* Main content */}
-      <div className="lg:pl-64 min-h-screen">
+      <div className="lg:ml-64 min-h-screen">
         {/* Top bar */}
         <header className="bg-white shadow-sm border-b sticky top-0 z-20">
           <div className="px-4 sm:px-6 lg:px-8">
