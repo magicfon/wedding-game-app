@@ -99,16 +99,18 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
         </button>
       </div>
 
-      {/* Mobile sidebar */}
-      {isMenuOpen && (
-        <div className="fixed inset-y-0 left-0 z-40 w-64 bg-white shadow-lg transform lg:hidden">
-          {/* Header */}
-          <div className="flex items-center justify-center h-16 bg-gradient-to-r from-pink-500 to-purple-600">
-            <div className="flex items-center space-x-2">
-              <Shield className="w-8 h-8 text-white" />
-              <span className="text-xl font-bold text-white">管理員</span>
-            </div>
+      {/* Sidebar */}
+      <div className={`fixed inset-y-0 left-0 z-40 w-64 bg-white shadow-lg transform ${
+        isMenuOpen ? 'translate-x-0' : '-translate-x-full'
+      } lg:translate-x-0 transition-transform duration-300 ease-in-out lg:relative lg:inset-auto lg:left-auto lg:top-auto lg:transform-none`}>
+        
+        {/* Header */}
+        <div className="flex items-center justify-center h-16 bg-gradient-to-r from-pink-500 to-purple-600">
+          <div className="flex items-center space-x-2">
+            <Shield className="w-8 h-8 text-white" />
+            <span className="text-xl font-bold text-white">管理員</span>
           </div>
+        </div>
 
           {/* Navigation */}
           <nav className="mt-8">
@@ -159,7 +161,7 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
       )}
 
       {/* Main content */}
-      <div className="flex-1 min-h-screen">
+      <div className="lg:pl-64 min-h-screen">
         {/* Top bar */}
         <header className="bg-white shadow-sm border-b sticky top-0 z-20">
           <div className="px-4 sm:px-6 lg:px-8">
