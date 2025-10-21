@@ -112,45 +112,44 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
           </div>
         </div>
 
-          {/* Navigation */}
-          <nav className="mt-8">
-            <div className="px-4 space-y-2">
-              {adminMenuItems.map((item) => (
-                <button
-                  key={item.href}
-                  onClick={() => {
-                    router.push(item.href)
-                    setIsMenuOpen(false)
-                  }}
-                  className={`w-full flex items-center space-x-3 px-4 py-3 text-left rounded-lg transition-colors ${
-                    pathname === item.href
-                      ? 'bg-pink-100 text-pink-700 border-r-4 border-pink-500'
-                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                  }`}
-                >
-                  <item.icon className="w-5 h-5" />
-                  <span className="font-medium">{item.name}</span>
-                </button>
-              ))}
-            </div>
+        {/* Navigation */}
+        <nav className="mt-8">
+          <div className="px-4 space-y-2">
+            {adminMenuItems.map((item) => (
+              <button
+                key={item.href}
+                onClick={() => {
+                  router.push(item.href)
+                  setIsMenuOpen(false)
+                }}
+                className={`w-full flex items-center space-x-3 px-4 py-3 text-left rounded-lg transition-colors ${
+                  pathname === item.href
+                    ? 'bg-pink-100 text-pink-700 border-r-4 border-pink-500'
+                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                }`}
+              >
+                <item.icon className="w-5 h-5" />
+                <span className="font-medium">{item.name}</span>
+              </button>
+            ))}
+          </div>
 
-            <div className="mt-8 pt-8 border-t border-gray-200">
-              <div className="px-4 space-y-2">
-                <button
-                  onClick={() => {
-                    router.push('/')
-                    setIsMenuOpen(false)
-                  }}
-                  className="w-full flex items-center space-x-3 px-4 py-3 text-left rounded-lg transition-colors text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                >
-                  <Home className="w-5 h-5" />
-                  <span className="font-medium">回到首頁</span>
-                </button>
-              </div>
+          <div className="mt-8 pt-8 border-t border-gray-200">
+            <div className="px-4 space-y-2">
+              <button
+                onClick={() => {
+                  router.push('/')
+                  setIsMenuOpen(false)
+                }}
+                className="w-full flex items-center space-x-3 px-4 py-3 text-left rounded-lg transition-colors text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+              >
+                <Home className="w-5 h-5" />
+                <span className="font-medium">回到首頁</span>
+              </button>
             </div>
-          </nav>
-        </div>
-      )}
+          </div>
+        </nav>
+      </div>
 
       {/* Overlay for mobile */}
       {isMenuOpen && (
