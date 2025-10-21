@@ -4,11 +4,12 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLiff } from '@/hooks/useLiff'
 import { useGameState } from '@/hooks/useGameState'
-import { 
-  Users, 
-  HelpCircle, 
-  Camera, 
-  Settings, 
+import AdminLayout from '@/components/AdminLayout'
+import {
+  Users,
+  HelpCircle,
+  Camera,
+  Settings,
   Play,
   Trophy,
   BarChart3,
@@ -208,17 +209,16 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
+    <AdminLayout title="管理控制台">
+      <div className="max-w-7xl mx-auto">
+        {/* Admin Info Bar */}
+        <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+          <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
                 <Shield className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">管理控制台</h1>
                 <p className="text-sm text-gray-600">婚禮互動遊戲管理系統</p>
               </div>
             </div>
@@ -254,9 +254,8 @@ export default function AdminDashboard() {
             </div>
           </div>
         </div>
-      </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="space-y-6">
         {/* 統計卡片 */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div className="bg-white rounded-lg shadow p-6">
@@ -547,7 +546,8 @@ export default function AdminDashboard() {
             ))}
           </div>
         </div>
+        </div>
       </div>
-    </div>
+    </AdminLayout>
   )
 }

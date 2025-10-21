@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLiff } from '@/hooks/useLiff'
+import AdminLayout from '@/components/AdminLayout'
 import { Eye, EyeOff, Download, Trash2, Image as ImageIcon, Clock, User, Heart, Home, ArrowLeft, Filter } from 'lucide-react'
 import Image from 'next/image'
 
@@ -188,38 +189,8 @@ export default function PhotosManagePage() {
   console.log('渲染照片管理頁面 - photos:', photos.length, 'filteredPhotos:', filteredPhotos.length, 'filter:', filter)
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={() => router.push('/admin/dashboard')}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5 text-gray-600" />
-              </button>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">照片管理</h1>
-                <p className="text-sm text-gray-600">管理所有上傳的照片</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={() => router.push('/admin/dashboard')}
-                className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
-              >
-                <Home className="w-4 h-4" />
-                <span className="text-sm">控制台</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <AdminLayout title="照片管理">
+      <div className="max-w-7xl mx-auto">
         <div className="space-y-6">
           {/* 統計卡片 */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -517,7 +488,7 @@ export default function PhotosManagePage() {
           </div>
         )}
       </div>
-    </div>
+    </AdminLayout>
   )
 }
 

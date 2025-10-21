@@ -48,7 +48,7 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
       <div className="lg:hidden fixed top-4 left-4 z-50">
         <button
           onClick={() => setIsMenuOpen(!isMenuOpen)}
-          className="p-2 bg-white rounded-lg shadow-md"
+          className="p-2 bg-white rounded-lg shadow-md hover:bg-gray-50 transition-colors"
         >
           {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </button>
@@ -57,7 +57,7 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
       {/* Sidebar */}
       <div className={`fixed inset-y-0 left-0 z-40 w-64 bg-white shadow-lg transform ${
         isMenuOpen ? 'translate-x-0' : '-translate-x-full'
-      } lg:translate-x-0 transition-transform duration-300 ease-in-out lg:static lg:inset-0`}>
+      } lg:translate-x-0 transition-transform duration-300 ease-in-out lg:relative lg:inset-auto lg:left-auto lg:top-auto lg:transform-none`}>
         
         {/* Header */}
         <div className="flex items-center justify-center h-16 bg-gradient-to-r from-pink-500 to-purple-600">
@@ -108,16 +108,16 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
 
       {/* Overlay for mobile */}
       {isMenuOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden"
           onClick={() => setIsMenuOpen(false)}
         />
       )}
 
       {/* Main content */}
-      <div className="lg:ml-64">
+      <div className="lg:pl-64 min-h-screen">
         {/* Top bar */}
-        <header className="bg-white shadow-sm border-b">
+        <header className="bg-white shadow-sm border-b sticky top-0 z-20">
           <div className="px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center py-4">
               <div className="flex items-center space-x-4">
