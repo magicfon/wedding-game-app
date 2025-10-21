@@ -43,7 +43,52 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
   ]
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="flex min-h-screen bg-gray-100">
+      {/* Sidebar - Hidden on mobile, visible on desktop */}
+      <div className="hidden lg:block lg:w-64 lg:flex-shrink-0">
+        <div className="fixed inset-y-0 left-0 z-40 w-64 bg-white shadow-lg">
+          {/* Header */}
+          <div className="flex items-center justify-center h-16 bg-gradient-to-r from-pink-500 to-purple-600">
+            <div className="flex items-center space-x-2">
+              <Shield className="w-8 h-8 text-white" />
+              <span className="text-xl font-bold text-white">管理員</span>
+            </div>
+          </div>
+
+          {/* Navigation */}
+          <nav className="mt-8">
+            <div className="px-4 space-y-2">
+              {adminMenuItems.map((item) => (
+                <button
+                  key={item.href}
+                  onClick={() => router.push(item.href)}
+                  className={`w-full flex items-center space-x-3 px-4 py-3 text-left rounded-lg transition-colors ${
+                    pathname === item.href
+                      ? 'bg-pink-100 text-pink-700 border-r-4 border-pink-500'
+                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                  }`}
+                >
+                  <item.icon className="w-5 h-5" />
+                  <span className="font-medium">{item.name}</span>
+                </button>
+              ))}
+            </div>
+
+            <div className="mt-8 pt-8 border-t border-gray-200">
+              <div className="px-4 space-y-2">
+                <button
+                  onClick={() => router.push('/')}
+                  className="w-full flex items-center space-x-3 px-4 py-3 text-left rounded-lg transition-colors text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                >
+                  <Home className="w-5 h-5" />
+                  <span className="font-medium">回到首頁</span>
+                </button>
+              </div>
+            </div>
+          </nav>
+        </div>
+      </div>
+
       {/* Mobile menu button */}
       <div className="lg:hidden fixed top-4 left-4 z-50">
         <button
@@ -54,57 +99,56 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
         </button>
       </div>
 
-      {/* Sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-40 w-64 bg-white shadow-lg transform ${
-        isMenuOpen ? 'translate-x-0' : '-translate-x-full'
-      } lg:translate-x-0 transition-transform duration-300 ease-in-out lg:static lg:inset-0`}>
-        
-        {/* Header */}
-        <div className="flex items-center justify-center h-16 bg-gradient-to-r from-pink-500 to-purple-600">
-          <div className="flex items-center space-x-2">
-            <Shield className="w-8 h-8 text-white" />
-            <span className="text-xl font-bold text-white">管理員</span>
-          </div>
-        </div>
-
-        {/* Navigation */}
-        <nav className="mt-8">
-          <div className="px-4 space-y-2">
-            {adminMenuItems.map((item) => (
-              <button
-                key={item.href}
-                onClick={() => {
-                  router.push(item.href)
-                  setIsMenuOpen(false)
-                }}
-                className={`w-full flex items-center space-x-3 px-4 py-3 text-left rounded-lg transition-colors ${
-                  pathname === item.href
-                    ? 'bg-pink-100 text-pink-700 border-r-4 border-pink-500'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                }`}
-              >
-                <item.icon className="w-5 h-5" />
-                <span className="font-medium">{item.name}</span>
-              </button>
-            ))}
-          </div>
-
-          <div className="mt-8 pt-8 border-t border-gray-200">
-            <div className="px-4 space-y-2">
-              <button
-                onClick={() => {
-                  router.push('/')
-                  setIsMenuOpen(false)
-                }}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-left rounded-lg transition-colors text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-              >
-                <Home className="w-5 h-5" />
-                <span className="font-medium">回到首頁</span>
-              </button>
+      {/* Mobile sidebar */}
+      {isMenuOpen && (
+        <div className="fixed inset-y-0 left-0 z-40 w-64 bg-white shadow-lg transform lg:hidden">
+          {/* Header */}
+          <div className="flex items-center justify-center h-16 bg-gradient-to-r from-pink-500 to-purple-600">
+            <div className="flex items-center space-x-2">
+              <Shield className="w-8 h-8 text-white" />
+              <span className="text-xl font-bold text-white">管理員</span>
             </div>
           </div>
-        </nav>
-      </div>
+
+          {/* Navigation */}
+          <nav className="mt-8">
+            <div className="px-4 space-y-2">
+              {adminMenuItems.map((item) => (
+                <button
+                  key={item.href}
+                  onClick={() => {
+                    router.push(item.href)
+                    setIsMenuOpen(false)
+                  }}
+                  className={`w-full flex items-center space-x-3 px-4 py-3 text-left rounded-lg transition-colors ${
+                    pathname === item.href
+                      ? 'bg-pink-100 text-pink-700 border-r-4 border-pink-500'
+                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                  }`}
+                >
+                  <item.icon className="w-5 h-5" />
+                  <span className="font-medium">{item.name}</span>
+                </button>
+              ))}
+            </div>
+
+            <div className="mt-8 pt-8 border-t border-gray-200">
+              <div className="px-4 space-y-2">
+                <button
+                  onClick={() => {
+                    router.push('/')
+                    setIsMenuOpen(false)
+                  }}
+                  className="w-full flex items-center space-x-3 px-4 py-3 text-left rounded-lg transition-colors text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                >
+                  <Home className="w-5 h-5" />
+                  <span className="font-medium">回到首頁</span>
+                </button>
+              </div>
+            </div>
+          </nav>
+        </div>
+      )}
 
       {/* Overlay for mobile */}
       {isMenuOpen && (
@@ -115,7 +159,7 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
       )}
 
       {/* Main content */}
-      <div className="lg:ml-64 min-h-screen">
+      <div className="flex-1 min-h-screen">
         {/* Top bar */}
         <header className="bg-white shadow-sm border-b sticky top-0 z-20">
           <div className="px-4 sm:px-6 lg:px-8">
