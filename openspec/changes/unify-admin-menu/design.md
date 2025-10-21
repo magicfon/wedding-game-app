@@ -29,17 +29,40 @@
 
 ## 技術分析
 
-### Chrome 瀏覽器顯示問題的可能原因
-1. **Z-index 問題**: 選單的層級可能被其他元素覆蓋
-2. **定位問題**: `fixed` 或 `absolute` 定位在 Chrome 中的行為差異
-3. **CSS 屬性兼容性**: 某些 CSS 屬性在 Chrome 中的渲染差異
-4. **響應式設計問題**: 桌面版和移動版的切換邏輯
+### 根本問題分析
+經過多次嘗試，發現問題的根源是 AdminLayout 組件的佈局結構存在根本性問題。所有使用 AdminLayout 的頁面都表現出「左上右下」的問題，表明問題不在特定頁面，而在 AdminLayout 組件本身。
 
-### 修復策略
-1. **檢查和調整 z-index**: 確保選單始終在最上層
-2. **優化 CSS 定位**: 使用更穩定的定位方式
-3. **添加瀏覽器特定的 CSS hack**: 如果需要，針對 Chrome 添加特定樣式
-4. **測試不同屏幕尺寸**: 確保響應式設計正常工作
+### 問題原因
+1. **固定定位衝突**: 選單使用 `fixed` 定位導致其脫離正常文檔流
+2. **Flexbox 上下文問題**: 根容器和選單的定位方式產生衝突
+3. **CSS 類別複雜性**: 過多的響應式類別組合導致不可預測的行為
+4. **Tailwind CSS 特定問題**: 某些 Tailwind 類別組合在 Chrome 中的渲染問題
+
+### 新的修復策略
+1. **完全重寫佈局結構**: 使用最簡單直接的 HTML 結構
+2. **分離桌面和移動版**: 完全分離兩種版本的實現
+3. **避免複雜定位**: 使用最簡單的定位方式
+4. **測試驅動開發**: 每次修改後立即測試
+
+### 推薦的佈局結構
+```jsx
+// 桌面版：簡單的兩列佈局
+<div className="flex h-screen">
+  <div className="w-64 bg-white shadow-lg"> {/* 選單 */} </div>
+  <div className="flex-1 bg-gray-100"> {/* 內容 */} </div>
+</div>
+
+// 移動版：選單覆蓋層
+<div className="relative h-screen">
+  <div className="bg-gray-100 min-h-screen"> {/* 內容 */} </div>
+  {isMenuOpen && (
+    <div className="fixed inset-0 z-50 flex">
+      <div className="w-64 bg-white shadow-lg"> {/* 選單 */} </div>
+      <div className="flex-1 bg-black bg-opacity-50" /> {/* 遮罩 */}
+    </div>
+  )}
+</div>
+```
 
 ## Risks / Trade-offs
 - [破壞性變更風險] → 逐步遷移頁面，保持向後兼容
