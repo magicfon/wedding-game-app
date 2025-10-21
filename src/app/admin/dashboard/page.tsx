@@ -23,7 +23,9 @@ import {
   SkipForward,
   Square,
   RotateCcw,
-  PlayCircle
+  PlayCircle,
+  Gift,
+  HardDrive
 } from 'lucide-react'
 
 interface AdminInfo {
@@ -133,25 +135,11 @@ export default function AdminDashboard() {
 
   const menuItems = [
     {
-      title: '用戶管理',
-      description: '查看和管理註冊用戶',
-      icon: Users,
-      href: '/admin/users',
-      color: 'bg-blue-500'
-    },
-    {
-      title: '問題管理',
+      title: '題目管理',
       description: '管理快問快答題目',
       icon: HelpCircle,
       href: '/admin/questions',
       color: 'bg-green-500'
-    },
-    {
-      title: '遊戲控制',
-      description: '開始/暫停遊戲',
-      icon: Play,
-      href: '/admin/game-control',
-      color: 'bg-purple-500'
     },
     {
       title: '照片管理',
@@ -161,39 +149,67 @@ export default function AdminDashboard() {
       color: 'bg-pink-500'
     },
     {
-      title: '排行榜',
-      description: '查看分數排行',
+      title: '分數管理',
+      description: '查看和管理用戶分數',
       icon: Trophy,
-      href: '/admin/leaderboard',
+      href: '/admin/scores',
       color: 'bg-yellow-500'
+    },
+    {
+      title: '積分歷史',
+      description: '查看用戶積分歷史記錄',
+      icon: Trophy,
+      href: '/admin/score-history',
+      color: 'bg-orange-500'
+    },
+    {
+      title: '照片摸彩',
+      description: '管理照片摸彩活動',
+      icon: Gift,
+      href: '/admin/lottery',
+      color: 'bg-purple-500'
     },
     {
       title: '投票設定',
       description: '管理照片投票功能',
       icon: Trophy,
       href: '/admin/voting-settings',
-      color: 'bg-orange-500'
-    },
-    {
-      title: '統計報告',
-      description: '查看詳細統計',
-      icon: BarChart3,
-      href: '/admin/analytics',
       color: 'bg-indigo-500'
     },
     {
-      title: '管理員設置',
-      description: '管理管理員權限',
-      icon: Shield,
-      href: '/admin/settings',
-      color: 'bg-red-500'
+      title: '批量設定',
+      description: '批量管理遊戲設定',
+      icon: Settings,
+      href: '/admin/batch-settings',
+      color: 'bg-blue-500'
     },
     {
-      title: '系統設置',
-      description: '系統配置和設置',
+      title: '計分規則',
+      description: '設定遊戲計分規則',
       icon: Settings,
-      href: '/admin/system',
+      href: '/admin/scoring-rules',
+      color: 'bg-teal-500'
+    },
+    {
+      title: '媒體清理',
+      description: '清理無效的媒體文件',
+      icon: HardDrive,
+      href: '/admin/media-cleanup',
       color: 'bg-gray-500'
+    },
+    {
+      title: 'LINE 選單',
+      description: '管理 LINE Bot 選單',
+      icon: Settings,
+      href: '/admin/line-menu',
+      color: 'bg-green-600'
+    },
+    {
+      title: '系統設定',
+      description: '系統配置和管理員設置',
+      icon: Settings,
+      href: '/admin/settings',
+      color: 'bg-red-500'
     }
   ]
 
