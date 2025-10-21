@@ -226,7 +226,7 @@ export default function VotingSettingsPage() {
                 max="20"
                 value={votesPerUser}
                 onChange={(e) => setVotesPerUser(parseInt(e.target.value) || 1)}
-                className="w-24 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
+                className="w-24 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 text-black"
               />
               <span className="text-gray-600">票</span>
             </div>

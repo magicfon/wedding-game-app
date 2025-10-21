@@ -63,7 +63,7 @@ export default function AnswerTest() {
                 type="text"
                 value={questionId}
                 onChange={(e) => setQuestionId(e.target.value)}
-                className="w-full border rounded px-3 py-2"
+                className="w-full border rounded px-3 py-2 text-black"
                 placeholder="輸入題目 ID（例如：1, 2, 3...）"
                 onKeyPress={(e) => e.key === 'Enter' && testAnswerDistribution()}
               />

@@ -127,7 +127,7 @@ export default function ScoringRulesPage() {
                     ...rules,
                     speed_bonus_multiplier: parseFloat(e.target.value) || 0
                   })}
-                  className="w-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
+                  className="w-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 text-black"
                 />
                 <span className="text-sm text-gray-500">
                   (剩餘時間比例 × 基礎分數 × 此倍數)
@@ -151,7 +151,7 @@ export default function ScoringRulesPage() {
                   ...rules,
                   max_bonus_points: parseInt(e.target.value) || 0
                 })}
-                className="w-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
+                className="w-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 text-black"
               />
               <span className="text-sm text-gray-500 ml-2">分</span>
             </div>
@@ -191,7 +191,7 @@ export default function ScoringRulesPage() {
                       top_answer_bonus: newBonus
                     })
                   }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 text-center"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 text-center text-black"
                 />
                 <span className="text-sm text-gray-500">分</span>
               </div>
@@ -226,7 +226,7 @@ export default function ScoringRulesPage() {
                   ...rules,
                   wrong_answer_penalty: parseInt(e.target.value) || 0
                 })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 text-black"
               />
               <p className="text-xs text-gray-500 mt-1">
                 設為 0 表示答錯不扣分（推薦設定）
@@ -246,7 +246,7 @@ export default function ScoringRulesPage() {
                   ...rules,
                   timeout_penalty_default: parseInt(e.target.value) || 0
                 })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 text-black"
               />
               <p className="text-xs text-gray-500 mt-1">
                 超時未作答的預設扣分（可在題目中個別設定）

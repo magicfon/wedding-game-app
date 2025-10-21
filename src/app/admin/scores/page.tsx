@@ -194,7 +194,7 @@ export default function ScoreManagePage() {
                 <select
                   value={selectedUser}
                   onChange={(e) => setSelectedUser(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 text-black"
                 >
                   <option value="">請選擇用戶</option>
                   {users.map((user) => (
@@ -215,7 +215,7 @@ export default function ScoreManagePage() {
                     value={adjustmentScore}
                     onChange={(e) => setAdjustmentScore(parseInt(e.target.value) || 0)}
                     placeholder="輸入分數 (正數加分，負數扣分)"
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 text-black"
                   />
                   <button
                     onClick={() => setAdjustmentScore(10)}
@@ -241,7 +241,7 @@ export default function ScoreManagePage() {
                   onChange={(e) => setReason(e.target.value)}
                   placeholder="請輸入調整分數的原因..."
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 text-black"
                 />
               </div>
 

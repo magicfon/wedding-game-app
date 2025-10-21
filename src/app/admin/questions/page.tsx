@@ -879,7 +879,7 @@ ${diagnosis.recommendations?.join('\n') || '無建議'}
                             [`option_${option.toLowerCase()}`]: e.target.value
                           })}
                           required
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-black"
                           placeholder={`請輸入選項 ${option}...`}
                         />
                       </div>
@@ -919,7 +919,7 @@ ${diagnosis.recommendations?.join('\n') || '無建議'}
                         value={formData.points}
                         onChange={(e) => setFormData({ ...formData, points: parseInt(e.target.value) })}
                         min="1"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-black"
                       />
                     </div>
                     <div>
@@ -932,7 +932,7 @@ ${diagnosis.recommendations?.join('\n') || '無建議'}
                         onChange={(e) => setFormData({ ...formData, time_limit: parseInt(e.target.value) })}
                         min="5"
                         max="300"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-black"
                       />
                     </div>
                   </div>
@@ -958,7 +958,7 @@ ${diagnosis.recommendations?.join('\n') || '無建議'}
                           value={formData.penalty_score}
                           onChange={(e) => setFormData({ ...formData, penalty_score: parseInt(e.target.value) })}
                           min="0"
-                          className="w-20 px-2 py-1 border border-gray-300 rounded text-gray-900"
+                          className="w-20 px-2 py-1 border border-gray-300 rounded text-black"
                           placeholder="分數"
                         />
                       )}
@@ -981,7 +981,7 @@ ${diagnosis.recommendations?.join('\n') || '無建議'}
                           value={formData.timeout_penalty_score}
                           onChange={(e) => setFormData({ ...formData, timeout_penalty_score: parseInt(e.target.value) })}
                           min="0"
-                          className="w-20 px-2 py-1 border border-gray-300 rounded text-gray-900"
+                          className="w-20 px-2 py-1 border border-gray-300 rounded text-black"
                           placeholder="分數"
                         />
                       )}
@@ -1004,7 +1004,7 @@ ${diagnosis.recommendations?.join('\n') || '無建議'}
                           value={formData.max_bonus_points}
                           onChange={(e) => setFormData({ ...formData, max_bonus_points: parseInt(e.target.value) })}
                           min="0"
-                          className="w-20 px-2 py-1 border border-gray-300 rounded text-gray-900"
+                          className="w-20 px-2 py-1 border border-gray-300 rounded text-black"
                           placeholder="最高分"
                         />
                       )}

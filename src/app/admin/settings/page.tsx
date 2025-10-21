@@ -168,7 +168,7 @@ export default function AdminSettingsPage() {
                   type="text"
                   value={newAdminData.lineId}
                   onChange={(e) => setNewAdminData({ ...newAdminData, lineId: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
                   placeholder="輸入 Line ID"
                   required
                 />
@@ -181,7 +181,7 @@ export default function AdminSettingsPage() {
                   type="text"
                   value={newAdminData.displayName}
                   onChange={(e) => setNewAdminData({ ...newAdminData, displayName: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
                   placeholder="輸入顯示名稱"
                 />
               </div>
@@ -192,7 +192,7 @@ export default function AdminSettingsPage() {
                 <textarea
                   value={newAdminData.notes}
                   onChange={(e) => setNewAdminData({ ...newAdminData, notes: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
                   placeholder="輸入備註信息"
                   rows={3}
                 />

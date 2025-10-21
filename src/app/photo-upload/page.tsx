@@ -183,7 +183,7 @@ export default function PhotoUploadPage() {
                 type="file"
                 accept="image/*"
                 onChange={handleFileSelect}
-                className="hidden"
+                className="hidden text-black"
               />
             </div>
           ) : (

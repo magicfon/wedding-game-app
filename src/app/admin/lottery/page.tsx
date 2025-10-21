@@ -437,7 +437,7 @@ export default function LotteryManagePage() {
                       max="100"
                       value={maxPhotosInput}
                       onChange={(e) => setMaxPhotosInput(parseInt(e.target.value) || 0)}
-                      className="w-32 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      className="w-32 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-black"
                     />
                     <span className="text-gray-600">張</span>
                     <button

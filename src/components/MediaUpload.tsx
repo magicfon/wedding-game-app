@@ -204,7 +204,7 @@ export default function MediaUpload({
               onChange={(e) => handleAltTextChange(e.target.value)}
               disabled={disabled}
               placeholder={`描述這個${mediaType === 'image' ? '圖片' : '影片'}的內容...`}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed text-black"
             />
           </div>
         </div>
@@ -274,7 +274,7 @@ export default function MediaUpload({
             onChange={(e) => setAltText(e.target.value)}
             disabled={disabled}
             placeholder={`描述${mediaType === 'image' ? '圖片' : '影片'}內容...`}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed text-black"
           />
         </div>
       )}
