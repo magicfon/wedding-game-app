@@ -43,7 +43,7 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
   ]
 
   return (
-    <div className="min-h-screen bg-gray-100 lg:flex">
+    <>
       {/* Mobile menu button */}
       <div className="lg:hidden fixed top-4 left-4 z-50">
         <button
@@ -54,10 +54,10 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
         </button>
       </div>
 
-      {/* Sidebar */}
+      {/* Sidebar - Fixed positioning for mobile, static for desktop */}
       <div className={`fixed inset-y-0 left-0 z-40 w-64 bg-white shadow-lg transform ${
         isMenuOpen ? 'translate-x-0' : '-translate-x-full'
-      } lg:translate-x-0 transition-transform duration-300 ease-in-out lg:relative lg:inset-0 lg:flex-shrink-0`}>
+      } lg:translate-x-0 lg:static lg:inset-0 transition-transform duration-300 ease-in-out`}>
         
         {/* Header */}
         <div className="flex items-center justify-center h-16 bg-gradient-to-r from-pink-500 to-purple-600">
@@ -114,37 +114,43 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
         />
       )}
 
-      {/* Main content */}
-      <div className="flex-1 min-h-screen">
-        {/* Top bar */}
-        <header className="bg-white shadow-sm border-b sticky top-0 z-20">
-          <div className="px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center py-4">
-              <div className="flex items-center space-x-4">
-                <h1 className="text-2xl font-bold text-gray-900">
-                  {title || '管理員控制台'}
-                </h1>
-              </div>
-              
-              <div className="flex items-center space-x-4">
-                <div className="text-sm text-gray-500">
-                  {new Date().toLocaleDateString('zh-TW', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    weekday: 'long'
-                  })}
+      {/* Main content wrapper */}
+      <div className="lg:flex lg:min-h-screen">
+        {/* Desktop sidebar spacer */}
+        <div className="hidden lg:block lg:w-64 lg:flex-shrink-0"></div>
+        
+        {/* Main content */}
+        <div className="flex-1 bg-gray-100 min-h-screen">
+          {/* Top bar */}
+          <header className="bg-white shadow-sm border-b sticky top-0 z-20">
+            <div className="px-4 sm:px-6 lg:px-8">
+              <div className="flex justify-between items-center py-4">
+                <div className="flex items-center space-x-4">
+                  <h1 className="text-2xl font-bold text-gray-900">
+                    {title || '管理員控制台'}
+                  </h1>
+                </div>
+                
+                <div className="flex items-center space-x-4">
+                  <div className="text-sm text-gray-500">
+                    {new Date().toLocaleDateString('zh-TW', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                      weekday: 'long'
+                    })}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </header>
+          </header>
 
-        {/* Page content */}
-        <main className="p-4 sm:p-6 lg:p-8">
-          {children}
-        </main>
+          {/* Page content */}
+          <main className="p-4 sm:p-6 lg:p-8">
+            {children}
+          </main>
+        </div>
       </div>
-    </div>
+    </>
   )
 }
