@@ -10,7 +10,9 @@
     "test:thumbnails": "node scripts/test-thumbnail-functionality.js",
     "verify:production": "node scripts/verify-production-deployment.js",
     "migrate:photos": "curl -X POST http://localhost:3000/api/admin/migrate-photos",
-    "migration:status": "curl http://localhost:3000/api/admin/migrate-photos"
+    "migration:status": "curl http://localhost:3000/api/admin/migrate-photos",
+    "install:sharp": "node scripts/install-sharp.js",
+    "postinstall": "node scripts/install-sharp.js"
   },
   "dependencies": {
     "@line/bot-sdk": "^10.2.0",
