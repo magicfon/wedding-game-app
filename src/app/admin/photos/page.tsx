@@ -155,14 +155,14 @@ export default function PhotosManagePage() {
   const handleTestSharp = async () => {
     try {
       console.log('🔍 測試 Sharp 庫...')
-      const response = await fetch('/api/debug/sharp-test')
+      const response = await fetch('/api/debug/sharp-simple')
       const result = await response.json()
       
       if (result.success) {
-        alert(`✅ Sharp 庫測試通過\n通過測試: ${result.summary.passedTests}/${result.summary.totalTests}`)
+        alert(`✅ Sharp 庫測試通過\n版本: ${result.version}\n狀態: 可用`)
         console.log('Sharp 測試結果:', result)
       } else {
-        alert(`❌ Sharp 庫測試失敗\n失敗測試: ${result.summary.failedTests}/${result.summary.totalTests}`)
+        alert(`❌ Sharp 庫測試失敗\n錯誤: ${result.error}`)
         console.error('Sharp 測試失敗:', result)
       }
     } catch (error) {
@@ -380,7 +380,7 @@ export default function PhotosManagePage() {
                   onClick={handleTestSharp}
                   className="px-4 py-2 rounded-lg text-sm font-medium bg-blue-500 text-white hover:bg-blue-600 transition-colors"
                 >
-                  測試 Sharp 庫
+                  測試 Sharp 庫 (簡化版)
                 </button>
               </div>
             </div>

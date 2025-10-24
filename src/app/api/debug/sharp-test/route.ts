@@ -128,6 +128,7 @@ export async function GET(request: NextRequest) {
 
   const successCount = debugInfo.tests.filter(t => t.status === 'success').length
   const totalCount = debugInfo.tests.length
+  const failedCount = debugInfo.tests.filter(t => t.status === 'error').length
 
   return NextResponse.json({
     success: successCount === totalCount,
@@ -135,7 +136,7 @@ export async function GET(request: NextRequest) {
     summary: {
       totalTests: totalCount,
       passedTests: successCount,
-      failedTests: totalCount - successCount
+      failedTests: failedCount
     }
   })
 }
