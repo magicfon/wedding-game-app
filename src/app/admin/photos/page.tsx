@@ -171,6 +171,42 @@ export default function PhotosManagePage() {
     }
   }
 
+  // 檢查環境配置
+  const handleCheckEnvironment = async () => {
+    try {
+      console.log('🔍 檢查環境配置...')
+      const response = await fetch('/api/debug/env-check-simple')
+      const result = await response.json()
+      
+      if (result.success) {
+        const { envInfo, moduleTest, recommendations } = result.data
+        
+        let message = `📊 環境檢查結果:\n\n`
+        message += `環境: ${envInfo.environment}\n`
+        message += `Vercel: ${envInfo.vercel.isVercel ? '是' : '否'}\n`
+        message += `Node.js: ${envInfo.dependencies.nodeVersion}\n`
+        message += `Sharp 依賴: ${envInfo.dependencies.sharpInPackage ? '已添加' : '未添加'}\n`
+        message += `Sharp 模塊: ${moduleTest.sharp ? '可載入' : '無法載入'}\n\n`
+        
+        if (recommendations.length > 0) {
+          message += `建議:\n`
+          recommendations.forEach((rec: any, index: number) => {
+            message += `${index + 1}. ${rec.message}\n`
+          })
+        }
+        
+        alert(message)
+        console.log('環境檢查結果:', result)
+      } else {
+        alert(`❌ 環境檢查失敗\n錯誤: ${result.error}`)
+        console.error('環境檢查失敗:', result)
+      }
+    } catch (error) {
+      console.error('環境檢查錯誤:', error)
+      alert(`❌ 環境檢查錯誤: ${error instanceof Error ? error.message : '未知錯誤'}`)
+    }
+  }
+
   // 切換照片公開狀態
   const togglePhotoVisibility = async (photoId: number, currentStatus: boolean) => {
     try {
@@ -381,6 +417,12 @@ export default function PhotosManagePage() {
                   className="px-4 py-2 rounded-lg text-sm font-medium bg-blue-500 text-white hover:bg-blue-600 transition-colors"
                 >
                   測試 Sharp 庫 (簡化版)
+                </button>
+                <button
+                  onClick={handleCheckEnvironment}
+                  className="px-4 py-2 rounded-lg text-sm font-medium bg-green-500 text-white hover:bg-green-600 transition-colors"
+                >
+                  檢查環境配置
                 </button>
               </div>
             </div>
