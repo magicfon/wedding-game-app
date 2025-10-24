@@ -10,6 +10,8 @@ import Image from 'next/image'
 interface PhotoWithUser {
   id: number
   image_url: string
+  thumbnail_url?: string
+  has_thumbnail?: boolean
   blessing_message: string | null
   is_public: boolean
   vote_count: number
@@ -94,11 +96,58 @@ export default function PhotosManagePage() {
         console.log('照片已載入:', photosData.length)
         console.log('第一張照片資訊:', photosData[0])
         console.log('第一張照片 URL:', photosData[0]?.image_url)
+        console.log('第一張照片縮圖 URL:', photosData[0]?.thumbnail_url)
       } else {
         console.error('獲取照片失敗:', data.error)
       }
     } catch (error) {
       console.error('獲取照片失敗:', error)
+    }
+  }
+
+  // 執行照片遷移
+  const handleMigratePhotos = async () => {
+    try {
+      console.log('🔄 開始照片遷移...')
+      const response = await fetch('/api/admin/migrate-photos', {
+        method: 'POST'
+      })
+      const result = await response.json()
+      
+      if (result.success) {
+        alert(`✅ 成功遷移 ${result.data.migrated} 張照片，失敗 ${result.data.failed} 張`)
+        console.log('遷移結果:', result)
+        
+        // 重新載入照片列表以更新統計
+        fetchAllPhotos()
+      } else {
+        alert(`❌ 遷移失敗: ${result.error}`)
+        console.error('遷移失敗:', result)
+      }
+    } catch (error) {
+      console.error('遷移錯誤:', error)
+      alert(`❌ 遷移錯誤: ${error instanceof Error ? error.message : '未知錯誤'}`)
+    }
+  }
+
+  // 檢查遷移狀態
+  const handleCheckMigrationStatus = async () => {
+    try {
+      console.log('🔍 檢查遷移狀態...')
+      const response = await fetch('/api/admin/migrate-photos')
+      const result = await response.json()
+      
+      if (result.success) {
+        const { total, withThumbnails, withoutThumbnails } = result.data
+        alert(`📊 遷移狀態:\n總照片: ${total}\n已有縮圖: ${withThumbnails}\n需要遷移: ${withoutThumbnails}`)
+        console.log('遷移狀態:', result)
+      } else {
+        alert(`❌ 獲取遷移狀態失敗: ${result.error}`)
+        console.error('獲取遷移狀態失敗:', result)
+      }
+    } catch (error) {
+      console.error('檢查遷移狀態錯誤:', error)
+      alert(`❌ 檢查遷移狀態錯誤: ${error instanceof Error ? error.message : '未知錯誤'}`)
     }
   }
 
@@ -206,6 +255,24 @@ export default function PhotosManagePage() {
               </div>
             </div>
 
+            {/* 照片遷移卡片 */}
+            <div className="bg-white rounded-xl shadow-md p-6">
+              <div className="flex items-center space-x-4">
+                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                  <ImageIcon className="w-6 h-6 text-purple-600" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-600">照片遷移</h3>
+                  <p className="text-2xl font-bold text-purple-600">
+                    {photos.filter(p => p.thumbnail_url).length} / {photos.length}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    已生成縮圖的照片比例
+                  </p>
+                </div>
+              </div>
+            </div>
+
             <div className="bg-white rounded-xl shadow-md p-6">
               <div className="flex items-center space-x-4">
                 <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
@@ -266,6 +333,28 @@ export default function PhotosManagePage() {
                   }`}
                 >
                   隱私 ({privateCount})
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* 照片遷移按鈕 */}
+          <div className="bg-white rounded-xl shadow-md p-4">
+            <div className="flex items-center space-x-2">
+              <ImageIcon className="w-5 h-5 text-gray-600" />
+              <span className="text-sm font-medium text-gray-700">照片遷移：</span>
+              <div className="flex space-x-2">
+                <button
+                  onClick={handleMigratePhotos}
+                  className="px-4 py-2 rounded-lg text-sm font-medium bg-purple-500 text-white hover:bg-purple-600 transition-colors"
+                >
+                  執行照片遷移
+                </button>
+                <button
+                  onClick={handleCheckMigrationStatus}
+                  className="px-4 py-2 rounded-lg text-sm font-medium bg-gray-500 text-white hover:bg-gray-600 transition-colors"
+                >
+                  查看遷移狀態
                 </button>
               </div>
             </div>
