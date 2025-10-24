@@ -151,6 +151,26 @@ export default function PhotosManagePage() {
     }
   }
 
+  // 測試 Sharp 庫
+  const handleTestSharp = async () => {
+    try {
+      console.log('🔍 測試 Sharp 庫...')
+      const response = await fetch('/api/debug/sharp-test')
+      const result = await response.json()
+      
+      if (result.success) {
+        alert(`✅ Sharp 庫測試通過\n通過測試: ${result.summary.passedTests}/${result.summary.totalTests}`)
+        console.log('Sharp 測試結果:', result)
+      } else {
+        alert(`❌ Sharp 庫測試失敗\n失敗測試: ${result.summary.failedTests}/${result.summary.totalTests}`)
+        console.error('Sharp 測試失敗:', result)
+      }
+    } catch (error) {
+      console.error('Sharp 測試錯誤:', error)
+      alert(`❌ Sharp 測試錯誤: ${error instanceof Error ? error.message : '未知錯誤'}`)
+    }
+  }
+
   // 切換照片公開狀態
   const togglePhotoVisibility = async (photoId: number, currentStatus: boolean) => {
     try {
@@ -355,6 +375,12 @@ export default function PhotosManagePage() {
                   className="px-4 py-2 rounded-lg text-sm font-medium bg-gray-500 text-white hover:bg-gray-600 transition-colors"
                 >
                   查看遷移狀態
+                </button>
+                <button
+                  onClick={handleTestSharp}
+                  className="px-4 py-2 rounded-lg text-sm font-medium bg-blue-500 text-white hover:bg-blue-600 transition-colors"
+                >
+                  測試 Sharp 庫
                 </button>
               </div>
             </div>

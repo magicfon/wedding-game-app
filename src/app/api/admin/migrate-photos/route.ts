@@ -1,14 +1,72 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseAdmin } from '@/lib/supabase-server'
 
-// 動態導入 imageProcessor 以避免 Vercel 環境中的模塊加載問題
-async function getImageProcessor() {
+// 簡化的圖片處理函數，避免複雜的類依賴
+async function processImageSimple(imageUrl: string, photoId: number): Promise<{
+  thumbnailUrl: string
+  fileName: string
+  width: number
+  height: number
+}> {
+  let sharp: any
   try {
-    const { imageProcessor } = await import('@/lib/image-processing')
-    return imageProcessor
+    // 嘗試動態導入 sharp
+    sharp = require('sharp')
   } catch (error) {
-    console.error('無法載入圖片處理器:', error)
-    throw new Error('圖片處理模塊載入失敗，請檢查 Sharp 依賴是否正確安裝')
+    throw new Error('Sharp 庫未正確安裝，請檢查依賴配置')
+  }
+
+  const supabase = createSupabaseAdmin()
+  
+  // 下載圖片
+  const response = await fetch(imageUrl)
+  if (!response.ok) {
+    throw new Error(`圖片下載失敗: ${response.status} ${response.statusText}`)
+  }
+  
+  const arrayBuffer = await response.arrayBuffer()
+  const buffer = Buffer.from(arrayBuffer)
+  
+  // 生成縮圖
+  const fileName = `thumb_${photoId}_${Date.now()}.jpg`
+  
+  try {
+    const thumbnailBuffer = await sharp(buffer)
+      .resize(150, null, { 
+        withoutEnlargement: true,
+        fit: 'inside'
+      })
+      .jpeg({ quality: 85 })
+      .toBuffer()
+    
+    // 上傳縮圖
+    const { data, error } = await supabase.storage
+      .from('wedding-photos')
+      .upload(`thumbnails/${fileName}`, thumbnailBuffer, {
+        cacheControl: '3600',
+        upsert: true
+      })
+    
+    if (error) {
+      throw new Error(`縮圖上傳失敗: ${error.message}`)
+    }
+    
+    // 獲取公開 URL
+    const { data: urlData } = supabase.storage
+      .from('wedding-photos')
+      .getPublicUrl(`thumbnails/${fileName}`)
+    
+    // 獲取圖片尺寸信息
+    const metadata = await sharp(thumbnailBuffer).metadata()
+    
+    return {
+      thumbnailUrl: urlData.publicUrl,
+      fileName,
+      width: metadata.width || 150,
+      height: metadata.height || 150
+    }
+  } catch (error) {
+    throw new Error(`圖片處理失敗: ${error instanceof Error ? error.message : '未知錯誤'}`)
   }
 }
 
@@ -32,7 +90,7 @@ export async function POST(request: NextRequest) {
       .from('photos')
       .select('id, image_url, user_id, created_at')
       .is('has_thumbnail', false)
-      .limit(5) // 減少批次大小
+      .limit(3) // 進一步減少批次大小
     
     if (error) {
       throw error
@@ -54,17 +112,6 @@ export async function POST(request: NextRequest) {
       error?: string
     }> = []
     
-    // 動態載入圖片處理器
-    let imageProcessor
-    try {
-      imageProcessor = await getImageProcessor()
-    } catch (processorError) {
-      return NextResponse.json({
-        error: '圖片處理器載入失敗',
-        details: processorError instanceof Error ? processorError.message : '未知錯誤'
-      }, { status: 500 })
-    }
-    
     for (const photo of photos) {
       // 檢查執行時間
       if (Date.now() - startTime > maxExecutionTime) {
@@ -75,44 +122,14 @@ export async function POST(request: NextRequest) {
       try {
         console.log(`🔄 開始遷移照片 ${photo.id}`)
         
-        // 下載原始圖片（添加超時控制）
-        const downloadPromise = imageProcessor.downloadImage(photo.image_url)
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('圖片下載超時')), 10000)
-        )
-        
-        const originalBuffer = await Promise.race([downloadPromise, timeoutPromise]) as Buffer
-        
-        // 生成縮圖（添加超時控制）
-        const fileName = `migration_${photo.id}_${Date.now()}.jpg`
-        const thumbnailPromise = imageProcessor.generateThumbnail(originalBuffer, fileName)
-        const thumbnailTimeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('縮圖生成超時')), 15000)
-        )
-        
-        const thumbnailData = await Promise.race([thumbnailPromise, thumbnailTimeoutPromise]) as {
-          fileName: string
-          buffer: Buffer
-          width: number
-          height: number
-        }
-        
-        // 上傳縮圖（添加超時控制）
-        const uploadPromise = imageProcessor.uploadThumbnail(
-          thumbnailData.buffer,
-          thumbnailData.fileName
-        )
-        const uploadTimeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('縮圖上傳超時')), 10000)
-        )
-        
-        const thumbnailUrl = await Promise.race([uploadPromise, uploadTimeoutPromise]) as string
+        // 使用簡化的圖片處理函數
+        const thumbnailData = await processImageSimple(photo.image_url, photo.id)
         
         // 更新資料庫
         const { error: updateError } = await supabase
           .from('photos')
           .update({
-            thumbnail_url: thumbnailUrl,
+            thumbnail_url: thumbnailData.thumbnailUrl,
             thumbnail_file_name: thumbnailData.fileName,
             has_thumbnail: true,
             thumbnail_width: thumbnailData.width,
@@ -145,8 +162,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: `成功遷移 ${migratedCount} 張照片，失敗 ${failedCount} 張`,
-      data: {
-        migrated: migratedCount,
+      data: { 
+        migrated: migratedCount, 
         failed: failedCount,
         total: photos.length,
         results,
