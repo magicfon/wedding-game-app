@@ -18,7 +18,8 @@ export async function GET(request: NextRequest) {
 
   // 測試 1: 檢查 Sharp 是否可以導入
   try {
-    const sharp = require('sharp')
+    const sharpModule = await import('sharp')
+    const sharp = sharpModule.default || sharpModule
     debugInfo.tests.push({
       name: 'Sharp 導入測試',
       status: 'success',
@@ -39,7 +40,8 @@ export async function GET(request: NextRequest) {
 
   // 測試 2: 檢查 Sharp 基本功能
   try {
-    const sharp = require('sharp')
+    const sharpModule = await import('sharp')
+    const sharp = sharpModule.default || sharpModule
     const testBuffer = Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64')
     
     const metadata = await sharp(testBuffer).metadata()
@@ -63,7 +65,8 @@ export async function GET(request: NextRequest) {
 
   // 測試 3: 檢查 Sharp 圖片處理功能
   try {
-    const sharp = require('sharp')
+    const sharpModule = await import('sharp')
+    const sharp = sharpModule.default || sharpModule
     const testBuffer = Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64')
     
     const processedBuffer = await sharp(testBuffer)
@@ -103,8 +106,8 @@ export async function GET(request: NextRequest) {
 
   // 測試 5: 檢查 package.json 依賴
   try {
-    const fs = require('fs')
-    const path = require('path')
+    const fs = await import('fs')
+    const path = await import('path')
     const packageJsonPath = path.join(process.cwd(), 'package.json')
     const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'))
     

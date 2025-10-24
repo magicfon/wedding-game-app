@@ -11,7 +11,7 @@ async function processImageSimple(imageUrl: string, photoId: number): Promise<{
   let sharp: any
   try {
     // 嘗試動態導入 sharp
-    sharp = require('sharp')
+    sharp = (await import('sharp')).default || (await import('sharp'))
   } catch (error) {
     throw new Error('Sharp 庫未正確安裝，請檢查依賴配置')
   }

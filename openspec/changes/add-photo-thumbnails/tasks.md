@@ -25,6 +25,7 @@
 - [x] 創建遷移健康檢查 API
 - [x] 修復 Vercel 環境中的遷移 API 錯誤
 - [x] 創建 Sharp 庫調試工具
+- [x] 修復 Vercel 部署中的 TypeScript/ESLint 錯誤
 - [ ] 驗證遷移功能在生產環境中正常工作
 
 ## 5. 文檔和部署
