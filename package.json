@@ -6,7 +6,10 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:thumbnails": "node scripts/test-thumbnail-functionality.js",
+    "migrate:photos": "curl -X POST http://localhost:3000/api/admin/migrate-photos",
+    "migration:status": "curl http://localhost:3000/api/admin/migrate-photos"
   },
   "dependencies": {
     "@line/bot-sdk": "^10.2.0",

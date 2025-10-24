@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseAdmin } from '@/lib/supabase-server'
+import { imageProcessor } from '@/lib/image-processing'
 
 export async function POST(request: NextRequest) {
   try {
@@ -43,10 +44,14 @@ export async function POST(request: NextRequest) {
 
     console.log(`📸 開始上傳照片: ${fileName}, 大小: ${(file.size / 1024 / 1024).toFixed(2)}MB`)
 
+    // 將文件轉換為 Buffer 以便處理
+    const arrayBuffer = await file.arrayBuffer()
+    const buffer = Buffer.from(arrayBuffer)
+
     // 上傳到 Supabase Storage
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('wedding-photos')
-      .upload(fileName, file, {
+      .upload(fileName, buffer, {
         cacheControl: '3600',
         upsert: false
       })
@@ -106,11 +111,38 @@ export async function POST(request: NextRequest) {
       }, { status: 500 })
     }
 
+    // 生成縮圖
+    let thumbnailUrl: string | undefined
+    let thumbnailFileName: string | undefined
+    let thumbnailWidth: number | undefined
+    let thumbnailHeight: number | undefined
+    
+    try {
+      console.log(`🔄 開始生成縮圖: ${fileName}`)
+      const thumbnailData = await imageProcessor.generateThumbnail(buffer, fileName)
+      thumbnailUrl = await imageProcessor.uploadThumbnail(
+        thumbnailData.buffer,
+        thumbnailData.fileName
+      )
+      thumbnailFileName = thumbnailData.fileName
+      thumbnailWidth = thumbnailData.width
+      thumbnailHeight = thumbnailData.height
+      console.log(`✅ 縮圖生成成功: ${thumbnailFileName}`)
+    } catch (thumbnailError) {
+      console.error('❌ 縮圖生成失敗:', thumbnailError)
+      // 縮圖生成失敗不影響主要上傳流程
+    }
+
     // 儲存照片資訊到資料庫
     // 注意: 實際的資料庫結構使用 image_url 和 user_id，而非 file_name 和 uploader_line_id
     const photoInsertData: any = {
       user_id: uploaderLineId,  // 對應 users.line_id
       image_url: urlData.publicUrl,  // 使用公開 URL
+      thumbnail_url: thumbnailUrl,
+      thumbnail_file_name: thumbnailFileName,
+      has_thumbnail: !!thumbnailUrl,
+      thumbnail_width: thumbnailWidth,
+      thumbnail_height: thumbnailHeight,
       blessing_message: blessingMessage || '',
       is_public: isPublic,
       vote_count: 0
@@ -152,6 +184,7 @@ export async function POST(request: NextRequest) {
         id: photoData.id,
         fileName,
         publicUrl: urlData?.publicUrl || `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/wedding-photos/${fileName}`,
+        thumbnailUrl,
         blessingMessage,
         isPublic,
         uploadTime: photoData.created_at || new Date().toISOString()

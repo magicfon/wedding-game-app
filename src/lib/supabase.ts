@@ -62,6 +62,11 @@ export interface Photo {
   id: number
   user_id: string  // 對應 users.line_id
   image_url: string  // 照片的公開 URL
+  thumbnail_url?: string  // 縮圖的公開 URL
+  thumbnail_file_name?: string  // 縮圖文件名
+  has_thumbnail?: boolean  // 是否有縮圖標記
+  thumbnail_width?: number  // 縮圖寬度（像素）
+  thumbnail_height?: number  // 縮圖高度（像素）
   blessing_message: string
   is_public: boolean
   vote_count: number

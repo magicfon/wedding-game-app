@@ -49,16 +49,20 @@ export async function GET(request: NextRequest) {
       }, { status: 500 })
     }
 
-    // 照片已經包含 image_url，不需要額外處理
-    const photosWithUrls = photos || []
+    // 確保每個照片對象都有完整的縮圖信息
+    const processedPhotos = (photos || []).map(photo => ({
+      ...photo,
+      thumbnail_url: photo.thumbnail_url || photo.image_url, // 向後相容
+      has_thumbnail: photo.has_thumbnail || false
+    }))
 
-    console.log(`✅ 成功獲取 ${photosWithUrls.length} 張照片`)
+    console.log(`✅ 成功獲取 ${processedPhotos.length} 張照片`)
 
     return NextResponse.json({
       success: true,
       data: {
-        photos: photosWithUrls,
-        total: photosWithUrls.length,
+        photos: processedPhotos,
+        total: processedPhotos.length,
         sortBy,
         isPublic
       }
