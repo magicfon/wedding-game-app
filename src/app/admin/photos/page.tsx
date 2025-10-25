@@ -130,6 +130,31 @@ export default function PhotosManagePage() {
     }
   }
 
+  // 執行照片遷移（使用外部服務）
+  const handleMigratePhotosExternal = async () => {
+    try {
+      console.log('🔄 開始照片遷移（使用外部服務）...')
+      const response = await fetch('/api/admin/migrate-photos-fallback', {
+        method: 'POST'
+      })
+      const result = await response.json()
+      
+      if (result.success) {
+        alert(`✅ 成功遷移 ${result.data.migrated} 張照片，失敗 ${result.data.failed} 張（使用外部服務）`)
+        console.log('遷移結果:', result)
+        
+        // 重新載入照片列表以更新統計
+        fetchAllPhotos()
+      } else {
+        alert(`❌ 遷移失敗: ${result.error}`)
+        console.error('遷移失敗:', result)
+      }
+    } catch (error) {
+      console.error('遷移錯誤:', error)
+      alert(`❌ 遷移錯誤: ${error instanceof Error ? error.message : '未知錯誤'}`)
+    }
+  }
+
   // 檢查遷移狀態
   const handleCheckMigrationStatus = async () => {
     try {
@@ -404,7 +429,13 @@ export default function PhotosManagePage() {
                   onClick={handleMigratePhotos}
                   className="px-4 py-2 rounded-lg text-sm font-medium bg-purple-500 text-white hover:bg-purple-600 transition-colors"
                 >
-                  執行照片遷移
+                  執行照片遷移 (Sharp)
+                </button>
+                <button
+                  onClick={handleMigratePhotosExternal}
+                  className="px-4 py-2 rounded-lg text-sm font-medium bg-orange-500 text-white hover:bg-orange-600 transition-colors"
+                >
+                  執行照片遷移 (外部服務)
                 </button>
                 <button
                   onClick={handleCheckMigrationStatus}
