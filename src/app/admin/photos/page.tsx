@@ -438,6 +438,18 @@ export default function PhotosManagePage() {
                   執行照片遷移 (外部服務)
                 </button>
                 <button
+                  onClick={() => {
+                    const form = document.createElement('form')
+                    form.method = 'POST'
+                    form.action = '/api/admin/migrate-photos-edge'
+                    document.body.appendChild(form)
+                    form.submit()
+                  }}
+                  className="px-4 py-2 rounded-lg text-sm font-medium bg-teal-500 text-white hover:bg-teal-600 transition-colors"
+                >
+                  執行照片遷移 (Edge Functions)
+                </button>
+                <button
                   onClick={handleCheckMigrationStatus}
                   className="px-4 py-2 rounded-lg text-sm font-medium bg-gray-500 text-white hover:bg-gray-600 transition-colors"
                 >
