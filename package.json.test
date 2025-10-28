@@ -1,0 +1,28 @@
+{
+  "scripts": {
+    "test": "node src/__tests__/thumbnail-system.test.ts",
+    "test:watch": "node --watch src/__tests__/thumbnail-system.test.ts",
+    "test:coverage": "node src/__tests__/thumbnail-system.test.ts --coverage"
+  },
+  "jest": {
+    "testEnvironment": "jsdom",
+    "setupFilesAfterEnv": ["<rootDir>/src/__tests__/setup.ts"],
+    "moduleNameMapping": {
+      "^@/(.*)$": "<rootDir>/src/$1"
+    },
+    "collectCoverageFrom": [
+      "src/**/*.{ts,tsx}",
+      "!src/**/*.d.ts",
+      "!src/**/*.stories.{ts,tsx}"
+    ],
+    "coverageReporters": ["text", "lcov", "html"],
+    "coverageThreshold": {
+      "global": {
+        "branches": 70,
+        "functions": 70,
+        "lines": 70,
+        "statements": 70
+      }
+    }
+  }
+}

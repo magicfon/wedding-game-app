@@ -4,6 +4,8 @@ import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLiff } from '@/hooks/useLiff'
 import Layout from '@/components/Layout'
+import UploadProgress, { useUploadProgress } from '@/components/UploadProgress'
+import { uploadWithProgress, createUploadController, formatFileSize } from '@/lib/upload-with-progress'
 import { Camera, Upload, Heart, Lock, Globe, Image as ImageIcon, X } from 'lucide-react'
 
 export default function PhotoUploadPage() {
@@ -11,12 +13,15 @@ export default function PhotoUploadPage() {
   const [preview, setPreview] = useState<string | null>(null)
   const [blessingMessage, setBlessingMessage] = useState('')
   const [isPublic, setIsPublic] = useState(true)
-  const [uploading, setUploading] = useState(false)
   const [uploadSuccess, setUploadSuccess] = useState(false)
+  const [uploadController, setUploadController] = useState<ReturnType<typeof createUploadController> | null>(null)
   
   const fileInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
   const { isReady, isLoggedIn, profile, login, loading } = useLiff()
+  
+  // 使用上傳進度 Hook
+  const { progress, isUploading, error, startUpload, updateProgress, completeUpload, failUpload, reset } = useUploadProgress()
 
   // 檢查登入狀態
   useEffect(() => {
@@ -56,28 +61,33 @@ export default function PhotoUploadPage() {
   const handleUpload = async () => {
     if (!selectedFile || !profile) return
 
-    setUploading(true)
+    // 創建上傳控制器
+    const controller = createUploadController()
+    setUploadController(controller)
 
     try {
-      // 使用 FormData 準備上傳資料
-      const formData = new FormData()
-      formData.append('file', selectedFile)
-      formData.append('blessingMessage', blessingMessage)
-      formData.append('isPublic', isPublic.toString())
-      formData.append('uploaderLineId', profile.userId)
+      startUpload()
 
-      // 呼叫照片上傳 API
-      const response = await fetch('/api/photo/upload', {
-        method: 'POST',
-        body: formData
+      // 使用帶進度的上傳函數
+      const result = await uploadWithProgress({
+        url: '/api/photo/upload',
+        file: selectedFile,
+        data: {
+          blessingMessage,
+          isPublic: isPublic.toString(),
+          uploaderLineId: profile.userId
+        },
+        onProgress: (progress, status) => {
+          updateProgress(progress)
+        },
+        signal: controller.signal
       })
-
-      const result = await response.json()
 
       if (!result.success) {
         throw new Error(result.error || '上傳失敗')
       }
 
+      completeUpload()
       setUploadSuccess(true)
       
       // 清理表單
@@ -94,10 +104,19 @@ export default function PhotoUploadPage() {
       }, 2000)
 
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '上傳失敗，請稍後再試'
+      failUpload(errorMessage)
       console.error('Upload error:', error)
-      alert(error instanceof Error ? error.message : '上傳失敗，請稍後再試')
     } finally {
-      setUploading(false)
+      setUploadController(null)
+    }
+  }
+
+  const handleCancelUpload = () => {
+    if (uploadController) {
+      uploadController.cancel()
+      setUploadController(null)
+      reset()
     }
   }
 
@@ -225,17 +244,17 @@ export default function PhotoUploadPage() {
         <div className="text-center">
           <button
             onClick={handleUpload}
-            disabled={!selectedFile || uploading}
+            disabled={!selectedFile || isUploading}
             className={`px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-200 ${
-              !selectedFile || uploading
+              !selectedFile || isUploading
                 ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 : 'bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white shadow-lg hover:shadow-xl transform hover:scale-105'
             }`}
           >
-            {uploading ? (
+            {isUploading ? (
               <div className="flex items-center space-x-2">
                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                <span>上傳中...</span>
+                <span>上傳中... {Math.round(progress)}%</span>
               </div>
             ) : (
               <div className="flex items-center space-x-2">
@@ -244,6 +263,13 @@ export default function PhotoUploadPage() {
               </div>
             )}
           </button>
+          
+          {/* 顯示檔案資訊 */}
+          {selectedFile && !isUploading && (
+            <div className="mt-3 text-sm text-gray-600">
+              檔案大小: {formatFileSize(selectedFile.size)}
+            </div>
+          )}
         </div>
 
         {/* 提示 */}
@@ -253,6 +279,21 @@ export default function PhotoUploadPage() {
           </p>
         </div>
       </div>
+
+      {/* 上傳進度組件 */}
+      <UploadProgress
+        isUploading={isUploading}
+        progress={progress}
+        fileName={selectedFile?.name}
+        error={error}
+        onComplete={() => {
+          reset()
+        }}
+        onCancel={handleCancelUpload}
+        showPercentage={true}
+        showFileName={true}
+        size="medium"
+      />
     </Layout>
   )
 }

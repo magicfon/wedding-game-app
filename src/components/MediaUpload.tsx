@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import UploadProgress, { useUploadProgress } from './UploadProgress'
+import { uploadWithProgress, createUploadController, formatFileSize } from '@/lib/upload-with-progress'
 import { Upload, X, Image as ImageIcon, Video, FileText } from 'lucide-react'
 
 interface MediaUploadProps {
@@ -27,41 +29,61 @@ export default function MediaUpload({
   const [uploading, setUploading] = useState(false)
   const [dragOver, setDragOver] = useState(false)
   const [altText, setAltText] = useState(currentAltText || '')
+  const [uploadController, setUploadController] = useState<ReturnType<typeof createUploadController> | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  
+  // 使用上傳進度 Hook
+  const { progress, isUploading, error, startUpload, updateProgress, completeUpload, failUpload, reset } = useUploadProgress()
 
   const handleFileSelect = async (file: File) => {
     if (!file || disabled) return
 
+    // 創建上傳控制器
+    const controller = createUploadController()
+    setUploadController(controller)
+
     try {
-      setUploading(true)
+      startUpload()
 
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('mediaType', mediaType)
-      formData.append('altText', altText)
-
-      const response = await fetch('/api/admin/media/upload', {
-        method: 'POST',
-        body: formData
+      // 使用帶進度的上傳函數
+      const result = await uploadWithProgress({
+        url: '/api/admin/media/upload',
+        file,
+        data: {
+          mediaType,
+          altText
+        },
+        onProgress: (progress, status) => {
+          updateProgress(progress)
+        },
+        signal: controller.signal
       })
-
-      const result = await response.json()
 
       if (result.success) {
         onMediaChange({
           mediaUrl: result.data.publicUrl,
           thumbnailUrl: result.data.thumbnailUrl,
-          altText: result.data.altText
+          altText: result.data.altText || altText
         })
         console.log('✅ 媒體上傳成功:', result.data)
+        completeUpload()
       } else {
-        alert(`上傳失敗: ${result.error}`)
+        failUpload(result.error || '上傳失敗')
       }
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '上傳失敗，請稍後再試'
+      failUpload(errorMessage)
       console.error('❌ 上傳錯誤:', error)
-      alert('上傳失敗，請稍後再試')
     } finally {
-      setUploading(false)
+      setUploadController(null)
+    }
+  }
+
+  const handleCancelUpload = () => {
+    if (uploadController) {
+      uploadController.cancel()
+      setUploadController(null)
+      reset()
     }
   }
 
@@ -230,10 +252,16 @@ export default function MediaUpload({
             className="hidden"
           />
 
-          {uploading ? (
+          {isUploading ? (
             <div className="space-y-3">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-              <p className="text-gray-600">上傳中...</p>
+              <p className="text-gray-600">上傳中... {Math.round(progress)}%</p>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div
+                  className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
             </div>
           ) : (
             <div className="space-y-3">
@@ -278,6 +306,21 @@ export default function MediaUpload({
           />
         </div>
       )}
+
+      {/* 上傳進度組件 */}
+      <UploadProgress
+        isUploading={isUploading}
+        progress={progress}
+        fileName={currentMediaUrl ? undefined : undefined} // 只在上傳新檔案時顯示檔名
+        error={error}
+        onComplete={() => {
+          reset()
+        }}
+        onCancel={handleCancelUpload}
+        showPercentage={true}
+        showFileName={true}
+        size="small"
+      />
     </div>
   )
 }

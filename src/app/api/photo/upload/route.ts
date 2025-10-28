@@ -43,6 +43,14 @@ export async function POST(request: NextRequest) {
 
     console.log(`📸 開始上傳照片: ${fileName}, 大小: ${(file.size / 1024 / 1024).toFixed(2)}MB`)
 
+    // 模擬上傳進度回報（實際應用中可以使用 XMLHttpRequest 或其他支援進度的方法）
+    // 這裡我們返回一個包含進度資訊的響應頭
+    const progressHeaders = {
+      'X-Upload-Progress': '0',
+      'X-Upload-Status': 'starting',
+      'X-Upload-File-Name': fileName
+    }
+
     // 上傳到 Supabase Storage
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('wedding-photos')
@@ -53,10 +61,17 @@ export async function POST(request: NextRequest) {
 
     if (uploadError) {
       console.error('❌ 照片上傳失敗:', uploadError)
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: '照片上傳失敗',
-        details: uploadError.message 
-      }, { status: 500 })
+        details: uploadError.message
+      }, {
+        status: 500,
+        headers: {
+          ...progressHeaders,
+          'X-Upload-Progress': '0',
+          'X-Upload-Status': 'error'
+        }
+      })
     }
 
     // 獲取公開URL
@@ -172,6 +187,12 @@ export async function POST(request: NextRequest) {
         blessingMessage,
         isPublic,
         uploadTime: photoData.created_at || new Date().toISOString()
+      }
+    }, {
+      headers: {
+        ...progressHeaders,
+        'X-Upload-Progress': '100',
+        'X-Upload-Status': 'completed'
       }
     })
 

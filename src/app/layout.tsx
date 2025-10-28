@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { autoInitializeImagePerformance } from "@/lib/image-performance-init";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -22,8 +23,13 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // 初始化影像效能監控（只在客戶端執行）
+  if (typeof window !== 'undefined') {
+    autoInitializeImagePerformance();
+  }
+
   return (
-    <html lang="en">
+    <html lang="zh-TW">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
