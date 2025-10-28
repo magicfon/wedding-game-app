@@ -20,6 +20,7 @@ interface ResponsiveImageProps {
   fallbackSrc?: string
   onLoad?: () => void
   onError?: () => void
+  lightboxMode?: boolean  // 新增屬性：放大模式時強制使用原圖
 }
 
 export default function ResponsiveImage({
@@ -33,7 +34,8 @@ export default function ResponsiveImage({
   thumbnailUrls,
   fallbackSrc,
   onLoad,
-  onError
+  onError,
+  lightboxMode = false  // 新增參數，默認為 false
 }: ResponsiveImageProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [hasError, setHasError] = useState(false)
@@ -42,6 +44,11 @@ export default function ResponsiveImage({
   // 根據螢幕尺寸選擇適當的縮圖
   const getOptimalSrc = () => {
     if (hasError && fallbackSrc) return fallbackSrc
+    
+    // 🎯 放大模式優先使用原圖
+    if (lightboxMode) {
+      return src
+    }
     
     // 如果有縮圖 URL，根據螢幕寬度選擇
     if (thumbnailUrls) {
