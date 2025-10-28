@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Layout from '@/components/AdminLayout'
-import { Clock, CheckCircle, XCircle, Monitor, Smartphone, Tablet, Wifi, Activity, TrendingUp, TrendingDown } from 'lucide-react'
+import { Clock, CheckCircle, XCircle, Monitor, Smartphone, Tablet, Wifi, Activity } from 'lucide-react'
 
 interface PerformanceStats {
   totalImages: number
@@ -12,9 +12,9 @@ interface PerformanceStats {
   averageLoadTime: number
   medianLoadTime: number
   p95LoadTime: number
-  byThumbnailSize: Record<string, any>
-  byDeviceType: Record<string, any>
-  byConnectionType: Record<string, any>
+  byThumbnailSize: Record<string, { count: number; avgLoadTime: number; successRate: number }>
+  byDeviceType: Record<string, { count: number; avgLoadTime: number; successRate: number }>
+  byConnectionType: Record<string, { count: number; avgLoadTime: number; successRate: number }>
 }
 
 interface TimeSeriesData {
@@ -32,11 +32,7 @@ export default function ImagePerformancePage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    fetchPerformanceStats()
-  }, [timeRange, selectedThumbnailSize])
-
-  const fetchPerformanceStats = async () => {
+  const fetchPerformanceStats = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
@@ -54,10 +50,10 @@ export default function ImagePerformancePage() {
         
         // 轉換時間序列數據格式
         const timeSeries = result.data.rawData
-          .filter((item: any) => item.success) // 只包含成功的載入
-          .reduce((acc: any, item: any) => {
+          .filter((item: { success: boolean; timestamp: string; load_time: number }) => item.success) // 只包含成功的載入
+          .reduce((acc: TimeSeriesData[], item: { success: boolean; timestamp: string; load_time: number }) => {
             const date = new Date(item.timestamp).toLocaleDateString()
-            const existing = acc.find((d: any) => d.date === date)
+            const existing = acc.find((d: TimeSeriesData) => d.date === date)
             
             if (existing) {
               existing.totalImages++
@@ -85,7 +81,11 @@ export default function ImagePerformancePage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [timeRange, selectedThumbnailSize])
+
+  useEffect(() => {
+    fetchPerformanceStats()
+  }, [fetchPerformanceStats])
 
   const formatLoadTime = (time: number) => {
     return `${time.toFixed(0)}ms`
@@ -103,19 +103,11 @@ export default function ImagePerformancePage() {
     }
   }
 
-  const getConnectionIcon = (connectionType: string) => {
+  const getConnectionIcon = (_connectionType: string) => {
     return <Wifi className="w-4 h-4" />
   }
 
-  const getTrendIcon = (current: number, previous: number) => {
-    if (current > previous) {
-      return <TrendingUp className="w-4 h-4 text-red-500" />
-    } else {
-      return <TrendingDown className="w-4 h-4 text-green-500" />
-    }
-  }
-
-  const getSimpleBarChart = (data: any[], valueKey: string, maxBarWidth: number = 100) => {
+  const getSimpleBarChart = (data: { name: string; count: number; avgLoadTime: number; successRate: number }[], valueKey: 'count' | 'avgLoadTime' | 'successRate', maxBarWidth: number = 100) => {
     const maxValue = Math.max(...data.map(d => d[valueKey]))
     
     return (
@@ -130,14 +122,14 @@ export default function ImagePerformancePage() {
               <div className="flex-1">
                 <div className="relative">
                   <div className="w-full bg-gray-200 rounded-full h-6">
-                    <div 
+                    <div
                       className="bg-blue-500 h-6 rounded-full transition-all duration-300"
                       style={{ width: `${barWidth}px` }}
                     />
                   </div>
                   <span className="absolute inset-0 flex items-center justify-center text-xs text-white font-medium">
-                    {valueKey === 'avgLoadTime' ? formatLoadTime(item[valueKey]) : 
-                     valueKey === 'successRate' ? formatPercentage(item[valueKey]) : 
+                    {valueKey === 'avgLoadTime' ? formatLoadTime(item[valueKey]) :
+                     valueKey === 'successRate' ? formatPercentage(item[valueKey]) :
                      item[valueKey]}
                   </span>
                 </div>
@@ -183,21 +175,21 @@ export default function ImagePerformancePage() {
   }
 
   // 準備圖表數據
-  const thumbnailSizeData = Object.entries(stats.byThumbnailSize).map(([size, data]: [string, any]) => ({
+  const thumbnailSizeData = Object.entries(stats.byThumbnailSize).map(([size, data]) => ({
     name: size || 'unknown',
     count: data.count,
     avgLoadTime: data.avgLoadTime,
     successRate: data.successRate
   }))
 
-  const deviceTypeData = Object.entries(stats.byDeviceType).map(([type, data]: [string, any]) => ({
+  const deviceTypeData = Object.entries(stats.byDeviceType).map(([type, data]) => ({
     name: type,
     count: data.count,
     avgLoadTime: data.avgLoadTime,
     successRate: data.successRate
   }))
 
-  const connectionTypeData = Object.entries(stats.byConnectionType).map(([type, data]: [string, any]) => ({
+  const connectionTypeData = Object.entries(stats.byConnectionType).map(([type, data]) => ({
     name: type || 'unknown',
     count: data.count,
     avgLoadTime: data.avgLoadTime,
@@ -326,7 +318,7 @@ export default function ImagePerformancePage() {
           <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-lg font-semibold mb-4 text-black">按設備類型分析</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {deviceTypeData.map((device, index) => (
+              {deviceTypeData.map((device) => (
                 <div key={device.name} className="bg-gray-50 rounded-lg p-4">
                   <div className="flex items-center space-x-2 mb-3">
                     {getDeviceIcon(device.name)}
@@ -357,7 +349,7 @@ export default function ImagePerformancePage() {
           <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-lg font-semibold mb-4 text-black">按網路連接類型分析</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {connectionTypeData.map((connection, index) => (
+              {connectionTypeData.map((connection) => (
                 <div key={connection.name} className="bg-gray-50 rounded-lg p-4">
                   <div className="flex items-center space-x-2 mb-2">
                     {getConnectionIcon(connection.name)}

@@ -146,7 +146,7 @@ class ImagePerformanceTracker {
       imgElement.removeEventListener('error', onError)
     }
 
-    const onError = (error: Event) => {
+    const onError = (_error: Event) => {
       const loadTime = performance.now() - startTime
       
       const metrics: ImagePerformanceMetrics = {
@@ -212,7 +212,7 @@ class ImagePerformanceTracker {
       imgElement.removeEventListener('error', onError)
     }
 
-    const onError = (error: Event) => {
+    const onError = (_error: Event) => {
       const loadTime = performance.now() - startTime
       
       const metrics: ImagePerformanceMetrics = {
@@ -241,7 +241,7 @@ class ImagePerformanceTracker {
   /**
    * 添加效能指標
    */
-  private addMetrics(metrics: ImagePerformanceMetrics, additionalData?: any) {
+  private addMetrics(metrics: ImagePerformanceMetrics, additionalData?: Record<string, unknown>) {
     this.metrics.push(metrics)
 
     // 控制台日誌
@@ -252,17 +252,19 @@ class ImagePerformanceTracker {
     // Vercel Analytics
     if (this.config.enableVercelAnalytics && typeof window !== 'undefined' && 'va' in window) {
       try {
-        // @ts-ignore
-        window.va('event', {
-          eventName: 'image_performance',
-          data: {
-            loadTime: metrics.loadTime,
-            thumbnailSize: metrics.thumbnailSize,
-            success: metrics.success,
-            deviceType: this.getDeviceType(metrics.deviceInfo.userAgent),
-            connectionType: metrics.deviceInfo.connection?.effectiveType
-          }
-        })
+        const va = (window as { va?: (event: string, data: Record<string, unknown>) => void }).va
+        if (va) {
+          va('event', {
+            eventName: 'image_performance',
+            data: {
+              loadTime: metrics.loadTime,
+              thumbnailSize: metrics.thumbnailSize,
+              success: metrics.success,
+              deviceType: this.getDeviceType(metrics.deviceInfo.userAgent),
+              connectionType: metrics.deviceInfo.connection?.effectiveType
+            }
+          })
+        }
       } catch (error) {
         console.warn('Vercel Analytics 追蹤失敗:', error)
       }
@@ -277,7 +279,7 @@ class ImagePerformanceTracker {
   /**
    * 發送到自定義端點
    */
-  private async sendToCustomEndpoint(metrics: ImagePerformanceMetrics, additionalData?: any) {
+  private async sendToCustomEndpoint(metrics: ImagePerformanceMetrics, additionalData?: Record<string, unknown>) {
     if (!this.config.customEndpoint) return
 
     try {
@@ -309,9 +311,9 @@ class ImagePerformanceTracker {
       }
     }
 
-    const connection = (navigator as any).connection || 
-                     (navigator as any).mozConnection || 
-                     (navigator as any).webkitConnection
+    const connection = (navigator as unknown as { connection?: { effectiveType: string; downlink: number; rtt: number } }).connection ||
+                     (navigator as unknown as { mozConnection?: { effectiveType: string; downlink: number; rtt: number } }).mozConnection ||
+                     (navigator as unknown as { webkitConnection?: { effectiveType: string; downlink: number; rtt: number } }).webkitConnection
 
     return {
       userAgent: navigator.userAgent,
@@ -351,7 +353,7 @@ class ImagePerformanceTracker {
   /**
    * 獲取圖片尺寸（簡化版本）
    */
-  private getImageDimensions(url: string): { width: number; height: number } | undefined {
+  private getImageDimensions(_url: string): { width: number; height: number } | undefined {
     // 這裡可以實現更複雜的邏輯來獲取圖片尺寸
     // 目前返回 undefined，實際應用中可以預先獲取或從資料庫查詢
     return undefined
@@ -457,7 +459,7 @@ export function useImagePerformanceTracking(config?: ImageAnalyticsConfig) {
     trackImage: (imageUrl: string, imgElement: HTMLImageElement, thumbnailSize?: 'small' | 'medium' | 'large') => {
       tracker.trackImage(imageUrl, imgElement, thumbnailSize)
     },
-    trackVercelImage: (originalUrl: string, vercelUrl: string, imgElement: HTMLImageElement, options?: any) => {
+    trackVercelImage: (originalUrl: string, vercelUrl: string, imgElement: HTMLImageElement, options?: { width?: number; quality?: number; format?: string }) => {
       tracker.trackVercelImage(originalUrl, vercelUrl, imgElement, options)
     },
     getStatistics: () => tracker.getStatistics()

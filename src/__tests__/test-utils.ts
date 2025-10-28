@@ -25,8 +25,8 @@ export const expect = (actual: unknown) => ({
     }
   },
   toBeInstanceOf: (expected: unknown) => {
-    if (!(actual instanceof (expected as any))) {
-      throw new Error(`期望是 ${(expected as any).name} 的實例`)
+    if (!(actual instanceof (expected as new (...args: unknown[]) => unknown))) {
+      throw new Error(`期望是 ${(expected as new (...args: unknown[]) => unknown).name} 的實例`)
     }
   },
   toContain: (expected: unknown) => {
@@ -64,8 +64,8 @@ export const mockFn = () => {
   }
   mock.calls = [] as unknown[][]
   mock.returnValue = undefined
-  mock.mockImplementation = (impl: Function) => {
-    (mock as any).impl = impl
+  mock.mockImplementation = (impl: (...args: unknown[]) => unknown) => {
+    (mock as unknown as { impl: (...args: unknown[]) => unknown }).impl = impl
     return mock
   }
   return mock
@@ -81,16 +81,16 @@ export const mockBrowserEnvironment = () => {
   } as any
 
   global.PerformanceObserver = class MockPerformanceObserver {
-    constructor(callback: any) {
+    callback: (entries: PerformanceObserverEntryList[]) => void
+    constructor(callback: (entries: PerformanceObserverEntryList[]) => void) {
       this.callback = callback
     }
-    callback: any
     observe() {}
     disconnect() {}
     takeRecords() {
       return []
     }
-  } as any
+  } as unknown as typeof PerformanceObserver
 
   global.navigator = {
     userAgent: 'Mozilla/5.0 (Test Browser)',

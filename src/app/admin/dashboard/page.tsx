@@ -12,7 +12,6 @@ import {
   Settings,
   Play,
   Trophy,
-  BarChart3,
   Shield,
   Home,
   LogOut,

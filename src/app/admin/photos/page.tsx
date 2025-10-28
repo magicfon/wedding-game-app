@@ -118,6 +118,54 @@ export default function PhotosManagePage() {
     }
   }
 
+  // 獲取縮圖統計
+  const fetchThumbnailStats = async () => {
+    try {
+      console.log('開始獲取縮圖統計...')
+      const response = await fetch('/api/admin/thumbnails/stats')
+      const data = await response.json()
+
+      console.log('縮圖統計 API 回應:', {
+        ok: response.ok,
+        status: response.status,
+        stats: data.stats
+      })
+
+      if (response.ok && data.stats) {
+        setThumbnailStats(data.stats)
+        console.log('縮圖統計已載入:', data.stats)
+      } else {
+        console.error('獲取縮圖統計失敗:', data.error)
+      }
+    } catch (error) {
+      console.error('獲取縮圖統計失敗:', error)
+    }
+  }
+
+  // 批量重新生成縮圖
+  const handleBatchRefreshThumbnails = async () => {
+    try {
+      console.log('開始批量重新生成縮圖...')
+      const response = await fetch('/api/admin/thumbnails/batch-refresh', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      })
+      const data = await response.json()
+
+      if (response.ok) {
+        console.log('批量重新生成縮圖成功:', data)
+        // 重新獲取統計
+        fetchThumbnailStats()
+      } else {
+        console.error('批量重新生成縮圖失敗:', data.error)
+      }
+    } catch (error) {
+      console.error('批量重新生成縮圖失敗:', error)
+    } finally {
+      setBatchRefreshing(false)
+    }
+  }
+
   // 切換照片公開狀態
   const togglePhotoVisibility = async (photoId: number, currentStatus: boolean) => {
     try {

@@ -217,6 +217,60 @@ export default function NetworkTestPage() {
     setNetworkStats(null)
   }
 
+  // 生成測試摘要
+  const generateTestSummary = () => {
+    const summary = {
+      totalTests: testResults.length,
+      successfulTests: testResults.filter(r => r.success).length,
+      failedTests: testResults.filter(r => !r.success).length,
+      averageLoadTimeByCondition: {} as Record<string, number>,
+      averageLoadTimeBySize: {} as Record<string, number>,
+      performanceByCondition: {} as Record<string, {
+        successRate: number;
+        averageLoadTime: number;
+        totalTests: number;
+      }>
+    }
+    
+    // 計算各條件下的平均載入時間
+    for (const condition of networkConditions) {
+      const conditionResults = testResults.filter(r => r.condition.name === condition.name)
+      const successfulResults = conditionResults.filter(r => r.success)
+      
+      if (successfulResults.length > 0) {
+        summary.averageLoadTimeByCondition[condition.name] =
+          successfulResults.reduce((sum, r) => sum + r.loadTime, 0) / successfulResults.length
+      }
+    }
+    
+    // 計算各尺寸下的平均載入時間
+    const sizes: ('small' | 'medium' | 'large')[] = ['small', 'medium', 'large']
+    for (const size of sizes) {
+      const sizeResults = testResults.filter(r => r.imageSize === size && r.success)
+      
+      if (sizeResults.length > 0) {
+        summary.averageLoadTimeBySize[size] =
+          sizeResults.reduce((sum, r) => sum + r.loadTime, 0) / sizeResults.length
+      }
+    }
+    
+    // 計算各條件下的性能表現
+    for (const condition of networkConditions) {
+      const conditionResults = testResults.filter(r => r.condition.name === condition.name)
+      const successfulResults = conditionResults.filter(r => r.success)
+      
+      if (conditionResults.length > 0) {
+        summary.performanceByCondition[condition.name] = {
+          successRate: (successfulResults.length / conditionResults.length) * 100,
+          averageLoadTime: successfulResults.reduce((sum, r) => sum + r.loadTime, 0) / successfulResults.length,
+          totalTests: conditionResults.length
+        }
+      }
+    }
+    
+    return summary
+  }
+
   // 導出測試結果
   const exportResults = () => {
     const report = {
@@ -233,7 +287,7 @@ export default function NetworkTestPage() {
         description: img.description
       })),
       results: testResults,
-      summary: generateSummary()
+      summary: generateTestSummary()
     }
     
     const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' })
@@ -243,55 +297,6 @@ export default function NetworkTestPage() {
     a.download = `network-test-${Date.now()}.json`
     a.click()
     URL.revokeObjectURL(url)
-  }
-
-  // 生成測試摘要
-  const generateSummary = () => {
-    const summary = {
-      totalTests: testResults.length,
-      successfulTests: testResults.filter(r => r.success).length,
-      failedTests: testResults.filter(r => !r.success).length,
-      averageLoadTimeByCondition: {} as Record<string, number>,
-      averageLoadTimeBySize: {} as Record<string, number>,
-      performanceByCondition: {} as Record<string, any>
-    }
-    
-    // 計算各條件下的平均載入時間
-    networkConditions.forEach(condition => {
-      const conditionResults = testResults.filter(r => r.condition.name === condition.name)
-      const successfulResults = conditionResults.filter(r => r.success)
-      
-      if (successfulResults.length > 0) {
-        summary.averageLoadTimeByCondition[condition.name] = 
-          successfulResults.reduce((sum, r) => sum + r.loadTime, 0) / successfulResults.length
-      }
-    })
-    
-    // 計算各尺寸下的平均載入時間
-    ['small', 'medium', 'large'].forEach(size => {
-      const sizeResults = testResults.filter(r => r.imageSize === size && r.success)
-      
-      if (sizeResults.length > 0) {
-        summary.averageLoadTimeBySize[size] = 
-          sizeResults.reduce((sum, r) => sum + r.loadTime, 0) / sizeResults.length
-      }
-    })
-    
-    // 計算各條件下的性能表現
-    networkConditions.forEach(condition => {
-      const conditionResults = testResults.filter(r => r.condition.name === condition.name)
-      const successfulResults = conditionResults.filter(r => r.success)
-      
-      if (conditionResults.length > 0) {
-        summary.performanceByCondition[condition.name] = {
-          successRate: (successfulResults.length / conditionResults.length) * 100,
-          averageLoadTime: successfulResults.reduce((sum, r) => sum + r.loadTime, 0) / successfulResults.length,
-          totalTests: conditionResults.length
-        }
-      }
-    })
-    
-    return summary
   }
 
   useEffect(() => {
