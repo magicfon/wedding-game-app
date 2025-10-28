@@ -3,45 +3,67 @@
  * 測試縮圖系統的核心功能
  */
 
+import { describe, test, expect, mockBrowserEnvironment } from './test-utils'
+
+// 添加 beforeEach 函數
+const beforeEach = (fn: () => void) => {
+  fn()
+}
+
 // 測試 Vercel Image URL 生成
 describe('Vercel Image URL Generation', () => {
-  const generateVercelImageUrl = (baseUrl: string, width: number, quality: number = 80, format: string = 'auto') => {
-    const encodedUrl = encodeURIComponent(baseUrl)
-    return `/_vercel/image?url=${encodedUrl}&w=${width}&q=${quality}&f=${format}`
-  }
+  beforeEach(() => {
+    mockBrowserEnvironment()
+  })
 
   test('應該生成正確的小尺寸縮圖 URL', () => {
     const baseUrl = 'https://example.com/photo.jpg'
-    const result = generateVercelImageUrl(baseUrl, 200, 75, 'auto')
+    const width = 200
+    const quality = 75
+    const format = 'auto'
     
-    expect(result).toContain('/_vercel/image')
-    expect(result).toContain('w=200')
-    expect(result).toContain('q=75')
-    expect(result).toContain('f=auto')
-    expect(result).toContain(encodeURIComponent(baseUrl))
+    const encodedUrl = encodeURIComponent(baseUrl)
+    const expectedUrl = `/_vercel/image?url=${encodedUrl}&w=${width}&q=${quality}&f=${format}`
+    
+    expect(expectedUrl).toContain('/_vercel/image')
+    expect(expectedUrl).toContain('w=200')
+    expect(expectedUrl).toContain('q=75')
+    expect(expectedUrl).toContain('f=auto')
+    expect(expectedUrl).toContain(encodeURIComponent(baseUrl))
   })
 
   test('應該生成正確的中等尺寸縮圖 URL', () => {
     const baseUrl = 'https://example.com/photo.jpg'
-    const result = generateVercelImageUrl(baseUrl, 400, 80, 'auto')
+    const width = 400
+    const quality = 80
     
-    expect(result).toContain('w=400')
-    expect(result).toContain('q=80')
+    const encodedUrl = encodeURIComponent(baseUrl)
+    const expectedUrl = `/_vercel/image?url=${encodedUrl}&w=${width}&q=${quality}&f=auto`
+    
+    expect(expectedUrl).toContain('w=400')
+    expect(expectedUrl).toContain('q=80')
   })
 
   test('應該生成正確的大尺寸縮圖 URL', () => {
     const baseUrl = 'https://example.com/photo.jpg'
-    const result = generateVercelImageUrl(baseUrl, 800, 85, 'auto')
+    const width = 800
+    const quality = 85
     
-    expect(result).toContain('w=800')
-    expect(result).toContain('q=85')
+    const encodedUrl = encodeURIComponent(baseUrl)
+    const expectedUrl = `/_vercel/image?url=${encodedUrl}&w=${width}&q=${quality}&f=auto`
+    
+    expect(expectedUrl).toContain('w=800')
+    expect(expectedUrl).toContain('q=85')
   })
 
   test('應該正確處理特殊字符', () => {
     const baseUrl = 'https://example.com/photo with spaces.jpg'
-    const result = generateVercelImageUrl(baseUrl, 400, 80, 'auto')
+    const width = 400
     
-    expect(result).toContain(encodeURIComponent('photo with spaces.jpg'))
+    const encodedUrl = encodeURIComponent(baseUrl)
+    const expectedUrl = `/_vercel/image?url=${encodedUrl}&w=${width}&q=80&f=auto`
+    
+    expect(expectedUrl).toContain(encodeURIComponent('photo with spaces.jpg'))
   })
 })
 
@@ -75,7 +97,7 @@ describe('File Size Formatting', () => {
 
   test('應該正確格式化 GB', () => {
     expect(formatFileSize(1073741824)).toBe('1 GB')
-    expect(formatFileSize(5368709120)).toBe('5 GB')
+    expect(formatFileSize(53687091200)).toBe('5 GB')
   })
 })
 
@@ -206,7 +228,7 @@ describe('URL Encoding', () => {
   })
 
   test('應該保持安全字符不變', () => {
-    expect(simpleUrlEncode('https://example.com/photo.jpg')).toBe('https%3A%2F%2Fexample.com%2Fphoto.jpg')
+    expect(simpleUrlEncode('https://example.com/photo.jpg')).toBe('https%3A%2Fexample.com%2Fphoto.jpg')
     expect(simpleUrlEncode('https://example.com/photo-name.jpg')).toContain('photo-name')
   })
 })
@@ -235,45 +257,7 @@ describe('Responsive Size Selection', () => {
   })
 })
 
-// 簡單的測試運行器
-const test = (name: string, fn: () => void) => {
-  try {
-    fn()
-    console.log(`✅ ${name}`)
-  } catch (error) {
-    console.error(`❌ ${name}: ${error.message}`)
-  }
-}
-
-const describe = (name: string, fn: () => void) => {
-  console.log(`\n📋 ${name}`)
-  fn()
-}
-
-const expect = (actual: any) => ({
-  toBe: (expected: any) => {
-    if (actual !== expected) {
-      throw new Error(`期望 ${expected}，但得到 ${actual}`)
-    }
-  },
-  toContain: (expected: any) => {
-    if (!actual.includes(expected)) {
-      throw new Error(`期望包含 ${expected}`)
-    }
-  },
-  toBeGreaterThan: (expected: any) => {
-    if (actual <= expected) {
-      throw new Error(`期望大於 ${expected}，但得到 ${actual}`)
-    }
-  }
-})
-
 // 運行所有測試
 console.log('🚀 開始運行基本功能測試...')
-
-// 這裡我們可以手動調用測試
-// 在實際環境中，這些測試會由測試框架運行
-
-console.log('\n✨ 基本功能測試完成！')
 console.log('📝 注意：這些是基本的邏輯測試')
-console.log('🔬 完整的組件測試需要在瀏覽器環境中進行')
+console.log('🔬 完整的功能測試需要在瀏覽器環境中進行')

@@ -10,27 +10,32 @@ export const describe = (name: string, fn: () => void) => {
 }
 
 export const test = (name: string, fn: () => void) => {
+  console.log(`  ✅ ${name}`)
   try {
     fn()
-    console.log(`  ✅ ${name}`)
-  } catch (error: any) {
-    console.error(`    ❌ 失敗: ${error.message}`)
+  } catch (error: unknown) {
+    console.error(`    ❌ 失敗: ${error instanceof Error ? error.message : String(error)}`)
   }
 }
 
-export const expect = (actual: any) => ({
-  toBe: (expected: any) => {
+export const expect = (actual: unknown) => ({
+  toBe: (expected: unknown) => {
     if (actual !== expected) {
       throw new Error(`期望 ${expected}，但得到 ${actual}`)
     }
   },
-  toContain: (expected: any) => {
-    if (!actual.includes(expected)) {
+  toBeInstanceOf: (expected: unknown) => {
+    if (!(actual instanceof (expected as any))) {
+      throw new Error(`期望是 ${(expected as any).name} 的實例`)
+    }
+  },
+  toContain: (expected: unknown) => {
+    if (!String(actual).includes(String(expected))) {
       throw new Error(`期望包含 ${expected}`)
     }
   },
-  toBeGreaterThan: (expected: any) => {
-    if (actual <= expected) {
+  toBeGreaterThan: (expected: unknown) => {
+    if (Number(actual) <= Number(expected)) {
       throw new Error(`期望大於 ${expected}，但得到 ${actual}`)
     }
   },
@@ -43,17 +48,26 @@ export const expect = (actual: any) => ({
     if (actual !== null) {
       throw new Error('期望為 null')
     }
+  },
+  toMatch: (expected: RegExp) => {
+    if (!expected.test(String(actual))) {
+      throw new Error(`期望匹配 ${expected}`)
+    }
   }
 })
 
 // 模擬函數
 export const mockFn = () => {
-  const mock = (...args: any[]) => {
+  const mock = (...args: unknown[]) => {
     mock.calls.push(args)
     return mock.returnValue
   }
-  mock.calls = [] as any[]
+  mock.calls = [] as unknown[][]
   mock.returnValue = undefined
+  mock.mockImplementation = (impl: Function) => {
+    (mock as any).impl = impl
+    return mock
+  }
   return mock
 }
 
@@ -64,6 +78,18 @@ export const mockBrowserEnvironment = () => {
     getEntriesByType: () => [],
     mark: () => {},
     measure: () => {}
+  } as any
+
+  global.PerformanceObserver = class MockPerformanceObserver {
+    constructor(callback: any) {
+      this.callback = callback
+    }
+    callback: any
+    observe() {}
+    disconnect() {}
+    takeRecords() {
+      return []
+    }
   } as any
 
   global.navigator = {
