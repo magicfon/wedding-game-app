@@ -13,15 +13,15 @@
   - 不引入複雜的圖片編輯功能
 
 ## Decisions
-- Decision: 使用 Sharp 庫進行伺服器端圖片處理
-  - Reason: Sharp 性能優異，支援多種格式，Vercel 環境相容性好
-  - Alternatives considered: JIMP (較慢但純 JavaScript), ImageMagick (過於複雜)
+- Decision: 使用 Vercel 內建的影像處理功能
+  - Reason: Vercel Image Optimization 提供自動影像最佳化、格式轉換和尺寸調整，無需額外依賴
+  - Alternatives considered: Sharp (需要額外依賴), JIMP (較慢且純 JavaScript), 自建處理 (複雜度高)
 - Decision: 生成多種尺寸的縮圖 (小: 200px, 中: 400px, 大: 800px)
   - Reason: 適應不同螢幕尺寸和網路條件
   - Alternatives considered: 單一尺寸 (不夠靈活), 響應式生成 (延遲高)
-- Decision: 在上傳時同步生成縮圖
-  - Reason: 確保縮圖可用性，避免用戶等待
-  - Alternatives considered: 按需生成 (首次載入慢), 背景任務 (複雜度高)
+- Decision: 使用 Vercel Image Optimization API 動態生成縮圖
+  - Reason: 減少存儲需求，支援即時格式最佳化，自動 CDN 快取
+  - Alternatives considered: 預生成所有尺寸 (存儲成本高), 按需生成 (首次載入慢)
 
 ## Risks / Trade-offs
 - [風險] 縮圖生成失敗 → 實施重試機制和回退到原圖

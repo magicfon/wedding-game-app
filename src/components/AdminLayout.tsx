@@ -2,19 +2,20 @@
 
 import { useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
-import { 
-  Shield, 
-  HelpCircle, 
-  Users, 
-  Trophy, 
-  Camera, 
-  Settings, 
+import {
+  Shield,
+  HelpCircle,
+  Users,
+  Trophy,
+  Camera,
+  Settings,
   BarChart3,
   Home,
   Menu,
   X,
   HardDrive,
-  Gift
+  Gift,
+  Image as ImageIcon
 } from 'lucide-react'
 
 interface AdminLayoutProps {
@@ -31,6 +32,7 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
     { name: '控制台', href: '/admin/dashboard', icon: BarChart3 },
     { name: '題目管理', href: '/admin/questions', icon: HelpCircle },
     { name: '照片管理', href: '/admin/photos', icon: Camera },
+    { name: '縮圖管理', href: '/admin/thumbnails', icon: ImageIcon },
     { name: '分數管理', href: '/admin/scores', icon: Trophy },
     { name: '積分歷史', href: '/admin/score-history', icon: Trophy },
     { name: '照片摸彩', href: '/admin/lottery', icon: Gift },

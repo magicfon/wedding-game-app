@@ -106,6 +106,12 @@ export async function POST(request: NextRequest) {
       }, { status: 500 })
     }
 
+    // 生成 Vercel Image Optimization 縮圖 URL
+    const generateVercelImageUrl = (baseUrl: string, width: number, quality: number = 80, format: string = 'auto') => {
+      const encodedUrl = encodeURIComponent(baseUrl)
+      return `/_vercel/image?url=${encodedUrl}&w=${width}&q=${quality}&f=${format}`
+    }
+
     // 儲存照片資訊到資料庫
     // 注意: 實際的資料庫結構使用 image_url 和 user_id，而非 file_name 和 uploader_line_id
     const photoInsertData: any = {
@@ -113,7 +119,13 @@ export async function POST(request: NextRequest) {
       image_url: urlData.publicUrl,  // 使用公開 URL
       blessing_message: blessingMessage || '',
       is_public: isPublic,
-      vote_count: 0
+      vote_count: 0,
+      // 添加縮圖 URL
+      thumbnail_url_template: urlData.publicUrl,
+      thumbnail_small_url: generateVercelImageUrl(urlData.publicUrl, 200, 75, 'auto'),
+      thumbnail_medium_url: generateVercelImageUrl(urlData.publicUrl, 400, 80, 'auto'),
+      thumbnail_large_url: generateVercelImageUrl(urlData.publicUrl, 800, 85, 'auto'),
+      thumbnail_generated_at: new Date().toISOString()
     }
 
     console.log('📸 準備插入資料庫:', photoInsertData)
@@ -152,6 +164,11 @@ export async function POST(request: NextRequest) {
         id: photoData.id,
         fileName,
         publicUrl: urlData?.publicUrl || `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/wedding-photos/${fileName}`,
+        thumbnailUrls: {
+          small: generateVercelImageUrl(urlData?.publicUrl || '', 200, 75, 'auto'),
+          medium: generateVercelImageUrl(urlData?.publicUrl || '', 400, 80, 'auto'),
+          large: generateVercelImageUrl(urlData?.publicUrl || '', 800, 85, 'auto')
+        },
         blessingMessage,
         isPublic,
         uploadTime: photoData.created_at || new Date().toISOString()

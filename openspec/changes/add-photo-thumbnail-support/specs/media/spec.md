@@ -1,19 +1,19 @@
 ## ADDED Requirements
 
 ### Requirement: Photo Thumbnail Generation
-系統 SHALL 為所有上傳的照片自動生成多種尺寸的縮圖。
+系統 SHALL 為所有上傳的照片提供多種尺寸的縮圖 URL。
 
-#### Scenario: Successful thumbnail generation
+#### Scenario: Dynamic thumbnail URL generation
 - **WHEN** 用戶上傳照片
-- **THEN** 系統自動生成小 (200px)、中 (400px)、大 (800px) 三種尺寸的縮圖
-- **AND** 縮圖儲存在 Supabase Storage 的專用資料夾
-- **AND** 縮圖 URL 記錄在 photos 表中
+- **THEN** 系統生成小 (200px)、中 (400px)、大 (800px) 三種尺寸的 Vercel 影像處理 URL
+- **AND** 縮圖 URL 模板記錄在 photos 表中
+- **AND** 支援動態參數調整 (品質、格式、尺寸)
 
-#### Scenario: Thumbnail generation fallback
-- **WHEN** 縮圖生成失敗
+#### Scenario: Vercel Image Optimization fallback
+- **WHEN** Vercel 影像處理失敗
 - **THEN** 系統記錄錯誤日誌
-- **AND** 使用原始照片作為回退
-- **AND** 後台重試機制嘗試重新生成
+- **AND** 使用原始照片 URL 作為回退
+- **AND** 提供替代的影像處理參數
 
 ### Requirement: Responsive Photo Display
 照片牆 SHALL 根據設備和網路條件智能選擇適當的圖片尺寸。
@@ -31,35 +31,35 @@
 - **AND** 點擊時載入原始圖片
 
 ### Requirement: Thumbnail Management API
-系統 SHALL 提供縮圖管理的 API 端點。
+系統 SHALL 提供縮圖 URL 管理的 API 端點。
 
-#### Scenario: Manual thumbnail regeneration
-- **WHEN** 管理員請求重新生成縮圖
+#### Scenario: Dynamic thumbnail URL refresh
+- **WHEN** 管理員請求更新縮圖 URL
 - **THEN** 系統驗證管理員權限
-- **AND** 重新生成指定照片的所有縮圖
-- **AND** 返回生成結果和統計資訊
+- **AND** 重新生成指定照片的縮圖 URL 模板
+- **AND** 返回新的 URL 配置和統計資訊
 
-#### Scenario: Thumbnail cleanup
+#### Scenario: Thumbnail URL cleanup
 - **WHEN** 原始照片被刪除
-- **THEN** 系統自動刪除相關的所有縮圖
-- **AND** 清理 photos 表中的縮圖記錄
-- **AND** 釋放存儲空間
+- **THEN** 系統自動清理 photos 表中的縮圖 URL 記錄
+- **AND** 使相關的 Vercel 影像快取失效
+- **AND** 返回清理確認
 
 ## MODIFIED Requirements
 
 ### Requirement: Photo Upload Process
-照片上傳流程 SHALL 包含縮圖生成步驟。
+照片上傳流程 SHALL 包含縮圖 URL 生成步驟。
 
-#### Scenario: Enhanced photo upload
+#### Scenario: Enhanced photo upload with Vercel optimization
 - **WHEN** 用戶上傳照片
 - **THEN** 系統驗證照片格式和大小
 - **AND** 儲存原始照片到 Supabase Storage
-- **AND** 自動生成多種尺寸的縮圖
-- **AND** 更新 photos 表包含縮圖資訊
-- **AND** 返回包含所有圖片 URL 的回應
+- **AND** 生成 Vercel 影像處理的縮圖 URL 模板
+- **AND** 更新 photos 表包含縮圖 URL 資訊
+- **AND** 返回包含原始和縮圖 URL 的回應
 
 #### Scenario: Upload progress indication
-- **WHEN** 照片上傳和縮圖生成進行中
+- **WHEN** 照片上傳進行中
 - **THEN** 系統顯示上傳進度
-- **AND** 顯示縮圖生成狀態
+- **AND** 顯示 URL 生成狀態
 - **AND** 提供取消操作的選項

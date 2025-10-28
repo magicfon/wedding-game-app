@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createSupabaseBrowser, Photo } from '@/lib/supabase'
 import { useLiff } from '@/hooks/useLiff'
 import Layout from '@/components/Layout'
+import ResponsiveImage from '@/components/ResponsiveImage'
 import { Heart, User, Clock, Trophy, X, MessageSquare } from 'lucide-react'
 
 interface PhotoWithUser extends Photo {
@@ -13,6 +14,9 @@ interface PhotoWithUser extends Photo {
     avatar_url: string
   }
   user_vote_count?: number
+  thumbnail_small_url?: string
+  thumbnail_medium_url?: string
+  thumbnail_large_url?: string
 }
 
 export default function PhotoWallPage() {
@@ -96,17 +100,32 @@ export default function PhotoWallPage() {
       const { data, error } = await supabase
         .from('photos')
         .select(`
-          *,
+          id,
+          image_url,
+          blessing_message,
+          is_public,
+          vote_count,
+          created_at,
+          user_id,
+          thumbnail_small_url,
+          thumbnail_medium_url,
+          thumbnail_large_url,
           uploader:users!photos_user_id_fkey(display_name, avatar_url)
         `)
         .eq('is_public', true)
-        .order(sortBy === 'votes' ? 'vote_count' : 'created_at', 
+        .order(sortBy === 'votes' ? 'vote_count' : 'created_at',
                { ascending: sortBy === 'votes' ? false : false })
 
       if (error) throw error
       
-      setPhotos(data as PhotoWithUser[])
-      setDisplayedPhotos((data as PhotoWithUser[]).slice(0, PHOTOS_PER_PAGE))
+      // 轉換資料結構以符合 PhotoWithUser 介面
+      const transformedData = (data || []).map((photo: any) => ({
+        ...photo,
+        uploader: Array.isArray(photo.uploader) ? photo.uploader[0] : photo.uploader
+      })) as PhotoWithUser[]
+      
+      setPhotos(transformedData)
+      setDisplayedPhotos(transformedData.slice(0, PHOTOS_PER_PAGE))
       setPage(1)
     } catch (error) {
       console.error('Error fetching photos:', error)
@@ -517,13 +536,18 @@ export default function PhotoWallPage() {
                   <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
                     {/* 照片 */}
                     <div className="relative">
-                      <img
+                      <ResponsiveImage
                         src={photo.image_url}
                         alt="Wedding photo"
-                        className="w-full h-auto object-cover"
-                        loading="lazy"
+                        className="w-full h-auto"
+                        thumbnailUrls={{
+                          small: photo.thumbnail_small_url,
+                          medium: photo.thumbnail_medium_url,
+                          large: photo.thumbnail_large_url
+                        }}
+                        sizes="(max-width: 640px) 200px, (max-width: 1024px) 400px, 800px"
                       />
-                      
+                       
                       {/* 票數顯示 */}
                       <div className="absolute bottom-2 left-2 sm:bottom-3 sm:left-3 bg-black/70 text-white px-2 py-1 sm:px-3 sm:py-1.5 rounded-full flex items-center space-x-1">
                         <Heart className="w-3 h-3 sm:w-4 sm:h-4 fill-current" />
@@ -610,11 +634,17 @@ export default function PhotoWallPage() {
             >
               {/* 照片容器 */}
               <div className="flex items-center justify-center relative min-h-0 mb-4">
-                <img
+                <ResponsiveImage
                   src={selectedPhoto.image_url}
                   alt="Wedding photo"
-                  className="max-w-full w-auto h-auto object-contain rounded-lg shadow-2xl"
-                  onClick={(e) => e.stopPropagation()}
+                  className="max-w-full max-h-[70vh] w-auto h-auto"
+                  thumbnailUrls={{
+                    small: selectedPhoto.thumbnail_small_url,
+                    medium: selectedPhoto.thumbnail_medium_url,
+                    large: selectedPhoto.thumbnail_large_url
+                  }}
+                  sizes="(max-width: 640px) 200px, (max-width: 1024px) 400px, 800px"
+                  priority={true}
                 />
               
                 {/* 投票區域 - 右上角 */}
@@ -625,22 +655,22 @@ export default function PhotoWallPage() {
                       <Heart className="w-5 h-5 fill-current text-white" />
                       <span className="font-semibold text-white">{selectedPhoto.vote_count}</span>
                     </div>
-                    
+                     
                     {/* 投票按鈕 */}
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
-                      // 檢查是否已經沒有票數
-                      const hasVoted = userVotes[selectedPhoto.id] > 0
-                      const totalUsedVotes = Object.values(userVotes).reduce((sum, count) => sum + count, 0)
-                      
-                      if (!hasVoted && totalUsedVotes >= availableVotes) {
-                        setShowVoteLimitModal(true)
-                        return
-                      }
-                      
-                      handleVote(selectedPhoto.id)
-                      }}
+                        // 檢查是否已經沒有票數
+                        const hasVoted = userVotes[selectedPhoto.id] > 0
+                        const totalUsedVotes = Object.values(userVotes).reduce((sum, count) => sum + count, 0)
+                         
+                        if (!hasVoted && totalUsedVotes >= availableVotes) {
+                          setShowVoteLimitModal(true)
+                          return
+                        }
+                         
+                        handleVote(selectedPhoto.id)
+                        }}
                       disabled={votingInProgress.has(selectedPhoto.id)}
                       className={`p-3 rounded-full shadow-2xl transition-all duration-200 backdrop-blur-sm ${
                         votingInProgress.has(selectedPhoto.id)
@@ -653,8 +683,8 @@ export default function PhotoWallPage() {
                       <Heart className={`w-8 h-8 transition-all ${
                         votingInProgress.has(selectedPhoto.id)
                           ? 'text-gray-400 animate-pulse'
-                          : userVotes[selectedPhoto.id] > 0 
-                          ? 'text-red-500 fill-current drop-shadow-lg' 
+                          : userVotes[selectedPhoto.id] > 0
+                          ? 'text-red-500 fill-current drop-shadow-lg'
                           : getRemainingVotes() <= 0
                           ? 'text-gray-400'
                           : 'text-gray-400 hover:text-pink-500'
