@@ -13,6 +13,65 @@ ADD COLUMN IF NOT EXISTS thumbnail_generated_at TIMESTAMP WITH TIME ZONE;
 CREATE INDEX IF NOT EXISTS idx_photos_thumbnail_generated_at ON photos(thumbnail_generated_at DESC) WHERE thumbnail_generated_at IS NOT NULL;
 
 -- 3. 創建函數來生成 Vercel Image Optimization URL
+-- 先創建 URL 編碼函數
+CREATE OR REPLACE FUNCTION url_encode(text_param TEXT) RETURNS TEXT AS $$
+DECLARE
+    result TEXT := '';
+    char_code INTEGER;
+    hex_code TEXT;
+BEGIN
+    FOR i IN 1..length(text_param) LOOP
+        char_code := ascii(substring(text_param, i, 1));
+        
+        IF char_code = 32 THEN -- 空格
+            result := result || '%20';
+        ELSIF char_code >= 48 AND char_code <= 57 THEN -- 0-9
+            result := result || chr(char_code);
+        ELSIF char_code >= 65 AND char_code <= 90 THEN -- A-Z
+            result := result || chr(char_code);
+        ELSIF char_code >= 97 AND char_code <= 122 THEN -- a-z
+            result := result || chr(char_code);
+        ELSIF char_code IN (45, 95, 46, 126) THEN -- - . _
+            result := result || chr(char_code);
+        ELSE
+            hex_code := upper(to_hex(char_code));
+            IF length(hex_code) = 1 THEN
+                result := result || '%0' || hex_code;
+            ELSE
+                result := result || '%' || hex_code;
+            END IF;
+        END IF;
+    END LOOP;
+    
+    RETURN result;
+END;
+$$ LANGUAGE plpgsql;
+
+-- 創建 to_hex 輔助函數
+CREATE OR REPLACE FUNCTION to_hex(dec_num INTEGER) RETURNS TEXT AS $$
+BEGIN
+    CASE dec_num
+        WHEN 0 THEN RETURN '0';
+        WHEN 1 THEN RETURN '1';
+        WHEN 2 THEN RETURN '2';
+        WHEN 3 THEN RETURN '3';
+        WHEN 4 THEN RETURN '4';
+        WHEN 5 THEN RETURN '5';
+        WHEN 6 THEN RETURN '6';
+        WHEN 7 THEN RETURN '7';
+        WHEN 8 THEN RETURN '8';
+        WHEN 9 THEN RETURN '9';
+        WHEN 10 THEN RETURN 'A';
+        WHEN 11 THEN RETURN 'B';
+        WHEN 12 THEN RETURN 'C';
+        WHEN 13 THEN RETURN 'D';
+        WHEN 14 THEN RETURN 'E';
+        WHEN 15 THEN RETURN 'F';
+        ELSE RETURN '';
+    END CASE;
+END;
+$$ LANGUAGE plpgsql;
+
 CREATE OR REPLACE FUNCTION generate_vercel_image_url(
     base_url TEXT,
     width INTEGER DEFAULT 400,
@@ -21,10 +80,10 @@ CREATE OR REPLACE FUNCTION generate_vercel_image_url(
 ) RETURNS TEXT AS $$
 BEGIN
     -- Vercel Image Optimization URL 格式: /_vercel/image?url=<encoded_url>&w=<width>&q=<quality>&f=<format>
-    RETURN format('/_vercel/image?url=%s&w=%s&q=%s&f=%s', 
-                 url_encode(base_url), 
-                 width, 
-                 quality, 
+    RETURN format('/_vercel/image?url=%s&w=%s&q=%s&f=%s',
+                 url_encode(base_url),
+                 width,
+                 quality,
                  format);
 END;
 $$ LANGUAGE plpgsql;
