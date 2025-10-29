@@ -51,7 +51,7 @@ export default function ResponsiveImage({
     }
     
     // 如果有縮圖 URL，根據螢幕寬度選擇
-    if (thumbnailUrls) {
+    if (thumbnailUrls && typeof window !== 'undefined') {
       const screenWidth = window.innerWidth
       if (screenWidth <= 640 && thumbnailUrls.small) {
         return thumbnailUrls.small
@@ -78,6 +78,9 @@ export default function ResponsiveImage({
 
   // 生成 srcset 以支援響應式圖片
   const generateSrcSet = () => {
+    // 🎯 放大模式下只使用原圖，不使用 srcset
+    if (lightboxMode) return undefined
+    
     if (!thumbnailUrls) return undefined
     
     const srcSet = []
@@ -121,9 +124,9 @@ export default function ResponsiveImage({
       <Image
         src={currentSrc}
         alt={alt}
-        sizes={sizes}
-        quality={quality}
-        priority={priority}
+        sizes={lightboxMode ? undefined : sizes}  // 🎯 放大模式下不使用 sizes
+        quality={lightboxMode ? 100 : quality}  // 🎯 放大模式下使用最高品質
+        priority={priority || lightboxMode}  // 🎯 放大模式下優先載入
         className={`
           transition-opacity duration-300
           ${isLoading ? 'opacity-0' : 'opacity-100'}

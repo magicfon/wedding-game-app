@@ -644,8 +644,9 @@ export default function PhotoWallPage() {
                     medium: selectedPhoto.thumbnail_medium_url,
                     large: selectedPhoto.thumbnail_large_url
                   }}
-                  sizes="(max-width: 640px) 200px, (max-width: 1024px) 400px, 800px"
+                  sizes={undefined}  // 🎯 放大模式下不使用響應式尺寸
                   priority={true}
+                  quality={100}  // 🎯 放大模式下使用最高品質
                 />
               
                 {/* 投票區域 - 右上角 */}
