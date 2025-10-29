@@ -639,6 +639,7 @@ export default function PhotoWallPage() {
                   alt="Wedding photo"
                   className="max-w-full max-h-[70vh] w-auto h-auto"
                   lightboxMode={true}  // 🎯 放大模式強制使用原圖
+                  progressiveLoad={true}  // 🎯 啟用漸進式載入：先顯示縮圖，再載入原圖
                   thumbnailUrls={{
                     small: selectedPhoto.thumbnail_small_url,
                     medium: selectedPhoto.thumbnail_medium_url,

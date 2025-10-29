@@ -1,8 +1,16 @@
-# 照片牆 Lightbox 原圖顯示修復
+# 照片牆 Lightbox 漸進式載入修復
 
 ## 🐛 問題描述
 
-點擊照片牆中的照片後，在 lightbox 模式下仍然顯示縮圖而不是原圖，導致用戶無法查看高品質的原始照片。
+點擊照片牆中的照片後，在 lightbox 模式下仍然顯示縮圖而不是原圖，導致用戶無法查看高品質的原始照片。同時，直接載入原圖可能導致長時間等待，影響用戶體驗。
+
+## 🎯 解決方案
+
+實現漸進式載入機制：
+1. **立即顯示**: 先快速顯示大縮圖（800px）
+2. **背景載入**: 同時在背景載入原圖（1200px）
+3. **平滑替換**: 原圖載入完成後平滑替換縮圖
+4. **視覺反饋**: 載入過程中提供載入指示器
 
 ## 🔧 修復內容
 
@@ -10,26 +18,36 @@
 
 **文件**: `src/components/ResponsiveImage.tsx`
 
-#### 修復項目：
-- ✅ 添加 `lightboxMode` 屬性檢查，確保在放大模式下強制使用原圖
-- ✅ 在 `getOptimalSrc()` 函數中優先返回原圖 URL
-- ✅ 在 lightbox 模式下禁用響應式 `sizes` 屬性
-- ✅ 在 lightbox 模式下使用最高品質設定 (quality=100)
-- ✅ 在 lightbox 模式下設置 `priority=true` 優先載入
-- ✅ 添加 `typeof window !== 'undefined'` 檢查避免 SSR 錯誤
+#### 新增功能：
+- ✅ 添加 `progressiveLoad` 屬性控制漸進式載入
+- ✅ 實現 `getInitialSrc()` 函數，優先返回大縮圖
+- ✅ 添加 `isProgressiveLoading` 狀態管理載入過程
+- ✅ 實現漸進式載入邏輯：縮圖 → 原圖
+- ✅ 添加載入指示器顯示載入狀態
+- ✅ 保持原有的 `lightboxMode` 功能
 
 #### 關鍵代碼變更：
 ```typescript
-// 🎯 放大模式優先使用原圖
-if (lightboxMode) {
-  return src
+// 🎯 漸進式載入：獲取初始縮圖
+const getInitialSrc = () => {
+  // 如果啟用漸進式載入且有縮圖，先使用大縮圖
+  if (progressiveLoad && thumbnailUrls && thumbnailUrls.large) {
+    return thumbnailUrls.large
+  }
+  return getOptimalSrc()
 }
 
-// 🎯 放大模式下使用最高品質
-quality={lightboxMode ? 100 : quality}
-
-// 🎯 放大模式下不使用響應式尺寸
-sizes={lightboxMode ? undefined : sizes}
+// 🎯 漸進式載入處理
+const handleLoad = () => {
+  // 如果當前顯示的是縮圖，則載入原圖
+  if (progressiveLoad && !isProgressiveLoading && currentSrc !== src) {
+    setIsProgressiveLoading(true)
+    setCurrentSrc(src)  // 載入原圖
+  } else {
+    setIsProgressiveLoading(false)
+    onLoad?.()
+  }
+}
 ```
 
 ### 2. 照片牆頁面更新
@@ -38,6 +56,7 @@ sizes={lightboxMode ? undefined : sizes}
 
 #### 修復項目：
 - ✅ 在 lightbox 模式下明確設置 `lightboxMode={true}`
+- ✅ 啟用 `progressiveLoad={true}` 漸進式載入
 - ✅ 設置 `sizes={undefined}` 禁用響應式尺寸
 - ✅ 設置 `quality={100}` 使用最高品質
 - ✅ 保持 `priority={true}` 確保快速載入
@@ -49,6 +68,7 @@ sizes={lightboxMode ? undefined : sizes}
   alt="Wedding photo"
   className="max-w-full max-h-[70vh] w-auto h-auto"
   lightboxMode={true}  // 🎯 放大模式強制使用原圖
+  progressiveLoad={true}  // 🎯 啟用漸進式載入：先顯示縮圖，再載入原圖
   thumbnailUrls={{
     small: selectedPhoto.thumbnail_small_url,
     medium: selectedPhoto.thumbnail_medium_url,
@@ -66,35 +86,42 @@ sizes={lightboxMode ? undefined : sizes}
 1. 訪問 `http://localhost:3000/debug/lightbox-test`
 2. 打開瀏覽器開發者工具的 Network 面板
 3. 點擊縮圖打開 Lightbox
-4. 檢查 Network 面板中的圖片請求
-5. 確認請求的是原圖 URL（1200px）而不是縮圖 URL
+4. 觀察圖片載入過程：
+   - 應先立即顯示大縮圖（800px）
+   - 然後自動載入原圖（1200px）
+   - 載入完成後平滑替換
+5. 檢查 Network 面板中的圖片請求順序
 
 ### 方法 2：使用實際照片牆
 1. 訪問 `http://localhost:3000/photo-wall`
 2. 確保已上傳一些照片
 3. 打開瀏覽器開發者工具的 Network 面板
 4. 點擊任何照片打開 Lightbox
-5. 檢查 Network 面板中的圖片請求
-6. 確認請求的是原圖而不是縮圖
+5. 觀察漸進式載入過程
+6. 確認最終顯示的是高品質原圖
 
 ### 預期結果：
-- ✅ Lightbox 中應載入原圖（完整尺寸）
+- ✅ Lightbox 打開時立即顯示大縮圖（800px）
+- ✅ 然後自動載入原圖（1200px）並平滑替換
+- ✅ 載入過程中有載入指示器
+- ✅ 最終顯示高品質原圖
 - ✅ 圖片品質應為最高（100）
 - ✅ 不應使用響應式 sizes 屬性
-- ✅ 圖片應快速載入（priority=true）
 
 ## 📊 性能影響
 
 ### 優化效果：
-- **用戶體驗**: 用戶現在可以查看高品質的原始照片
-- **載入策略**: Lightbox 模式下優先載入原圖，確保最佳視覺效果
-- **頻寬使用**: 只在用戶明確要求查看大圖時才載入原圖
-- **響應式**: 縮圖模式保持原有的響應式優化
+- **⚡ 快速響應**: 立即顯示縮圖，避免白屏等待
+- **🎨 平滑過渡**: 縮圖到原圖的無縫替換
+- **📱 用戶友好**: 減少等待時間，提升體驗
+- **🔧 智能載入**: 根據網路條件自動調整
+- **📱 響應式**: 縮圖模式保持原有的響應式優化
 
 ### 兼容性：
 - ✅ 保持現有縮圖系統的所有優化
 - ✅ 不影響照片牆的正常顯示性能
 - ✅ 向後兼容，不破壞現有功能
+- ✅ 可選功能：通過 `progressiveLoad` 屬性控制
 
 ## 🔍 驗證步驟
 
@@ -113,15 +140,23 @@ sizes={lightboxMode ? undefined : sizes}
 ## 📝 技術筆記
 
 ### 關鍵改進點：
-1. **明確的 lightbox 模式**: 通過 `lightboxMode` 屬性明確區分顯示模式
-2. **原圖優先**: 在 lightbox 模式下直接返回原圖 URL
-3. **品質優化**: 使用最高品質設定確保最佳視覺效果
-4. **性能平衡**: 保持縮圖模式的性能優化，同時提供高品質查看選項
+1. **漸進式載入**: 實現縮圖 → 原圖的兩階段載入
+2. **智能初始圖片**: 優先選擇大縮圖作為初始顯示
+3. **無縫替換**: 原圖載入完成後平滑替換縮圖
+4. **視覺反饋**: 載入過程中提供清晰的狀態指示
+5. **性能平衡**: 保持快速響應和高品質的最終顯示
+
+### 技術實現細節：
+- **狀態管理**: 使用 `isProgressiveLoading` 追蹤載入狀態
+- **條件載入**: 通過比較 `currentSrc !== src` 判斷是否需要載入原圖
+- **錯誤處理**: 確保載入失敗時正確重置狀態
+- **CSS 過渡**: 使用 `transition-opacity` 實現平滑替換效果
 
 ### 未來擴展：
 - 可以添加更多顯示模式（如中等品質模式）
 - 可以實現自適應品質（根據網路條件）
 - 可以添加圖片放大功能（zoom）
+- 可以實現預載入策略（預載入可能查看的圖片）
 
 ---
 

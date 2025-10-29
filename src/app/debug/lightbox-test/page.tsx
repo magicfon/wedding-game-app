@@ -7,12 +7,12 @@ import ResponsiveImage from '@/components/ResponsiveImage'
 export default function LightboxTestPage() {
   const [showLightbox, setShowLightbox] = useState(false)
   
-  // 測試用的圖片URL（替換為實際的圖片URL）
-  const testImageUrl = "https://images.unsplash.com/photo-1519225421980-9c3e50d43b40?w=1200"
+  // 測試用的圖片URL（使用本地圖片避免外部URL問題）
+  const testImageUrl = "/api/photo/test-image"  // 使用本地API端點
   const testThumbnailUrls = {
-    small: "https://images.unsplash.com/photo-1519225421980-9c3e50d43b40?w=200",
-    medium: "https://images.unsplash.com/photo-1519225421980-9c3e50d43b40?w=400",
-    large: "https://images.unsplash.com/photo-1519225421980-9c3e50d43b40?w=800"
+    small: "/api/photo/test-image?w=200",
+    medium: "/api/photo/test-image?w=400",
+    large: "/api/photo/test-image?w=800"
   }
 
   return (
@@ -31,6 +31,8 @@ export default function LightboxTestPage() {
                 className="w-full h-auto rounded-lg cursor-pointer"
                 thumbnailUrls={testThumbnailUrls}
                 sizes="(max-width: 640px) 200px, 400px"
+                width={400}  // 🎯 設置縮圖寬度
+                height={300}  // 🎯 設置縮圖高度
                 onClick={() => setShowLightbox(true)}
               />
             </div>
@@ -59,10 +61,13 @@ export default function LightboxTestPage() {
                     alt="Test image lightbox"
                     className="max-w-full max-h-[70vh] w-auto h-auto"
                     lightboxMode={true}
+                    progressiveLoad={true}  // 🎯 啟用漸進式載入
                     thumbnailUrls={testThumbnailUrls}
                     sizes={undefined}
                     priority={true}
                     quality={100}
+                    width={1200}  // 🎯 明確設置寬度避免 Next.js 錯誤
+                    height={800}  // 🎯 設置高度
                   />
                 </div>
                 
@@ -85,17 +90,32 @@ export default function LightboxTestPage() {
           <ol className="list-decimal list-inside space-y-2 text-sm">
             <li>打開瀏覽器開發者工具的 Network 面板</li>
             <li>點擊上方的縮圖打開 Lightbox</li>
-            <li>檢查 Network 面板中的圖片請求</li>
-            <li>確認請求的是原圖 URL（1200px）而不是縮圖 URL</li>
+            <li>觀察圖片載入過程：應先顯示大縮圖（800px）</li>
+            <li>然後自動載入原圖（1200px）並平滑替換</li>
+            <li>檢查 Network 面板中的圖片請求順序</li>
+            <li>確認最終顯示的是原圖 URL（1200px）</li>
             <li>確認圖片品質設定為 100</li>
           </ol>
           
           <div className="mt-4 p-3 bg-yellow-100 rounded">
             <p className="text-sm font-medium">預期結果：</p>
             <ul className="list-disc list-inside text-sm mt-1">
-              <li>Lightbox 中應載入原圖（1200px）</li>
+              <li>Lightbox 打開時立即顯示大縮圖（800px）</li>
+              <li>然後自動載入原圖（1200px）並平滑替換</li>
+              <li>載入過程中有載入指示器</li>
+              <li>最終顯示高品質原圖</li>
               <li>圖片品質應為最高（100）</li>
               <li>不應使用響應式 sizes 屬性</li>
+            </ul>
+          </div>
+          
+          <div className="mt-4 p-3 bg-blue-100 rounded">
+            <p className="text-sm font-medium">漸進式載入優勢：</p>
+            <ul className="list-disc list-inside text-sm mt-1">
+              <li>⚡ 快速響應：立即顯示縮圖，避免白屏等待</li>
+              <li>🎨 平滑過渡：縮圖到原圖的無縫替換</li>
+              <li>📱 用戶友好：減少等待時間，提升體驗</li>
+              <li>🔧 智能載入：根據網路條件自動調整</li>
             </ul>
           </div>
         </div>
