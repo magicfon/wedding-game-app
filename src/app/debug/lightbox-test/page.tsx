@@ -61,7 +61,7 @@ export default function LightboxTestPage() {
                     alt="Test image lightbox"
                     className="max-w-full max-h-[70vh] w-auto h-auto"
                     lightboxMode={true}
-                    progressiveLoad={false}  // 🎯 關閉漸進式載入，直接顯示原圖
+                    progressiveLoad={true}  // 🎯 啟用漸進式載入：先顯示縮圖，再載入原圖
                     thumbnailUrls={testThumbnailUrls}
                     sizes={undefined}
                     priority={true}
@@ -90,29 +90,32 @@ export default function LightboxTestPage() {
           <ol className="list-decimal list-inside space-y-2 text-sm">
             <li>打開瀏覽器開發者工具的 Network 面板</li>
             <li>點擊上方的縮圖打開 Lightbox</li>
-            <li>觀察圖片載入過程：應直接顯示原圖（1200px）</li>
-            <li>檢查 Network 面板中的圖片請求</li>
-            <li>確認請求的是原圖 URL（1200px）</li>
+            <li>觀察圖片載入過程：應先顯示縮圖（800px）</li>
+            <li>然後自動載入原圖（1200px）並平滑替換</li>
+            <li>檢查 Network 面板中的圖片請求順序</li>
+            <li>確認最終顯示的是原圖 URL（1200px）</li>
             <li>確認圖片品質設定為 100</li>
           </ol>
           
           <div className="mt-4 p-3 bg-yellow-100 rounded">
             <p className="text-sm font-medium">預期結果：</p>
             <ul className="list-disc list-inside text-sm mt-1">
-              <li>Lightbox 打開時直接顯示原圖（1200px）</li>
+              <li>Lightbox 打開時立即顯示縮圖（800px）</li>
+              <li>然後自動載入原圖（1200px）並平滑替換</li>
+              <li>載入過程中有載入指示器</li>
+              <li>最終顯示高品質原圖</li>
               <li>圖片品質應為最高（100）</li>
               <li>不應使用響應式 sizes 屬性</li>
-              <li>與瀑布牆上的照片保持一致的顯示</li>
             </ul>
           </div>
           
           <div className="mt-4 p-3 bg-blue-100 rounded">
-            <p className="text-sm font-medium">直接載入原圖的優勢：</p>
+            <p className="text-sm font-medium">漸進式載入優勢：</p>
             <ul className="list-disc list-inside text-sm mt-1">
-              <li>🎯 一致性：與瀑布牆上的照片顯示保持一致</li>
-              <li>📱 用戶體驗：點擊後立即看到高品質圖片</li>
-              <li>🔧 簡單性：減少複雜的載入邏輯</li>
-              <li>⚡ 快速響應：直接載入高品質圖片</li>
+              <li>⚡ 快速響應：立即顯示縮圖，避免白屏等待</li>
+              <li>🎨 平滑過渡：縮圖到原圖的無縫替換</li>
+              <li>📱 用戶友好：減少等待時間，提升體驗</li>
+              <li>🔧 智能載入：根據網路條件自動調整</li>
             </ul>
           </div>
           

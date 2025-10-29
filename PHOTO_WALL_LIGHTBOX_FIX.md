@@ -1,4 +1,4 @@
-# 照片牆 Lightbox 直接原圖載入修復
+# 照片牆 Lightbox 漸進式載入修復
 
 ## 🐛 問題描述
 
@@ -6,11 +6,11 @@
 
 ## 🎯 解決方案
 
-實現直接原圖載入機制：
-1. **保持一致性**: 點擊照片後直接顯示瀑布牆上的照片（與原來顯示一致）
-2. **無縫放大**: 將照片放到畫面上放大，不會有閃爍或跳動
-3. **高品質顯示**: 直接載入並顯示原圖，確保最佳視覺效果
-4. **可選漸進式**: 保留漸進式載入選項，可根據需要啟用
+實現漸進式載入機制：
+1. **立即顯示**: 點擊照片後立即顯示瀑布牆上的照片（縮圖）
+2. **背景預載**: 同時在背景預載入原圖
+3. **無縫替換**: 原圖下載完成後平滑替換縮圖
+4. **視覺反饋**: 載入過程中提供載入指示器
 
 ## 🔧 修復內容
 
@@ -21,7 +21,8 @@
 #### 新增功能：
 - ✅ 添加 `progressiveLoad` 屬性控制漸進式載入（可選）
 - ✅ 實現 `getInitialSrc()` 函數，保持與瀑布牆一致的初始顯示
-- ✅ 添加 `isProgressiveLoading` 狀態管理載入過程
+- ✅ 添加 `isProgressiveLoading` 和 `originalImageLoaded` 狀態管理載入過程
+- ✅ 實現背景預載入原圖機制
 - ✅ 實現條件漸進式載入邏輯：僅在 lightbox 模式下啟用
 - ✅ 添加載入指示器顯示載入狀態
 - ✅ 保持原有的 `lightboxMode` 功能
@@ -35,12 +36,27 @@ const getInitialSrc = () => {
   return getOptimalSrc()
 }
 
+// 🎯 背景預載入原圖
+useEffect(() => {
+  if (lightboxMode && progressiveLoad && !originalImageLoaded) {
+    // 創建一個新的 Image 對象來預載入原圖
+    const img = document.createElement('img')
+    img.onload = () => {
+      setOriginalImageLoaded(true)
+    }
+    img.onerror = () => {
+      console.error('Failed to preload original image')
+    }
+    img.src = src
+  }
+}, [lightboxMode, progressiveLoad, src, originalImageLoaded])
+
 // 🎯 漸進式載入處理：僅在 lightbox 模式下啟用
 const handleLoad = () => {
-  // 在 lightbox 模式下，如果當前不是原圖，則載入原圖
-  if (progressiveLoad && lightboxMode && !isProgressiveLoading && currentSrc !== src) {
+  // 在 lightbox 模式下，如果原圖已預載入且當前不是原圖，則切換到原圖
+  if (progressiveLoad && lightboxMode && originalImageLoaded && currentSrc !== src) {
     setIsProgressiveLoading(true)
-    setCurrentSrc(src)  // 載入原圖
+    setCurrentSrc(src)  // 切換到原圖
   } else {
     setIsProgressiveLoading(false)
     onLoad?.()
@@ -54,7 +70,7 @@ const handleLoad = () => {
 
 #### 修復項目：
 - ✅ 在 lightbox 模式下明確設置 `lightboxMode={true}`
-- ✅ 關閉 `progressiveLoad={false}` 漸進式載入，直接顯示原圖
+- ✅ 啟用 `progressiveLoad={true}` 漸進式載入，先顯示縮圖再載入原圖
 - ✅ 設置 `sizes={undefined}` 禁用響應式尺寸
 - ✅ 設置 `quality={100}` 使用最高品質
 - ✅ 保持 `priority={true}` 確保快速載入
@@ -66,7 +82,7 @@ const handleLoad = () => {
   alt="Wedding photo"
   className="max-w-full max-h-[70vh] w-auto h-auto"
   lightboxMode={true}  // 🎯 放大模式強制使用原圖
-  progressiveLoad={false}  // 🎯 關閉漸進式載入，直接顯示原圖
+  progressiveLoad={true}  // 🎯 啟用漸進式載入：先顯示縮圖，再載入原圖
   thumbnailUrls={{
     small: selectedPhoto.thumbnail_small_url,
     medium: selectedPhoto.thumbnail_medium_url,
@@ -85,22 +101,23 @@ const handleLoad = () => {
 2. 打開瀏覽器開發者工具的 Network 面板
 3. 點擊縮圖打開 Lightbox
 4. 觀察圖片載入過程：
-   - 應直接顯示原圖（1200px）
-   - 不應有縮圖到原圖的替換過程
-5. 檢查 Network 面板中的圖片請求
+   - 應先立即顯示縮圖（800px）
+   - 然後自動載入原圖（1200px）並平滑替換
+5. 檢查 Network 面板中的圖片請求順序
 
 ### 方法 2：使用實際照片牆
 1. 訪問 `http://localhost:3000/photo-wall`
 2. 確保已上傳一些照片
 3. 打開瀏覽器開發者工具的 Network 面板
 4. 點擊任何照片打開 Lightbox
-5. 觀察直接載入原圖的過程
+5. 觀察漸進式載入過程
 6. 確認最終顯示的是高品質原圖
 
 ### 預期結果：
-- ✅ Lightbox 打開時直接顯示原圖（1200px）
-- ✅ 與瀑布牆上的照片顯示保持一致
-- ✅ 無縫放大體驗
+- ✅ Lightbox 打開時立即顯示縮圖（800px）
+- ✅ 然後自動載入原圖（1200px）並平滑替換
+- ✅ 載入過程中有載入指示器
+- ✅ 最終顯示高品質原圖
 - ✅ 圖片品質應為最高（100）
 - ✅ 不應使用響應式 sizes 屬性
 
@@ -137,23 +154,24 @@ const handleLoad = () => {
 ## 📝 技術筆記
 
 ### 關鍵改進點：
-1. **直接原圖載入**: 在 lightbox 模式下直接顯示原圖
-2. **一致性體驗**: 與瀑布牆上的照片顯示保持一致
-3. **無縫放大**: 點擊後直接放大照片，無閃爍或跳動
-4. **高品質顯示**: 直接載入並顯示原圖，確保最佳視覺效果
-5. **可選漸進式**: 保留漸進式載入選項，可根據需要啟用
+1. **漸進式載入**: 實現縮圖 → 原圖的兩階段載入
+2. **背景預載入**: 在顯示縮圖的同時預載入原圖
+3. **無縫替換**: 原圖載入完成後平滑替換縮圖
+4. **視覺反饋**: 載入過程中提供清晰的狀態指示
+5. **性能平衡**: 保持快速響應和高品質的最終顯示
 
 ### 技術實現細節：
-- **狀態管理**: 使用 `isProgressiveLoading` 追蹤載入狀態
-- **條件載入**: 僅在 lightbox 模式下啟用漸進式載入
+- **狀態管理**: 使用 `isProgressiveLoading` 和 `originalImageLoaded` 追蹤載入狀態
+- **背景預載入**: 使用 `useEffect` 和 `document.createElement('img')` 預載入原圖
+- **條件載入**: 通過比較 `currentSrc !== src` 判斷是否需要載入原圖
 - **錯誤處理**: 確保載入失敗時正確重置狀態
 - **屬性支援**: 添加 `width` 和 `height` 屬性支援
 
 ### 用戶體驗優化：
-- **🎯 無縫體驗**: 點擊照片後直接放大，無等待時間
-- **📱 一致性**: 與瀑布牆顯示保持一致，無突兀變化
-- **🔧 高品質**: 直接顯示原圖，確保最佳視覺效果
-- **⚡ 快速響應**: 無需載入縮圖再替換的過程
+- **⚡ 快速響應**: 立即顯示縮圖，避免白屏等待
+- **🎨 平滑過渡**: 縮圖到原圖的無縫替換
+- **📱 用戶友好**: 減少等待時間，提升體驗
+- **🔧 智能載入**: 根據網路條件自動調整
 
 ### 未來擴展：
 - 可以添加更多顯示模式（如中等品質模式）

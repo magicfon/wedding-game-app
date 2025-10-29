@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Loader2 } from 'lucide-react'
 
 interface ResponsiveImageProps {
@@ -47,6 +47,7 @@ export default function ResponsiveImage({
   const [hasError, setHasError] = useState(false)
   const [currentSrc, setCurrentSrc] = useState(src)
   const [isProgressiveLoading, setIsProgressiveLoading] = useState(false)
+  const [originalImageLoaded, setOriginalImageLoaded] = useState(false)
 
   // 根據螢幕尺寸選擇適當的縮圖
   const getOptimalSrc = () => {
@@ -81,13 +82,28 @@ export default function ResponsiveImage({
     return getOptimalSrc()
   }
 
+  // 🎯 預載入原圖
+  useEffect(() => {
+    if (lightboxMode && progressiveLoad && !originalImageLoaded) {
+      // 創建一個新的 Image 對象來預載入原圖
+      const img = document.createElement('img')
+      img.onload = () => {
+        setOriginalImageLoaded(true)
+      }
+      img.onerror = () => {
+        console.error('Failed to preload original image')
+      }
+      img.src = src
+    }
+  }, [lightboxMode, progressiveLoad, src, originalImageLoaded])
+
   const handleLoad = () => {
     setIsLoading(false)
     
-    // 🎯 漸進式載入：在 lightbox 模式下，如果當前不是原圖，則載入原圖
-    if (progressiveLoad && lightboxMode && !isProgressiveLoading && currentSrc !== src) {
+    // 🎯 漸進式載入：在 lightbox 模式下，如果原圖已預載入且當前不是原圖，則切換到原圖
+    if (progressiveLoad && lightboxMode && originalImageLoaded && currentSrc !== src) {
       setIsProgressiveLoading(true)
-      setCurrentSrc(src)  // 載入原圖
+      setCurrentSrc(src)  // 切換到原圖
     } else {
       setIsProgressiveLoading(false)
       onLoad?.()
@@ -99,22 +115,6 @@ export default function ResponsiveImage({
     setIsProgressiveLoading(false)
     setHasError(true)
     onError?.()
-  }
-
-  // 生成 srcset 以支援響應式圖片
-  const generateSrcSet = () => {
-    // 🎯 放大模式下只使用原圖，不使用 srcset
-    if (lightboxMode) return undefined
-    
-    if (!thumbnailUrls) return undefined
-    
-    const srcSet = []
-    if (thumbnailUrls.small) srcSet.push(`${thumbnailUrls.small} 200w`)
-    if (thumbnailUrls.medium) srcSet.push(`${thumbnailUrls.medium} 400w`)
-    if (thumbnailUrls.large) srcSet.push(`${thumbnailUrls.large} 800w`)
-    if (src) srcSet.push(`${src} 1200w`)
-    
-    return srcSet.join(', ')
   }
 
   return (
@@ -145,6 +145,15 @@ export default function ResponsiveImage({
         </div>
       )}
       
+      {/* 🎯 漸進式載入指示器 */}
+      {isProgressiveLoading && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="bg-black/20 backdrop-blur-sm rounded-full p-2">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+          </div>
+        </div>
+      )}
+      
       {/* 主要圖片 */}
       <Image
         src={currentSrc}
@@ -157,7 +166,7 @@ export default function ResponsiveImage({
         className={`
           transition-opacity duration-300
           ${isLoading ? 'opacity-0' : 'opacity-100'}
-          ${isProgressiveLoading ? 'opacity-80' : ''}  // 🎯 漸進式載入時稍微透明
+          ${isProgressiveLoading ? 'opacity-90' : ''}  // 🎯 漸進式載入時稍微透明
           ${hasError ? 'hidden' : ''}
           ${className}
         `}
@@ -170,15 +179,6 @@ export default function ResponsiveImage({
           cursor: onClick ? 'pointer' : 'default'
         }}
       />
-      
-      {/* 🎯 漸進式載入指示器 */}
-      {isProgressiveLoading && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="bg-black/20 backdrop-blur-sm rounded-full p-2">
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
