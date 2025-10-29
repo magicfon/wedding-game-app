@@ -61,7 +61,19 @@ const getInitialSrc = () => {
   // 🎯 漸進式載入：直接使用當前顯示的圖片（瀑布牆上的縮圖）
   // 這樣可以保持與瀑布牆一致的顯示
   // 在 lightbox 模式下，即使啟用漸進式載入，也先顯示縮圖
-  return getOptimalSrc()
+  // 不調用 getOptimalSrc()，因為它在 lightbox 模式下會返回原圖
+  if (thumbnailUrls && typeof window !== 'undefined') {
+    const screenWidth = window.innerWidth
+    if (screenWidth <= 640 && thumbnailUrls.small) {
+      return thumbnailUrls.small
+    } else if (screenWidth <= 1024 && thumbnailUrls.medium) {
+      return thumbnailUrls.medium
+    } else if (thumbnailUrls.large) {
+      return thumbnailUrls.large
+    }
+  }
+  
+  return src
 }
 
 // 🎯 背景預載入原圖
