@@ -72,23 +72,20 @@ export default function ResponsiveImage({
     return src
   }
 
-  // 🎯 漸進式載入：獲取初始縮圖
+  // 🎯 漸進式載入：獲取初始圖片（瀑布牆上的照片）
   const getInitialSrc = () => {
     if (hasError && fallbackSrc) return fallbackSrc
     
-    // 如果啟用漸進式載入且有縮圖，先使用大縮圖
-    if (progressiveLoad && thumbnailUrls && thumbnailUrls.large) {
-      return thumbnailUrls.large
-    }
-    
+    // 🎯 漸進式載入：直接使用當前顯示的圖片（瀑布牆上的縮圖）
+    // 這樣可以保持與瀑布牆一致的顯示
     return getOptimalSrc()
   }
 
   const handleLoad = () => {
     setIsLoading(false)
     
-    // 🎯 漸進式載入：如果當前顯示的是縮圖，則載入原圖
-    if (progressiveLoad && !isProgressiveLoading && currentSrc !== src) {
+    // 🎯 漸進式載入：在 lightbox 模式下，如果當前不是原圖，則載入原圖
+    if (progressiveLoad && lightboxMode && !isProgressiveLoading && currentSrc !== src) {
       setIsProgressiveLoading(true)
       setCurrentSrc(src)  // 載入原圖
     } else {
