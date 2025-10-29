@@ -53,8 +53,8 @@ export default function ResponsiveImage({
   const getOptimalSrc = () => {
     if (hasError && fallbackSrc) return fallbackSrc
     
-    // 🎯 放大模式優先使用原圖
-    if (lightboxMode) {
+    // 🎯 放大模式優先使用原圖（僅在不啟用漸進式載入時）
+    if (lightboxMode && !progressiveLoad) {
       return src
     }
     
@@ -79,6 +79,7 @@ export default function ResponsiveImage({
     
     // 🎯 漸進式載入：直接使用當前顯示的圖片（瀑布牆上的縮圖）
     // 這樣可以保持與瀑布牆一致的顯示
+    // 在 lightbox 模式下，即使啟用漸進式載入，也先顯示縮圖
     return getOptimalSrc()
   }
 

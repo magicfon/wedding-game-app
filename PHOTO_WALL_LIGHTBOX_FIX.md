@@ -30,9 +30,37 @@
 
 #### 關鍵代碼變更：
 ```typescript
+// 根據螢幕尺寸選擇適當的縮圖
+const getOptimalSrc = () => {
+  if (hasError && fallbackSrc) return fallbackSrc
+  
+  // 🎯 放大模式優先使用原圖（僅在不啟用漸進式載入時）
+  if (lightboxMode && !progressiveLoad) {
+    return src
+  }
+  
+  // 如果有縮圖 URL，根據螢幕寬度選擇
+  if (thumbnailUrls && typeof window !== 'undefined') {
+    const screenWidth = window.innerWidth
+    if (screenWidth <= 640 && thumbnailUrls.small) {
+      return thumbnailUrls.small
+    } else if (screenWidth <= 1024 && thumbnailUrls.medium) {
+      return thumbnailUrls.medium
+    } else if (thumbnailUrls.large) {
+      return thumbnailUrls.large
+    }
+  }
+  
+  return src
+}
+
 // 🎯 漸進式載入：獲取初始圖片（瀑布牆上的照片）
 const getInitialSrc = () => {
-  // 直接使用當前顯示的圖片，保持一致性
+  if (hasError && fallbackSrc) return fallbackSrc
+  
+  // 🎯 漸進式載入：直接使用當前顯示的圖片（瀑布牆上的縮圖）
+  // 這樣可以保持與瀑布牆一致的顯示
+  // 在 lightbox 模式下，即使啟用漸進式載入，也先顯示縮圖
   return getOptimalSrc()
 }
 
