@@ -53,6 +53,26 @@ export const expect = (actual: unknown) => ({
     if (!expected.test(String(actual))) {
       throw new Error(`期望匹配 ${expected}`)
     }
+  },
+  toEqual: (expected: unknown) => {
+    if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+      throw new Error(`期望 ${JSON.stringify(expected)}，但得到 ${JSON.stringify(actual)}`)
+    }
+  },
+  toHaveLength: (expected: number) => {
+    if (!Array.isArray(actual) || actual.length !== expected) {
+      throw new Error(`期望長度為 ${expected}，但得到 ${Array.isArray(actual) ? actual.length : 'not an array'}`)
+    }
+  },
+  toBeFalsy: () => {
+    if (actual) {
+      throw new Error(`期望為 falsy，但得到 ${actual}`)
+    }
+  },
+  toBeTruthy: () => {
+    if (!actual) {
+      throw new Error(`期望為 truthy，但得到 ${actual}`)
+    }
   }
 })
 

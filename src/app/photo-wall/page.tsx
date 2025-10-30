@@ -7,17 +7,10 @@ import { useLiff } from '@/hooks/useLiff'
 import Layout from '@/components/Layout'
 import ResponsiveImage from '@/components/ResponsiveImage'
 import { Heart, User, Clock, Trophy, X, MessageSquare } from 'lucide-react'
+import { useResponsiveColumns } from '@/hooks/useResponsiveColumns'
+import { usePhotoDistribution } from '@/hooks/usePhotoDistribution'
+import { PhotoWithUser } from '@/lib/photo-distribution'
 
-interface PhotoWithUser extends Photo {
-  uploader: {
-    display_name: string
-    avatar_url: string
-  }
-  user_vote_count?: number
-  thumbnail_small_url?: string
-  thumbnail_medium_url?: string
-  thumbnail_large_url?: string
-}
 
 export default function PhotoWallPage() {
   const [photos, setPhotos] = useState<PhotoWithUser[]>([])
@@ -42,6 +35,12 @@ export default function PhotoWallPage() {
   const router = useRouter()
   const supabase = createSupabaseBrowser()
   const { isReady, isLoggedIn, profile, loading: liffLoading } = useLiff()
+  
+  // 添加響應式列數管理
+  const { columnCount } = useResponsiveColumns()
+  
+  // 使用照片分配 Hook
+  const { columns } = usePhotoDistribution(displayedPhotos, columnCount)
 
   const PHOTOS_PER_PAGE = 12
 
@@ -525,50 +524,57 @@ export default function PhotoWallPage() {
           </div>
         ) : (
           <>
-            {/* 瀑布流布局 */}
-            <div className="columns-3 sm:columns-4 md:columns-5 lg:columns-4 xl:columns-5 gap-3 sm:gap-4 space-y-3 sm:space-y-4">
-              {displayedPhotos.map((photo) => (
-                <div 
-                  key={photo.id} 
-                  className="break-inside-avoid mb-3 sm:mb-4 cursor-pointer group"
-                  onClick={() => setSelectedPhoto(photo)}
+            {/* 橫向排序的網格佈局 */}
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
+              {columns.map((column, columnIndex) => (
+                <div
+                  key={`column-${columnIndex}`}
+                  className="flex flex-col space-y-3 sm:space-y-4"
                 >
-                  <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
-                    {/* 照片 */}
-                    <div className="relative">
-                      <ResponsiveImage
-                        src={photo.image_url}
-                        alt="Wedding photo"
-                        className="w-full h-auto"
-                        thumbnailUrls={{
-                          small: photo.thumbnail_small_url,
-                          medium: photo.thumbnail_medium_url,
-                          large: photo.thumbnail_large_url
-                        }}
-                        sizes="(max-width: 640px) 200px, (max-width: 1024px) 400px, 800px"
-                      />
-                       
-                      {/* 票數顯示 */}
-                      <div className="absolute bottom-2 left-2 sm:bottom-3 sm:left-3 bg-black/70 text-white px-2 py-1 sm:px-3 sm:py-1.5 rounded-full flex items-center space-x-1">
-                        <Heart className="w-3 h-3 sm:w-4 sm:h-4 fill-current" />
-                        <span className="text-xs sm:text-sm font-semibold">{photo.vote_count}</span>
-                      </div>
-                    </div>
+                  {column.map((photo) => (
+                    <div
+                      key={photo.id}
+                      className="cursor-pointer group"
+                      onClick={() => setSelectedPhoto(photo)}
+                    >
+                      <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
+                        {/* 照片 */}
+                        <div className="relative">
+                          <ResponsiveImage
+                            src={photo.image_url}
+                            alt="Wedding photo"
+                            className="w-full h-auto"
+                            thumbnailUrls={{
+                              small: photo.thumbnail_small_url,
+                              medium: photo.thumbnail_medium_url,
+                              large: photo.thumbnail_large_url
+                            }}
+                            sizes="(max-width: 640px) 200px, (max-width: 1024px) 400px, 800px"
+                          />
+                           
+                          {/* 票數顯示 */}
+                          <div className="absolute bottom-2 left-2 sm:bottom-3 sm:left-3 bg-black/70 text-white px-2 py-1 sm:px-3 sm:py-1.5 rounded-full flex items-center space-x-1">
+                            <Heart className="w-3 h-3 sm:w-4 sm:h-4 fill-current" />
+                            <span className="text-xs sm:text-sm font-semibold">{photo.vote_count}</span>
+                          </div>
+                        </div>
 
-                    {/* 簡化資訊 */}
-                    <div className="p-2 sm:p-3">
-                      <div className="flex items-center space-x-1.5 sm:space-x-2">
-                        <img
-                          src={photo.uploader.avatar_url || '/default-avatar.png'}
-                          alt="Avatar"
-                          className="w-5 h-5 sm:w-6 sm:h-6 rounded-full"
-                        />
-                        <span className="text-xs sm:text-sm font-medium text-gray-800 truncate">
-                          {photo.uploader.display_name}
-                        </span>
+                        {/* 簡化資訊 */}
+                        <div className="p-2 sm:p-3">
+                          <div className="flex items-center space-x-1.5 sm:space-x-2">
+                            <img
+                              src={photo.uploader.avatar_url || '/default-avatar.png'}
+                              alt="Avatar"
+                              className="w-5 h-5 sm:w-6 sm:h-6 rounded-full"
+                            />
+                            <span className="text-xs sm:text-sm font-medium text-gray-800 truncate">
+                              {photo.uploader.display_name}
+                            </span>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  ))}
                 </div>
               ))}
             </div>
