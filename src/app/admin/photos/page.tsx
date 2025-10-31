@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLiff } from '@/hooks/useLiff'
 import AdminLayout from '@/components/AdminLayout'
-import { Eye, EyeOff, Download, Trash2, Image as ImageIcon, Clock, User, Heart, Home, ArrowLeft, Filter, RefreshCw, Image as ImageIcon2, CheckCircle, XCircle, Loader2, Users } from 'lucide-react'
+import { Eye, EyeOff, Download, Trash2, Image as ImageIcon, Clock, User, Heart, Filter, CheckCircle, XCircle, Loader2, Users } from 'lucide-react'
 import Image from 'next/image'
 
 interface PhotoWithUser {
@@ -31,12 +31,6 @@ interface Voter {
   avatarUrl: string | null
 }
 
-interface ThumbnailStats {
-  totalPhotos: number
-  photosWithThumbnails: number
-  photosWithoutThumbnails: number
-  thumbnailCoverage: string
-}
 
 type FilterType = 'all' | 'public' | 'private'
 
@@ -48,9 +42,6 @@ export default function PhotosManagePage() {
   const [filteredPhotos, setFilteredPhotos] = useState<PhotoWithUser[]>([])
   const [selectedPhoto, setSelectedPhoto] = useState<PhotoWithUser | null>(null)
   const [filter, setFilter] = useState<FilterType>('all')
-  const [thumbnailStats, setThumbnailStats] = useState<ThumbnailStats | null>(null)
-  const [refreshingStats, setRefreshingStats] = useState(false)
-  const [batchRefreshing, setBatchRefreshing] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [voters, setVoters] = useState<Voter[]>([])
   const [votersLoading, setVotersLoading] = useState(false)
@@ -76,7 +67,6 @@ export default function PhotosManagePage() {
 
     setIsAdmin(true)
     fetchAllPhotos()
-    fetchThumbnailStats()
     setLoading(false)
   }, [isLoggedIn, profile, liffIsAdmin, liffLoading, adminLoading, router])
 
@@ -127,53 +117,6 @@ export default function PhotosManagePage() {
     }
   }
 
-  // 獲取縮圖統計
-  const fetchThumbnailStats = async () => {
-    try {
-      console.log('開始獲取縮圖統計...')
-      const response = await fetch('/api/admin/thumbnails/stats')
-      const data = await response.json()
-
-      console.log('縮圖統計 API 回應:', {
-        ok: response.ok,
-        status: response.status,
-        stats: data.stats
-      })
-
-      if (response.ok && data.stats) {
-        setThumbnailStats(data.stats)
-        console.log('縮圖統計已載入:', data.stats)
-      } else {
-        console.error('獲取縮圖統計失敗:', data.error)
-      }
-    } catch (error) {
-      console.error('獲取縮圖統計失敗:', error)
-    }
-  }
-
-  // 批量重新生成縮圖
-  const handleBatchRefreshThumbnails = async () => {
-    try {
-      console.log('開始批量重新生成縮圖...')
-      const response = await fetch('/api/admin/thumbnails/batch-refresh', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      })
-      const data = await response.json()
-
-      if (response.ok) {
-        console.log('批量重新生成縮圖成功:', data)
-        // 重新獲取統計
-        fetchThumbnailStats()
-      } else {
-        console.error('批量重新生成縮圖失敗:', data.error)
-      }
-    } catch (error) {
-      console.error('批量重新生成縮圖失敗:', error)
-    } finally {
-      setBatchRefreshing(false)
-    }
-  }
 
   // 切換照片公開狀態
   const togglePhotoVisibility = async (photoId: number, currentStatus: boolean) => {
@@ -340,46 +283,6 @@ export default function PhotosManagePage() {
               </div>
             </div>
 
-            {/* 縮圖統計卡片 */}
-            {thumbnailStats && (
-              <>
-                <div className="bg-white rounded-xl shadow-md p-6">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                      <ImageIcon2 className="w-6 h-6 text-orange-600" />
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-600">已有縮圖</h3>
-                      <p className="text-2xl font-bold text-orange-600">{thumbnailStats.photosWithThumbnails}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-white rounded-xl shadow-md p-6">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-                      <XCircle className="w-6 h-6 text-red-600" />
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-600">缺少縮圖</h3>
-                      <p className="text-2xl font-bold text-red-600">{thumbnailStats.photosWithoutThumbnails}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-white rounded-xl shadow-md p-6">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center">
-                      <CheckCircle className="w-6 h-6 text-indigo-600" />
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-600">覆蓋率</h3>
-                      <p className="text-2xl font-bold text-indigo-600">{thumbnailStats.thumbnailCoverage}</p>
-                    </div>
-                  </div>
-                </div>
-              </>
-            )}
           </div>
 
           {/* 篩選按鈕 */}
@@ -422,44 +325,6 @@ export default function PhotosManagePage() {
             </div>
           </div>
 
-          {/* 縮圖管理操作 */}
-          <div className="bg-white rounded-xl shadow-md p-4">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-2">
-                <ImageIcon2 className="w-5 h-5 text-gray-600" />
-                <h3 className="text-lg font-semibold text-gray-800">縮圖管理</h3>
-              </div>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <button
-                onClick={() => {
-                  setThumbnailStats(null)
-                  fetchThumbnailStats()
-                }}
-                disabled={refreshingStats}
-                className="flex items-center space-x-2 bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white font-medium py-3 px-6 rounded-lg transition-colors duration-200"
-              >
-                <RefreshCw className={`w-5 h-5 ${refreshingStats ? 'animate-spin' : ''}`} />
-                <span>重新整理統計</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  setBatchRefreshing(true)
-                  handleBatchRefreshThumbnails()
-                }}
-                disabled={batchRefreshing || !thumbnailStats || thumbnailStats.totalPhotos === 0}
-                className="flex items-center space-x-2 bg-pink-500 hover:bg-pink-600 disabled:bg-pink-300 text-white font-medium py-3 px-6 rounded-lg transition-colors duration-200"
-              >
-                {batchRefreshing ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <RefreshCw className="w-5 h-5" />
-                )}
-                <span>批量重新生成縮圖</span>
-              </button>
-            </div>
-          </div>
 
           {/* 照片列表 */}
           {filteredPhotos.length === 0 ? (
