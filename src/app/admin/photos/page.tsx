@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLiff } from '@/hooks/useLiff'
 import AdminLayout from '@/components/AdminLayout'
-import { Eye, EyeOff, Download, Trash2, Image as ImageIcon, Clock, User, Heart, Home, ArrowLeft, Filter, RefreshCw, Image as ImageIcon2, CheckCircle, XCircle, Loader2 } from 'lucide-react'
+import { Eye, EyeOff, Download, Trash2, Image as ImageIcon, Clock, User, Heart, Home, ArrowLeft, Filter, RefreshCw, Image as ImageIcon2, CheckCircle, XCircle, Loader2, Users } from 'lucide-react'
 import Image from 'next/image'
 
 interface PhotoWithUser {
@@ -23,6 +23,12 @@ interface PhotoWithUser {
   thumbnail_medium_url?: string
   thumbnail_large_url?: string
   thumbnail_generated_at?: string
+}
+
+interface Voter {
+  lineId: string
+  displayName: string
+  avatarUrl: string | null
 }
 
 interface ThumbnailStats {
@@ -46,6 +52,9 @@ export default function PhotosManagePage() {
   const [refreshingStats, setRefreshingStats] = useState(false)
   const [batchRefreshing, setBatchRefreshing] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [voters, setVoters] = useState<Voter[]>([])
+  const [votersLoading, setVotersLoading] = useState(false)
+  const [votersError, setVotersError] = useState<string | null>(null)
 
   const { isLoggedIn, profile, isAdmin: liffIsAdmin, loading: liffLoading, adminLoading } = useLiff()
 
@@ -231,6 +240,43 @@ export default function PhotosManagePage() {
     link.click()
     document.body.removeChild(link)
   }
+
+  // 獲取照片投票者資訊
+  const fetchPhotoVoters = async (photoId: number) => {
+    if (!photoId) return
+    
+    setVotersLoading(true)
+    setVotersError(null)
+    
+    try {
+      console.log(`開始獲取照片 ${photoId} 的投票者資訊...`)
+      const response = await fetch(`/api/admin/photos/voters?photoId=${photoId}`)
+      const data = await response.json()
+
+      if (response.ok && data.success) {
+        setVoters(data.data.voters || [])
+        console.log(`照片 ${photoId} 投票者資訊已載入:`, data.data.voters.length, '人')
+      } else {
+        console.error('獲取投票者失敗:', data.error)
+        setVotersError(data.error || '獲取投票者失敗')
+      }
+    } catch (error) {
+      console.error('獲取投票者資訊錯誤:', error)
+      setVotersError('網路錯誤，請稍後再試')
+    } finally {
+      setVotersLoading(false)
+    }
+  }
+
+  // 當選擇照片時，重置投票者資訊並重新載入
+  useEffect(() => {
+    if (selectedPhoto) {
+      fetchPhotoVoters(selectedPhoto.id)
+    } else {
+      setVoters([])
+      setVotersError(null)
+    }
+  }, [selectedPhoto])
 
   if (loading || liffLoading || adminLoading) {
     return (
@@ -618,6 +664,81 @@ export default function PhotosManagePage() {
                     <Trash2 className="w-5 h-5" />
                     <span>刪除</span>
                   </button>
+                </div>
+
+                {/* 投票者列表 */}
+                <div className="pt-4 border-t">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-800 flex items-center space-x-2">
+                      <Users className="w-5 h-5" />
+                      <span>投票者 ({voters.length})</span>
+                    </h3>
+                    {votersLoading && (
+                      <div className="flex items-center space-x-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span className="text-sm text-gray-500">載入中...</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {votersError ? (
+                    <div className="text-center py-8">
+                      <XCircle className="w-12 h-12 text-red-400 mx-auto mb-3" />
+                      <p className="text-red-600 font-medium mb-3">{votersError}</p>
+                      <button
+                        onClick={() => fetchPhotoVoters(selectedPhoto?.id || 0)}
+                        className="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
+                      >
+                        重試
+                      </button>
+                    </div>
+                  ) : votersLoading ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                      {Array.from({ length: 8 }).map((_, index) => (
+                        <div key={index} className="flex flex-col items-center p-3 bg-gray-50 rounded-lg">
+                          <div className="w-12 h-12 bg-gray-200 rounded-full animate-pulse mb-2" />
+                          <div className="w-16 h-4 bg-gray-200 rounded animate-pulse" />
+                        </div>
+                      ))}
+                    </div>
+                  ) : voters.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Heart className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                      <p className="text-gray-500 font-medium">尚無投票者</p>
+                      <p className="text-gray-400 text-sm mt-1">
+                        當有用戶投票時，他們的資訊會顯示在這裡
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                      {voters.map((voter) => (
+                        <div
+                          key={voter.lineId}
+                          className="flex flex-col items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                        >
+                          <div className="w-12 h-12 mb-2 relative">
+                            {voter.avatarUrl ? (
+                              <img
+                                src={voter.avatarUrl}
+                                alt={voter.displayName}
+                                className="w-full h-full rounded-full object-cover"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none'
+                                  e.currentTarget.nextElementSibling?.classList.remove('hidden')
+                                }}
+                              />
+                            ) : null}
+                            <div className={`w-full h-full bg-gray-300 rounded-full flex items-center justify-center ${voter.avatarUrl ? 'hidden' : ''}`}>
+                              <User className="w-6 h-6 text-gray-600" />
+                            </div>
+                          </div>
+                          <p className="text-sm text-gray-700 text-center truncate w-full">
+                            {voter.displayName}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* 關閉按鈕 */}
