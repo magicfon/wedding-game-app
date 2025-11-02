@@ -41,7 +41,7 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
     { name: '計分規則', href: '/admin/scoring-rules', icon: Settings },
     { name: '媒體清理', href: '/admin/media-cleanup', icon: HardDrive },
     { name: 'LINE 選單', href: '/admin/line-menu', icon: Settings },
-    { name: '系統設定', href: '/admin/settings', icon: Settings },
+    { name: '系統設定', href: '/admin/system-settings', icon: Settings },
   ]
 
   return (

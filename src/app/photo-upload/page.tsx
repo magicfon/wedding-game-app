@@ -5,24 +5,30 @@ import { useRouter } from 'next/navigation'
 import { useLiff } from '@/hooks/useLiff'
 import Layout from '@/components/Layout'
 import UploadProgress, { useUploadProgress } from '@/components/UploadProgress'
-import { uploadWithProgress, createUploadController, formatFileSize } from '@/lib/upload-with-progress'
 import { Camera, Upload, Heart, Lock, Globe, Image as ImageIcon, X } from 'lucide-react'
 
+interface Preview {
+  file: File;
+  preview: string;
+  id: string;
+  sequence: number;
+}
+
 export default function PhotoUploadPage() {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null)
-  const [preview, setPreview] = useState<string | null>(null)
-  const [blessingMessage, setBlessingMessage] = useState('')
-  const [isPublic, setIsPublic] = useState(true)
-  const [uploadSuccess, setUploadSuccess] = useState(false)
-  const [uploadController, setUploadController] = useState<ReturnType<typeof createUploadController> | null>(null)
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [blessingMessage, setBlessingMessage] = useState('');
+  const [isPublic, setIsPublic] = useState(true);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [maxPhotoCount, setMaxPhotoCount] = useState(3); // 從設定 API 獲取
+  const [error, setError] = useState<string | null>(null);
   
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const router = useRouter()
-  const { isReady, isLoggedIn, profile, login, loading } = useLiff()
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
+  const { isReady, isLoggedIn, profile, loading } = useLiff();
   
   // 使用上傳進度 Hook
-  const { progress, isUploading, error, startUpload, updateProgress, completeUpload, failUpload, reset } = useUploadProgress()
-
+  const { progress, isUploading, error: uploadError, startUpload, updateProgress, completeUpload, failUpload, reset } = useUploadProgress();
+  
   // 檢查登入狀態
   useEffect(() => {
     if (isReady && !loading && !isLoggedIn) {
@@ -30,104 +36,138 @@ export default function PhotoUploadPage() {
       alert('請先登入才能上傳照片')
       router.push('/')
     }
-  }, [isReady, isLoggedIn, loading, router])
-
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file) return
-
-    // 檢查檔案類型
-    if (!file.type.startsWith('image/')) {
-      alert('請選擇圖片檔案')
-      return
-    }
-
-    // 檢查檔案大小 (最大 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      alert('圖片檔案不能超過 5MB')
-      return
-    }
-
-    setSelectedFile(file)
-
-    // 創建預覽
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      setPreview(e.target?.result as string)
-    }
-    reader.readAsDataURL(file)
-  }
-
-  const handleUpload = async () => {
-    if (!selectedFile || !profile) return
-
-    // 創建上傳控制器
-    const controller = createUploadController()
-    setUploadController(controller)
-
+  }, [isReady, isLoggedIn, loading, router]);
+  
+  // 載入系統設定
+  useEffect(() => {
+    loadMaxPhotoCount();
+  }, []);
+  
+  const loadMaxPhotoCount = async () => {
     try {
-      startUpload()
-
-      // 使用帶進度的上傳函數
-      const result = await uploadWithProgress({
-        url: '/api/photo/upload',
-        file: selectedFile,
-        data: {
-          blessingMessage,
-          isPublic: isPublic.toString(),
-          uploaderLineId: profile.userId
-        },
-        onProgress: (progress, status) => {
-          updateProgress(progress)
-        },
-        signal: controller.signal
-      })
-
-      if (!result.success) {
-        throw new Error(result.error || '上傳失敗')
+      const response = await fetch('/api/photo/upload');
+      const data = await response.json();
+      if (data.success) {
+        setMaxPhotoCount(data.data.maxPhotoUploadCount || 3);
       }
-
-      completeUpload()
-      setUploadSuccess(true)
-      
-      // 清理表單
-      setSelectedFile(null)
-      setPreview(null)
-      setBlessingMessage('')
-      if (fileInputRef.current) {
-        fileInputRef.current.value = ''
-      }
-
-      // 2秒後跳轉到照片牆
-      setTimeout(() => {
-        router.push('/photo-wall')
-      }, 2000)
-
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : '上傳失敗，請稍後再試'
-      failUpload(errorMessage)
-      console.error('Upload error:', error)
-    } finally {
-      setUploadController(null)
+      console.error('載入設定失敗:', error);
     }
-  }
-
+  };
+  
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    
+    // 驗證檔案數量
+    if (files.length > maxPhotoCount) {
+      setError(`最多只能選擇 ${maxPhotoCount} 張照片`);
+      return;
+    }
+    
+    // 驗證每個檔案
+    const validFiles = files.filter(file => {
+      if (!file.type.startsWith('image/')) {
+        return false;
+      }
+      
+      if (file.size > 5 * 1024 * 1024) {
+        return false;
+      }
+      
+      return true;
+    });
+    
+    if (validFiles.length !== files.length) {
+      setError('部分檔案不符合要求，請檢查檔案格式和大小');
+      return;
+    }
+    
+    setSelectedFiles(validFiles);
+    setError(null);
+    generatePreviews(validFiles);
+  };
+  
+  const generatePreviews = (files: File[]) => {
+    const newPreviews = files.map((file, index) => ({
+      file,
+      preview: URL.createObjectURL(file),
+      id: `preview-${index}`,
+      sequence: index + 1
+    }));
+    
+    setSelectedFiles(files);
+  };
+  
+  const handleRemoveFile = (index: number) => {
+    const newFiles = selectedFiles.filter((_, i) => i !== index);
+    setSelectedFiles(newFiles);
+    
+    // 如果沒有檔案了，清空預覽
+    if (newFiles.length === 0) {
+      setBlessingMessage('');
+    }
+  };
+  
+  const handleUpload = async () => {
+    if (selectedFiles.length === 0 || !profile) return;
+    
+    // 創建 FormData
+    const formData = new FormData();
+    selectedFiles.forEach((file) => {
+      formData.append('files', file);
+    });
+    formData.append('blessingMessage', blessingMessage);
+    formData.append('isPublic', isPublic.toString());
+    formData.append('uploaderLineId', profile.userId);
+    
+    try {
+      startUpload();
+      
+      const response = await fetch('/api/photo/upload', {
+        method: 'POST',
+        body: formData
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        completeUpload();
+        setUploadSuccess(true);
+        
+        // 清理表單
+        setSelectedFiles([]);
+        setBlessingMessage('');
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+        
+        // 2秒後跳轉到照片牆
+        setTimeout(() => {
+          router.push('/photo-wall');
+        }, 2000);
+      } else {
+        throw new Error(data.error || '上傳失敗');
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '上傳失敗，請稍後再試';
+      failUpload(errorMessage);
+      console.error('Upload error:', error);
+    }
+  };
+  
   const handleCancelUpload = () => {
-    if (uploadController) {
-      uploadController.cancel()
-      setUploadController(null)
-      reset()
-    }
-  }
-
+    reset();
+  };
+  
   const clearSelection = () => {
-    setSelectedFile(null)
-    setPreview(null)
+    setSelectedFiles([]);
+    setBlessingMessage('');
+    setError(null);
     if (fileInputRef.current) {
-      fileInputRef.current.value = ''
+      fileInputRef.current.value = '';
     }
-  }
-
+  };
+  
   return (
     <Layout title="照片上傳">
       {/* 成功訊息彈出框 */}
@@ -145,9 +185,9 @@ export default function PhotoUploadPage() {
       )}
       
       <div className="max-w-2xl mx-auto">
-
+        
         {/* 隱私設定 */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+        <div className="bg-white rounded-lg shadow p-6 mb-6">
           <h3 className="text-lg font-semibold text-black mb-4">隱私設定</h3>
           <div className="space-y-4">
             <label className="flex items-center space-x-3 cursor-pointer">
@@ -164,7 +204,7 @@ export default function PhotoUploadPage() {
                 <div className="text-sm text-black">所有賓客都可以看到並投票</div>
               </div>
             </label>
-            
+           
             <label className="flex items-center space-x-3 cursor-pointer">
               <input
                 type="radio"
@@ -181,119 +221,179 @@ export default function PhotoUploadPage() {
             </label>
           </div>
         </div>
-
+        
         {/* 上傳區域 */}
-        <div className="bg-white rounded-2xl shadow-lg p-8 mb-6">
+        <div className="bg-white rounded-lg shadow p-8 mb-6">
           <div className="text-center mb-8">
             <Camera className="w-10 h-10 text-pink-500 mx-auto mb-4" />
             <p className="text-black">上傳照片並留下祝福的話語</p>
+            <p className="text-sm text-gray-500">最多可選擇 {maxPhotoCount} 張照片</p>
           </div>
-
-          {!preview ? (
-            <div
-              onClick={() => fileInputRef.current?.click()}
-              className="border-2 border-dashed border-gray-300 rounded-xl p-12 text-center cursor-pointer hover:border-pink-400 hover:bg-pink-50 transition-colors"
-            >
-              <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-lg text-black mb-2">點擊選擇照片</p>
-              <p className="text-sm text-black">支援 JPG, PNG 格式，最大 5MB</p>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleFileSelect}
-                className="hidden text-black"
-              />
-            </div>
-          ) : (
-            <div className="relative">
-              <img
-                src={preview}
-                alt="Preview"
-                className="w-full max-h-96 object-cover rounded-xl"
-              />
-              <button
-                onClick={clearSelection}
-                className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-2 transition-colors"
+          
+          {/* 多檔案選擇器 */}
+          <div className="mb-6">
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              accept="image/*"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
+            
+            {selectedFiles.length === 0 ? (
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                className="border-2 border-dashed border-gray-300 rounded-xl p-12 text-center cursor-pointer hover:border-pink-400 hover:bg-pink-50 transition-colors"
               >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* 祝福訊息 */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-          <h3 className="text-lg font-semibold text-black mb-4 flex items-center">
-            <Heart className="w-5 h-5 text-pink-500 mr-2" />
-            祝福訊息
-          </h3>
-          <textarea
-            value={blessingMessage}
-            onChange={(e) => setBlessingMessage(e.target.value)}
-            placeholder="寫下您對新人的祝福..."
-            className="w-full h-32 p-4 border border-gray-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent text-black"
-            maxLength={200}
-          />
-          <div className="text-right text-sm text-black mt-2">
-            {blessingMessage.length}/200
-          </div>
-        </div>
-
-        {/* 上傳按鈕 */}
-        <div className="text-center">
-          <button
-            onClick={handleUpload}
-            disabled={!selectedFile || isUploading}
-            className={`px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-200 ${
-              !selectedFile || isUploading
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                : 'bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white shadow-lg hover:shadow-xl transform hover:scale-105'
-            }`}
-          >
-            {isUploading ? (
-              <div className="flex items-center space-x-2">
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                <span>上傳中... {Math.round(progress)}%</span>
+                <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-lg text-black mb-2">點擊選擇照片</p>
+                <p className="text-sm text-black">支援 JPG, PNG 格式，最大 5MB</p>
               </div>
             ) : (
-              <div className="flex items-center space-x-2">
-                <ImageIcon className="w-5 h-5" />
-                <span>上傳照片</span>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-lg font-medium text-black">
+                    已選擇 {selectedFiles.length}/{maxPhotoCount} 張照片
+                  </h4>
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600"
+                  >
+                    添加更多照片
+                  </button>
+                </div>
+                
+                {/* 錯誤提示 */}
+                {error && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                    <p className="text-sm">{error}</p>
+                  </div>
+                )}
+                
+                {/* 預覽網格 */}
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {selectedFiles.map((file, index) => (
+                    <div key={index} className="relative group">
+                      <img
+                        src={URL.createObjectURL(file)}
+                        alt={`照片 ${index + 1}`}
+                        className="w-full h-32 object-cover rounded-lg"
+                      />
+                      
+                      {/* 序號標籤 */}
+                      <div className="absolute top-2 left-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-sm">
+                        {index + 1}/{selectedFiles.length}
+                      </div>
+                      
+                      {/* 移除按鈕 */}
+                      <button
+                        onClick={() => handleRemoveFile(index)}
+                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                      
+                      {/* 檔案資訊 */}
+                      <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-75 text-white p-2 text-xs">
+                        <p className="truncate">{file.name}</p>
+                        <p>{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
-          </button>
+          </div>
           
-          {/* 顯示檔案資訊 */}
-          {selectedFile && !isUploading && (
-            <div className="mt-3 text-sm text-gray-600">
-              檔案大小: {formatFileSize(selectedFile.size)}
+          {/* 祝福語輸入 */}
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold text-black mb-4 flex items-center">
+              <Heart className="w-5 h-5 text-pink-500 mr-2" />
+              祝福語
+            </h3>
+            <textarea
+              value={blessingMessage}
+              onChange={(e) => setBlessingMessage(e.target.value)}
+              placeholder="寫下您對新人的祝福..."
+              className="w-full h-32 p-4 border border-gray-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent text-black"
+              maxLength={200}
+            />
+            <div className="text-right text-sm text-black mt-2">
+              {blessingMessage.length}/200
             </div>
-          )}
+            
+            {/* 預覽區域 */}
+            {blessingMessage && selectedFiles.length > 0 && (
+              <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                <p className="text-sm font-medium text-gray-700 mb-2">祝福語預覽：</p>
+                {Array.from({ length: selectedFiles.length }, (_, index) => (
+                  <p key={index} className="text-sm text-gray-600">
+                    "{blessingMessage} ({index + 1}/{selectedFiles.length})"
+                  </p>
+                ))}
+              </div>
+            )}
+          </div>
+          
+          {/* 上傳按鈕 */}
+          <div className="text-center">
+            <button
+              onClick={handleUpload}
+              disabled={selectedFiles.length === 0 || isUploading}
+              className={`px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-200 ${
+                selectedFiles.length === 0 || isUploading
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white shadow-lg hover:shadow-xl transform hover:scale-105'
+              }`}
+            >
+              {isUploading ? (
+                <div className="flex items-center space-x-2">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  <span>上傳中... {Math.round(progress)}%</span>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-2">
+                  <ImageIcon className="w-5 h-5" />
+                  <span>上傳照片</span>
+                </div>
+              )}
+            </button>
+            
+            {/* 取消按鈕 */}
+            {isUploading && (
+              <button
+                onClick={handleCancelUpload}
+                className="ml-4 px-4 py-2 text-gray-600 hover:text-gray-800"
+              >
+                取消上傳
+              </button>
+            )}
+          </div>
+          
+          {/* 提示 */}
+          <div className="bg-blue-50 rounded-xl p-4 mt-6 text-center">
+            <p className="text-black text-sm">
+              💡 上傳的照片將會出現在照片牆和快門傳情中，讓所有賓客一起欣賞美好回憶！
+            </p>
+          </div>
         </div>
-
-        {/* 提示 */}
-        <div className="bg-blue-50 rounded-xl p-4 mt-6 text-center">
-          <p className="text-black text-sm">
-            💡 上傳的照片將會出現在照片牆和快門傳情中，讓所有賓客一起欣賞美好回憶！
-          </p>
-        </div>
+        
+        {/* 上傳進度組件 */}
+        <UploadProgress
+          isUploading={isUploading}
+          progress={progress}
+          fileName={selectedFiles.length > 0 ? `${selectedFiles.length} 張照片` : undefined}
+          error={uploadError}
+          onComplete={() => {
+            reset();
+          }}
+          onCancel={handleCancelUpload}
+          showPercentage={true}
+          showFileName={true}
+          size="medium"
+        />
       </div>
-
-      {/* 上傳進度組件 */}
-      <UploadProgress
-        isUploading={isUploading}
-        progress={progress}
-        fileName={selectedFile?.name}
-        error={error}
-        onComplete={() => {
-          reset()
-        }}
-        onCancel={handleCancelUpload}
-        showPercentage={true}
-        showFileName={true}
-        size="medium"
-      />
     </Layout>
-  )
+  );
 }
