@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation'
 import { useLiff } from '@/hooks/useLiff'
 import Layout from '@/components/Layout'
 import UploadProgress, { useUploadProgress } from '@/components/UploadProgress'
-import { Camera, Upload, Heart, Lock, Globe, Image as ImageIcon, X } from 'lucide-react'
+import { directUploadToSupabase, formatFileSize, needsResumableUpload, getUploadMethodDescription } from '@/lib/supabase-direct-upload'
+import { Camera, Upload, Heart, Lock, Globe, Image as ImageIcon, X, Info } from 'lucide-react'
 
 interface Preview {
   file: File;
@@ -64,21 +65,18 @@ export default function PhotoUploadPage() {
       return;
     }
     
-    // 驗證每個檔案
+    // 驗證每個檔案（移除大小限制）
     const validFiles = files.filter(file => {
       if (!file.type.startsWith('image/')) {
         return false;
       }
       
-      if (file.size > 5 * 1024 * 1024) {
-        return false;
-      }
-      
+      // 不再檢查檔案大小限制
       return true;
     });
     
     if (validFiles.length !== files.length) {
-      setError('部分檔案不符合要求，請檢查檔案格式和大小');
+      setError('部分檔案不符合要求，請檢查檔案格式');
       return;
     }
     
@@ -111,43 +109,80 @@ export default function PhotoUploadPage() {
   const handleUpload = async () => {
     if (selectedFiles.length === 0 || !profile) return;
     
-    // 創建 FormData
-    const formData = new FormData();
-    selectedFiles.forEach((file) => {
-      formData.append('files', file);
-    });
-    formData.append('blessingMessage', blessingMessage);
-    formData.append('isPublic', isPublic.toString());
-    formData.append('uploaderLineId', profile.userId);
-    
     try {
       startUpload();
       
-      const response = await fetch('/api/photo/upload', {
-        method: 'POST',
-        body: formData
-      });
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        completeUpload();
-        setUploadSuccess(true);
+      // 使用客戶端直接上傳
+      const uploadPromises = selectedFiles.map(async (file, index) => {
+        // 為每張照片生成帶序號的祝福語
+        const processedBlessingMessage = blessingMessage
+          ? `${blessingMessage} (${index + 1}/${selectedFiles.length})`
+          : blessingMessage;
         
-        // 清理表單
-        setSelectedFiles([]);
-        setBlessingMessage('');
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
+        // 直接上傳到 Supabase Storage
+        const uploadResult = await directUploadToSupabase({
+          file,
+          userId: profile.userId,
+          onProgress: (progress, status) => {
+            // 對於多檔案上傳，計算平均進度
+            const totalProgress = (index * 100 + progress) / selectedFiles.length;
+            updateProgress(totalProgress);
+          }
+        });
+        
+        if (!uploadResult.success) {
+          throw new Error(uploadResult.error || '上傳失敗');
         }
         
-        // 2秒後跳轉到照片牆
-        setTimeout(() => {
-          router.push('/photo-wall');
-        }, 2000);
-      } else {
-        throw new Error(data.error || '上傳失敗');
+        // 發送元數據到後端 API
+        const metadataFormData = new FormData();
+        metadataFormData.append('fileName', uploadResult.data!.fileName);
+        metadataFormData.append('fileUrl', uploadResult.data!.fileUrl);
+        metadataFormData.append('fileSize', uploadResult.data!.fileSize.toString());
+        metadataFormData.append('fileType', uploadResult.data!.fileType);
+        metadataFormData.append('blessingMessage', processedBlessingMessage);
+        metadataFormData.append('isPublic', isPublic.toString());
+        metadataFormData.append('uploaderLineId', profile.userId);
+        
+        const response = await fetch('/api/photo/upload', {
+          method: 'POST',
+          body: metadataFormData
+        });
+        
+        const data = await response.json();
+        
+        if (!data.success) {
+          throw new Error(data.error || '照片資訊儲存失敗');
+        }
+        
+        return data.data;
+      });
+      
+      const results = await Promise.allSettled(uploadPromises);
+      
+      // 處理結果
+      const successful = results.filter(r => r.status === 'fulfilled');
+      const failed = results.filter(r => r.status === 'rejected');
+      
+      if (failed.length > 0) {
+        throw new Error(`部分上傳失敗：${successful.length} 張成功，${failed.length} 張失敗`);
       }
+      
+      completeUpload();
+      setUploadSuccess(true);
+      
+      // 清理表單
+      setSelectedFiles([]);
+      setBlessingMessage('');
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      
+      // 2秒後跳轉到照片牆
+      setTimeout(() => {
+        router.push('/photo-wall');
+      }, 2000);
+      
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '上傳失敗，請稍後再試';
       failUpload(errorMessage);
@@ -248,7 +283,11 @@ export default function PhotoUploadPage() {
               >
                 <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                 <p className="text-lg text-black mb-2">點擊選擇照片</p>
-                <p className="text-sm text-black">支援 JPG, PNG 格式，最大 5MB</p>
+                <p className="text-sm text-black">支援 JPG, PNG 格式，無檔案大小限制</p>
+                <div className="mt-2 p-2 bg-blue-50 rounded text-xs text-blue-700">
+                  <p>💡 現在使用直接上傳，支援任意大小的照片</p>
+                  <p>大檔案將自動使用可恢復上傳技術</p>
+                </div>
               </div>
             ) : (
               <div className="space-y-4">
@@ -297,7 +336,10 @@ export default function PhotoUploadPage() {
                       {/* 檔案資訊 */}
                       <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-75 text-white p-2 text-xs">
                         <p className="truncate">{file.name}</p>
-                        <p>{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                        <p>{formatFileSize(file.size)}</p>
+                        {needsResumableUpload(file.size) && (
+                          <p className="text-yellow-300">🔄 可恢復上傳</p>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -373,9 +415,13 @@ export default function PhotoUploadPage() {
           
           {/* 提示 */}
           <div className="bg-blue-50 rounded-xl p-4 mt-6 text-center">
-            <p className="text-black text-sm">
+            <p className="text-black text-sm mb-2">
               💡 上傳的照片將會出現在照片牆和快門傳情中，讓所有賓客一起欣賞美好回憶！
             </p>
+            <div className="flex items-center justify-center space-x-2 text-xs text-gray-600">
+              <Info className="w-4 h-4" />
+              <span>使用直接上傳技術，無檔案大小限制</span>
+            </div>
           </div>
         </div>
         

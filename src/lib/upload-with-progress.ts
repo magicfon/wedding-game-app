@@ -1,9 +1,10 @@
 'use client'
 
+import { directUploadToSupabase, DirectUploadOptions, DirectUploadResult } from './supabase-direct-upload'
+
 /**
  * 支援進度追蹤的檔案上傳工具
- * 由於瀏覽器限制，這裡使用模擬進度來演示功能
- * 在實際應用中，可以結合 XMLHttpRequest 或 fetch with ReadableStream 來實現真實進度
+ * 支援客戶端直接上傳到 Supabase Storage 和傳統的 API 上傳
  */
 
 export interface UploadProgressCallback {
@@ -11,11 +12,14 @@ export interface UploadProgressCallback {
 }
 
 export interface UploadOptions {
-  url: string
+  url?: string  // 傳統 API 上傳的 URL
   file: File
   data?: Record<string, any>
   onProgress?: UploadProgressCallback
   signal?: AbortSignal
+  // 新增直接上傳選項
+  useDirectUpload?: boolean
+  userId?: string
 }
 
 export interface UploadResult {
@@ -25,12 +29,76 @@ export interface UploadResult {
 }
 
 /**
- * 模擬進度的檔案上傳函數
+ * 支援進度追蹤的檔案上傳函數
+ * 根據選項自動選擇直接上傳或傳統 API 上傳
  * @param options 上傳選項
  * @returns 上傳結果
  */
 export async function uploadWithProgress(options: UploadOptions): Promise<UploadResult> {
-  const { url, file, data = {}, onProgress, signal } = options
+  const { url, file, data = {}, onProgress, signal, useDirectUpload = false, userId } = options
+
+  // 檢查是否已經取消
+  if (signal?.aborted) {
+    return { success: false, error: '上傳已取消' }
+  }
+
+  // 根據選項選擇上傳方式
+  if (useDirectUpload && userId) {
+    return await directUploadWithProgress(file, userId, onProgress, signal)
+  } else {
+    return await traditionalUploadWithProgress(url, file, data, onProgress, signal)
+  }
+}
+
+/**
+ * 客戶端直接上傳到 Supabase Storage
+ */
+async function directUploadWithProgress(
+  file: File,
+  userId: string,
+  onProgress?: UploadProgressCallback,
+  signal?: AbortSignal
+): Promise<UploadResult> {
+  const directOptions: DirectUploadOptions = {
+    file,
+    userId,
+    onProgress,
+    signal
+  }
+
+  const result = await directUploadToSupabase(directOptions)
+  
+  if (result.success) {
+    return {
+      success: true,
+      data: {
+        fileName: result.data?.fileName,
+        fileUrl: result.data?.fileUrl,
+        fileSize: result.data?.fileSize,
+        fileType: result.data?.fileType
+      }
+    }
+  } else {
+    return {
+      success: false,
+      error: result.error
+    }
+  }
+}
+
+/**
+ * 傳統的 API 上傳（向後相容）
+ */
+async function traditionalUploadWithProgress(
+  url: string | undefined,
+  file: File,
+  data: Record<string, any>,
+  onProgress?: UploadProgressCallback,
+  signal?: AbortSignal
+): Promise<UploadResult> {
+  if (!url) {
+    return { success: false, error: '未提供上傳 URL' }
+  }
 
   return new Promise((resolve) => {
     // 檢查是否已經取消
@@ -102,9 +170,9 @@ export async function uploadWithProgress(options: UploadOptions): Promise<Upload
       if (response.ok && result.success) {
         resolve({ success: true, data: result.data })
       } else {
-        resolve({ 
-          success: false, 
-          error: result.error || '上傳失敗' 
+        resolve({
+          success: false,
+          error: result.error || '上傳失敗'
         })
       }
     })
@@ -116,9 +184,9 @@ export async function uploadWithProgress(options: UploadOptions): Promise<Upload
 
       clearInterval(progressInterval)
       onProgress?.(0, '上傳失敗')
-      resolve({ 
-        success: false, 
-        error: error.message || '網路錯誤' 
+      resolve({
+        success: false,
+        error: error.message || '網路錯誤'
       })
     })
     .finally(() => {
@@ -190,8 +258,12 @@ export function uploadWithXHR(options: UploadOptions): Promise<UploadResult> {
     })
 
     // 發送請求
-    xhr.open('POST', url)
-    xhr.send(formData)
+    if (url) {
+      xhr.open('POST', url)
+      xhr.send(formData)
+    } else {
+      resolve({ success: false, error: '未提供上傳 URL' })
+    }
   })
 }
 

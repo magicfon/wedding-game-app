@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react'
 import UploadProgress, { useUploadProgress } from './UploadProgress'
 import { uploadWithProgress, createUploadController, formatFileSize } from '@/lib/upload-with-progress'
+import { formatFileSize as supabaseFormatFileSize, needsResumableUpload, getUploadMethodDescription } from '@/lib/supabase-direct-upload'
 import { Upload, X, Image as ImageIcon, Video, FileText } from 'lucide-react'
 
 interface MediaUploadProps {
@@ -16,6 +17,9 @@ interface MediaUploadProps {
     altText: string
   }) => void
   disabled?: boolean
+  // 新增直接上傳選項
+  useDirectUpload?: boolean
+  userId?: string
 }
 
 export default function MediaUpload({
@@ -24,7 +28,9 @@ export default function MediaUpload({
   currentThumbnailUrl,
   currentAltText,
   onMediaChange,
-  disabled = false
+  disabled = false,
+  useDirectUpload = false,
+  userId
 }: MediaUploadProps) {
   const [uploading, setUploading] = useState(false)
   const [dragOver, setDragOver] = useState(false)
@@ -45,23 +51,32 @@ export default function MediaUpload({
     try {
       startUpload()
 
-      // 使用帶進度的上傳函數
-      const result = await uploadWithProgress({
-        url: '/api/admin/media/upload',
+      // 根據選項選擇上傳方式
+      const uploadOptions: any = {
         file,
         data: {
           mediaType,
           altText
         },
-        onProgress: (progress, status) => {
+        onProgress: (progress: number, status: string) => {
           updateProgress(progress)
         },
         signal: controller.signal
-      })
+      }
+
+      // 如果啟用直接上傳且有 userId，使用直接上傳
+      if (useDirectUpload && userId) {
+        uploadOptions.useDirectUpload = true
+        uploadOptions.userId = userId
+      } else {
+        uploadOptions.url = '/api/admin/media/upload'
+      }
+
+      const result = await uploadWithProgress(uploadOptions)
 
       if (result.success) {
         onMediaChange({
-          mediaUrl: result.data.publicUrl,
+          mediaUrl: result.data.publicUrl || result.data.fileUrl,
           thumbnailUrl: result.data.thumbnailUrl,
           altText: result.data.altText || altText
         })
@@ -158,12 +173,23 @@ export default function MediaUpload({
   const getMaxSizeText = () => {
     switch (mediaType) {
       case 'image':
-        return '最大 5MB'
+        return useDirectUpload ? '無大小限制' : '最大 5MB'
       case 'video':
         return '最大 50MB'
       default:
         return ''
     }
+  }
+
+  const getUploadInfoText = () => {
+    if (!useDirectUpload || mediaType !== 'image') return null
+    
+    return (
+      <div className="text-xs text-gray-500 mt-2 p-2 bg-blue-50 rounded">
+        <p>💡 使用直接上傳，無檔案大小限制</p>
+        <p>大檔案將自動使用可恢復上傳</p>
+      </div>
+    )
   }
 
   if (mediaType === 'text') {
@@ -276,11 +302,12 @@ export default function MediaUpload({
                   點擊選擇或拖拽檔案到此處
                 </p>
                 <p className="text-xs text-gray-400 mt-2">
-                  {mediaType === 'image' 
-                    ? '支援 JPEG, PNG, GIF, WebP 格式' 
+                  {mediaType === 'image'
+                    ? '支援 JPEG, PNG, GIF, WebP 格式'
                     : '支援 MP4, WebM, OGG 格式'
                   } • {getMaxSizeText()}
                 </p>
+                {getUploadInfoText()}
               </div>
               <div className="flex justify-center">
                 <Upload className="w-6 h-6 text-gray-400" />

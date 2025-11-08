@@ -19,12 +19,11 @@ class SystemSettingsManager {
   
   private loadDefaultSettings() {
     // 從環境變數載入設定
-    this.settings.set('maxPhotoUploadCount', 
+    this.settings.set('maxPhotoUploadCount',
       parseInt(process.env.MAX_PHOTO_UPLOAD_COUNT || '3', 10)
     );
     
-    // 可以添加更多設定
-    this.settings.set('maxFileSize', 5 * 1024 * 1024); // 5MB
+    // 移除檔案大小限制，因為現在使用直接上傳
     this.settings.set('allowedFileTypes', ['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
   }
   
@@ -68,7 +67,71 @@ async function getMaxPhotoUploadCount(): Promise<number> {
   return maxCount;
 }
 
-// 單張照片上傳函數
+// 處理客戶端直接上傳的元數據
+async function processDirectUploadMetadata({
+  fileName,
+  fileUrl,
+  fileSize,
+  fileType,
+  blessingMessage,
+  isPublic,
+  uploaderLineId
+}: {
+  fileName: string;
+  fileUrl: string;
+  fileSize: number;
+  fileType: string;
+  blessingMessage: string;
+  isPublic: boolean;
+  uploaderLineId: string;
+}) {
+  const supabase = createSupabaseAdmin();
+  
+  // 驗證檔案類型
+  if (!fileType.startsWith('image/')) {
+    throw new Error('請選擇圖片檔案');
+  }
+  
+  // 驗證檔案 URL 是否來自我們的 Supabase Storage
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!fileUrl.startsWith(`${supabaseUrl}/storage/v1/object/public/wedding-photos/`)) {
+    throw new Error('無效的檔案來源');
+  }
+  
+  // 生成縮圖 URL
+  const generateVercelImageUrl = (baseUrl: string, width: number, quality: number = 80, format: string = 'auto') => {
+    const encodedUrl = encodeURIComponent(baseUrl);
+    return `/_vercel/image?url=${encodedUrl}&w=${width}&q=${quality}&f=${format}`;
+  };
+  
+  // 儲存到資料庫
+  const photoInsertData = {
+    user_id: uploaderLineId,
+    image_url: fileUrl,
+    blessing_message: blessingMessage,
+    is_public: isPublic,
+    vote_count: 0,
+    thumbnail_url_template: fileUrl,
+    thumbnail_small_url: generateVercelImageUrl(fileUrl, 200, 75, 'auto'),
+    thumbnail_medium_url: generateVercelImageUrl(fileUrl, 400, 80, 'auto'),
+    thumbnail_large_url: generateVercelImageUrl(fileUrl, 800, 85, 'auto'),
+    thumbnail_generated_at: new Date().toISOString()
+  };
+  
+  const { data: photoData, error: dbError } = await supabase
+    .from('photos')
+    .insert(photoInsertData)
+    .select()
+    .single();
+  
+  if (dbError) {
+    throw new Error(`照片資訊儲存失敗: ${dbError.message}`);
+  }
+  
+  return photoData;
+}
+
+// 向後相容的單張照片上傳函數（用於管理員上傳）
 async function uploadSinglePhoto({
   file,
   blessingMessage,
@@ -85,10 +148,6 @@ async function uploadSinglePhoto({
   // 驗證檔案
   if (!file.type.startsWith('image/')) {
     throw new Error('請選擇圖片檔案');
-  }
-  
-  if (file.size > 5 * 1024 * 1024) {
-    throw new Error('圖片檔案不能超過 5MB');
   }
   
   // 生成檔名
@@ -112,42 +171,16 @@ async function uploadSinglePhoto({
     .from('wedding-photos')
     .getPublicUrl(fileName);
   
-  // 生成縮圖 URL
-  const generateVercelImageUrl = (baseUrl: string, width: number, quality: number = 80, format: string = 'auto') => {
-    const encodedUrl = encodeURIComponent(baseUrl);
-    return `/_vercel/image?url=${encodedUrl}&w=${width}&q=${quality}&f=${format}`;
-  };
-  
-  // 儲存到資料庫
-  const photoInsertData = {
-    user_id: uploaderLineId,
-    image_url: urlData.publicUrl,
-    blessing_message: blessingMessage, // 使用處理後的祝福語
-    is_public: isPublic,
-    vote_count: 0,
-    thumbnail_url_template: urlData.publicUrl,
-    thumbnail_small_url: generateVercelImageUrl(urlData.publicUrl, 200, 75, 'auto'),
-    thumbnail_medium_url: generateVercelImageUrl(urlData.publicUrl, 400, 80, 'auto'),
-    thumbnail_large_url: generateVercelImageUrl(urlData.publicUrl, 800, 85, 'auto'),
-    thumbnail_generated_at: new Date().toISOString()
-  };
-  
-  const { data: photoData, error: dbError } = await supabase
-    .from('photos')
-    .insert(photoInsertData)
-    .select()
-    .single();
-  
-  if (dbError) {
-    // 清理已上傳的檔案
-    await supabase.storage
-      .from('wedding-photos')
-      .remove([fileName]);
-    
-    throw new Error(`照片資訊儲存失敗: ${dbError.message}`);
-  }
-  
-  return photoData;
+  // 使用新的元數據處理函數
+  return await processDirectUploadMetadata({
+    fileName,
+    fileUrl: urlData.publicUrl,
+    fileSize: file.size,
+    fileType: file.type,
+    blessingMessage,
+    isPublic,
+    uploaderLineId
+  });
 }
 
 export async function POST(request: NextRequest) {
@@ -155,76 +188,118 @@ export async function POST(request: NextRequest) {
     const supabase = createSupabaseAdmin();
     const formData = await request.formData();
     
-    // 檢查是否為多檔案上傳
-    const files = formData.getAll('files') as File[];
-    const blessingMessage = formData.get('blessingMessage') as string;
-    const isPublic = formData.get('isPublic') === 'true';
-    const uploaderLineId = formData.get('uploaderLineId') as string;
+    // 檢查是否為客戶端直接上傳的元數據
+    const fileName = formData.get('fileName') as string;
+    const fileUrl = formData.get('fileUrl') as string;
+    const fileSize = formData.get('fileSize') as string;
+    const fileType = formData.get('fileType') as string;
     
-    if (files.length === 0) {
-      return NextResponse.json({ 
-        error: '未選擇檔案' 
-      }, { status: 400 });
-    }
-    
-    if (!uploaderLineId) {
-      return NextResponse.json({ 
-        error: '用戶身份驗證失敗' 
-      }, { status: 401 });
-    }
-    
-    // 檢查最大上傳數量
-    const maxCount = await getMaxPhotoUploadCount();
-    if (files.length > maxCount) {
-      return NextResponse.json({ 
-        error: `最多只能上傳 ${maxCount} 張照片` 
-      }, { status: 400 });
-    }
-    
-    // 並行處理多張照片上傳（相當於手動三次獨立上傳）
-    const uploadPromises = files.map(async (file, index) => {
-      // 為每張照片生成帶序號的祝福語
-      const processedBlessingMessage = blessingMessage 
-        ? `${blessingMessage} (${index + 1}/${files.length})`
-        : blessingMessage;
+    if (fileName && fileUrl && fileSize && fileType) {
+      // 處理客戶端直接上傳的元數據
+      const blessingMessage = formData.get('blessingMessage') as string || '';
+      const isPublic = formData.get('isPublic') === 'true';
+      const uploaderLineId = formData.get('uploaderLineId') as string;
       
-      return uploadSinglePhoto({
-        file,
-        blessingMessage: processedBlessingMessage,
-        isPublic,
-        uploaderLineId
+      if (!uploaderLineId) {
+        return NextResponse.json({
+          error: '用戶身份驗證失敗'
+        }, { status: 401 });
+      }
+      
+      try {
+        const photoData = await processDirectUploadMetadata({
+          fileName,
+          fileUrl,
+          fileSize: parseInt(fileSize, 10),
+          fileType,
+          blessingMessage,
+          isPublic,
+          uploaderLineId
+        });
+        
+        return NextResponse.json({
+          success: true,
+          message: '照片上傳成功',
+          data: photoData
+        });
+      } catch (error) {
+        console.error('❌ 元數據處理錯誤:', error);
+        return NextResponse.json({
+          error: error instanceof Error ? error.message : '照片資訊儲存失敗'
+        }, { status: 500 });
+      }
+    } else {
+      // 向後相容：處理傳統的檔案上傳（管理員使用）
+      const files = formData.getAll('files') as File[];
+      const blessingMessage = formData.get('blessingMessage') as string;
+      const isPublic = formData.get('isPublic') === 'true';
+      const uploaderLineId = formData.get('uploaderLineId') as string;
+      
+      if (files.length === 0) {
+        return NextResponse.json({
+          error: '未選擇檔案'
+        }, { status: 400 });
+      }
+      
+      if (!uploaderLineId) {
+        return NextResponse.json({
+          error: '用戶身份驗證失敗'
+        }, { status: 401 });
+      }
+      
+      // 檢查最大上傳數量
+      const maxCount = await getMaxPhotoUploadCount();
+      if (files.length > maxCount) {
+        return NextResponse.json({
+          error: `最多只能上傳 ${maxCount} 張照片`
+        }, { status: 400 });
+      }
+      
+      // 並行處理多張照片上傳
+      const uploadPromises = files.map(async (file, index) => {
+        // 為每張照片生成帶序號的祝福語
+        const processedBlessingMessage = blessingMessage
+          ? `${blessingMessage} (${index + 1}/${files.length})`
+          : blessingMessage;
+        
+        return uploadSinglePhoto({
+          file,
+          blessingMessage: processedBlessingMessage,
+          isPublic,
+          uploaderLineId
+        });
       });
-    });
-    
-    const results = await Promise.allSettled(uploadPromises);
-    
-    // 處理結果
-    const successful = results.filter(r => r.status === 'fulfilled');
-    const failed = results.filter(r => r.status === 'rejected');
-    
-    if (failed.length > 0) {
+      
+      const results = await Promise.allSettled(uploadPromises);
+      
+      // 處理結果
+      const successful = results.filter(r => r.status === 'fulfilled');
+      const failed = results.filter(r => r.status === 'rejected');
+      
+      if (failed.length > 0) {
+        return NextResponse.json({
+          success: false,
+          message: `部分上傳失敗：${successful.length} 張成功，${failed.length} 張失敗`,
+          data: {
+            uploadedPhotos: successful.map(r => r.value),
+            failedFiles: failed.map(r => r.reason)
+          }
+        }, { status: 207 }); // Multi-Status
+      }
+      
       return NextResponse.json({
-        success: false,
-        message: `部分上傳失敗：${successful.length} 張成功，${failed.length} 張失敗`,
+        success: true,
+        message: `成功上傳 ${files.length} 張照片`,
         data: {
           uploadedPhotos: successful.map(r => r.value),
-          failedFiles: failed.map(r => r.reason)
+          totalCount: files.length
         }
-      }, { status: 207 }); // Multi-Status
+      });
     }
-    
-    return NextResponse.json({
-      success: true,
-      message: `成功上傳 ${files.length} 張照片`,
-      data: {
-        uploadedPhotos: successful.map(r => r.value),
-        totalCount: files.length
-      }
-    });
     
   } catch (error) {
     console.error('❌ 照片上傳錯誤:', error);
-    return NextResponse.json({ 
+    return NextResponse.json({
       error: '照片上傳失敗',
       details: error instanceof Error ? error.message : '未知錯誤'
     }, { status: 500 });
