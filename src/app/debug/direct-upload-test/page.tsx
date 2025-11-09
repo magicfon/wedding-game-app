@@ -138,6 +138,16 @@ export default function DirectUploadTestPage() {
             <p>• 可以測試各種大小的檔案上傳性能和可靠性</p>
             <p>• 測試結果會顯示上傳時間、成功狀態和使用的上傳方法</p>
           </div>
+        {/* RLS 修復提示 */}
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+          <h2 className="text-lg font-semibold text-yellow-900 mb-3">⚠️ 重要提示</h2>
+          <div className="space-y-2 text-sm text-yellow-800">
+            <p>• 如果遇到 "new row violates row-level security policy" 錯誤，請執行以下步驟：</p>
+            <p>1. 在 Supabase Dashboard 中打開 SQL Editor</p>
+            <p>2. 執行 <code className="bg-yellow-100 px-1 rounded">database/fix-storage-policies-for-direct-upload.sql</code> 腳本</p>
+            <p>3. 詳細說明請參考 <code className="bg-yellow-100 px-1 rounded">DIRECT_UPLOAD_RLS_FIX.md</code> 文件</p>
+          </div>
+        </div>
         </div>
 
         {/* 檔案選擇區域 */}
