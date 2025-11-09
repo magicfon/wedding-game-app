@@ -134,7 +134,7 @@ export default function DirectUploadTestPage() {
           <h2 className="text-lg font-semibold text-blue-900 mb-3">直接上傳測試</h2>
           <div className="space-y-2 text-sm text-blue-800">
             <p>• 測試客戶端直接上傳到 Supabase Storage 的功能</p>
-            <p>• 小檔案 (<6MB) 使用直接上傳，大檔案 (>=6MB) 使用可恢復上傳</p>
+            <p>• 小檔案 (&lt;6MB) 使用直接上傳，大檔案 (&gt;=6MB) 使用可恢復上傳</p>
             <p>• 可以測試各種大小的檔案上傳性能和可靠性</p>
             <p>• 測試結果會顯示上傳時間、成功狀態和使用的上傳方法</p>
           </div>
