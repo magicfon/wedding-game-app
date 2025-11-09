@@ -262,7 +262,7 @@ export default function PhotoUploadPage() {
           <div className="text-center mb-8">
             <Camera className="w-10 h-10 text-pink-500 mx-auto mb-4" />
             <p className="text-black">上傳照片並留下祝福的話語</p>
-            <p className="text-sm text-gray-500">最多可選擇 {maxPhotoCount} 張照片</p>
+            <p className="text-sm text-gray-500">單次上傳最多可選擇 {maxPhotoCount} 張照片</p>
           </div>
           
           {/* 多檔案選擇器 */}
@@ -284,10 +284,6 @@ export default function PhotoUploadPage() {
                 <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                 <p className="text-lg text-black mb-2">點擊選擇照片</p>
                 <p className="text-sm text-black">支援 JPG, PNG 格式，無檔案大小限制</p>
-                <div className="mt-2 p-2 bg-blue-50 rounded text-xs text-blue-700">
-                  <p>💡 現在使用直接上傳，支援任意大小的照片</p>
-                  <p>大檔案將自動使用可恢復上傳技術</p>
-                </div>
               </div>
             ) : (
               <div className="space-y-4">
@@ -418,10 +414,6 @@ export default function PhotoUploadPage() {
             <p className="text-black text-sm mb-2">
               💡 上傳的照片將會出現在照片牆和快門傳情中，讓所有賓客一起欣賞美好回憶！
             </p>
-            <div className="flex items-center justify-center space-x-2 text-xs text-gray-600">
-              <Info className="w-4 h-4" />
-              <span>使用直接上傳技術，無檔案大小限制</span>
-            </div>
           </div>
         </div>
         
