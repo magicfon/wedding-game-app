@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLiff } from '@/hooks/useLiff'
 import AdminLayout from '@/components/AdminLayout'
-import { Eye, EyeOff, Download, Trash2, Image as ImageIcon, Clock, User, Heart, Filter, CheckCircle, XCircle, Loader2, Users, HardDrive } from 'lucide-react'
+import { Eye, EyeOff, Download, Trash2, Image as ImageIcon, Clock, User, Heart, Filter, CheckCircle, XCircle, Loader2, Users, HardDrive, CheckSquare, Square } from 'lucide-react'
 import Image from 'next/image'
 
 interface PhotoWithUser {
@@ -49,6 +49,9 @@ export default function PhotosManagePage() {
   const [votersError, setVotersError] = useState<string | null>(null)
   const [fileSizes, setFileSizes] = useState<Map<number, number>>(new Map())
   const [loadingSizes, setLoadingSizes] = useState<Set<number>>(new Set())
+  const [selectedPhotos, setSelectedPhotos] = useState<Set<number>>(new Set())
+  const [isBatchMode, setIsBatchMode] = useState(false)
+  const [batchDeleting, setBatchDeleting] = useState(false)
 
   const { isLoggedIn, profile, isAdmin: liffIsAdmin, loading: liffLoading, adminLoading } = useLiff()
 
@@ -234,6 +237,62 @@ export default function PhotosManagePage() {
     }
   }
 
+  // 批量刪除照片
+  const batchDeletePhotos = async (photoIds: number[]) => {
+    if (!confirm(`確定要刪除選中的 ${photoIds.length} 張照片嗎？此操作無法復原。`)) {
+      return
+    }
+
+    setBatchDeleting(true)
+    
+    try {
+      const response = await fetch('/api/admin/photos/batch-delete', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ photoIds }),
+        credentials: 'include'
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setPhotos(photos.filter(photo => !photoIds.includes(photo.id)))
+        setSelectedPhotos(new Set())
+        setIsBatchMode(false)
+        alert(`已成功刪除 ${data.deletedCount} 張照片`)
+      } else {
+        alert(`批量刪除失敗: ${data.error}`)
+      }
+    } catch (error) {
+      console.error('批量刪除照片失敗:', error)
+      alert('批量刪除失敗')
+    } finally {
+      setBatchDeleting(false)
+    }
+  }
+
+  // 切換照片選擇狀態
+  const togglePhotoSelection = (photoId: number) => {
+    setSelectedPhotos(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(photoId)) {
+        newSet.delete(photoId)
+      } else {
+        newSet.add(photoId)
+      }
+      return newSet
+    })
+  }
+
+  // 全選/取消全選
+  const toggleSelectAll = () => {
+    if (selectedPhotos.size === filteredPhotos.length) {
+      setSelectedPhotos(new Set())
+    } else {
+      setSelectedPhotos(new Set(filteredPhotos.map(photo => photo.id)))
+    }
+  }
+
   // 下載照片
   const downloadPhoto = (imageUrl: string, photoId: number) => {
     const link = document.createElement('a')
@@ -346,44 +405,106 @@ export default function PhotosManagePage() {
 
           </div>
 
-          {/* 篩選按鈕 */}
+          {/* 篩選和批量操作按鈕 */}
           <div className="bg-white rounded-xl shadow-md p-4">
-            <div className="flex items-center space-x-2">
-              <Filter className="w-5 h-5 text-gray-600" />
-              <span className="text-sm font-medium text-gray-700">篩選：</span>
-              <div className="flex space-x-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Filter className="w-5 h-5 text-gray-600" />
+                <span className="text-sm font-medium text-gray-700">篩選：</span>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => setFilter('all')}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      filter === 'all'
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    全部 ({photos.length})
+                  </button>
+                  <button
+                    onClick={() => setFilter('public')}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      filter === 'public'
+                        ? 'bg-green-500 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    公開 ({publicCount})
+                  </button>
+                  <button
+                    onClick={() => setFilter('private')}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      filter === 'private'
+                        ? 'bg-purple-500 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    隱私 ({privateCount})
+                  </button>
+                </div>
+              </div>
+              
+              <div className="flex items-center space-x-2">
                 <button
-                  onClick={() => setFilter('all')}
+                  onClick={() => {
+                    setIsBatchMode(!isBatchMode)
+                    setSelectedPhotos(new Set())
+                  }}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    filter === 'all'
-                      ? 'bg-blue-500 text-white'
+                    isBatchMode
+                      ? 'bg-orange-500 text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
-                  全部 ({photos.length})
-                </button>
-                <button
-                  onClick={() => setFilter('public')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    filter === 'public'
-                      ? 'bg-green-500 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  公開 ({publicCount})
-                </button>
-                <button
-                  onClick={() => setFilter('private')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    filter === 'private'
-                      ? 'bg-purple-500 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  隱私 ({privateCount})
+                  {isBatchMode ? '取消批量選擇' : '批量選擇'}
                 </button>
               </div>
             </div>
+            
+            {/* 批量操作工具列 */}
+            {isBatchMode && (
+              <div className="mt-4 pt-4 border-t border-gray-200 flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <button
+                    onClick={toggleSelectAll}
+                    className="flex items-center space-x-2 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    {selectedPhotos.size === filteredPhotos.length ? (
+                      <CheckSquare className="w-4 h-4" />
+                    ) : (
+                      <Square className="w-4 h-4" />
+                    )}
+                    <span>
+                      {selectedPhotos.size === filteredPhotos.length ? '取消全選' : '全選'}
+                    </span>
+                  </button>
+                  <span className="text-sm text-gray-500">
+                    已選擇 {selectedPhotos.size} 張照片
+                  </span>
+                </div>
+                
+                {selectedPhotos.size > 0 && (
+                  <button
+                    onClick={() => batchDeletePhotos(Array.from(selectedPhotos))}
+                    disabled={batchDeleting}
+                    className="flex items-center space-x-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {batchDeleting ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        <span>刪除中...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Trash2 className="w-4 h-4" />
+                        <span>批量刪除</span>
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
 
@@ -402,8 +523,16 @@ export default function PhotosManagePage() {
               {filteredPhotos.map((photo) => (
                 <div
                   key={photo.id}
-                  className="group relative bg-white rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer"
-                  onClick={() => setSelectedPhoto(photo)}
+                  className={`group relative bg-white rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 ${
+                    isBatchMode ? 'cursor-pointer' : ''
+                  }`}
+                  onClick={() => {
+                    if (isBatchMode) {
+                      togglePhotoSelection(photo.id)
+                    } else {
+                      setSelectedPhoto(photo)
+                    }
+                  }}
                 >
                   <div className="aspect-square w-full relative overflow-hidden bg-gray-100">
                     {photo.image_url ? (
@@ -422,8 +551,23 @@ export default function PhotosManagePage() {
                       </div>
                     )}
                     
+                    {/* 批量選擇模式下的選擇框 */}
+                    {isBatchMode && (
+                      <div className="absolute top-2 left-2 z-10">
+                        <div className={`w-6 h-6 rounded-md border-2 flex items-center justify-center ${
+                          selectedPhotos.has(photo.id)
+                            ? 'bg-blue-500 border-blue-500'
+                            : 'bg-white border-gray-300'
+                        }`}>
+                          {selectedPhotos.has(photo.id) && (
+                            <CheckSquare className="w-4 h-4 text-white" />
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    
                     {/* 公開/隱私標記 */}
-                    <div className="absolute top-2 right-2 z-10">
+                    <div className={`absolute top-2 z-10 ${isBatchMode ? 'right-2' : 'right-2'}`}>
                       {photo.is_public ? (
                         <div className="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1">
                           <Eye className="w-3 h-3" />
