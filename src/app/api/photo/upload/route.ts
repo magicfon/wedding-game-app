@@ -111,6 +111,7 @@ async function processDirectUploadMetadata({
     blessing_message: blessingMessage,
     is_public: isPublic,
     vote_count: 0,
+    file_size: fileSize, // 新增檔案大小
     thumbnail_url_template: fileUrl,
     thumbnail_small_url: generateVercelImageUrl(fileUrl, 200, 75, 'auto'),
     thumbnail_medium_url: generateVercelImageUrl(fileUrl, 400, 80, 'auto'),

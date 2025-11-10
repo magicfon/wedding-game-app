@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
         vote_count,
         created_at,
         user_id,
+        file_size,
         uploader:users!photos_user_id_fkey (
           display_name,
           avatar_url

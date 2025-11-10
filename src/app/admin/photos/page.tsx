@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLiff } from '@/hooks/useLiff'
 import AdminLayout from '@/components/AdminLayout'
-import { Eye, EyeOff, Download, Trash2, Image as ImageIcon, Clock, User, Heart, Filter, CheckCircle, XCircle, Loader2, Users } from 'lucide-react'
+import { Eye, EyeOff, Download, Trash2, Image as ImageIcon, Clock, User, Heart, Filter, CheckCircle, XCircle, Loader2, Users, HardDrive } from 'lucide-react'
 import Image from 'next/image'
 
 interface PhotoWithUser {
@@ -15,6 +15,7 @@ interface PhotoWithUser {
   vote_count: number
   created_at: string
   user_id: string
+  file_size: number | null
   uploader: {
     display_name: string
     avatar_url: string | null
@@ -46,8 +47,68 @@ export default function PhotosManagePage() {
   const [voters, setVoters] = useState<Voter[]>([])
   const [votersLoading, setVotersLoading] = useState(false)
   const [votersError, setVotersError] = useState<string | null>(null)
+  const [fileSizes, setFileSizes] = useState<Map<number, number>>(new Map())
+  const [loadingSizes, setLoadingSizes] = useState<Set<number>>(new Set())
 
   const { isLoggedIn, profile, isAdmin: liffIsAdmin, loading: liffLoading, adminLoading } = useLiff()
+
+  // 檔案大小格式化函數
+  const formatFileSize = (bytes: number | null): string => {
+    if (!bytes || bytes === 0) return '未知'
+    if (bytes < 1024) return `${bytes} B`
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+    if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+    return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`
+  }
+
+  // 獲取檔案大小
+  const fetchFileSize = async (photoId: number, imageUrl: string): Promise<number | null> => {
+    // 檢查快取
+    if (fileSizes.has(photoId)) {
+      return fileSizes.get(photoId)!
+    }
+    
+    // 檢查是否正在載入
+    if (loadingSizes.has(photoId)) {
+      return null
+    }
+    
+    setLoadingSizes(prev => new Set(prev).add(photoId))
+    
+    try {
+      const response = await fetch(imageUrl, { method: 'HEAD' })
+      const contentLength = response.headers.get('content-length')
+      
+      if (contentLength) {
+        const fileSize = parseInt(contentLength, 10)
+        setFileSizes(prev => new Map(prev).set(photoId, fileSize))
+        return fileSize
+      }
+    } catch (error) {
+      console.warn(`無法獲取照片 ${photoId} 的檔案大小:`, error)
+    } finally {
+      setLoadingSizes(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(photoId)
+        return newSet
+      })
+    }
+    
+    return null
+  }
+
+  // 批量獲取檔案大小
+  useEffect(() => {
+    if (filteredPhotos.length > 0) {
+      const visiblePhotos = filteredPhotos.slice(0, 20) // 限制前 20 張照片
+      
+      visiblePhotos.forEach(photo => {
+        if (!fileSizes.has(photo.id) && !loadingSizes.has(photo.id)) {
+          fetchFileSize(photo.id, photo.image_url)
+        }
+      })
+    }
+  }, [filteredPhotos])
 
   // 檢查管理員權限
   useEffect(() => {
@@ -405,8 +466,14 @@ export default function PhotosManagePage() {
                         <span>{photo.vote_count}</span>
                       </div>
                       <div className="flex items-center space-x-1">
-                        <Clock className="w-3 h-3" />
-                        <span>{new Date(photo.created_at).toLocaleDateString('zh-TW')}</span>
+                        {loadingSizes.has(photo.id) ? (
+                          <div className="animate-spin rounded-full h-3 w-3 border-b border-gray-400"></div>
+                        ) : (
+                          <>
+                            <HardDrive className="w-3 h-3" />
+                            <span>{formatFileSize(fileSizes.get(photo.id) || null)}</span>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
