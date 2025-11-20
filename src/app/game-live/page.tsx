@@ -3,6 +3,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import { createSupabaseBrowser } from '@/lib/supabase'
 import { useRealtimeGameState } from '@/hooks/useRealtimeGameState'
+import { useSoundEffects } from '@/hooks/useSoundEffects'
+import { SoundToggle } from '@/components/SoundToggle'
+import { subscribeToVoteEvents } from '@/lib/vote-events'
 import Layout from '@/components/Layout'
 import { Play, Pause, Users, Clock, HelpCircle, Zap, QrCode, UserPlus, Trophy } from 'lucide-react'
 
@@ -53,6 +56,9 @@ export default function GameLivePage() {
   
   // 使用統一的即時遊戲狀態
   const { gameState, currentQuestion, loading, calculateTimeLeft } = useRealtimeGameState()
+  
+  // 使用音效系統
+  const { isSoundEnabled, toggleSound, playSound, preloadSounds, isLoaded } = useSoundEffects()
 
   // 同步 showingCorrectOnly 狀態到 localStorage
   useEffect(() => {
@@ -60,6 +66,11 @@ export default function GameLivePage() {
       localStorage.setItem('game-live-showing-correct-only', showingCorrectOnly.toString());
     }
   }, [showingCorrectOnly])
+  
+  // 預載音效
+  useEffect(() => {
+    preloadSounds()
+  }, [preloadSounds])
 
   // 控制顯示階段切換
   useEffect(() => {
@@ -100,6 +111,13 @@ export default function GameLivePage() {
       }
     }
   }, [currentQuestion?.id, gameState?.is_game_active, gameState?.is_paused])
+  
+  // 遊戲開始音效
+  useEffect(() => {
+    if (gameState?.is_game_active && !gameState?.is_paused && displayPhase === 'question') {
+      playSound('GAME_START')
+    }
+  }, [gameState?.is_game_active, gameState?.is_paused, displayPhase, playSound])
 
   // 清理計時器
   useEffect(() => {
@@ -127,6 +145,30 @@ export default function GameLivePage() {
       return () => clearTimeout(rankingTimer)
     }
   }, [displayPhase, timeLeft, currentQuestion])
+  
+  // 時間結束音效
+  useEffect(() => {
+    if (displayPhase === 'options' && timeLeft <= 0 && currentQuestion) {
+      playSound('TIME_UP')
+    }
+  }, [displayPhase, timeLeft, currentQuestion, playSound])
+  
+  // 正確答案音效
+  useEffect(() => {
+    if (displayPhase === 'options' && timeLeft <= 0 && currentQuestion) {
+      // 延遲一點時間播放正確答案音效，讓時間結束音效先播放
+      setTimeout(() => {
+        playSound('CORRECT_ANSWER')
+      }, 500)
+    }
+  }, [displayPhase, timeLeft, currentQuestion, playSound])
+  
+  // 排行榜音效
+  useEffect(() => {
+    if (displayPhase === 'rankings') {
+      playSound('LEADERBOARD')
+    }
+  }, [displayPhase, playSound])
 
   // 獲取當前題目答題人數
   const fetchCurrentQuestionAnswerCount = useCallback(async () => {
@@ -344,6 +386,20 @@ export default function GameLivePage() {
       console.log('No current question, not subscribing to answer records')
     }
   }, [currentQuestion, fetchAnswerDistribution, fetchTopPlayers, supabase, handleNewAnswer])
+  
+  // 監聽投票事件並播放投票音效
+  useEffect(() => {
+    if (!isSoundEnabled) return
+    
+    const voteSubscription = subscribeToVoteEvents((event) => {
+      console.log('🗳️ 收到投票事件:', event)
+      playSound('VOTE')
+    })
+
+    return () => {
+      voteSubscription.unsubscribe()
+    }
+  }, [isSoundEnabled, playSound])
 
   // 伺服器同步計時器（每秒同步一次實際時間）
   useEffect(() => {
@@ -393,6 +449,21 @@ export default function GameLivePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+      {/* 音效控制 */}
+      <div className="fixed top-4 right-4 z-50">
+        <SoundToggle isEnabled={isSoundEnabled} onToggle={toggleSound} />
+      </div>
+      
+      {/* 音效載入狀態指示 */}
+      {!isLoaded && (
+        <div className="fixed bottom-4 right-4 bg-white bg-opacity-20 text-white px-4 py-2 rounded-lg text-sm backdrop-blur-sm border border-white border-opacity-30">
+          <div className="flex items-center space-x-2">
+            <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
+            <span>音效載入中...</span>
+          </div>
+        </div>
+      )}
+      
       {/* 遊戲暫停提示 */}
       {gameState?.is_paused && (
         <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 bg-yellow-500 bg-opacity-90 border border-yellow-400 text-white px-6 py-3 rounded-lg shadow-lg backdrop-blur-sm">
