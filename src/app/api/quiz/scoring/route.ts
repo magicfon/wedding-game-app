@@ -32,13 +32,13 @@ export async function POST(request: NextRequest) {
   try {
     const supabase = await createSupabaseServer()
     const body = await request.json()
-    
+
     const { user_line_id, question_id, selected_answer, answer_time, is_timeout = false } = body as AnswerSubmission
 
     // 驗證必要參數
     if (!user_line_id || !question_id) {
-      return NextResponse.json({ 
-        error: '缺少必要參數：user_line_id, question_id' 
+      return NextResponse.json({
+        error: '缺少必要參數：user_line_id, question_id'
       }, { status: 400 })
     }
 
@@ -62,8 +62,8 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (existingAnswer) {
-      return NextResponse.json({ 
-        error: '用戶已經回答過這個問題' 
+      return NextResponse.json({
+        error: '用戶已經回答過這個問題'
       }, { status: 400 })
     }
 
@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
       console.error('❌ 記錄答題失敗:', insertError)
       throw insertError
     }
-    
+
     console.log('✅ 答題記錄已插入:', answerRecord)
 
     // 如果答對了，檢查是否需要給前三名額外加分
@@ -113,26 +113,26 @@ export async function POST(request: NextRequest) {
     // 檢查用戶總分是否已更新（觸發器應該會自動更新）
     const { data: updatedUser, error: userError } = await supabase
       .from('users')
-      .select('total_score')
+      .select('quiz_score')
       .eq('line_id', user_line_id)
       .single()
 
     if (userError) {
       console.error('⚠️ 無法檢查用戶分數更新:', userError)
     } else {
-      console.log('📊 用戶當前總分:', updatedUser.total_score)
+      console.log('📊 用戶當前快問快答分數:', updatedUser.quiz_score)
     }
 
     return NextResponse.json({
       success: true,
       score_details: scoreResult,
       answer_record: answerRecord,
-      user_total_score: updatedUser?.total_score || 0,
+      user_quiz_score: updatedUser?.quiz_score || 0,
       message: `獲得 ${scoreResult.final_score} 分！`
     })
   } catch (error) {
     console.error('Error in quiz scoring:', error)
-    return NextResponse.json({ 
+    return NextResponse.json({
       error: '計分失敗',
       details: error instanceof Error ? error.message : '未知錯誤'
     }, { status: 500 })
@@ -161,10 +161,10 @@ async function calculateScore({
 
   // 處理超時情況
   if (is_timeout) {
-    const timeoutPenalty = question.timeout_penalty_enabled 
-      ? question.timeout_penalty_score 
+    const timeoutPenalty = question.timeout_penalty_enabled
+      ? question.timeout_penalty_score
       : SCORING_RULES.TIMEOUT_PENALTY_DEFAULT
-    
+
     result.penalty = timeoutPenalty
     result.final_score = -timeoutPenalty
     return result
@@ -217,11 +217,11 @@ async function updateTopAnswerBonuses(question_id: number, supabase: any) {
     const updates = correctAnswers.map((record: any, index: number) => {
       const rankBonus = SCORING_RULES.TOP_ANSWER_BONUS[index] || 0
       const newScore = record.earned_score + rankBonus
-      
+
       return supabase
         .from('answer_records')
-        .update({ 
-          earned_score: newScore 
+        .update({
+          earned_score: newScore
         })
         .eq('id', record.id)
     })
@@ -312,7 +312,7 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('Error getting quiz statistics:', error)
-    return NextResponse.json({ 
+    return NextResponse.json({
       error: '獲取統計失敗',
       details: error instanceof Error ? error.message : '未知錯誤'
     }, { status: 500 })

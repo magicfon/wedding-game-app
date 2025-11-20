@@ -157,7 +157,7 @@ export default function LeaderboardPage() {
             <Trophy className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
             <h2 className="text-3xl font-bold text-gray-800 mb-2">🏆 積分排行榜</h2>
             <p className="text-gray-600">快問快答積分競賽</p>
-            
+
             {/* 刷新控制 */}
             <div className="mt-4 flex items-center justify-center space-x-4">
               <button
@@ -168,7 +168,7 @@ export default function LeaderboardPage() {
                 <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
                 <span>{refreshing ? '刷新中...' : '手動刷新'}</span>
               </button>
-              
+
               {lastUpdated && (
                 <div className="text-sm text-gray-500">
                   最後更新：{lastUpdated.toLocaleTimeString('zh-TW')}
@@ -192,7 +192,7 @@ export default function LeaderboardPage() {
               <div className="text-right">
                 <div className="text-2xl font-bold text-pink-600">第 {currentUserRank} 名</div>
                 <div className="text-sm text-gray-600">
-                  {users.find(u => u.line_id === currentUser.id)?.total_score || 0} 分
+                  {users.find(u => u.line_id === currentUser.id)?.quiz_score || 0} 分
                 </div>
               </div>
             </div>
@@ -228,9 +228,8 @@ export default function LeaderboardPage() {
                 return (
                   <div
                     key={user.line_id}
-                    className={`p-6 ${getRankColor(rank)} ${
-                      isCurrentUser ? 'ring-2 ring-pink-500' : ''
-                    }`}
+                    className={`p-6 ${getRankColor(rank)} ${isCurrentUser ? 'ring-2 ring-pink-500' : ''
+                      }`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-4">
@@ -254,9 +253,8 @@ export default function LeaderboardPage() {
                           />
                           <div>
                             <div className="flex items-center space-x-2">
-                              <span className={`font-semibold ${
-                                rank <= 3 ? 'text-white' : 'text-gray-800'
-                              }`}>
+                              <span className={`font-semibold ${rank <= 3 ? 'text-white' : 'text-gray-800'
+                                }`}>
                                 {user.display_name}
                               </span>
                               {isCurrentUser && (
@@ -265,9 +263,8 @@ export default function LeaderboardPage() {
                                 </span>
                               )}
                             </div>
-                            <p className={`text-sm ${
-                              rank <= 3 ? 'text-white/80' : 'text-gray-500'
-                            }`}>
+                            <p className={`text-sm ${rank <= 3 ? 'text-white/80' : 'text-gray-500'
+                              }`}>
                               加入時間：{new Date(user.join_time).toLocaleDateString('zh-TW')}
                             </p>
                           </div>
@@ -276,14 +273,12 @@ export default function LeaderboardPage() {
 
                       {/* 分數 */}
                       <div className="text-right">
-                        <div className={`text-2xl font-bold ${
-                          rank <= 3 ? 'text-white' : 'text-gray-800'
-                        }`}>
+                        <div className={`text-2xl font-bold ${rank <= 3 ? 'text-white' : 'text-gray-800'
+                          }`}>
                           {user.quiz_score}
                         </div>
-                        <p className={`text-sm ${
-                          rank <= 3 ? 'text-white/80' : 'text-gray-500'
-                        }`}>
+                        <p className={`text-sm ${rank <= 3 ? 'text-white/80' : 'text-gray-500'
+                          }`}>
                           分
                         </p>
                       </div>
