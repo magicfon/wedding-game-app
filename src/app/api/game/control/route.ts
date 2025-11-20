@@ -123,7 +123,7 @@ export async function POST(request: Request) {
         break;
 
       case 'next_question':
-        // 下一題 - 按 display_order 排序找到下一題
+        // 下一題 - 改進排序邏輯，處理相同 display_order 的情況
         const { data: currentState } = await supabase
           .from('game_state')
           .select('current_question_id, completed_questions')
@@ -134,10 +134,10 @@ export async function POST(request: Request) {
           return NextResponse.json({ error: '遊戲狀態不存在' }, { status: 400 });
         }
 
-        // 先獲取當前題目的 display_order
+        // 先獲取當前題目的 display_order 和 id
         const { data: currentQuestion } = await supabase
           .from('questions')
-          .select('display_order')
+          .select('id, display_order')
           .eq('id', currentState.current_question_id)
           .single();
 
@@ -145,16 +145,32 @@ export async function POST(request: Request) {
           return NextResponse.json({ error: '當前題目不存在' }, { status: 400 });
         }
 
-        // 找到下一題（按 display_order 排序）
-        const { data: nextQuestion } = await supabase
+        // 尋找下一題：
+        // 1. 先找 display_order 相同但 id 更大的（處理排序相同的情況）
+        let { data: nextQuestion } = await supabase
           .from('questions')
           .select('id, display_order')
           .eq('is_active', true)
-          .gt('display_order', currentQuestion.display_order)
-          .order('display_order', { ascending: true })
-          .order('id', { ascending: true }) // 備用排序，以防 display_order 相同
+          .eq('display_order', currentQuestion.display_order)
+          .gt('id', currentQuestion.id)
+          .order('id', { ascending: true })
           .limit(1)
           .single();
+
+        // 2. 如果沒找到，找 display_order 更大的第一題
+        if (!nextQuestion) {
+          const { data: nextOrderQuestion } = await supabase
+            .from('questions')
+            .select('id, display_order')
+            .eq('is_active', true)
+            .gt('display_order', currentQuestion.display_order)
+            .order('display_order', { ascending: true })
+            .order('id', { ascending: true })
+            .limit(1)
+            .single();
+
+          nextQuestion = nextOrderQuestion;
+        }
 
         if (!nextQuestion) {
           // 沒有下一題，結束遊戲
@@ -167,7 +183,7 @@ export async function POST(request: Request) {
               updated_at: new Date().toISOString()
             })
             .eq('id', 1);
-          
+
           actionDetails = { game_ended: true };
         } else {
           // 設定下一題
@@ -181,9 +197,9 @@ export async function POST(request: Request) {
             })
             .eq('id', 1);
 
-          actionDetails = { 
+          actionDetails = {
             previous_question_id: currentState.current_question_id,
-            next_question_id: nextQuestion.id 
+            next_question_id: nextQuestion.id
           };
         }
         break;
@@ -269,7 +285,7 @@ export async function POST(request: Request) {
         try {
           await supabase
             .from('users')
-            .update({ 
+            .update({
               quiz_score: 0,
               is_in_quiz_page: false
             })
@@ -280,7 +296,7 @@ export async function POST(request: Request) {
           console.log('⚠️ is_in_quiz_page 欄位可能不存在，只重置用戶快問快答分數');
           await supabase
             .from('users')
-            .update({ 
+            .update({
               quiz_score: 0
             })
             .neq('line_id', '');
@@ -322,8 +338,8 @@ export async function POST(request: Request) {
           .update(resetUpdateData)
           .eq('id', 1);
 
-        actionDetails = { 
-          reset_complete: true, 
+        actionDetails = {
+          reset_complete: true,
           stage: 'waiting_for_players',
           cleared_join_status: true,
           cleared_answer_records: true,
@@ -338,10 +354,10 @@ export async function POST(request: Request) {
 
     if (result?.error) {
       console.error('Database error:', result.error);
-      return NextResponse.json({ 
-        error: '資料庫操作失敗', 
+      return NextResponse.json({
+        error: '資料庫操作失敗',
         details: result.error,
-        action: action 
+        action: action
       }, { status: 500 });
     }
 
@@ -356,10 +372,10 @@ export async function POST(request: Request) {
         details: actionDetails
       });
 
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       action,
-      details: actionDetails 
+      details: actionDetails
     });
 
   } catch (error) {
