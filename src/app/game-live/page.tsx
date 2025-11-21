@@ -30,7 +30,7 @@ interface ScoreRanking {
 }
 
 export default function GameLivePage() {
-  
+
   const [answerDistribution, setAnswerDistribution] = useState<AnswerDistribution[]>([])
   const [topPlayers, setTopPlayers] = useState<TopPlayer[]>([])
   const [scoreRankings, setScoreRankings] = useState<ScoreRanking[]>([])
@@ -38,11 +38,11 @@ export default function GameLivePage() {
   const [timeLeft, setTimeLeft] = useState<number>(0)
   const [displayTimeLeft, setDisplayTimeLeft] = useState<number>(0)
   const [currentQuestionAnswerCount, setCurrentQuestionAnswerCount] = useState<number>(0)
-  
+
   // 顯示階段控制
   const [displayPhase, setDisplayPhase] = useState<'question' | 'options' | 'rankings'>('question')
   const [phaseTimer, setPhaseTimer] = useState<NodeJS.Timeout | null>(null)
-  
+
   // 從 localStorage 初始化狀態，以防組件重新載入
   const [showingCorrectOnly, setShowingCorrectOnly] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
@@ -51,12 +51,12 @@ export default function GameLivePage() {
     }
     return false;
   })
-  
+
   const supabase = createSupabaseBrowser()
-  
+
   // 使用統一的即時遊戲狀態
   const { gameState, currentQuestion, loading, calculateTimeLeft } = useRealtimeGameState()
-  
+
   // 使用音效系統
   const { isSoundEnabled, toggleSound, playSound, preloadSounds, isLoaded } = useSoundEffects()
 
@@ -66,7 +66,7 @@ export default function GameLivePage() {
       localStorage.setItem('game-live-showing-correct-only', showingCorrectOnly.toString());
     }
   }, [showingCorrectOnly])
-  
+
   // 預載音效
   useEffect(() => {
     preloadSounds()
@@ -88,7 +88,7 @@ export default function GameLivePage() {
 
     // 根據媒體類型設定切換時間
     let switchDelay = 3000 // 預設3秒（圖片或純文字）
-    
+
     if (currentQuestion.media_type === 'video' && currentQuestion.media_duration) {
       // 如果有影片長度資訊，使用影片長度
       switchDelay = currentQuestion.media_duration * 1000
@@ -111,7 +111,7 @@ export default function GameLivePage() {
       }
     }
   }, [currentQuestion?.id, gameState?.is_game_active, gameState?.is_paused])
-  
+
   // 遊戲開始音效
   useEffect(() => {
     if (gameState?.is_game_active && !gameState?.is_paused && displayPhase === 'question') {
@@ -135,24 +135,24 @@ export default function GameLivePage() {
       fetchAnswerDistribution()
       fetchCurrentQuestionAnswerCount()
       console.log('倒數結束：重新獲取答題數據以顯示最終分佈')
-      
+
       // 5秒後顯示分數排行榜
       const rankingTimer = setTimeout(() => {
         setDisplayPhase('rankings')
         fetchScoreRankings()
       }, 5000)
-      
+
       return () => clearTimeout(rankingTimer)
     }
   }, [displayPhase, timeLeft, currentQuestion])
-  
+
   // 時間結束音效
   useEffect(() => {
     if (displayPhase === 'options' && timeLeft <= 0 && currentQuestion) {
       playSound('TIME_UP')
     }
   }, [displayPhase, timeLeft, currentQuestion, playSound])
-  
+
   // 正確答案音效
   useEffect(() => {
     if (displayPhase === 'options' && timeLeft <= 0 && currentQuestion) {
@@ -162,7 +162,7 @@ export default function GameLivePage() {
       }, 500)
     }
   }, [displayPhase, timeLeft, currentQuestion, playSound])
-  
+
   // 排行榜音效
   useEffect(() => {
     if (displayPhase === 'rankings') {
@@ -187,7 +187,7 @@ export default function GameLivePage() {
         .eq('question_id', currentQuestion.id)
 
       if (error) throw error
-      
+
       console.log('fetchCurrentQuestionAnswerCount: Count result:', count)
       setCurrentQuestionAnswerCount(count || 0)
     } catch (error) {
@@ -209,7 +209,7 @@ export default function GameLivePage() {
         .limit(10) // 只顯示前10名
 
       if (error) throw error
-      
+
       console.log('🏆 分數排行榜數據:', data)
       setScoreRankings(data || [])
     } catch (error) {
@@ -275,7 +275,7 @@ export default function GameLivePage() {
             avatar_url: user?.avatar_url || null
           }
         }).filter(user => user.display_name !== '未知用戶') // 過濾掉無效用戶
-        
+
         return {
           answer: option,
           count: optionUsers.length,
@@ -373,7 +373,7 @@ export default function GameLivePage() {
     if (currentQuestion) {
       const answerSubscription = supabase
         .channel(`answer-records-${currentQuestion.id}`)
-        .on('postgres_changes', 
+        .on('postgres_changes',
           { event: 'INSERT', schema: 'public', table: 'answer_records', filter: `question_id=eq.${currentQuestion.id}` },
           handleNewAnswer
         )
@@ -386,11 +386,11 @@ export default function GameLivePage() {
       console.log('No current question, not subscribing to answer records')
     }
   }, [currentQuestion, fetchAnswerDistribution, fetchTopPlayers, supabase, handleNewAnswer])
-  
+
   // 監聽投票事件並播放投票音效
   useEffect(() => {
     if (!isSoundEnabled) return
-    
+
     const voteSubscription = subscribeToVoteEvents((event) => {
       console.log('🗳️ 收到投票事件:', event)
       playSound('VOTE')
@@ -415,7 +415,7 @@ export default function GameLivePage() {
         fetchAnswerDistribution()
         fetchTopPlayers(showingCorrectOnly)
         fetchCurrentQuestionAnswerCount()
-        
+
         // 延遲獲取分數排行榜
         setTimeout(() => {
           fetchScoreRankings()
@@ -453,7 +453,7 @@ export default function GameLivePage() {
       <div className="fixed top-4 right-4 z-50">
         <SoundToggle isEnabled={isSoundEnabled} onToggle={toggleSound} />
       </div>
-      
+
       {/* 音效載入狀態指示 */}
       {!isLoaded && (
         <div className="fixed bottom-4 right-4 bg-white bg-opacity-20 text-white px-4 py-2 rounded-lg text-sm backdrop-blur-sm border border-white border-opacity-30">
@@ -463,7 +463,7 @@ export default function GameLivePage() {
           </div>
         </div>
       )}
-      
+
       {/* 遊戲暫停提示 */}
       {gameState?.is_paused && (
         <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 bg-yellow-500 bg-opacity-90 border border-yellow-400 text-white px-6 py-3 rounded-lg shadow-lg backdrop-blur-sm">
@@ -483,7 +483,7 @@ export default function GameLivePage() {
                 <h1 className="text-4xl md:text-6xl lg:text-8xl font-bold text-white mb-8 leading-tight">
                   {currentQuestion.question_text}
                 </h1>
-                
+
                 {/* 媒體內容 - 滿版顯示 */}
                 {currentQuestion.media_url && (
                   <div className="flex justify-center">
@@ -524,7 +524,7 @@ export default function GameLivePage() {
                     )}
                   </div>
                 )}
-                
+
                 {/* 階段指示器 */}
                 <div className="mt-8">
                   <div className="inline-flex items-center space-x-2 bg-black bg-opacity-40 rounded-full px-6 py-3 backdrop-blur-sm border border-white border-opacity-30">
@@ -544,7 +544,7 @@ export default function GameLivePage() {
                 <h2 className="text-2xl md:text-4xl font-bold text-white mb-4">
                   {currentQuestion.question_text}
                 </h2>
-                
+
                 {/* 倒數計時或結果顯示 */}
                 {timeLeft > 0 ? (
                   <div className="inline-flex items-center space-x-4 bg-black bg-opacity-40 rounded-full px-6 py-3 backdrop-blur-sm border border-white border-opacity-30">
@@ -582,25 +582,24 @@ export default function GameLivePage() {
                   const distribution = answerDistribution.find(d => d.answer === option.key)
                   const isCorrect = currentQuestion.correct_answer === option.key
                   const percentage = distribution ? Math.round((distribution.count / Math.max(currentQuestionAnswerCount, 1)) * 100) : 0
-                  
+
                   return (
                     <div
                       key={option.key}
-                      className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${option.color} shadow-2xl transform transition-all duration-500 hover:scale-105 flex items-center justify-center ${
-                        timeLeft <= 0 && isCorrect ? 'ring-8 ring-white ring-opacity-80 animate-pulse' : ''
-                      }`}
+                      className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${option.color} shadow-2xl transform transition-all duration-500 hover:scale-105 flex items-center justify-center ${timeLeft <= 0 && isCorrect ? 'ring-8 ring-white ring-opacity-80 animate-pulse' : ''
+                        }`}
                     >
                       {/* 答題進度條 - 只在倒數結束後顯示 */}
                       {timeLeft <= 0 && distribution && distribution.count > 0 && (
-                        <div 
+                        <div
                           className="absolute bottom-0 left-0 bg-opacity-30 transition-all duration-1000"
-                          style={{ 
+                          style={{
                             height: `${Math.max(percentage, 5)}%`,
                             width: '100%'
                           }}
                         />
                       )}
-                      
+
                       {/* 選項內容 */}
                       <div className="relative z-10 flex flex-col h-full p-6">
                         {/* 選項標題區域 */}
@@ -624,17 +623,16 @@ export default function GameLivePage() {
                           </div>
                         )}
 
-                        {/* 選擇此選項的玩家頭像 - 只在倒數結束後顯示 */}
-                        {timeLeft <= 0 && (
-                          <div className="flex-1 flex flex-col justify-center">
-                            {distribution && distribution.users && distribution.users.length > 0 ? (
-                              <div className="grid grid-cols-4 gap-2 justify-items-center">
-                                {distribution.users.slice(0, 12).map((user, userIndex) => (
+                        {/* 選擇此選項的玩家頭像 - 即時顯示 */}
+                        <div className="flex-1 flex flex-col justify-center">
+                          {distribution && distribution.users && distribution.users.length > 0 ? (
+                            <div className="grid grid-cols-4 gap-2 justify-items-center">
+                              {distribution.users.slice(0, 12).map((user, userIndex) => (
                                 <div key={userIndex} className="flex flex-col items-center">
                                   {user.avatar_url ? (
-                                    <img 
-                                      src={user.avatar_url} 
-                                      alt={user.display_name} 
+                                    <img
+                                      src={user.avatar_url}
+                                      alt={user.display_name}
                                       className="w-8 h-8 rounded-full object-cover border-2 border-white"
                                     />
                                   ) : (
@@ -642,25 +640,24 @@ export default function GameLivePage() {
                                       {user.display_name?.charAt(0) || '?'}
                                     </div>
                                   )}
-                                  
+
                                 </div>
                               ))}
-                                {distribution.users.length > 12 && (
-                                  <div className="flex flex-col items-center">
-                                    <div className="w-8 h-8 bg-white bg-opacity-50 rounded-full flex items-center justify-center text-black font-bold text-xs border-2 border-white">
-                                      +{distribution.users.length - 12}
-                                    </div>
-                                    <span className="text-xs text-black mt-1">更多</span>
+                              {distribution.users.length > 12 && (
+                                <div className="flex flex-col items-center">
+                                  <div className="w-8 h-8 bg-white bg-opacity-50 rounded-full flex items-center justify-center text-black font-bold text-xs border-2 border-white">
+                                    +{distribution.users.length - 12}
                                   </div>
-                                )}
-                              </div>
-                            ) : (
-                              <div className="text-center text-white opacity-60">
-                                <div className="text-lg">暫無人選擇</div>
-                              </div>
-                            )}
-                          </div>
-                        )}
+                                  <span className="text-xs text-black mt-1">更多</span>
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="text-center text-white opacity-60">
+                              <div className="text-lg">暫無人選擇</div>
+                            </div>
+                          )}
+                        </div>
 
                         {/* 正確答案標示 */}
                         {timeLeft <= 0 && isCorrect && (
@@ -691,25 +688,23 @@ export default function GameLivePage() {
                 {scoreRankings.map((player, index) => (
                   <div
                     key={player.line_id}
-                    className={`flex items-center space-x-6 bg-white bg-opacity-10 backdrop-blur-md rounded-2xl p-6 ${
-                      index < 3 ? 'ring-2 ring-yellow-400 ring-opacity-60' : ''
-                    }`}
+                    className={`flex items-center space-x-6 bg-white bg-opacity-10 backdrop-blur-md rounded-2xl p-6 ${index < 3 ? 'ring-2 ring-yellow-400 ring-opacity-60' : ''
+                      }`}
                   >
                     {/* 排名 */}
-                    <div className={`w-16 h-16 rounded-full flex items-center justify-center font-bold text-2xl ${
-                      index === 0 ? 'bg-yellow-500 text-black' :
-                      index === 1 ? 'bg-gray-400 text-black' :
-                      index === 2 ? 'bg-orange-600 text-black' :
-                      'bg-white bg-opacity-20 text-black'
-                    }`}>
+                    <div className={`w-16 h-16 rounded-full flex items-center justify-center font-bold text-2xl ${index === 0 ? 'bg-yellow-500 text-black' :
+                        index === 1 ? 'bg-gray-400 text-black' :
+                          index === 2 ? 'bg-orange-600 text-black' :
+                            'bg-white bg-opacity-20 text-black'
+                      }`}>
                       {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : index + 1}
                     </div>
-                    
+
                     {/* 玩家頭像 */}
                     {player.avatar_url ? (
-                      <img 
-                        src={player.avatar_url} 
-                        alt={player.display_name} 
+                      <img
+                        src={player.avatar_url}
+                        alt={player.display_name}
                         className="w-16 h-16 rounded-full object-cover"
                       />
                     ) : (
@@ -717,21 +712,21 @@ export default function GameLivePage() {
                         {player.display_name?.charAt(0) || '?'}
                       </div>
                     )}
-                    
+
                     {/* 玩家資訊 */}
                     <div className="flex-1">
                       <div className="text-2xl font-bold text-black">
                         {player.display_name}
                       </div>
                     </div>
-                    
+
                     {/* 分數 */}
                     <div className="text-3xl font-bold text-black">
                       {player.quiz_score} 分
                     </div>
                   </div>
                 ))}
-                
+
                 {scoreRankings.length === 0 && (
                   <div className="text-center text-black text-xl opacity-60 py-8">
                     暫無排行榜資料
@@ -773,7 +768,7 @@ function WaitingStage({ gameState }: { gameState: any }) {
     try {
       // 查詢在過去2分鐘內有心跳且標記為在快問快答頁面的用戶
       const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString()
-      
+
       const { data: players, error } = await supabase
         .from('users')
         .select('line_id, display_name, avatar_url, last_active_at, is_in_quiz_page')
@@ -782,12 +777,12 @@ function WaitingStage({ gameState }: { gameState: any }) {
         .order('last_active_at', { ascending: false })
 
       if (error) throw error
-      
+
       setJoinedPlayers(players || [])
       setPlayerCount(players?.length || 0)
     } catch (error) {
       console.error('Error fetching joined players:', error)
-      
+
       // 如果新欄位不存在，回退到舊邏輯
       try {
         const { data: fallbackPlayers, error: fallbackError } = await supabase
@@ -825,13 +820,13 @@ function WaitingStage({ gameState }: { gameState: any }) {
   useEffect(() => {
     fetchJoinedPlayers()
     generateQRCode()
-    
+
     const interval = setInterval(fetchJoinedPlayers, 5000) // 每5秒更新一次
-    
+
     // 訂閱用戶狀態變化
     const playersSubscription = supabase
       .channel('waiting-players')
-      .on('postgres_changes', 
+      .on('postgres_changes',
         { event: '*', schema: 'public', table: 'users' },
         () => {
           fetchJoinedPlayers()
@@ -867,7 +862,7 @@ function WaitingStage({ gameState }: { gameState: any }) {
                 已加入玩家 ({playerCount})
               </h2>
             </div>
-            
+
             <div className="max-h-96 overflow-y-auto space-y-4">
               {joinedPlayers.length > 0 ? (
                 joinedPlayers.map((player, index) => (
@@ -876,9 +871,9 @@ function WaitingStage({ gameState }: { gameState: any }) {
                       {index + 1}
                     </div>
                     {player.avatar_url ? (
-                      <img 
-                        src={player.avatar_url} 
-                        alt={player.display_name} 
+                      <img
+                        src={player.avatar_url}
+                        alt={player.display_name}
                         className="w-12 h-12 rounded-full object-cover"
                       />
                     ) : (
@@ -905,9 +900,9 @@ function WaitingStage({ gameState }: { gameState: any }) {
             <h3 className="text-3xl font-bold text-black mb-8">掃描加入遊戲</h3>
             <div className="w-80 h-80 bg-white rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-2xl">
               {qrCodeDataURL ? (
-                <img 
-                  src={qrCodeDataURL} 
-                  alt="QR Code" 
+                <img
+                  src={qrCodeDataURL}
+                  alt="QR Code"
                   className="w-full h-full rounded-3xl object-contain p-4"
                 />
               ) : (
