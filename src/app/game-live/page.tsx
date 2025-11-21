@@ -525,8 +525,8 @@ export default function GameLivePage() {
                   </div>
                 )}
 
-                {/* 階段指示器 */}
-                <div className="mt-8">
+                {/* 階段指示器 - 改為固定在底部，避免影響版面高度 */}
+                <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-10">
                   <div className="inline-flex items-center space-x-2 bg-black bg-opacity-40 rounded-full px-6 py-3 backdrop-blur-sm border border-white border-opacity-30">
                     <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
                     <span className="text-white text-lg font-medium">
@@ -693,9 +693,9 @@ export default function GameLivePage() {
                   >
                     {/* 排名 */}
                     <div className={`w-16 h-16 rounded-full flex items-center justify-center font-bold text-2xl ${index === 0 ? 'bg-yellow-500 text-black' :
-                        index === 1 ? 'bg-gray-400 text-black' :
-                          index === 2 ? 'bg-orange-600 text-black' :
-                            'bg-white bg-opacity-20 text-black'
+                      index === 1 ? 'bg-gray-400 text-black' :
+                        index === 2 ? 'bg-orange-600 text-black' :
+                          'bg-white bg-opacity-20 text-black'
                       }`}>
                       {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : index + 1}
                     </div>
