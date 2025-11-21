@@ -571,105 +571,210 @@ export default function GameLivePage() {
                 )}
               </div>
 
-              {/* 四個選項 - 2x2 網格滿版 */}
-              <div className="grid grid-cols-2 gap-6 flex-1 min-h-0">
-                {[
-                  { key: 'A', text: currentQuestion.option_a, color: 'from-red-500 to-red-600' },
-                  { key: 'B', text: currentQuestion.option_b, color: 'from-blue-500 to-blue-600' },
-                  { key: 'C', text: currentQuestion.option_c, color: 'from-green-500 to-green-600' },
-                  { key: 'D', text: currentQuestion.option_d, color: 'from-yellow-500 to-yellow-600' }
-                ].map((option) => {
-                  const distribution = answerDistribution.find(d => d.answer === option.key)
-                  const isCorrect = currentQuestion.correct_answer === option.key
-                  const percentage = distribution ? Math.round((distribution.count / Math.max(currentQuestionAnswerCount, 1)) * 100) : 0
+              {/* 內容區域：根據是否有圖片決定佈局 */}
+              {currentQuestion.media_type === 'image' && currentQuestion.media_url ? (
+                // 有圖片：左右分欄佈局
+                <div className="flex-1 flex gap-8 min-h-0">
+                  {/* 左側：圖片 */}
+                  <div className="w-1/2 flex items-center justify-center bg-black bg-opacity-20 rounded-3xl p-4">
+                    <img
+                      src={currentQuestion.media_url}
+                      alt={currentQuestion.media_alt_text || '題目圖片'}
+                      className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl"
+                    />
+                  </div>
 
-                  return (
-                    <div
-                      key={option.key}
-                      className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${option.color} shadow-2xl transform transition-all duration-500 hover:scale-105 flex items-center justify-center ${timeLeft <= 0 && isCorrect ? 'ring-8 ring-white ring-opacity-80 animate-pulse' : ''
-                        }`}
-                    >
-                      {/* 答題進度條 - 只在倒數結束後顯示 */}
-                      {timeLeft <= 0 && distribution && distribution.count > 0 && (
+                  {/* 右側：選項 (垂直排列) */}
+                  <div className="w-1/2 grid grid-cols-1 gap-4 overflow-y-auto">
+                    {['A', 'B', 'C', 'D'].map((key) => {
+                      const option = {
+                        key,
+                        text: key === 'A' ? currentQuestion.option_a :
+                          key === 'B' ? currentQuestion.option_b :
+                            key === 'C' ? currentQuestion.option_c :
+                              currentQuestion.option_d,
+                        color: key === 'A' ? 'from-red-500 to-red-600' :
+                          key === 'B' ? 'from-blue-500 to-blue-600' :
+                            key === 'C' ? 'from-green-500 to-green-600' :
+                              'from-yellow-500 to-yellow-600'
+                      }
+
+                      const distribution = answerDistribution.find(d => d.answer === option.key)
+                      const isCorrect = currentQuestion.correct_answer === option.key
+                      const percentage = distribution ? Math.round((distribution.count / Math.max(currentQuestionAnswerCount, 1)) * 100) : 0
+
+                      return (
                         <div
-                          className="absolute bottom-0 left-0 bg-opacity-30 transition-all duration-1000"
-                          style={{
-                            height: `${Math.max(percentage, 5)}%`,
-                            width: '100%'
-                          }}
-                        />
-                      )}
+                          key={option.key}
+                          className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${option.color} shadow-lg transform transition-all duration-500 hover:scale-[1.02] flex items-center ${timeLeft <= 0 && isCorrect ? 'ring-4 ring-white ring-opacity-80 animate-pulse' : ''
+                            }`}
+                        >
+                          {/* 答題進度條 */}
+                          {timeLeft <= 0 && distribution && distribution.count > 0 && (
+                            <div
+                              className="absolute bottom-0 left-0 bg-opacity-30 transition-all duration-1000 h-full"
+                              style={{
+                                width: `${Math.max(percentage, 5)}%`,
+                                opacity: 0.3
+                              }}
+                            />
+                          )}
 
-                      {/* 選項內容 */}
-                      <div className="relative z-10 flex flex-col h-full p-6">
-                        {/* 選項標題區域 */}
-                        <div className="text-center flex-shrink-0">
-                          <div className="text-4xl md:text-6xl font-black text-white mb-2">
-                            {option.key}
-                          </div>
-                          <div className="text-lg md:text-2xl font-bold text-white leading-tight mb-4">
-                            {option.text}
-                          </div>
-                        </div>
-
-                        {/* 答題統計 - 只在倒數結束後顯示 */}
-                        {timeLeft <= 0 && (
-                          <div className="text-center mb-4">
-                            <div className="bg-white bg-opacity-20 rounded-full px-4 py-2 inline-block">
-                              <span className="text-black font-bold text-lg">
-                                {distribution?.count || 0} 人 ({percentage}%)
-                              </span>
+                          <div className="relative z-10 flex items-center w-full p-4">
+                            {/* 選項標號 */}
+                            <div className="text-3xl font-black text-white mr-4 w-12 text-center flex-shrink-0">
+                              {option.key}
                             </div>
-                          </div>
-                        )}
 
-                        {/* 選擇此選項的玩家頭像 - 即時顯示 */}
-                        <div className="flex-1 flex flex-col justify-center">
-                          {distribution && distribution.users && distribution.users.length > 0 ? (
-                            <div className="grid grid-cols-4 gap-2 justify-items-center">
-                              {distribution.users.slice(0, 12).map((user, userIndex) => (
-                                <div key={userIndex} className="flex flex-col items-center">
+                            {/* 選項文字 */}
+                            <div className="text-xl font-bold text-white flex-1 mr-4 line-clamp-2">
+                              {option.text}
+                            </div>
+
+                            {/* 答題統計 (倒數結束後顯示) */}
+                            {timeLeft <= 0 && (
+                              <div className="flex-shrink-0 bg-white bg-opacity-20 rounded-full px-3 py-1">
+                                <span className="text-white font-bold text-sm">
+                                  {distribution?.count || 0}人 ({percentage}%)
+                                </span>
+                              </div>
+                            )}
+
+                            {/* 正確答案標示 */}
+                            {timeLeft <= 0 && isCorrect && (
+                              <div className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white text-green-600 rounded-full p-1 shadow-lg">
+                                <span className="text-xl font-bold">✓</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* 玩家頭像預覽 (僅顯示前幾名) */}
+                          {distribution && distribution.users && distribution.users.length > 0 && (
+                            <div className="absolute bottom-1 right-4 flex -space-x-2 overflow-hidden py-1">
+                              {distribution.users.slice(0, 5).map((user, idx) => (
+                                <div key={idx} className="inline-block h-6 w-6 rounded-full ring-2 ring-white bg-gray-200">
                                   {user.avatar_url ? (
-                                    <img
-                                      src={user.avatar_url}
-                                      alt={user.display_name}
-                                      className="w-8 h-8 rounded-full object-cover border-2 border-white"
-                                    />
+                                    <img src={user.avatar_url} alt="" className="h-full w-full rounded-full object-cover" />
                                   ) : (
-                                    <div className="w-8 h-8 bg-white bg-opacity-30 rounded-full flex items-center justify-center text-black font-bold text-xs border-2 border-white">
-                                      {user.display_name?.charAt(0) || '?'}
+                                    <div className="h-full w-full flex items-center justify-center text-[10px] font-bold text-gray-500">
+                                      {user.display_name?.charAt(0)}
                                     </div>
                                   )}
-
                                 </div>
                               ))}
-                              {distribution.users.length > 12 && (
-                                <div className="flex flex-col items-center">
-                                  <div className="w-8 h-8 bg-white bg-opacity-50 rounded-full flex items-center justify-center text-black font-bold text-xs border-2 border-white">
-                                    +{distribution.users.length - 12}
-                                  </div>
-                                  <span className="text-xs text-black mt-1">更多</span>
+                              {distribution.users.length > 5 && (
+                                <div className="inline-block h-6 w-6 rounded-full ring-2 ring-white bg-gray-300 flex items-center justify-center text-[10px] font-bold text-gray-600">
+                                  +{distribution.users.length - 5}
                                 </div>
                               )}
                             </div>
-                          ) : (
-                            <div className="text-center text-white opacity-60">
-                              <div className="text-lg">暫無人選擇</div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              ) : (
+                // 無圖片：維持原有的 2x2 網格滿版
+                <div className="grid grid-cols-2 gap-6 flex-1 min-h-0">
+                  {[
+                    { key: 'A', text: currentQuestion.option_a, color: 'from-red-500 to-red-600' },
+                    { key: 'B', text: currentQuestion.option_b, color: 'from-blue-500 to-blue-600' },
+                    { key: 'C', text: currentQuestion.option_c, color: 'from-green-500 to-green-600' },
+                    { key: 'D', text: currentQuestion.option_d, color: 'from-yellow-500 to-yellow-600' }
+                  ].map((option) => {
+                    const distribution = answerDistribution.find(d => d.answer === option.key)
+                    const isCorrect = currentQuestion.correct_answer === option.key
+                    const percentage = distribution ? Math.round((distribution.count / Math.max(currentQuestionAnswerCount, 1)) * 100) : 0
+
+                    return (
+                      <div
+                        key={option.key}
+                        className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${option.color} shadow-2xl transform transition-all duration-500 hover:scale-105 flex items-center justify-center ${timeLeft <= 0 && isCorrect ? 'ring-8 ring-white ring-opacity-80 animate-pulse' : ''
+                          }`}
+                      >
+                        {/* 答題進度條 - 只在倒數結束後顯示 */}
+                        {timeLeft <= 0 && distribution && distribution.count > 0 && (
+                          <div
+                            className="absolute bottom-0 left-0 bg-opacity-30 transition-all duration-1000"
+                            style={{
+                              height: `${Math.max(percentage, 5)}%`,
+                              width: '100%'
+                            }}
+                          />
+                        )}
+
+                        {/* 選項內容 */}
+                        <div className="relative z-10 flex flex-col h-full p-6">
+                          {/* 選項標題區域 */}
+                          <div className="text-center flex-shrink-0">
+                            <div className="text-4xl md:text-6xl font-black text-white mb-2">
+                              {option.key}
+                            </div>
+                            <div className="text-lg md:text-2xl font-bold text-white leading-tight mb-4">
+                              {option.text}
+                            </div>
+                          </div>
+
+                          {/* 答題統計 - 只在倒數結束後顯示 */}
+                          {timeLeft <= 0 && (
+                            <div className="text-center mb-4">
+                              <div className="bg-white bg-opacity-20 rounded-full px-4 py-2 inline-block">
+                                <span className="text-black font-bold text-lg">
+                                  {distribution?.count || 0} 人 ({percentage}%)
+                                </span>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* 選擇此選項的玩家頭像 - 即時顯示 */}
+                          <div className="flex-1 flex flex-col justify-center">
+                            {distribution && distribution.users && distribution.users.length > 0 ? (
+                              <div className="grid grid-cols-4 gap-2 justify-items-center">
+                                {distribution.users.slice(0, 12).map((user, userIndex) => (
+                                  <div key={userIndex} className="flex flex-col items-center">
+                                    {user.avatar_url ? (
+                                      <img
+                                        src={user.avatar_url}
+                                        alt={user.display_name}
+                                        className="w-8 h-8 rounded-full object-cover border-2 border-white"
+                                      />
+                                    ) : (
+                                      <div className="w-8 h-8 bg-white bg-opacity-30 rounded-full flex items-center justify-center text-black font-bold text-xs border-2 border-white">
+                                        {user.display_name?.charAt(0) || '?'}
+                                      </div>
+                                    )}
+
+                                  </div>
+                                ))}
+                                {distribution.users.length > 12 && (
+                                  <div className="flex flex-col items-center">
+                                    <div className="w-8 h-8 bg-white bg-opacity-50 rounded-full flex items-center justify-center text-black font-bold text-xs border-2 border-white">
+                                      +{distribution.users.length - 12}
+                                    </div>
+                                    <span className="text-xs text-black mt-1">更多</span>
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <div className="text-center text-white opacity-60">
+                                <div className="text-lg">暫無人選擇</div>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* 正確答案標示 */}
+                          {timeLeft <= 0 && isCorrect && (
+                            <div className="absolute -top-4 -right-4 bg-white text-green-600 rounded-full p-4 shadow-lg">
+                              <span className="text-2xl">✓</span>
                             </div>
                           )}
                         </div>
-
-                        {/* 正確答案標示 */}
-                        {timeLeft <= 0 && isCorrect && (
-                          <div className="absolute -top-4 -right-4 bg-white text-green-600 rounded-full p-4 shadow-lg">
-                            <span className="text-2xl">✓</span>
-                          </div>
-                        )}
                       </div>
-                    </div>
-                  )
-                })}
-              </div>
+                    )
+                  })}
+                </div>
+              )}
             </div>
           ) : displayPhase === 'rankings' ? (
             // 排行榜階段 - 顯示分數排行榜
