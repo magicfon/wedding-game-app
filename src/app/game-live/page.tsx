@@ -585,7 +585,7 @@ export default function GameLivePage() {
                   </div>
 
                   {/* 右側：選項 (垂直排列) */}
-                  <div className="w-1/2 grid grid-cols-1 gap-4 overflow-y-auto">
+                  <div className="w-1/2 flex flex-col gap-3 h-full min-h-0">
                     {['A', 'B', 'C', 'D'].map((key) => {
                       const option = {
                         key,
@@ -606,7 +606,7 @@ export default function GameLivePage() {
                       return (
                         <div
                           key={option.key}
-                          className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${option.color} shadow-lg transform transition-all duration-500 hover:scale-[1.02] flex items-center ${timeLeft <= 0 && isCorrect ? 'ring-4 ring-white ring-opacity-80 animate-pulse' : ''
+                          className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${option.color} shadow-lg transform transition-all duration-500 hover:scale-[1.01] flex items-center flex-1 min-h-0 ${timeLeft <= 0 && isCorrect ? 'ring-4 ring-white ring-opacity-80 animate-pulse' : ''
                             }`}
                         >
                           {/* 答題進度條 */}
@@ -620,21 +620,21 @@ export default function GameLivePage() {
                             />
                           )}
 
-                          <div className="relative z-10 flex items-center w-full p-4">
+                          <div className="relative z-10 flex items-center w-full px-4 py-2 h-full">
                             {/* 選項標號 */}
-                            <div className="text-3xl font-black text-white mr-4 w-12 text-center flex-shrink-0">
+                            <div className="text-2xl md:text-3xl font-black text-white mr-4 w-10 text-center flex-shrink-0">
                               {option.key}
                             </div>
 
                             {/* 選項文字 */}
-                            <div className="text-xl font-bold text-white flex-1 mr-4 line-clamp-2">
+                            <div className="text-lg md:text-xl font-bold text-white flex-1 mr-4 line-clamp-2 leading-tight">
                               {option.text}
                             </div>
 
                             {/* 答題統計 (倒數結束後顯示) */}
                             {timeLeft <= 0 && (
-                              <div className="flex-shrink-0 bg-white bg-opacity-20 rounded-full px-3 py-1">
-                                <span className="text-white font-bold text-sm">
+                              <div className="flex-shrink-0 bg-white bg-opacity-20 rounded-full px-2 py-1">
+                                <span className="text-white font-bold text-xs md:text-sm">
                                   {distribution?.count || 0}人 ({percentage}%)
                                 </span>
                               </div>
@@ -643,27 +643,27 @@ export default function GameLivePage() {
                             {/* 正確答案標示 */}
                             {timeLeft <= 0 && isCorrect && (
                               <div className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white text-green-600 rounded-full p-1 shadow-lg">
-                                <span className="text-xl font-bold">✓</span>
+                                <span className="text-lg font-bold">✓</span>
                               </div>
                             )}
                           </div>
 
                           {/* 玩家頭像預覽 (僅顯示前幾名) */}
                           {distribution && distribution.users && distribution.users.length > 0 && (
-                            <div className="absolute bottom-1 right-4 flex -space-x-2 overflow-hidden py-1">
+                            <div className="absolute bottom-1 right-4 flex -space-x-1 overflow-hidden py-0.5">
                               {distribution.users.slice(0, 5).map((user, idx) => (
-                                <div key={idx} className="inline-block h-6 w-6 rounded-full ring-2 ring-white bg-gray-200">
+                                <div key={idx} className="inline-block h-5 w-5 rounded-full ring-1 ring-white bg-gray-200">
                                   {user.avatar_url ? (
                                     <img src={user.avatar_url} alt="" className="h-full w-full rounded-full object-cover" />
                                   ) : (
-                                    <div className="h-full w-full flex items-center justify-center text-[10px] font-bold text-gray-500">
+                                    <div className="h-full w-full flex items-center justify-center text-[8px] font-bold text-gray-500">
                                       {user.display_name?.charAt(0)}
                                     </div>
                                   )}
                                 </div>
                               ))}
                               {distribution.users.length > 5 && (
-                                <div className="inline-block h-6 w-6 rounded-full ring-2 ring-white bg-gray-300 flex items-center justify-center text-[10px] font-bold text-gray-600">
+                                <div className="inline-block h-5 w-5 rounded-full ring-1 ring-white bg-gray-300 flex items-center justify-center text-[8px] font-bold text-gray-600">
                                   +{distribution.users.length - 5}
                                 </div>
                               )}
