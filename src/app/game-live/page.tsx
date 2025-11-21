@@ -650,20 +650,20 @@ export default function GameLivePage() {
 
                           {/* 玩家頭像預覽 (僅顯示前幾名) */}
                           {distribution && distribution.users && distribution.users.length > 0 && (
-                            <div className="absolute bottom-1 right-4 flex -space-x-1 overflow-hidden py-0.5">
+                            <div className="absolute bottom-2 right-4 flex -space-x-1 py-1 px-1">
                               {distribution.users.slice(0, 5).map((user, idx) => (
-                                <div key={idx} className="inline-block h-5 w-5 rounded-full ring-1 ring-white bg-gray-200">
+                                <div key={idx} className="relative inline-block h-6 w-6 rounded-full ring-2 ring-white bg-gray-200 z-10">
                                   {user.avatar_url ? (
                                     <img src={user.avatar_url} alt="" className="h-full w-full rounded-full object-cover" />
                                   ) : (
-                                    <div className="h-full w-full flex items-center justify-center text-[8px] font-bold text-gray-500">
+                                    <div className="h-full w-full flex items-center justify-center text-[10px] font-bold text-gray-500">
                                       {user.display_name?.charAt(0)}
                                     </div>
                                   )}
                                 </div>
                               ))}
                               {distribution.users.length > 5 && (
-                                <div className="inline-block h-5 w-5 rounded-full ring-1 ring-white bg-gray-300 flex items-center justify-center text-[8px] font-bold text-gray-600">
+                                <div className="relative inline-block h-6 w-6 rounded-full ring-2 ring-white bg-gray-300 flex items-center justify-center text-[10px] font-bold text-gray-600 z-0">
                                   +{distribution.users.length - 5}
                                 </div>
                               )}
