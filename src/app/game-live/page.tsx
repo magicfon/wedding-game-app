@@ -448,7 +448,7 @@ export default function GameLivePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+    <div className="min-h-screen h-screen overflow-hidden bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
       {/* 音效控制 */}
       <div className="fixed top-4 right-4 z-50">
         <SoundToggle isEnabled={isSoundEnabled} onToggle={toggleSound} />
@@ -538,9 +538,9 @@ export default function GameLivePage() {
             </div>
           ) : displayPhase === 'options' ? (
             // 選項階段 - 滿版顯示選項
-            <div className="flex-1 p-8">
+            <div className="flex-1 flex flex-col p-8 overflow-hidden">
               {/* 題目標題（縮小版） */}
-              <div className="text-center mb-8">
+              <div className="text-center mb-8 flex-shrink-0">
                 <h2 className="text-2xl md:text-4xl font-bold text-white mb-4">
                   {currentQuestion.question_text}
                 </h2>
@@ -572,7 +572,7 @@ export default function GameLivePage() {
               </div>
 
               {/* 四個選項 - 2x2 網格滿版 */}
-              <div className="grid grid-cols-2 gap-6 h-[calc(100vh-200px)]">
+              <div className="grid grid-cols-2 gap-6 flex-1 min-h-0">
                 {[
                   { key: 'A', text: currentQuestion.option_a, color: 'from-red-500 to-red-600' },
                   { key: 'B', text: currentQuestion.option_b, color: 'from-blue-500 to-blue-600' },
