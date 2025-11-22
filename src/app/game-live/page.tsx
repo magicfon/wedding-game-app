@@ -650,20 +650,20 @@ export default function GameLivePage() {
 
                           {/* 玩家頭像預覽 (僅顯示前幾名) */}
                           {distribution && distribution.users && distribution.users.length > 0 && (
-                            <div className="absolute bottom-2 right-4 flex -space-x-1 py-1 px-1">
+                            <div className="absolute bottom-2 right-4 flex -space-x-2 py-1 px-1">
                               {distribution.users.slice(0, 5).map((user, idx) => (
-                                <div key={idx} className="relative inline-block h-6 w-6 rounded-full ring-2 ring-white bg-gray-200 z-10">
+                                <div key={idx} className="relative inline-block h-10 w-10 rounded-full ring-2 ring-white bg-gray-200 z-10">
                                   {user.avatar_url ? (
                                     <img src={user.avatar_url} alt="" className="h-full w-full rounded-full object-cover" />
                                   ) : (
-                                    <div className="h-full w-full flex items-center justify-center text-[10px] font-bold text-gray-500">
+                                    <div className="h-full w-full flex items-center justify-center text-xs font-bold text-gray-500">
                                       {user.display_name?.charAt(0)}
                                     </div>
                                   )}
                                 </div>
                               ))}
                               {distribution.users.length > 5 && (
-                                <div className="relative inline-block h-6 w-6 rounded-full ring-2 ring-white bg-gray-300 flex items-center justify-center text-[10px] font-bold text-gray-600 z-0">
+                                <div className="relative inline-block h-10 w-10 rounded-full ring-2 ring-white bg-gray-300 flex items-center justify-center text-xs font-bold text-gray-600 z-0">
                                   +{distribution.users.length - 5}
                                 </div>
                               )}
@@ -737,10 +737,10 @@ export default function GameLivePage() {
                                       <img
                                         src={user.avatar_url}
                                         alt={user.display_name}
-                                        className="w-8 h-8 rounded-full object-cover border-2 border-white"
+                                        className="w-12 h-12 rounded-full object-cover border-2 border-white"
                                       />
                                     ) : (
-                                      <div className="w-8 h-8 bg-white bg-opacity-30 rounded-full flex items-center justify-center text-black font-bold text-xs border-2 border-white">
+                                      <div className="w-12 h-12 bg-white bg-opacity-30 rounded-full flex items-center justify-center text-black font-bold text-sm border-2 border-white">
                                         {user.display_name?.charAt(0) || '?'}
                                       </div>
                                     )}
@@ -749,7 +749,7 @@ export default function GameLivePage() {
                                 ))}
                                 {distribution.users.length > 12 && (
                                   <div className="flex flex-col items-center">
-                                    <div className="w-8 h-8 bg-white bg-opacity-50 rounded-full flex items-center justify-center text-black font-bold text-xs border-2 border-white">
+                                    <div className="w-12 h-12 bg-white bg-opacity-50 rounded-full flex items-center justify-center text-black font-bold text-sm border-2 border-white">
                                       +{distribution.users.length - 12}
                                     </div>
                                     <span className="text-xs text-black mt-1">更多</span>
