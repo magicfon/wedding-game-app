@@ -650,7 +650,7 @@ export default function GameLivePage() {
 
                           {/* 玩家頭像預覽 (僅顯示前幾名) */}
                           {distribution && distribution.users && distribution.users.length > 0 && (
-                            <div className="absolute bottom-2 right-4 flex -space-x-2 py-1 px-1">
+                            <div className="absolute bottom-2 left-20 flex -space-x-2 py-1 px-1">
                               {distribution.users.slice(0, 5).map((user, idx) => (
                                 <div key={idx} className="relative inline-block h-10 w-10 rounded-full ring-2 ring-white bg-gray-200 z-10">
                                   {user.avatar_url ? (
