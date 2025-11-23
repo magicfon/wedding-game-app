@@ -86,17 +86,15 @@ Confetti.displayName = 'Confetti'
 
 interface PhotoItemProps {
   photo: Photo
-  isHighlighted: boolean
-  isAnimating: boolean
-  isWinner: boolean
   size: number
-  winnerRef?: React.RefObject<HTMLDivElement | null>
+  isWinner: boolean // Still needed for final static style if any, but not for animation
 }
 
-const PhotoItem = memo(({ photo, isHighlighted, isAnimating, isWinner, size, winnerRef }: PhotoItemProps) => {
+// Optimized PhotoItem: No longer receives isHighlighted or isAnimating
+// This component should NEVER re-render during the animation
+const PhotoItem = memo(({ photo, size, isWinner }: PhotoItemProps) => {
   return (
     <div
-      ref={isWinner ? winnerRef : null}
       className="relative"
       style={{
         width: `${size}px`,
@@ -106,15 +104,8 @@ const PhotoItem = memo(({ photo, isHighlighted, isAnimating, isWinner, size, win
       {/* 照片 */}
       <div className={`
         relative w-full h-full bg-white rounded-2xl shadow-xl overflow-hidden
-        transition-all duration-150 ease-out
-        ${isHighlighted
-          ? 'ring-8 ring-yellow-400 scale-110 z-20'
-          : 'scale-100'
-        }
-        ${isWinner
-          ? 'ring-green-400 scale-110 !duration-500'
-          : ''
-        }
+        transition-all duration-500 ease-out
+        ${isWinner ? 'scale-110 z-20' : 'scale-100'}
       `}>
         <img
           src={photo.image_url}
@@ -138,31 +129,61 @@ const PhotoItem = memo(({ photo, isHighlighted, isAnimating, isWinner, size, win
             </span>
           </div>
         </div>
-
-        {/* 動畫中的高亮框 */}
-        {isHighlighted && (
-          <div className={`
-          absolute inset-0 
-          ${isAnimating ? 'bg-yellow-400/40' : 'bg-green-400/40'}
-          pointer-events-none
-          transition-colors duration-150
-          ${isAnimating ? 'animate-pulse' : ''}
-        `} />
-        )}
       </div>
     </div>
   )
-}, (prevProps, nextProps) => {
-  // Custom comparison for performance
-  return (
-    prevProps.photo.id === nextProps.photo.id &&
-    prevProps.isHighlighted === nextProps.isHighlighted &&
-    prevProps.isAnimating === nextProps.isAnimating &&
-    prevProps.isWinner === nextProps.isWinner &&
-    prevProps.size === nextProps.size
-  )
+}, (prev, next) => {
+  return prev.photo.id === next.photo.id &&
+    prev.size === next.size &&
+    prev.isWinner === next.isWinner
 })
 PhotoItem.displayName = 'PhotoItem'
+
+interface FloatingHighlightProps {
+  highlightedIndex: number
+  gridLayout: { cols: number; rows: number; size: number }
+  isAnimating: boolean
+  winnerRef: React.RefObject<HTMLDivElement | null>
+}
+
+// New Component: Handles the moving highlight box
+// Only this component re-renders during animation
+const FloatingHighlight = memo(({ highlightedIndex, gridLayout, isAnimating, winnerRef }: FloatingHighlightProps) => {
+  if (highlightedIndex === -1) return null
+
+  const col = highlightedIndex % gridLayout.cols
+  const row = Math.floor(highlightedIndex / gridLayout.cols)
+
+  // Calculate position based on grid layout
+  // Gap is 20px (5 * 4px from gap-5)
+  const gap = 20
+  const left = col * (gridLayout.size + gap)
+  const top = row * (gridLayout.size + gap)
+
+  return (
+    <div
+      ref={winnerRef}
+      className={`
+        absolute pointer-events-none z-30
+        transition-all duration-100 ease-out
+        ${isAnimating ? 'border-8 border-yellow-400' : 'border-8 border-green-400 scale-110'}
+        rounded-2xl
+        ${isAnimating ? 'animate-pulse' : ''}
+      `}
+      style={{
+        width: `${gridLayout.size}px`,
+        height: `${gridLayout.size}px`,
+        left: 0,
+        top: 0,
+        transform: `translate(${left}px, ${top}px)`
+      }}
+    >
+      {/* Inner glow */}
+      <div className={`absolute inset-0 rounded-xl ${isAnimating ? 'bg-yellow-400/20' : 'bg-green-400/20'}`} />
+    </div>
+  )
+})
+FloatingHighlight.displayName = 'FloatingHighlight'
 
 interface PhotoGridProps {
   photos: Photo[]
@@ -174,28 +195,37 @@ interface PhotoGridProps {
 
 const PhotoGrid = memo(({ photos, highlightedIndex, isAnimating, gridLayout, winnerPhotoRef }: PhotoGridProps) => {
   return (
-    <div
-      className="grid gap-5 justify-center items-center"
-      style={{
-        gridTemplateColumns: `repeat(${gridLayout.cols}, ${gridLayout.size}px)`
-      }}
-    >
-      {photos.map((photo, index) => {
-        const isHighlighted = highlightedIndex === index
-        const isWinner = isHighlighted && !isAnimating
+    <div className="relative">
+      {/* The Grid of Photos (Static) */}
+      <div
+        className="grid gap-5 justify-center items-center"
+        style={{
+          gridTemplateColumns: `repeat(${gridLayout.cols}, ${gridLayout.size}px)`
+        }}
+      >
+        {photos.map((photo, index) => {
+          // Only mark as winner if animation stopped and this is the index
+          // This prop change only happens ONCE at the end of animation
+          const isWinner = !isAnimating && highlightedIndex === index
 
-        return (
-          <PhotoItem
-            key={photo.id}
-            photo={photo}
-            isHighlighted={isHighlighted}
-            isAnimating={isAnimating}
-            isWinner={isWinner}
-            size={gridLayout.size}
-            winnerRef={winnerPhotoRef}
-          />
-        )
-      })}
+          return (
+            <PhotoItem
+              key={photo.id}
+              photo={photo}
+              size={gridLayout.size}
+              isWinner={isWinner}
+            />
+          )
+        })}
+      </div>
+
+      {/* The Floating Highlight (Dynamic) */}
+      <FloatingHighlight
+        highlightedIndex={highlightedIndex}
+        gridLayout={gridLayout}
+        isAnimating={isAnimating}
+        winnerRef={winnerPhotoRef}
+      />
     </div>
   )
 })
