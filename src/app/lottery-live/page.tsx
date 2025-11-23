@@ -90,7 +90,7 @@ interface PhotoItemProps {
   isAnimating: boolean
   isWinner: boolean
   size: number
-  winnerRef?: React.RefObject<HTMLDivElement>
+  winnerRef?: React.RefObject<HTMLDivElement | null>
 }
 
 const PhotoItem = memo(({ photo, isHighlighted, isAnimating, isWinner, size, winnerRef }: PhotoItemProps) => {
@@ -169,7 +169,7 @@ interface PhotoGridProps {
   highlightedIndex: number
   isAnimating: boolean
   gridLayout: { cols: number; rows: number; size: number }
-  winnerPhotoRef: React.RefObject<HTMLDivElement>
+  winnerPhotoRef: React.RefObject<HTMLDivElement | null>
 }
 
 const PhotoGrid = memo(({ photos, highlightedIndex, isAnimating, gridLayout, winnerPhotoRef }: PhotoGridProps) => {
