@@ -165,7 +165,7 @@ const FloatingHighlight = memo(({ highlightedIndex, gridLayout, isAnimating, win
       ref={winnerRef}
       className={`
         absolute pointer-events-none z-30
-        transition-all duration-100 ease-out
+        transition-all duration-300 ease-out
         ${isAnimating ? 'border-8 border-yellow-400' : 'border-8 border-green-400 scale-110'}
         rounded-2xl
         ${isAnimating ? 'animate-pulse' : ''}
@@ -542,11 +542,21 @@ export default function LotteryLivePage() {
         // 繼續動畫
         animationFrameRef.current = requestAnimationFrame(animate)
       } else {
-        // 動畫結束，確保停在目標位置
+        // 動畫結束 sequence
         console.log('🎉 動畫結束，停在索引:', targetIndex)
+
+        // Step 1: 確保停在目標位置 (黃框)
         setHighlightedIndex(targetIndex)
-        setIsAnimating(false)
-        startCelebration()
+
+        // Step 2: 等待移動到位 (200ms) -> 變綠色
+        setTimeout(() => {
+          setIsAnimating(false) // 變綠色
+
+          // Step 3: 等待綠框展示 (800ms) -> 開始慶祝
+          setTimeout(() => {
+            startCelebration()
+          }, 800)
+        }, 200)
       }
     }
 
