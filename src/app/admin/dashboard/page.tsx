@@ -443,7 +443,7 @@ export default function AdminDashboard() {
                       max="60"
                       value={displayDuration}
                       onChange={(e) => setDisplayDuration(parseInt(e.target.value) || 3)}
-                      className="w-20 px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500"
+                      className="w-20 px-3 py-2 border border-gray-300 rounded-md text-sm text-black focus:ring-blue-500 focus:border-blue-500"
                     />
                     <span className="ml-2 text-xs text-gray-500">秒後顯示選項</span>
                   </div>
