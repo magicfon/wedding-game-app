@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, memo, useMemo } from 'react'
 import { createSupabaseBrowser } from '@/lib/supabase'
 import { Gift, Sparkles, Heart } from 'lucide-react'
 
@@ -29,6 +29,180 @@ interface Photo {
   avatar_url: string
 }
 
+// 固定設計尺寸 (基準: 1920x1080)
+const DESIGN_WIDTH = 1920
+const DESIGN_HEIGHT = 1080
+
+// --- Memoized Components ---
+
+const BackgroundParticles = memo(() => {
+  return (
+    <div className="absolute inset-0 pointer-events-none">
+      {[...Array(30)].map((_, i) => (
+        <div
+          key={i}
+          className="absolute animate-float"
+          style={{
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+            animationDelay: `${Math.random() * 2}s`,
+            animationDuration: `${3 + Math.random() * 2}s`
+          }}
+        >
+          <Sparkles className="w-6 h-6 text-white opacity-30" />
+        </div>
+      ))}
+    </div>
+  )
+})
+BackgroundParticles.displayName = 'BackgroundParticles'
+
+const Confetti = memo(() => {
+  return (
+    <div className="absolute inset-0 pointer-events-none z-30">
+      {[...Array(150)].map((_, i) => (
+        <div
+          key={i}
+          className="absolute animate-confetti"
+          style={{
+            left: `${Math.random() * 100}%`,
+            top: '-10%',
+            animationDelay: `${Math.random() * 0.5}s`,
+            animationDuration: `${2 + Math.random()}s`
+          }}
+        >
+          <div
+            className="w-3 h-3 rounded-full"
+            style={{
+              backgroundColor: ['#ff6b6b', '#ffd93d', '#6bcf7f', '#4d96ff', '#ff6bff'][Math.floor(Math.random() * 5)]
+            }}
+          />
+        </div>
+      ))}
+    </div>
+  )
+})
+Confetti.displayName = 'Confetti'
+
+interface PhotoItemProps {
+  photo: Photo
+  isHighlighted: boolean
+  isAnimating: boolean
+  isWinner: boolean
+  size: number
+  winnerRef?: React.RefObject<HTMLDivElement>
+}
+
+const PhotoItem = memo(({ photo, isHighlighted, isAnimating, isWinner, size, winnerRef }: PhotoItemProps) => {
+  return (
+    <div
+      ref={isWinner ? winnerRef : null}
+      className="relative"
+      style={{
+        width: `${size}px`,
+        height: `${size}px`
+      }}
+    >
+      {/* 照片 */}
+      <div className={`
+        relative w-full h-full bg-white rounded-2xl shadow-xl overflow-hidden
+        transition-all duration-150 ease-out
+        ${isHighlighted
+          ? 'ring-8 ring-yellow-400 scale-110 z-20'
+          : 'scale-100'
+        }
+        ${isWinner
+          ? 'ring-green-400 scale-110 !duration-500'
+          : ''
+        }
+      `}>
+        <img
+          src={photo.image_url}
+          alt={photo.display_name}
+          className="w-full h-full object-cover"
+          onError={(e) => {
+            e.currentTarget.src = '/default-avatar.png'
+          }}
+        />
+
+        {/* 照片資訊 */}
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
+          <div className="flex items-center space-x-2">
+            <img
+              src={photo.avatar_url || '/default-avatar.png'}
+              alt={photo.display_name}
+              className="w-8 h-8 rounded-full border-2 border-white"
+            />
+            <span className="text-white text-sm font-medium truncate">
+              {photo.display_name}
+            </span>
+          </div>
+        </div>
+
+        {/* 動畫中的高亮框 */}
+        {isHighlighted && (
+          <div className={`
+          absolute inset-0 
+          ${isAnimating ? 'bg-yellow-400/40' : 'bg-green-400/40'}
+          pointer-events-none
+          transition-colors duration-150
+          ${isAnimating ? 'animate-pulse' : ''}
+        `} />
+        )}
+      </div>
+    </div>
+  )
+}, (prevProps, nextProps) => {
+  // Custom comparison for performance
+  return (
+    prevProps.photo.id === nextProps.photo.id &&
+    prevProps.isHighlighted === nextProps.isHighlighted &&
+    prevProps.isAnimating === nextProps.isAnimating &&
+    prevProps.isWinner === nextProps.isWinner &&
+    prevProps.size === nextProps.size
+  )
+})
+PhotoItem.displayName = 'PhotoItem'
+
+interface PhotoGridProps {
+  photos: Photo[]
+  highlightedIndex: number
+  isAnimating: boolean
+  gridLayout: { cols: number; rows: number; size: number }
+  winnerPhotoRef: React.RefObject<HTMLDivElement>
+}
+
+const PhotoGrid = memo(({ photos, highlightedIndex, isAnimating, gridLayout, winnerPhotoRef }: PhotoGridProps) => {
+  return (
+    <div
+      className="grid gap-5 justify-center items-center"
+      style={{
+        gridTemplateColumns: `repeat(${gridLayout.cols}, ${gridLayout.size}px)`
+      }}
+    >
+      {photos.map((photo, index) => {
+        const isHighlighted = highlightedIndex === index
+        const isWinner = isHighlighted && !isAnimating
+
+        return (
+          <PhotoItem
+            key={photo.id}
+            photo={photo}
+            isHighlighted={isHighlighted}
+            isAnimating={isAnimating}
+            isWinner={isWinner}
+            size={gridLayout.size}
+            winnerRef={winnerPhotoRef}
+          />
+        )
+      })}
+    </div>
+  )
+})
+PhotoGrid.displayName = 'PhotoGrid'
+
+// --- Main Component ---
+
 export default function LotteryLivePage() {
   const [lotteryState, setLotteryState] = useState<LotteryState>({
     is_lottery_active: false,
@@ -44,35 +218,31 @@ export default function LotteryLivePage() {
   const [winnerPhotoRect, setWinnerPhotoRect] = useState<DOMRect | null>(null) // 中獎照片原始位置
   const [scale, setScale] = useState(1)
   const [highlightedIndex, setHighlightedIndex] = useState(-1)
-  
+
   const animationFrameRef = useRef<number | null>(null)
   const winnerPhotoRef = useRef<HTMLDivElement>(null) // 中獎照片的 ref
   const currentDrawRef = useRef<CurrentDraw | null>(null) // 追蹤最新的 currentDraw 值
   const supabase = createSupabaseBrowser()
-  
+
   // 同步 currentDraw 到 ref
   useEffect(() => {
     currentDrawRef.current = currentDraw
     console.log('🔄 currentDrawRef 更新:', currentDraw?.id || null)
   }, [currentDraw])
 
-  // 固定設計尺寸 (基準: 1920x1080)
-  const DESIGN_WIDTH = 1920
-  const DESIGN_HEIGHT = 1080
-
   // 計算縮放比例以適應視窗大小（針對全螢幕播放優化）
   useEffect(() => {
     const updateScale = () => {
       const windowWidth = window.innerWidth
       const windowHeight = window.innerHeight
-      
+
       // 計算寬高比例
       const scaleX = windowWidth / DESIGN_WIDTH
       const scaleY = windowHeight / DESIGN_HEIGHT
-      
+
       // 針對 16:9 全螢幕：使用較大的比例填滿畫面
       const newScale = Math.max(scaleX, scaleY)
-      
+
       setScale(newScale)
     }
 
@@ -126,16 +296,16 @@ export default function LotteryLivePage() {
     try {
       const response = await fetch('/api/lottery/control')
       const data = await response.json()
-      
+
       const latestCurrentDraw = currentDrawRef.current
-      
+
       console.log('📡 fetchLotteryState:', {
         current_draw_id: data.state?.current_draw_id,
         latestCurrentDraw_id: latestCurrentDraw?.id || null,
         has_current_draw: !!data.current_draw,
         will_reset: !data.state.current_draw_id && latestCurrentDraw !== null
       })
-      
+
       if (data.success) {
         // 檢測重置操作：沒有 current_draw_id 且我們之前有 currentDraw
         if (!data.state.current_draw_id && latestCurrentDraw !== null) {
@@ -145,9 +315,9 @@ export default function LotteryLivePage() {
           setLotteryState(data.state)
           return
         }
-        
+
         setLotteryState(data.state)
-        
+
         // 注意：不在這裡調用 startCelebration()
         // 慶祝效果只應該在動畫結束時觸發（由 animateSelection 控制）
         if (data.current_draw && data.current_draw.id !== latestCurrentDraw?.id) {
@@ -165,9 +335,9 @@ export default function LotteryLivePage() {
       console.log('📸 開始載入照片...')
       const response = await fetch('/api/lottery/photos')
       const data = await response.json()
-      
+
       console.log('📸 API 回應:', data)
-      
+
       if (data.success && data.photos) {
         console.log(`✅ 成功載入 ${data.photos.length} 張照片`)
         setPhotos(data.photos)
@@ -189,7 +359,7 @@ export default function LotteryLivePage() {
       highlightedIndex,
       isAnimating
     })
-    
+
     setCurrentDraw(null)
     setCelebrating(false)
     setShowingWinner(false)
@@ -197,25 +367,25 @@ export default function LotteryLivePage() {
     setWinnerPhotoRect(null)
     setHighlightedIndex(-1) // 移除黃框
     setIsAnimating(false)
-    
+
     // 取消任何進行中的動畫
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current)
       animationFrameRef.current = null
     }
-    
+
     console.log('✅ 重置完成')
   }
 
   const handleNewDraw = async (newDraw: CurrentDraw) => {
     // 先重置所有狀態
     resetToInitialState()
-    
+
     setCurrentDraw(newDraw)
-    
+
     console.log('🎰 收到新的抽獎記錄')
     console.log('當前照片數量:', photos.length)
-    
+
     // 如果照片還沒載入，先載入照片
     if (photos.length === 0) {
       console.log('⚠️ 照片尚未載入，現在載入...')
@@ -223,18 +393,18 @@ export default function LotteryLivePage() {
       // 等待一下讓 state 更新
       await new Promise(resolve => setTimeout(resolve, 200))
     }
-    
+
     // 重新獲取最新的照片列表
     const response = await fetch('/api/lottery/photos')
     const data = await response.json()
-    
+
     if (data.success && data.photos && data.photos.length > 0) {
       const currentPhotos = data.photos
       console.log(`📸 使用 ${currentPhotos.length} 張照片進行抽獎`)
-      
+
       // 找到中獎照片的索引
       const winnerIndex = currentPhotos.findIndex((p: Photo) => p.user_id === newDraw.winner_line_id)
-      
+
       if (winnerIndex === -1) {
         console.error('❌ 找不到中獎照片！')
         console.error('中獎者 ID:', newDraw.winner_line_id)
@@ -244,7 +414,7 @@ export default function LotteryLivePage() {
         startCarouselAnimationWithPhotos(currentPhotos, randomIndex)
         return
       }
-      
+
       console.log('✅ 找到中獎照片，索引:', winnerIndex)
       startCarouselAnimationWithPhotos(currentPhotos, winnerIndex)
     } else {
@@ -262,34 +432,34 @@ export default function LotteryLivePage() {
     setPhotos(photosToUse)
     setIsAnimating(true)
     setHighlightedIndex(-1)
-    
+
     console.log('🎰 開始抽獎動畫')
     console.log('使用照片數:', photosToUse.length)
     console.log('目標索引:', targetIndex)
-    
+
     animateSelection(targetIndex, photosToUse)
   }
 
   const animateSelection = (targetIndex: number, photosToUse: Photo[]) => {
     const photoCount = photosToUse.length
     console.log('🎯 開始跳動動畫，目標索引:', targetIndex, '照片總數:', photoCount)
-    
+
     if (photoCount === 0) {
       console.error('❌ 沒有照片可以進行動畫！')
       return
     }
-    
+
     // 動畫參數
     const startTime = Date.now()
     const duration = 10000 // 10秒
     let lastJumpTime = startTime - 100
     let currentIndex = Math.floor(Math.random() * photoCount)
     let lastIndex = currentIndex // 記錄上一次的索引，避免重複
-    
+
     // 立即顯示第一個框框
     setHighlightedIndex(currentIndex)
     console.log('📍 初始框框位置:', currentIndex)
-    
+
     // 跳動間隔函數 (越來越慢)
     const getJumpInterval = (progress: number) => {
       // 開始很快 (30ms)，結束很慢 (800ms)
@@ -313,11 +483,11 @@ export default function LotteryLivePage() {
 
       // 檢查是否該跳到下一張照片
       const jumpInterval = getJumpInterval(progress)
-      
+
       if (now - lastJumpTime >= jumpInterval) {
         lastJumpTime = now
         lastIndex = currentIndex
-        
+
         if (progress < 0.92) {
           // 還沒接近結束，隨機跳動（但不重複上一張）
           currentIndex = getNextRandomIndex(lastIndex, photoCount)
@@ -333,8 +503,8 @@ export default function LotteryLivePage() {
             }
           }
         }
-        
-        console.log(`📍 跳到索引 ${currentIndex}，進度: ${(progress * 100).toFixed(1)}%`)
+
+        // console.log(`📍 跳到索引 ${currentIndex}，進度: ${(progress * 100).toFixed(1)}%`)
         setHighlightedIndex(currentIndex)
       }
 
@@ -366,21 +536,21 @@ export default function LotteryLivePage() {
   const startCelebration = () => {
     console.log('🎊 開始慶祝動畫')
     setCelebrating(true)
-    
+
     // 1.5秒後開始放大中獎照片（讓大家先看清楚中獎的是哪張）
     setTimeout(() => {
       console.log('🔍 開始放大中獎照片')
-      
+
       // 獲取中獎照片的位置
       if (winnerPhotoRef.current) {
         const rect = winnerPhotoRef.current.getBoundingClientRect()
         setWinnerPhotoRect(rect)
         console.log('📍 中獎照片位置:', rect)
       }
-      
+
       // 先觸發縮放動畫
       setZoomingWinner(true)
-      
+
       // 800ms 後（縮放動畫完成）切換到完整顯示
       setTimeout(() => {
         setShowingWinner(true)
@@ -388,11 +558,6 @@ export default function LotteryLivePage() {
         console.log('✅ 中獎畫面顯示完成，等待管理員操作...')
       }, 800)
     }, 1500)
-    
-    // 不再自動關閉，畫面會持續顯示直到：
-    // 1. 管理員點擊「重置狀態」
-    // 2. 管理員開始新的抽獎
-    // 這些操作會觸發 handleNewDraw，自動重置所有狀態
   }
 
   // 找出中獎照片
@@ -402,7 +567,7 @@ export default function LotteryLivePage() {
   }
 
   const winnerPhoto = getWinnerPhoto()
-  
+
   // 調試：記錄渲染狀態
   useEffect(() => {
     console.log('🎨 渲染狀態:', {
@@ -418,24 +583,22 @@ export default function LotteryLivePage() {
   }, [currentDraw, showingWinner, zoomingWinner, celebrating, isAnimating, highlightedIndex, winnerPhoto])
 
   // 計算每張照片的大小（自動填滿螢幕）
-  const getPhotoGridLayout = () => {
+  const gridLayout = useMemo(() => {
     const count = photos.length
     if (count === 0) return { cols: 0, rows: 0, size: 0 }
-    
+
     // 計算最佳的行列數
     const ratio = DESIGN_WIDTH / DESIGN_HEIGHT
     const cols = Math.ceil(Math.sqrt(count * ratio))
     const rows = Math.ceil(count / cols)
-    
+
     // 計算照片大小（留一些間距）
     const photoWidth = (DESIGN_WIDTH - (cols + 1) * 20) / cols
     const photoHeight = (DESIGN_HEIGHT - (rows + 1) * 20 - 200) / rows // 200px 留給標題
     const size = Math.min(photoWidth, photoHeight, 300) // 最大300px
-    
-    return { cols, rows, size }
-  }
 
-  const gridLayout = getPhotoGridLayout()
+    return { cols, rows, size }
+  }, [photos.length])
 
   // 待機畫面
   if (!lotteryState.is_lottery_active) {
@@ -466,7 +629,7 @@ export default function LotteryLivePage() {
   return (
     <div data-lottery-live className="w-screen h-screen bg-black flex items-center justify-center overflow-hidden fixed inset-0">
       {/* 固定尺寸容器 + 縮放 */}
-      <div 
+      <div
         className="bg-gradient-to-br from-purple-600 via-pink-500 to-orange-500 flex flex-col items-center justify-center overflow-hidden relative"
         style={{
           width: `${DESIGN_WIDTH}px`,
@@ -475,259 +638,159 @@ export default function LotteryLivePage() {
           transformOrigin: 'center center'
         }}
       >
-      {/* 背景動畫 */}
-      <div className="absolute inset-0">
-        {[...Array(30)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute animate-float"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 2}s`,
-              animationDuration: `${3 + Math.random() * 2}s`
-            }}
-          >
-            <Sparkles className="w-6 h-6 text-white opacity-30" />
-          </div>
-        ))}
-      </div>
+        {/* 背景動畫 */}
+        <BackgroundParticles />
 
-      {/* 慶祝動畫（停止後） */}
-      {celebrating && !isAnimating && (
-        <div className="absolute inset-0 pointer-events-none z-30">
-          {[...Array(150)].map((_, i) => (
+        {/* 慶祝動畫（停止後） */}
+        {celebrating && !isAnimating && <Confetti />}
+
+        {/* 標題 */}
+        <div className="text-center mb-8 z-10">
+          <h1 className={`text-6xl font-bold text-white mb-4 ${isAnimating ? 'animate-pulse' : ''}`}>
+            {isAnimating ? '🎰 抽獎中 🎰' : (currentDraw ? '🎉 恭喜中獎 🎉' : '📸 照片摸彩 📸')}
+          </h1>
+          <p className="text-2xl text-white opacity-90">
+            參與照片數：{photos.length} 張
+          </p>
+        </div>
+
+        {/* 照片 Grid 顯示 */}
+        <div className={`relative z-10 px-10 transition-opacity duration-1000 ${showingWinner || zoomingWinner ? 'opacity-0' : 'opacity-100'}`}>
+          <PhotoGrid
+            photos={photos}
+            highlightedIndex={highlightedIndex}
+            isAnimating={isAnimating}
+            gridLayout={gridLayout}
+            winnerPhotoRef={winnerPhotoRef}
+          />
+        </div>
+
+        {/* 中獎照片放大動畫 - 從原位置放大到左側900x900位置 */}
+        {!isAnimating && zoomingWinner && winnerPhoto && winnerPhotoRect && (() => {
+          // 目標尺寸（左側大照片）
+          const targetSize = 900
+
+          // 計算目標位置（左側照片的中心位置）
+          // 設計尺寸: 1920x1080, padding: 32px
+          // 左側照片位置: 32px + 900px/2 = 482px (從設計稿左側算)
+          const designLeftPhotoCenter = 32 + targetSize / 2  // 482px
+
+          // 考慮縮放比例，計算實際螢幕上的位置
+          const screenCenterY = window.innerHeight / 2
+
+          // 計算左側照片在實際螢幕上的中心 X 位置
+          // 使用 scale 來計算實際位置
+          const scaledDesignWidth = DESIGN_WIDTH * scale
+          const screenOffsetX = (window.innerWidth - scaledDesignWidth) / 2
+          const targetCenterX = screenOffsetX + designLeftPhotoCenter * scale
+
+          // 計算當前照片的中心位置
+          const currentCenterX = winnerPhotoRect.left + winnerPhotoRect.width / 2
+          const currentCenterY = winnerPhotoRect.top + winnerPhotoRect.height / 2
+
+          // 計算需要移動的距離
+          const translateX = targetCenterX - currentCenterX
+          const translateY = screenCenterY - currentCenterY
+
+          // 計算縮放比例
+          const scaleFactor = (targetSize * scale) / winnerPhotoRect.width
+
+          console.log('🎬 放大動畫參數:', {
+            targetSize,
+            scale,
+            targetCenterX,
+            currentCenterX,
+            translateX,
+            translateY,
+            scaleFactor
+          })
+
+          return (
             <div
-              key={i}
-              className="absolute animate-confetti"
+              className="fixed z-50 pointer-events-none"
               style={{
-                left: `${Math.random() * 100}%`,
-                top: '-10%',
-                animationDelay: `${Math.random() * 0.5}s`,
-                animationDuration: `${2 + Math.random()}s`
-              }}
+                left: `${winnerPhotoRect.left}px`,
+                top: `${winnerPhotoRect.top}px`,
+                width: `${winnerPhotoRect.width}px`,
+                height: `${winnerPhotoRect.height}px`,
+                '--translate-x': `${translateX}px`,
+                '--translate-y': `${translateY}px`,
+                '--scale-factor': scaleFactor,
+                animation: 'zoomToCenter 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards'
+              } as React.CSSProperties}
             >
-              <div 
-                className="w-3 h-3 rounded-full"
-                style={{
-                  backgroundColor: ['#ff6b6b', '#ffd93d', '#6bcf7f', '#4d96ff', '#ff6bff'][Math.floor(Math.random() * 5)]
-                }}
-              />
+              <div className="relative w-full h-full">
+                <div className="absolute -inset-6 bg-gradient-to-r from-yellow-400 via-orange-400 to-pink-400 rounded-3xl animate-pulse blur-2xl opacity-75"></div>
+                <img
+                  src={winnerPhoto.image_url}
+                  alt={winnerPhoto.display_name}
+                  className="relative w-full h-full object-cover rounded-3xl border-8 border-white shadow-2xl"
+                  onError={(e) => {
+                    e.currentTarget.src = '/default-avatar.png'
+                  }}
+                />
+              </div>
             </div>
-          ))}
-        </div>
-      )}
+          )
+        })()}
 
-      {/* 標題 */}
-      <div className="text-center mb-8 z-10">
-        <h1 className={`text-6xl font-bold text-white mb-4 ${isAnimating ? 'animate-pulse' : ''}`}>
-          {isAnimating ? '🎰 抽獎中 🎰' : (currentDraw ? '🎉 恭喜中獎 🎉' : '📸 照片摸彩 📸')}
-        </h1>
-        <p className="text-2xl text-white opacity-90">
-          參與照片數：{photos.length} 張
-        </p>
-      </div>
+        {/* 中獎照片放大特寫 - 左右分欄布局 */}
+        {!isAnimating && showingWinner && !zoomingWinner && winnerPhoto && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm animate-in fade-in duration-500">
+            <div className="flex items-center justify-center gap-12 px-8" style={{ width: `${DESIGN_WIDTH}px`, height: `${DESIGN_HEIGHT}px` }}>
+              {/* 左側：中獎照片 */}
+              <div className="relative flex-shrink-0 animate-in zoom-in duration-500">
+                <div className="absolute -inset-6 bg-gradient-to-r from-yellow-400 via-orange-400 to-pink-400 rounded-3xl animate-pulse blur-2xl opacity-75"></div>
+                <img
+                  src={winnerPhoto.image_url}
+                  alt={winnerPhoto.display_name}
+                  className="relative w-[900px] h-[900px] object-cover rounded-3xl border-8 border-white shadow-2xl"
+                  onError={(e) => {
+                    e.currentTarget.src = '/default-avatar.png'
+                  }}
+                />
+              </div>
 
-      {/* 照片 Grid 顯示 */}
-      <div className={`relative z-10 px-10 transition-opacity duration-1000 ${showingWinner || zoomingWinner ? 'opacity-0' : 'opacity-100'}`}>
-        <div 
-          className="grid gap-5 justify-center items-center"
-          style={{
-            gridTemplateColumns: `repeat(${gridLayout.cols}, ${gridLayout.size}px)`
-          }}
-        >
-          {photos.map((photo, index) => {
-            const isWinner = highlightedIndex === index && !isAnimating
-            
-            return (
-              <div
-                key={photo.id}
-                ref={isWinner ? winnerPhotoRef : null}
-                className="relative"
-                style={{
-                  width: `${gridLayout.size}px`,
-                  height: `${gridLayout.size}px`
-                }}
-              >
-                {/* 照片 */}
-                <div className={`
-                  relative w-full h-full bg-white rounded-2xl shadow-xl overflow-hidden
-                  transition-all duration-150 ease-out
-                  ${highlightedIndex === index 
-                    ? 'ring-8 ring-yellow-400 scale-110 z-20' 
-                    : 'scale-100'
-                  }
-                  ${isWinner
-                    ? 'ring-green-400 scale-110 !duration-500' 
-                    : ''
-                  }
-                `}>
-                  <img
-                    src={photo.image_url}
-                    alt={photo.display_name}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.currentTarget.src = '/default-avatar.png'
-                    }}
-                  />
-                  
-                  {/* 照片資訊 */}
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
-                    <div className="flex items-center space-x-2">
-                      <img
-                        src={photo.avatar_url || '/default-avatar.png'}
-                        alt={photo.display_name}
-                        className="w-8 h-8 rounded-full border-2 border-white"
-                      />
-                      <span className="text-white text-sm font-medium truncate">
-                        {photo.display_name}
-                      </span>
+              {/* 右側：恭喜文字 + 資訊卡片 */}
+              <div className="flex flex-col justify-center gap-8 flex-1 max-w-[880px]">
+                {/* 恭喜文字 */}
+                <div className="text-center animate-in slide-in-from-right duration-500">
+                  <h1 className="text-8xl font-bold text-white drop-shadow-2xl animate-pulse leading-tight mb-4">
+                    🎉 恭喜中獎 🎉
+                  </h1>
+                </div>
+
+                {/* 中獎者資訊卡片 */}
+                <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl p-10 animate-in slide-in-from-right duration-500 delay-150">
+                  <div className="flex items-center gap-8 mb-8">
+                    <img
+                      src={winnerPhoto.avatar_url || '/default-avatar.png'}
+                      alt={winnerPhoto.display_name}
+                      className="w-32 h-32 rounded-full border-8 border-green-400 shadow-lg flex-shrink-0"
+                    />
+                    <div className="flex items-center gap-4 flex-1 min-w-0">
+                      <Gift className="w-12 h-12 text-green-500 flex-shrink-0" />
+                      <h2 className="text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-500 to-emerald-500 break-words leading-tight">
+                        {winnerPhoto.display_name}
+                      </h2>
                     </div>
                   </div>
 
-                {/* 動畫中的高亮框 */}
-                {highlightedIndex === index && (
-                  <div className={`
-                    absolute inset-0 
-                    ${isAnimating ? 'bg-yellow-400/40' : 'bg-green-400/40'}
-                    pointer-events-none
-                    transition-colors duration-150
-                    ${isAnimating ? 'animate-pulse' : ''}
-                  `} />
-                )}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      </div>
-
-      {/* 中獎照片放大動畫 - 從原位置放大到左側900x900位置 */}
-      {!isAnimating && zoomingWinner && winnerPhoto && winnerPhotoRect && (() => {
-        // 目標尺寸（左側大照片）
-        const targetSize = 900
-        
-        // 計算目標位置（左側照片的中心位置）
-        // 設計尺寸: 1920x1080, padding: 32px
-        // 左側照片位置: 32px + 900px/2 = 482px (從設計稿左側算)
-        const designLeftPhotoCenter = 32 + targetSize / 2  // 482px
-        
-        // 考慮縮放比例，計算實際螢幕上的位置
-        const screenCenterY = window.innerHeight / 2
-        
-        // 計算左側照片在實際螢幕上的中心 X 位置
-        // 使用 scale 來計算實際位置
-        const scaledDesignWidth = DESIGN_WIDTH * scale
-        const screenOffsetX = (window.innerWidth - scaledDesignWidth) / 2
-        const targetCenterX = screenOffsetX + designLeftPhotoCenter * scale
-        
-        // 計算當前照片的中心位置
-        const currentCenterX = winnerPhotoRect.left + winnerPhotoRect.width / 2
-        const currentCenterY = winnerPhotoRect.top + winnerPhotoRect.height / 2
-        
-        // 計算需要移動的距離
-        const translateX = targetCenterX - currentCenterX
-        const translateY = screenCenterY - currentCenterY
-        
-        // 計算縮放比例
-        const scaleFactor = (targetSize * scale) / winnerPhotoRect.width
-        
-        console.log('🎬 放大動畫參數:', {
-          targetSize,
-          scale,
-          targetCenterX,
-          currentCenterX,
-          translateX,
-          translateY,
-          scaleFactor
-        })
-        
-        return (
-          <div 
-            className="fixed z-50 pointer-events-none"
-            style={{
-              left: `${winnerPhotoRect.left}px`,
-              top: `${winnerPhotoRect.top}px`,
-              width: `${winnerPhotoRect.width}px`,
-              height: `${winnerPhotoRect.height}px`,
-              '--translate-x': `${translateX}px`,
-              '--translate-y': `${translateY}px`,
-              '--scale-factor': scaleFactor,
-              animation: 'zoomToCenter 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards'
-            } as React.CSSProperties}
-          >
-            <div className="relative w-full h-full">
-              <div className="absolute -inset-6 bg-gradient-to-r from-yellow-400 via-orange-400 to-pink-400 rounded-3xl animate-pulse blur-2xl opacity-75"></div>
-              <img
-                src={winnerPhoto.image_url}
-                alt={winnerPhoto.display_name}
-                className="relative w-full h-full object-cover rounded-3xl border-8 border-white shadow-2xl"
-                onError={(e) => {
-                  e.currentTarget.src = '/default-avatar.png'
-                }}
-              />
-            </div>
-          </div>
-        )
-      })()}
-
-      {/* 中獎照片放大特寫 - 左右分欄布局 */}
-      {!isAnimating && showingWinner && !zoomingWinner && winnerPhoto && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm animate-in fade-in duration-500">
-          <div className="flex items-center justify-center gap-12 px-8" style={{ width: `${DESIGN_WIDTH}px`, height: `${DESIGN_HEIGHT}px` }}>
-            {/* 左側：中獎照片 */}
-            <div className="relative flex-shrink-0 animate-in zoom-in duration-500">
-              <div className="absolute -inset-6 bg-gradient-to-r from-yellow-400 via-orange-400 to-pink-400 rounded-3xl animate-pulse blur-2xl opacity-75"></div>
-              <img
-                src={winnerPhoto.image_url}
-                alt={winnerPhoto.display_name}
-                className="relative w-[900px] h-[900px] object-cover rounded-3xl border-8 border-white shadow-2xl"
-                onError={(e) => {
-                  e.currentTarget.src = '/default-avatar.png'
-                }}
-              />
-            </div>
-
-            {/* 右側：恭喜文字 + 資訊卡片 */}
-            <div className="flex flex-col justify-center gap-8 flex-1 max-w-[880px]">
-              {/* 恭喜文字 */}
-              <div className="text-center animate-in slide-in-from-right duration-500">
-                <h1 className="text-8xl font-bold text-white drop-shadow-2xl animate-pulse leading-tight mb-4">
-                  🎉 恭喜中獎 🎉
-                </h1>
-              </div>
-
-              {/* 中獎者資訊卡片 */}
-              <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl p-10 animate-in slide-in-from-right duration-500 delay-150">
-                <div className="flex items-center gap-8 mb-8">
-                  <img
-                    src={winnerPhoto.avatar_url || '/default-avatar.png'}
-                    alt={winnerPhoto.display_name}
-                    className="w-32 h-32 rounded-full border-8 border-green-400 shadow-lg flex-shrink-0"
-                  />
-                  <div className="flex items-center gap-4 flex-1 min-w-0">
-                    <Gift className="w-12 h-12 text-green-500 flex-shrink-0" />
-                    <h2 className="text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-500 to-emerald-500 break-words leading-tight">
-                      {winnerPhoto.display_name}
-                    </h2>
-                  </div>
-                </div>
-                
-                {winnerPhoto.blessing_message && (
-                  <div className="flex items-start gap-4">
-                    <Heart className="w-10 h-10 text-red-500 mt-1 flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-3xl text-gray-700 italic leading-relaxed break-words whitespace-pre-wrap max-h-[400px] overflow-y-auto pr-3">
-                        「{winnerPhoto.blessing_message}」
-                      </p>
+                  {winnerPhoto.blessing_message && (
+                    <div className="flex items-start gap-4">
+                      <Heart className="w-10 h-10 text-red-500 mt-1 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-3xl text-gray-700 italic leading-relaxed break-words whitespace-pre-wrap max-h-[400px] overflow-y-auto pr-3">
+                          「{winnerPhoto.blessing_message}」
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
       </div>
     </div>
   )
