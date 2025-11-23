@@ -18,7 +18,7 @@ export default function ThumbnailsPage() {
   const [refreshing, setRefreshing] = useState(false)
   const [batchRefreshing, setBatchRefreshing] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
-  
+
   const supabase = createSupabaseBrowser()
 
   // 獲取縮圖統計
@@ -29,11 +29,12 @@ export default function ThumbnailsPage() {
           'Authorization': `Bearer ${process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'admin'}`
         }
       })
-      
+
       if (!response.ok) {
-        throw new Error('獲取統計資訊失敗')
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.details || errorData.error || '獲取統計資訊失敗')
       }
-      
+
       const result = await response.json()
       if (result.success) {
         setStats(result.data)
@@ -70,14 +71,15 @@ export default function ThumbnailsPage() {
       })
 
       if (!response.ok) {
-        throw new Error('批量更新失敗')
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.details || errorData.error || '批量更新失敗')
       }
 
       const result = await response.json()
       if (result.success) {
-        setMessage({ 
-          type: 'success', 
-          text: `批量更新完成！成功: ${result.data.successCount}, 失敗: ${result.data.errorCount}` 
+        setMessage({
+          type: 'success',
+          text: `批量更新完成！成功: ${result.data.successCount}, 失敗: ${result.data.errorCount}`
         })
         await fetchStats() // 重新獲取統計
       } else {
@@ -196,11 +198,10 @@ export default function ThumbnailsPage() {
 
         {/* 訊息顯示 */}
         {message && (
-          <div className={`rounded-xl p-4 flex items-center space-x-3 ${
-            message.type === 'success' 
-              ? 'bg-green-50 border-2 border-green-200 text-green-800' 
+          <div className={`rounded-xl p-4 flex items-center space-x-3 ${message.type === 'success'
+              ? 'bg-green-50 border-2 border-green-200 text-green-800'
               : 'bg-red-50 border-2 border-red-200 text-red-800'
-          }`}>
+            }`}>
             {message.type === 'success' ? (
               <CheckCircle className="w-6 h-6 flex-shrink-0" />
             ) : (
