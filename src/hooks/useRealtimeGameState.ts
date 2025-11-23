@@ -12,6 +12,7 @@ interface GameState {
   qr_code_url: string | null
   created_at: string
   updated_at: string
+  question_display_duration?: number
 }
 
 export function useRealtimeGameState() {
@@ -19,13 +20,13 @@ export function useRealtimeGameState() {
   const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  
+
   const supabase = createSupabaseBrowser()
 
   const fetchGameState = useCallback(async () => {
     try {
       setError(null)
-      
+
       // 獲取遊戲狀態
       const { data: gameData, error: gameError } = await supabase
         .from('game_state')
@@ -60,10 +61,10 @@ export function useRealtimeGameState() {
   const calculateTimeLeft = useCallback((): number => {
     // 如果在等待階段或沒有當前題目，返回 0
     // 兼容舊表格結構：如果沒有 is_waiting_for_players 欄位，檢查 current_question_id 是否為 null
-    const isWaitingForPlayers = gameState?.is_waiting_for_players !== undefined 
-      ? gameState.is_waiting_for_players 
+    const isWaitingForPlayers = gameState?.is_waiting_for_players !== undefined
+      ? gameState.is_waiting_for_players
       : !gameState?.current_question_id;
-      
+
     if (isWaitingForPlayers || !gameState?.question_start_time || !currentQuestion || gameState.is_paused) {
       return 0
     }
@@ -73,7 +74,7 @@ export function useRealtimeGameState() {
     const elapsedMs = now - startTime
     const totalTimeMs = currentQuestion.time_limit * 1000
     const remainingMs = Math.max(0, totalTimeMs - elapsedMs)
-    
+
     // 返回毫秒數，讓調用者決定如何顯示
     return remainingMs
   }, [gameState, currentQuestion])

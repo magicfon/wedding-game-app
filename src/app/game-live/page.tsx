@@ -87,9 +87,12 @@ export default function GameLivePage() {
     setDisplayPhase('question')
 
     // 根據媒體類型設定切換時間
-    let switchDelay = 3000 // 預設3秒（圖片或純文字）
+    let switchDelay = 3000 // 預設3秒
 
-    if (currentQuestion.media_type === 'video' && currentQuestion.media_duration) {
+    // 優先使用後台設定的顯示時間 (如果是圖片或純文字)
+    if (currentQuestion.media_type !== 'video' && gameState.question_display_duration) {
+      switchDelay = gameState.question_display_duration * 1000
+    } else if (currentQuestion.media_type === 'video' && currentQuestion.media_duration) {
       // 如果有影片長度資訊，使用影片長度
       switchDelay = currentQuestion.media_duration * 1000
     } else if (currentQuestion.media_type === 'video') {
@@ -110,7 +113,7 @@ export default function GameLivePage() {
         clearTimeout(timer)
       }
     }
-  }, [currentQuestion?.id, gameState?.is_game_active, gameState?.is_paused])
+  }, [currentQuestion?.id, gameState?.is_game_active, gameState?.is_paused, gameState?.question_display_duration])
 
   // 遊戲開始音效
   useEffect(() => {

@@ -30,6 +30,7 @@ export interface GameState {
   time_remaining: number;
   created_at: string;
   updated_at: string;
+  question_display_duration?: number;
 }
 
 export interface UseGameStateReturn {
@@ -38,6 +39,7 @@ export interface UseGameStateReturn {
   error: string | null;
   refreshGameState: () => Promise<void>;
   controlGame: (action: string, questionId?: number) => Promise<boolean>;
+  updateSettings: (settings: { question_display_duration?: number }) => Promise<boolean>;
   timeRemaining: number;
   isGameActive: boolean;
   isPaused: boolean;
@@ -111,6 +113,42 @@ export function useGameState(adminLineId?: string) {
     }
   }, [adminLineId, refreshGameState]);
 
+  // 更新遊戲設定
+  const updateSettings = useCallback(async (settings: { question_display_duration?: number }) => {
+    if (!adminLineId) {
+      setError('需要管理員權限');
+      return false;
+    }
+
+    try {
+      const response = await fetch('/api/game/control', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'update_settings',
+          adminLineId,
+          settings
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        await refreshGameState();
+        return true;
+      } else {
+        setError(data.error || '設定更新失敗');
+        return false;
+      }
+    } catch (err) {
+      console.error('設定更新錯誤:', err);
+      setError('網路錯誤');
+      return false;
+    }
+  }, [adminLineId, refreshGameState]);
+
   // 倒數計時器
   useEffect(() => {
     if (!gameState?.is_game_active || gameState?.is_paused || !gameState?.questions) {
@@ -121,7 +159,7 @@ export function useGameState(adminLineId?: string) {
     // 計算初始剩餘時間
     const calculateTimeRemaining = () => {
       if (!gameState.question_start_time || !gameState.questions) return 0;
-      
+
       const startTime = new Date(gameState.question_start_time).getTime();
       const currentTime = new Date().getTime();
       const elapsed = Math.floor((currentTime - startTime) / 1000);
@@ -187,6 +225,7 @@ export function useGameState(adminLineId?: string) {
     error,
     refreshGameState,
     controlGame,
+    updateSettings,
     timeRemaining,
     isGameActive: gameState?.is_game_active || false,
     isPaused: gameState?.is_paused || false,

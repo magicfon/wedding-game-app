@@ -4,7 +4,7 @@ import { createSupabaseAdmin } from '@/lib/supabase-admin';
 // 遊戲控制 API - 開始/暫停/下一題/重置遊戲
 export async function POST(request: Request) {
   try {
-    const { action, questionId, adminLineId } = await request.json();
+    const { action, questionId, adminLineId, settings } = await request.json();
     const supabase = createSupabaseAdmin();
 
     // 驗證管理員身份
@@ -346,6 +346,29 @@ export async function POST(request: Request) {
           cleared_score_adjustments: true,
           reset_user_scores: true
         };
+        break;
+
+      case 'update_settings':
+        // 更新遊戲設定
+        if (!settings) {
+          return NextResponse.json({ error: '必須提供設定資料' }, { status: 400 });
+        }
+
+        const settingsUpdateData: any = {
+          updated_at: new Date().toISOString()
+        };
+
+        // 只更新允許的欄位
+        if (typeof settings.question_display_duration === 'number') {
+          settingsUpdateData.question_display_duration = settings.question_display_duration;
+        }
+
+        result = await supabase
+          .from('game_state')
+          .update(settingsUpdateData)
+          .eq('id', 1);
+
+        actionDetails = { settings_updated: true, updated_fields: Object.keys(settingsUpdateData) };
         break;
 
       default:
