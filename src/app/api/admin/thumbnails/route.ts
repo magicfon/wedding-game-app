@@ -2,14 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseAdmin } from '@/lib/supabase-server'
 
 // 管理員密碼驗證
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'default-admin-password'
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin'
 
 function verifyAdmin(request: NextRequest): boolean {
   const authHeader = request.headers.get('Authorization')
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return false
   }
-  
+
   const token = authHeader.substring(7)
   return token === ADMIN_PASSWORD
 }
@@ -24,16 +24,16 @@ export async function POST(request: NextRequest) {
   try {
     // 驗證管理員權限
     if (!verifyAdmin(request)) {
-      return NextResponse.json({ 
-        error: '未授權存取' 
+      return NextResponse.json({
+        error: '未授權存取'
       }, { status: 401 })
     }
 
     const { photoId, action } = await request.json()
 
     if (!photoId || !action) {
-      return NextResponse.json({ 
-        error: '缺少必要參數' 
+      return NextResponse.json({
+        error: '缺少必要參數'
       }, { status: 400 })
     }
 
@@ -48,9 +48,9 @@ export async function POST(request: NextRequest) {
         .single()
 
       if (fetchError) {
-        return NextResponse.json({ 
+        return NextResponse.json({
           error: '找不到指定照片',
-          details: fetchError.message 
+          details: fetchError.message
         }, { status: 404 })
       }
 
@@ -72,9 +72,9 @@ export async function POST(request: NextRequest) {
         .single()
 
       if (updateError) {
-        return NextResponse.json({ 
+        return NextResponse.json({
           error: '更新縮圖 URL 失敗',
-          details: updateError.message 
+          details: updateError.message
         }, { status: 500 })
       }
 
@@ -98,9 +98,9 @@ export async function POST(request: NextRequest) {
         .not('image_url', 'is', null)
 
       if (fetchError) {
-        return NextResponse.json({ 
+        return NextResponse.json({
           error: '獲取照片列表失敗',
-          details: fetchError.message 
+          details: fetchError.message
         }, { status: 500 })
       }
 
@@ -156,14 +156,14 @@ export async function POST(request: NextRequest) {
       })
 
     } else {
-      return NextResponse.json({ 
-        error: '不支援的操作' 
+      return NextResponse.json({
+        error: '不支援的操作'
       }, { status: 400 })
     }
 
   } catch (error) {
     console.error('❌ 縮圖管理錯誤:', error)
-    return NextResponse.json({ 
+    return NextResponse.json({
       error: '伺服器錯誤',
       details: error instanceof Error ? error.message : '未知錯誤'
     }, { status: 500 })
@@ -174,8 +174,8 @@ export async function GET(request: NextRequest) {
   try {
     // 驗證管理員權限
     if (!verifyAdmin(request)) {
-      return NextResponse.json({ 
-        error: '未授權存取' 
+      return NextResponse.json({
+        error: '未授權存取'
       }, { status: 401 })
     }
 
@@ -188,9 +188,9 @@ export async function GET(request: NextRequest) {
       .not('image_url', 'is', null)
 
     if (statsError) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: '獲取統計資訊失敗',
-        details: statsError.message 
+        details: statsError.message
       }, { status: 500 })
     }
 
@@ -210,7 +210,7 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('❌ 獲取縮圖統計錯誤:', error)
-    return NextResponse.json({ 
+    return NextResponse.json({
       error: '伺服器錯誤',
       details: error instanceof Error ? error.message : '未知錯誤'
     }, { status: 500 })
