@@ -300,7 +300,7 @@ export default function LotteryLivePage() {
         },
         (payload) => {
           console.log('抽獎狀態更新:', payload)
-          fetchLotteryState()
+          fetchLotteryState(true)
         }
       )
       .on(
@@ -322,7 +322,7 @@ export default function LotteryLivePage() {
     }
   }, [supabase])
 
-  const fetchLotteryState = async () => {
+  const fetchLotteryState = async (fromRealtime = false) => {
     try {
       const response = await fetch('/api/lottery/control')
       const data = await response.json()
@@ -330,6 +330,7 @@ export default function LotteryLivePage() {
       const latestCurrentDraw = currentDrawRef.current
 
       console.log('📡 fetchLotteryState:', {
+        fromRealtime,
         current_draw_id: data.state?.current_draw_id,
         latestCurrentDraw_id: latestCurrentDraw?.id || null,
         has_current_draw: !!data.current_draw,
@@ -351,6 +352,13 @@ export default function LotteryLivePage() {
         // 注意：不在這裡調用 startCelebration()
         // 慶祝效果只應該在動畫結束時觸發（由 animateSelection 控制）
         if (data.current_draw && data.current_draw.id !== latestCurrentDraw?.id) {
+          // 如果是 Realtime 觸發的更新，且是新的抽獎，則忽略（交給 handleNewDraw 處理）
+          // 避免 "恭喜中獎" -> "抽獎中" 的閃爍
+          if (fromRealtime) {
+            console.log('⚠️ Realtime 觸發的新抽獎更新，忽略（交給 handleNewDraw）')
+            return
+          }
+
           console.log('📝 更新 currentDraw:', data.current_draw)
           setCurrentDraw(data.current_draw)
         }
@@ -410,6 +418,10 @@ export default function LotteryLivePage() {
   const handleNewDraw = async (newDraw: CurrentDraw) => {
     // 先重置所有狀態
     resetToInitialState()
+
+    // 立即設置為動畫狀態，避免標題閃爍 ("恭喜中獎" -> "照片摸彩" -> "抽獎中")
+    // 這樣會直接從 "恭喜中獎" (如果有) -> "抽獎中"
+    setIsAnimating(true)
 
     setCurrentDraw(newDraw)
 
