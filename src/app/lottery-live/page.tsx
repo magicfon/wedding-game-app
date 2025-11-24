@@ -3,6 +3,9 @@
 import { useState, useEffect, useRef, memo, useMemo } from 'react'
 import { createSupabaseBrowser } from '@/lib/supabase'
 import { Gift, Sparkles, Heart } from 'lucide-react'
+import { SoundToggle } from '@/components/SoundToggle'
+import { useSoundEffects } from '@/hooks/useSoundEffects'
+import { useBackgroundMusic } from '@/hooks/useBackgroundMusic'
 
 interface LotteryState {
   is_lottery_active: boolean
@@ -248,6 +251,31 @@ export default function LotteryLivePage() {
   const [winnerPhotoRect, setWinnerPhotoRect] = useState<DOMRect | null>(null) // 中獎照片原始位置
   const [scale, setScale] = useState(1)
   const [highlightedIndex, setHighlightedIndex] = useState(-1)
+
+  // 音效控制
+  const { isSoundEnabled, toggleSound } = useSoundEffects()
+  const { tryPlay } = useBackgroundMusic({
+    url: '/sounds/lottery_background.mp3',
+    enabled: isSoundEnabled,
+    volume: 0.2
+  })
+
+  // 處理用戶交互以啟用音效
+  useEffect(() => {
+    const handleInteraction = () => {
+      tryPlay()
+      window.removeEventListener('click', handleInteraction)
+      window.removeEventListener('keydown', handleInteraction)
+    }
+
+    window.addEventListener('click', handleInteraction)
+    window.addEventListener('keydown', handleInteraction)
+
+    return () => {
+      window.removeEventListener('click', handleInteraction)
+      window.removeEventListener('keydown', handleInteraction)
+    }
+  }, [tryPlay])
 
   const animationFrameRef = useRef<number | null>(null)
   const winnerPhotoRef = useRef<HTMLDivElement>(null) // 中獎照片的 ref
@@ -695,6 +723,11 @@ export default function LotteryLivePage() {
 
         {/* 慶祝動畫（停止後） */}
         {celebrating && !isAnimating && <Confetti />}
+
+        {/* 音效開關 */}
+        <div className="absolute top-8 right-8 z-50">
+          <SoundToggle isEnabled={isSoundEnabled} onToggle={toggleSound} />
+        </div>
 
         {/* 標題 */}
         <div className="text-center mb-8 z-10">
