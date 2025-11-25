@@ -12,8 +12,8 @@ export async function GET(request: NextRequest) {
       // 獲取用戶分數排行榜
       const { data, error } = await supabase
         .from('users')
-        .select('line_id, display_name, avatar_url, total_score, join_time')
-        .order('total_score', { ascending: false })
+        .select('line_id, display_name, avatar_url, quiz_score, join_time')
+        .order('quiz_score', { ascending: false })
 
       if (error) throw error
       return NextResponse.json({ users: data })
@@ -54,27 +54,27 @@ export async function POST(request: NextRequest) {
   try {
     const supabase = await createSupabaseServer()
     const body = await request.json()
-    
+
     const { user_line_id, adjustment_score, reason, admin_id } = body
 
     // 驗證必要欄位
     if (!user_line_id || adjustment_score === undefined || !reason) {
-      return NextResponse.json({ 
-        error: '缺少必要參數：user_line_id, adjustment_score, reason' 
+      return NextResponse.json({
+        error: '缺少必要參數：user_line_id, adjustment_score, reason'
       }, { status: 400 })
     }
 
     // 驗證分數調整範圍（防止惡意操作）
     if (Math.abs(adjustment_score) > 1000) {
-      return NextResponse.json({ 
-        error: '單次調整分數不能超過 ±1000' 
+      return NextResponse.json({
+        error: '單次調整分數不能超過 ±1000'
       }, { status: 400 })
     }
 
     // 檢查用戶是否存在
     const { data: user, error: userError } = await supabase
       .from('users')
-      .select('line_id, display_name, total_score')
+      .select('line_id, display_name, quiz_score')
       .eq('line_id', user_line_id)
       .single()
 
@@ -83,10 +83,10 @@ export async function POST(request: NextRequest) {
     }
 
     // 檢查調整後分數是否會變成負數
-    const newScore = user.total_score + adjustment_score
+    const newScore = user.quiz_score + adjustment_score
     if (newScore < 0) {
-      return NextResponse.json({ 
-        error: `調整後分數不能為負數。目前分數: ${user.total_score}，調整分數: ${adjustment_score}` 
+      return NextResponse.json({
+        error: `調整後分數不能為負數。目前分數: ${user.quiz_score}，調整分數: ${adjustment_score}`
       }, { status: 400 })
     }
 
@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
     // 獲取更新後的用戶分數
     const { data: updatedUser, error: updatedUserError } = await supabase
       .from('users')
-      .select('line_id, display_name, total_score')
+      .select('line_id, display_name, quiz_score')
       .eq('line_id', user_line_id)
       .single()
 
@@ -119,13 +119,13 @@ export async function POST(request: NextRequest) {
       adjustment,
       user: {
         ...user,
-        old_score: user.total_score,
-        new_score: updatedUser.total_score
+        old_score: user.quiz_score,
+        new_score: updatedUser.quiz_score
       }
     })
   } catch (error) {
     console.error('Error in scores POST:', error)
-    return NextResponse.json({ 
+    return NextResponse.json({
       error: '分數調整失敗',
       details: error instanceof Error ? error.message : '未知錯誤'
     }, { status: 500 })
@@ -137,26 +137,26 @@ export async function PATCH(request: NextRequest) {
   try {
     const supabase = await createSupabaseServer()
     const body = await request.json()
-    
+
     const { adjustments, admin_id } = body
 
     if (!Array.isArray(adjustments) || adjustments.length === 0) {
-      return NextResponse.json({ 
-        error: '批量調整需要提供調整列表' 
+      return NextResponse.json({
+        error: '批量調整需要提供調整列表'
       }, { status: 400 })
     }
 
     // 驗證每個調整項目
     for (const adj of adjustments) {
       if (!adj.user_line_id || adj.adjustment_score === undefined || !adj.reason) {
-        return NextResponse.json({ 
-          error: '每個調整項目都需要 user_line_id, adjustment_score, reason' 
+        return NextResponse.json({
+          error: '每個調整項目都需要 user_line_id, adjustment_score, reason'
         }, { status: 400 })
       }
 
       if (Math.abs(adj.adjustment_score) > 1000) {
-        return NextResponse.json({ 
-          error: `用戶 ${adj.user_line_id} 的調整分數超過限制 (±1000)` 
+        return NextResponse.json({
+          error: `用戶 ${adj.user_line_id} 的調整分數超過限制 (±1000)`
         }, { status: 400 })
       }
     }
@@ -170,7 +170,7 @@ export async function PATCH(request: NextRequest) {
         // 檢查用戶是否存在
         const { data: user, error: userError } = await supabase
           .from('users')
-          .select('line_id, display_name, total_score')
+          .select('line_id, display_name, quiz_score')
           .eq('line_id', adj.user_line_id)
           .single()
 
@@ -180,7 +180,7 @@ export async function PATCH(request: NextRequest) {
         }
 
         // 檢查調整後分數
-        const newScore = user.total_score + adj.adjustment_score
+        const newScore = user.quiz_score + adj.adjustment_score
         if (newScore < 0) {
           errors.push(`用戶 ${user.display_name} 調整後分數會變成負數`)
           continue
@@ -204,8 +204,8 @@ export async function PATCH(request: NextRequest) {
           user_line_id: adj.user_line_id,
           display_name: user.display_name,
           adjustment_score: adj.adjustment_score,
-          old_score: user.total_score,
-          new_score: user.total_score + adj.adjustment_score
+          old_score: user.quiz_score,
+          new_score: user.quiz_score + adj.adjustment_score
         })
       } catch (error) {
         errors.push(`處理用戶 ${adj.user_line_id} 時發生錯誤: ${error instanceof Error ? error.message : '未知錯誤'}`)
@@ -220,7 +220,7 @@ export async function PATCH(request: NextRequest) {
     })
   } catch (error) {
     console.error('Error in scores PATCH:', error)
-    return NextResponse.json({ 
+    return NextResponse.json({
       error: '批量調整失敗',
       details: error instanceof Error ? error.message : '未知錯誤'
     }, { status: 500 })
