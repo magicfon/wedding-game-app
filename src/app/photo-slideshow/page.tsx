@@ -138,9 +138,9 @@ export default function PhotoSlideshowPage() {
         </div>
 
         {/* 票數顯示 - 右上角 */}
-        <div className="absolute top-6 right-6 bg-black/70 text-white px-5 py-3 rounded-lg flex items-center space-x-2 backdrop-blur-sm">
-          <Heart className="w-6 h-6 text-red-400" />
-          <span className="font-bold text-2xl">{currentPhoto.vote_count}</span>
+        <div className="absolute top-6 right-6 bg-black/70 text-white px-8 py-4 rounded-xl flex items-center space-x-4 backdrop-blur-sm">
+          <Heart className="w-12 h-12 text-red-500 fill-red-500 animate-pulse" />
+          <span className="font-bold text-6xl drop-shadow-lg">{currentPhoto.vote_count}</span>
         </div>
 
         {/* 控制按鈕組 - 右下角 */}
