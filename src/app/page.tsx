@@ -6,6 +6,8 @@ import { createSupabaseBrowser } from '@/lib/supabase'
 import { useLiff } from '@/hooks/useLiff'
 import { Heart, Users, Trophy, Camera, HelpCircle, Play, Shield } from 'lucide-react'
 
+import { useOnlinePresence } from '@/hooks/useOnlinePresence'
+
 export default function Home() {
   const [user, setUser] = useState<{
     id: string
@@ -17,6 +19,7 @@ export default function Home() {
   const router = useRouter()
   const supabase = createSupabaseBrowser()
   const { isReady, isInLiff, isLoggedIn, profile, login, loading: liffLoading, isAdmin, adminInfo } = useLiff()
+  const onlineCount = useOnlinePresence()
 
   useEffect(() => {
     const getUser = async () => {
@@ -111,7 +114,7 @@ export default function Home() {
             </div>
             <div className="flex items-center space-x-2">
               <Users className="w-5 h-5 text-gray-600" />
-              <span className="text-sm text-gray-600">在線賓客</span>
+              <span className="text-sm text-gray-600">在線賓客: {onlineCount}</span>
             </div>
           </div>
         </div>
@@ -174,23 +177,23 @@ export default function Home() {
               ))}
             </div>
 
-                    {/* Admin Access - 只對管理員顯示 */}
-                    {isAdmin && (
-                      <div className="mt-8 text-center">
-                        <button
-                          onClick={() => router.push('/admin/dashboard')}
-                          className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all duration-200 shadow-lg font-medium"
-                        >
-                          <Shield className="w-4 h-4 mr-2" />
-                          管理員控制台
-                          {adminInfo && (
-                            <span className="ml-2 text-xs bg-white/20 px-2 py-1 rounded">
-                              {adminInfo.displayName}
-                            </span>
-                          )}
-                        </button>
-                      </div>
-                    )}
+            {/* Admin Access - 只對管理員顯示 */}
+            {isAdmin && (
+              <div className="mt-8 text-center">
+                <button
+                  onClick={() => router.push('/admin/dashboard')}
+                  className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all duration-200 shadow-lg font-medium"
+                >
+                  <Shield className="w-4 h-4 mr-2" />
+                  管理員控制台
+                  {adminInfo && (
+                    <span className="ml-2 text-xs bg-white/20 px-2 py-1 rounded">
+                      {adminInfo.displayName}
+                    </span>
+                  )}
+                </button>
+              </div>
+            )}
 
           </div>
         )}
