@@ -22,8 +22,8 @@ export default function PhotoSlideshowPage() {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isPlaying, setIsPlaying] = useState(true)
   const [loading, setLoading] = useState(true)
-  const [position, setPosition] = useState({ x: 50, y: 50 }) // 百分比位置
-  const [velocity, setVelocity] = useState({ x: 0.3, y: 0.2 }) // 速度（百分比/幀）
+
+
   const supabase = createSupabaseBrowser()
 
   useEffect(() => {
@@ -77,45 +77,7 @@ export default function PhotoSlideshowPage() {
     return () => clearInterval(interval)
   }, [isPlaying, photos.length])
 
-  // 物理反彈動畫
-  useEffect(() => {
-    const animate = () => {
-      setPosition(prev => {
-        let newX = prev.x + velocity.x
-        let newY = prev.y + velocity.y
-        let newVelX = velocity.x
-        let newVelY = velocity.y
 
-        // 邊界檢測和反彈（考慮元素大小，預留 15% 空間）
-        if (newX <= 10) {
-          newX = 10
-          newVelX = Math.abs(velocity.x) // 向右反彈
-        } else if (newX >= 90) {
-          newX = 90
-          newVelX = -Math.abs(velocity.x) // 向左反彈
-        }
-
-        if (newY <= 15) {
-          newY = 15
-          newVelY = Math.abs(velocity.y) // 向下反彈
-        } else if (newY >= 85) {
-          newY = 85
-          newVelY = -Math.abs(velocity.y) // 向上反彈
-        }
-
-        // 更新速度
-        if (newVelX !== velocity.x || newVelY !== velocity.y) {
-          setVelocity({ x: newVelX, y: newVelY })
-        }
-
-        return { x: newX, y: newY }
-      })
-    }
-
-    const animationFrame = setInterval(animate, 1000 / 60) // 60 FPS
-
-    return () => clearInterval(animationFrame)
-  }, [velocity])
 
   const handlePrevious = () => {
     setCurrentIndex(prev => prev === 0 ? photos.length - 1 : prev - 1)
@@ -170,8 +132,8 @@ export default function PhotoSlideshowPage() {
           />
         </div>
 
-        {/* 計數器 - 左上角 */}
-        <div className="absolute top-6 left-6 bg-black/70 text-white px-4 py-2 rounded-lg flex items-center space-x-2 backdrop-blur-sm">
+        {/* 計數器 - 左下角 */}
+        <div className="absolute bottom-6 left-6 bg-black/70 text-white px-4 py-2 rounded-lg flex items-center space-x-2 backdrop-blur-sm">
           <span className="font-medium text-lg">{currentIndex + 1} / {photos.length}</span>
         </div>
 
@@ -190,7 +152,7 @@ export default function PhotoSlideshowPage() {
           >
             <ChevronLeft className="w-8 h-8 text-gray-700" />
           </button>
-          
+
           {/* 播放/暫停 */}
           <button
             onClick={() => setIsPlaying(!isPlaying)}
@@ -213,39 +175,30 @@ export default function PhotoSlideshowPage() {
 
         </div>
 
-        {/* 反彈移動的資訊卡片 */}
-        <div 
-          className="absolute pointer-events-none transition-none"
-          style={{
-            left: `${position.x}%`,
-            top: `${position.y}%`,
-            transform: 'translate(-50%, -50%)'
-          }}
-        >
-          <div className="w-96 text-center pointer-events-auto">
+        {/* 固定在左上角的資訊卡片 */}
+        <div className="absolute top-6 left-6 max-w-md">
+          <div className="flex flex-col items-start space-y-4">
             {/* 上傳者資訊 */}
-            <div className="flex flex-col items-center space-y-3 mb-6">
+            <div className="flex items-center space-x-4 bg-black/30 p-3 rounded-xl backdrop-blur-sm">
               <img
                 src={currentPhoto.uploader.avatar_url || '/default-avatar.png'}
                 alt="Avatar"
-                className="w-20 h-20 rounded-full ring-4 ring-white shadow-2xl"
+                className="w-16 h-16 rounded-full ring-2 ring-white shadow-lg"
               />
               <div>
-                <div className="flex items-center justify-center">
-                  <span className="text-3xl font-bold text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)]">
-                    {currentPhoto.uploader.display_name}
-                  </span>
-                </div>
-                <p className="text-base text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)] mt-2">
+                <span className="text-2xl font-bold text-white drop-shadow-md block">
+                  {currentPhoto.uploader.display_name}
+                </span>
+                <span className="text-sm text-gray-200 drop-shadow-md">
                   {new Date(currentPhoto.created_at).toLocaleString('zh-TW')}
-                </p>
+                </span>
               </div>
             </div>
 
             {/* 祝福訊息 */}
             {currentPhoto.blessing_message && (
-              <div className="text-center">
-                <p className="text-2xl text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)] leading-relaxed font-medium break-words">
+              <div className="bg-black/30 p-4 rounded-xl backdrop-blur-sm">
+                <p className="text-xl text-white drop-shadow-md leading-relaxed font-medium break-words">
                   {currentPhoto.blessing_message}
                 </p>
               </div>
