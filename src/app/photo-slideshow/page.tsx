@@ -22,7 +22,8 @@ export default function PhotoSlideshowPage() {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isPlaying, setIsPlaying] = useState(true)
   const [loading, setLoading] = useState(true)
-
+  const [opacity, setOpacity] = useState(1)
+  const [isTransitioning, setIsTransitioning] = useState(false)
 
   const supabase = createSupabaseBrowser()
 
@@ -66,27 +67,42 @@ export default function PhotoSlideshowPage() {
     }
   }, [supabase])
 
+  const changePhoto = (nextIndex: number) => {
+    if (isTransitioning) return
+
+    setIsTransitioning(true)
+    setOpacity(0)
+
+    setTimeout(() => {
+      setCurrentIndex(nextIndex)
+      setOpacity(1)
+
+      setTimeout(() => {
+        setIsTransitioning(false)
+      }, 500) // 等待淡入完成
+    }, 500) // 等待淡出完成
+  }
+
   // 自動播放
   useEffect(() => {
-    if (!isPlaying || photos.length === 0) return
+    if (!isPlaying || photos.length === 0 || isTransitioning) return
 
     const interval = setInterval(() => {
-      setCurrentIndex(prev => (prev + 1) % photos.length)
+      changePhoto((currentIndex + 1) % photos.length)
     }, 5000) // 每5秒切換
 
     return () => clearInterval(interval)
-  }, [isPlaying, photos.length])
-
-
+  }, [isPlaying, photos.length, currentIndex, isTransitioning])
 
   const handlePrevious = () => {
-    setCurrentIndex(prev => prev === 0 ? photos.length - 1 : prev - 1)
+    const nextIndex = currentIndex === 0 ? photos.length - 1 : currentIndex - 1
+    changePhoto(nextIndex)
   }
 
   const handleNext = () => {
-    setCurrentIndex(prev => (prev + 1) % photos.length)
+    const nextIndex = (currentIndex + 1) % photos.length
+    changePhoto(nextIndex)
   }
-
 
   if (loading) {
     return (
@@ -120,30 +136,68 @@ export default function PhotoSlideshowPage() {
     <div className="w-screen h-screen bg-black overflow-hidden">
       {/* 全螢幕照片展示區 */}
       <div className="relative w-full h-full">
-        {/* 照片 - 16:9 全螢幕 */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <img
-            src={currentPhoto.image_url}
-            alt="Wedding photo"
-            className="max-w-full max-h-full object-contain"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = 'https://via.placeholder.com/1920x1080/1a1a1a/9ca3af?text=照片載入中...'
-            }}
-          />
+
+        {/* 可淡入淡出的內容區塊 */}
+        <div
+          className="w-full h-full transition-opacity duration-500 ease-in-out"
+          style={{ opacity: opacity }}
+        >
+          {/* 照片 - 16:9 全螢幕 */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <img
+              src={currentPhoto.image_url}
+              alt="Wedding photo"
+              className="max-w-full max-h-full object-contain"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = 'https://via.placeholder.com/1920x1080/1a1a1a/9ca3af?text=照片載入中...'
+              }}
+            />
+          </div>
+
+          {/* 計數器 - 左下角 */}
+          <div className="absolute bottom-6 left-6 bg-black/70 text-white px-4 py-2 rounded-lg flex items-center space-x-2 backdrop-blur-sm">
+            <span className="font-medium text-lg">{currentIndex + 1} / {photos.length}</span>
+          </div>
+
+          {/* 票數顯示 - 右上角 */}
+          <div className="absolute top-6 right-6 bg-black/70 text-white px-8 py-4 rounded-xl flex items-center space-x-4 backdrop-blur-sm">
+            <Heart className="w-12 h-12 text-red-500 fill-red-500 animate-pulse" />
+            <span className="font-bold text-6xl drop-shadow-lg">{currentPhoto.vote_count}</span>
+          </div>
+
+          {/* 固定在左上角的資訊卡片 */}
+          <div className="absolute top-6 left-6 max-w-md">
+            <div className="flex flex-col items-start space-y-4">
+              {/* 上傳者資訊 */}
+              <div className="flex items-center space-x-4 bg-black/30 p-3 rounded-xl backdrop-blur-sm">
+                <img
+                  src={currentPhoto.uploader.avatar_url || '/default-avatar.png'}
+                  alt="Avatar"
+                  className="w-16 h-16 rounded-full ring-2 ring-white shadow-lg"
+                />
+                <div>
+                  <span className="text-2xl font-bold text-white drop-shadow-md block">
+                    {currentPhoto.uploader.display_name}
+                  </span>
+                  <span className="text-sm text-gray-200 drop-shadow-md">
+                    {new Date(currentPhoto.created_at).toLocaleString('zh-TW')}
+                  </span>
+                </div>
+              </div>
+
+              {/* 祝福訊息 */}
+              {currentPhoto.blessing_message && (
+                <div className="bg-black/30 p-4 rounded-xl backdrop-blur-sm">
+                  <p className="text-xl text-white drop-shadow-md leading-relaxed font-medium break-words">
+                    {currentPhoto.blessing_message}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
-        {/* 計數器 - 左下角 */}
-        <div className="absolute bottom-6 left-6 bg-black/70 text-white px-4 py-2 rounded-lg flex items-center space-x-2 backdrop-blur-sm">
-          <span className="font-medium text-lg">{currentIndex + 1} / {photos.length}</span>
-        </div>
-
-        {/* 票數顯示 - 右上角 */}
-        <div className="absolute top-6 right-6 bg-black/70 text-white px-8 py-4 rounded-xl flex items-center space-x-4 backdrop-blur-sm">
-          <Heart className="w-12 h-12 text-red-500 fill-red-500 animate-pulse" />
-          <span className="font-bold text-6xl drop-shadow-lg">{currentPhoto.vote_count}</span>
-        </div>
-
-        {/* 控制按鈕組 - 右下角 */}
+        {/* 控制按鈕組 - 右下角 (不參與淡入淡出) */}
         <div className="absolute bottom-6 right-6 flex items-center space-x-3">
           {/* 上一張 */}
           <button
@@ -173,37 +227,6 @@ export default function PhotoSlideshowPage() {
             <ChevronRight className="w-8 h-8 text-gray-700" />
           </button>
 
-        </div>
-
-        {/* 固定在左上角的資訊卡片 */}
-        <div className="absolute top-6 left-6 max-w-md">
-          <div className="flex flex-col items-start space-y-4">
-            {/* 上傳者資訊 */}
-            <div className="flex items-center space-x-4 bg-black/30 p-3 rounded-xl backdrop-blur-sm">
-              <img
-                src={currentPhoto.uploader.avatar_url || '/default-avatar.png'}
-                alt="Avatar"
-                className="w-16 h-16 rounded-full ring-2 ring-white shadow-lg"
-              />
-              <div>
-                <span className="text-2xl font-bold text-white drop-shadow-md block">
-                  {currentPhoto.uploader.display_name}
-                </span>
-                <span className="text-sm text-gray-200 drop-shadow-md">
-                  {new Date(currentPhoto.created_at).toLocaleString('zh-TW')}
-                </span>
-              </div>
-            </div>
-
-            {/* 祝福訊息 */}
-            {currentPhoto.blessing_message && (
-              <div className="bg-black/30 p-4 rounded-xl backdrop-blur-sm">
-                <p className="text-xl text-white drop-shadow-md leading-relaxed font-medium break-words">
-                  {currentPhoto.blessing_message}
-                </p>
-              </div>
-            )}
-          </div>
         </div>
       </div>
     </div>
