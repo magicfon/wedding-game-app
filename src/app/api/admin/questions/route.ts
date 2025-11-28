@@ -6,16 +6,22 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const activeOnly = searchParams.get('active') === 'true'
-    
+    const category = searchParams.get('category')
+
     const supabase = createSupabaseAdmin()
 
     let query = supabase
       .from('questions')
       .select('*')
+      .order('display_order', { ascending: true })
       .order('created_at', { ascending: true })
 
     if (activeOnly) {
       query = query.eq('is_active', true)
+    }
+
+    if (category) {
+      query = query.eq('category', category)
     }
 
     const { data: questions, error } = await query
@@ -58,7 +64,9 @@ export async function POST(request: NextRequest) {
       media_url,
       media_thumbnail_url,
       media_alt_text,
-      media_duration
+      media_duration,
+      // 分類
+      category = 'formal'
     } = body
 
     // 驗證必填欄位
@@ -72,6 +80,17 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = createSupabaseAdmin()
+
+    // 獲取目前該分類的最大 display_order
+    const { data: maxOrderData } = await supabase
+      .from('questions')
+      .select('display_order')
+      .eq('category', category)
+      .order('display_order', { ascending: false })
+      .limit(1)
+      .single()
+
+    const nextOrder = (maxOrderData?.display_order || 0) + 1
 
     const { data: question, error } = await supabase
       .from('questions')
@@ -96,7 +115,10 @@ export async function POST(request: NextRequest) {
         media_url,
         media_thumbnail_url,
         media_alt_text,
-        media_duration
+        media_duration,
+        // 分類與排序
+        category,
+        display_order: nextOrder
       })
       .select()
       .single()

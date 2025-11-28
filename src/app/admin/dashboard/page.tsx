@@ -60,20 +60,25 @@ export default function AdminDashboard() {
   } = useGameState(profile?.userId)
 
   const [displayDuration, setDisplayDuration] = useState<number>(3)
+  const [activeQuestionSet, setActiveQuestionSet] = useState<'formal' | 'test' | 'backup'>('formal')
   const [savingSettings, setSavingSettings] = useState(false)
 
-  // 當 gameState 載入時，更新 displayDuration
+  // 當 gameState 載入時，更新 displayDuration 和 activeQuestionSet
   useEffect(() => {
     if (gameState?.question_display_duration) {
       setDisplayDuration(gameState.question_display_duration)
     }
-  }, [gameState?.question_display_duration])
+    if (gameState?.active_question_set) {
+      setActiveQuestionSet(gameState.active_question_set)
+    }
+  }, [gameState?.question_display_duration, gameState?.active_question_set])
 
   const handleUpdateSettings = async () => {
     setSavingSettings(true)
     try {
       const success = await updateSettings({
-        question_display_duration: displayDuration
+        question_display_duration: displayDuration,
+        active_question_set: activeQuestionSet
       })
       if (success) {
         console.log('設定更新成功')
@@ -373,10 +378,10 @@ export default function AdminDashboard() {
                 <p className="text-sm text-gray-600">控制快問快答遊戲流程</p>
               </div>
               <div className={`px-3 py-1 rounded-full text-sm font-medium ${isGameActive
-                  ? isPaused
-                    ? 'bg-yellow-100 text-yellow-800'
-                    : 'bg-green-100 text-green-800'
-                  : 'bg-gray-100 text-gray-800'
+                ? isPaused
+                  ? 'bg-yellow-100 text-yellow-800'
+                  : 'bg-green-100 text-green-800'
+                : 'bg-gray-100 text-gray-800'
                 }`}>
                 {isGameActive
                   ? isPaused
@@ -448,6 +453,20 @@ export default function AdminDashboard() {
                     <span className="ml-2 text-xs text-gray-500">秒後顯示選項</span>
                   </div>
                 </div>
+
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">當前題庫</label>
+                  <select
+                    value={activeQuestionSet}
+                    onChange={(e) => setActiveQuestionSet(e.target.value as 'formal' | 'test' | 'backup')}
+                    className="w-32 px-3 py-2 border border-gray-300 rounded-md text-sm text-black focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="formal">正式題目</option>
+                    <option value="test">測試題目</option>
+                    <option value="backup">備用題目</option>
+                  </select>
+                </div>
+
                 <button
                   onClick={handleUpdateSettings}
                   disabled={savingSettings || loading}
@@ -457,7 +476,7 @@ export default function AdminDashboard() {
                 </button>
               </div>
               <p className="mt-2 text-xs text-gray-500">
-                設定題目顯示多久後才會出現選項。此設定主要影響圖片和純文字題目。
+                設定題目顯示多久後才會出現選項。切換題庫後，下一題將從新題庫中選取。
               </p>
             </div>
 

@@ -31,6 +31,7 @@ export interface GameState {
   created_at: string;
   updated_at: string;
   question_display_duration?: number;
+  active_question_set?: 'formal' | 'test' | 'backup';
 }
 
 export interface UseGameStateReturn {
@@ -39,7 +40,7 @@ export interface UseGameStateReturn {
   error: string | null;
   refreshGameState: () => Promise<void>;
   controlGame: (action: string, questionId?: number) => Promise<boolean>;
-  updateSettings: (settings: { question_display_duration?: number }) => Promise<boolean>;
+  updateSettings: (settings: { question_display_duration?: number; active_question_set?: 'formal' | 'test' | 'backup' }) => Promise<boolean>;
   timeRemaining: number;
   isGameActive: boolean;
   isPaused: boolean;
@@ -114,7 +115,7 @@ export function useGameState(adminLineId?: string) {
   }, [adminLineId, refreshGameState]);
 
   // 更新遊戲設定
-  const updateSettings = useCallback(async (settings: { question_display_duration?: number }) => {
+  const updateSettings = useCallback(async (settings: { question_display_duration?: number; active_question_set?: 'formal' | 'test' | 'backup' }) => {
     if (!adminLineId) {
       setError('需要管理員權限');
       return false;

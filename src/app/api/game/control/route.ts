@@ -59,11 +59,21 @@ export async function POST(request: Request) {
         break;
 
       case 'start_first_question':
+        // 獲取當前遊戲設定的題庫組
+        const { data: currentSettings } = await supabase
+          .from('game_state')
+          .select('active_question_set')
+          .eq('id', 1)
+          .single();
+
+        const activeSet = currentSettings?.active_question_set || 'formal';
+
         // 開始第一題 - 從等待階段進入答題階段，按 display_order 排序
         const { data: firstQuestion } = await supabase
           .from('questions')
           .select('id, display_order')
           .eq('is_active', true)
+          .eq('category', activeSet)
           .order('display_order', { ascending: true })
           .order('id', { ascending: true }) // 備用排序，以防 display_order 相同
           .limit(1)
@@ -126,9 +136,11 @@ export async function POST(request: Request) {
         // 下一題 - 改進排序邏輯，處理相同 display_order 的情況
         const { data: currentState } = await supabase
           .from('game_state')
-          .select('current_question_id, completed_questions')
+          .select('current_question_id, completed_questions, active_question_set')
           .eq('id', 1)
           .single();
+
+        const currentActiveSet = currentState?.active_question_set || 'formal';
 
         if (!currentState) {
           return NextResponse.json({ error: '遊戲狀態不存在' }, { status: 400 });
@@ -151,6 +163,7 @@ export async function POST(request: Request) {
           .from('questions')
           .select('id, display_order')
           .eq('is_active', true)
+          .eq('category', currentActiveSet)
           .eq('display_order', currentQuestion.display_order)
           .gt('id', currentQuestion.id)
           .order('id', { ascending: true })
@@ -163,6 +176,7 @@ export async function POST(request: Request) {
             .from('questions')
             .select('id, display_order')
             .eq('is_active', true)
+            .eq('category', currentActiveSet)
             .gt('display_order', currentQuestion.display_order)
             .order('display_order', { ascending: true })
             .order('id', { ascending: true })
@@ -361,6 +375,9 @@ export async function POST(request: Request) {
         // 只更新允許的欄位
         if (typeof settings.question_display_duration === 'number') {
           settingsUpdateData.question_display_duration = settings.question_display_duration;
+        }
+        if (settings.active_question_set) {
+          settingsUpdateData.active_question_set = settings.active_question_set;
         }
 
         result = await supabase
