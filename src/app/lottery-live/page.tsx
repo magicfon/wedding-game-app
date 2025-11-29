@@ -188,51 +188,38 @@ const FloatingHighlight = memo(({ highlightedIndex, gridLayout, isAnimating, win
 })
 FloatingHighlight.displayName = 'FloatingHighlight'
 
-interface PhotoGridProps {
+interface StaticPhotoGridProps {
   photos: Photo[]
-  highlightedIndex: number
-  isAnimating: boolean
+  winnerIndex: number // Only used for static "winner" state AFTER animation
   gridLayout: { cols: number; rows: number; size: number }
-  winnerPhotoRef: React.RefObject<HTMLDivElement | null>
 }
 
-const PhotoGrid = memo(({ photos, highlightedIndex, isAnimating, gridLayout, winnerPhotoRef }: PhotoGridProps) => {
+// Renamed to StaticPhotoGrid to emphasize it should not update during animation
+const StaticPhotoGrid = memo(({ photos, winnerIndex, gridLayout }: StaticPhotoGridProps) => {
   return (
-    <div className="relative">
-      {/* The Grid of Photos (Static) */}
-      <div
-        className="grid gap-5 justify-center items-center"
-        style={{
-          gridTemplateColumns: `repeat(${gridLayout.cols}, ${gridLayout.size}px)`
-        }}
-      >
-        {photos.map((photo, index) => {
-          // Only mark as winner if animation stopped and this is the index
-          // This prop change only happens ONCE at the end of animation
-          const isWinner = !isAnimating && highlightedIndex === index
+    <div
+      className="grid gap-5 justify-center items-center"
+      style={{
+        gridTemplateColumns: `repeat(${gridLayout.cols}, ${gridLayout.size}px)`
+      }}
+    >
+      {photos.map((photo, index) => {
+        // Only mark as winner if this is the index passed in (which should be -1 during animation)
+        const isWinner = winnerIndex === index
 
-          return (
-            <PhotoItem
-              key={photo.id}
-              photo={photo}
-              size={gridLayout.size}
-              isWinner={isWinner}
-            />
-          )
-        })}
-      </div>
-
-      {/* The Floating Highlight (Dynamic) */}
-      <FloatingHighlight
-        highlightedIndex={highlightedIndex}
-        gridLayout={gridLayout}
-        isAnimating={isAnimating}
-        winnerRef={winnerPhotoRef}
-      />
+        return (
+          <PhotoItem
+            key={photo.id}
+            photo={photo}
+            size={gridLayout.size}
+            isWinner={isWinner}
+          />
+        )
+      })}
     </div>
   )
 })
-PhotoGrid.displayName = 'PhotoGrid'
+StaticPhotoGrid.displayName = 'StaticPhotoGrid'
 
 // --- Main Component ---
 
@@ -524,90 +511,120 @@ export default function LotteryLivePage() {
       return
     }
 
-    // 動畫參數
-    const startTime = Date.now()
-    const duration = 10000 // 10秒
-    let lastJumpTime = startTime - 100
+    // --- 預先計算動畫路徑 ---
+    // 我們不使用 requestAnimationFrame 的時間差來決定下一步，
+    // 而是預先生成一個 "時間表" (Schedule)，確保最後一步剛好落在 targetIndex
+
+    const schedule: { index: number; delay: number }[] = []
+    let currentDelay = 50 // 初始速度 (ms)
+    const maxDelay = 800  // 結束速度 (ms)
+    const totalDurationTarget = 10000 // 目標總時長 10秒
+    let totalTime = 0
+
+    // 1. 生成速度曲線 (Delay 逐漸增加)
+    // 我們先生成一系列的 delay，直到總時間接近 10 秒
+    const delays: number[] = []
+    while (totalTime < totalDurationTarget) {
+      delays.push(currentDelay)
+      totalTime += currentDelay
+      // 讓速度變慢：每次增加一點 delay
+      // 使用指數增長或線性增長都可以，這裡微調係數讓它自然一點
+      currentDelay = Math.min(maxDelay, currentDelay * 1.1)
+    }
+
+    // 2. 生成對應的索引路徑
+    // 我們需要 delays.length 個步驟
+    // 最後一步必須是 targetIndex
+    // 倒數幾步最好是線性移動 (target-3, target-2, target-1, target) 讓視覺上有 "停下來" 的感覺
+    // 前面的步驟則是隨機跳動
+
+    const steps = delays.length
     let currentIndex = Math.floor(Math.random() * photoCount)
-    let lastIndex = currentIndex // 記錄上一次的索引，避免重複
 
-    // 立即顯示第一個框框
-    setHighlightedIndex(currentIndex)
-    console.log('📍 初始框框位置:', currentIndex)
+    // 為了視覺效果，最後 5 步我們做 "線性接近" (如果照片夠多的話)
+    const finalStepsCount = Math.min(5, photoCount - 1)
+    const randomStepsCount = steps - finalStepsCount
 
-    // 跳動間隔函數 (越來越慢)
-    const getJumpInterval = (progress: number) => {
-      // 開始很快 (30ms)，結束很慢 (800ms)
-      return 30 + progress * progress * 770
-    }
-
-    // 生成不重複的隨機索引
-    const getNextRandomIndex = (current: number, count: number): number => {
-      if (count <= 1) return current
-      let next
+    // 生成隨機部分
+    for (let i = 0; i < randomStepsCount; i++) {
+      let nextIndex
       do {
-        next = Math.floor(Math.random() * count)
-      } while (next === current)
-      return next
+        nextIndex = Math.floor(Math.random() * photoCount)
+      } while (nextIndex === currentIndex) // 不重複上一張
+
+      currentIndex = nextIndex
+      schedule.push({ index: currentIndex, delay: delays[i] })
     }
 
-    const animate = () => {
-      const elapsed = Date.now() - startTime
-      const progress = Math.min(elapsed / duration, 1)
-      const now = Date.now()
+    // 生成最後線性接近部分
+    // 我們從 targetIndex 往回推 finalStepsCount 步
+    // 例如 target=10, finalSteps=3 -> 7, 8, 9, 10
+    // 注意：要處理環狀索引 (例如 target=0, prev=count-1)
 
-      // 檢查是否該跳到下一張照片
-      const jumpInterval = getJumpInterval(progress)
+    // 這裡我們簡單一點，直接計算最後幾步的路徑
+    // 為了讓最後幾步看起來是 "滑" 到目標，我們確保它們是鄰居
+    // 我們從目前的 currentIndex 開始，計算一條路徑連到 targetIndex ?
+    // 不，這樣太複雜。我們直接強制最後幾步是 target-N ... target
 
-      if (now - lastJumpTime >= jumpInterval) {
-        lastJumpTime = now
-        lastIndex = currentIndex
+    // 重新策略：最後幾步強制為 targetIndex 的前幾位
+    // 為了避免突然跳躍，我們在 randomSteps 的最後一步，確保它跳到 finalSteps 的起點附近?
+    // 其實隨機跳到哪都沒關係，只要最後幾步順暢即可。
 
-        if (progress < 0.92) {
-          // 還沒接近結束，隨機跳動（但不重複上一張）
-          currentIndex = getNextRandomIndex(lastIndex, photoCount)
-        } else {
-          // 接近結束，逐步接近目標
-          const distance = targetIndex - currentIndex
-          if (distance !== 0) {
-            // 根據距離決定移動方向
-            if (Math.abs(distance) === 1) {
-              currentIndex = targetIndex
-            } else {
-              currentIndex += distance > 0 ? 1 : -1
-            }
-          }
-        }
+    for (let i = 0; i < finalStepsCount; i++) {
+      // 倒數第 (finalStepsCount - i) 步
+      // 例如 finalStepsCount=5, i=0 (倒數第5步) -> target - 4
+      // i=4 (倒數第1步) -> target
 
-        // console.log(`📍 跳到索引 ${currentIndex}，進度: ${(progress * 100).toFixed(1)}%`)
-        setHighlightedIndex(currentIndex)
+      const offset = finalStepsCount - 1 - i
+      // 使用模運算處理負數： (target - offset + count) % count
+      const nextIndex = (targetIndex - offset + photoCount) % photoCount
+
+      // 使用對應的 delay (從 randomStepsCount + i 開始)
+      schedule.push({ index: nextIndex, delay: delays[randomStepsCount + i] })
+    }
+
+    console.log(`📊 動畫排程: 總步數 ${schedule.length}, 預計總時長 ${(totalTime / 1000).toFixed(2)}s`)
+
+    // --- 執行動畫 ---
+    let stepIndex = 0
+
+    const runStep = () => {
+      if (stepIndex >= schedule.length) {
+        // 動畫結束
+        finishAnimation()
+        return
       }
 
-      if (progress < 1) {
-        // 繼續動畫
-        animationFrameRef.current = requestAnimationFrame(animate)
-      } else {
-        // 動畫結束 sequence
-        console.log('🎉 動畫結束，停在索引:', targetIndex)
+      const step = schedule[stepIndex]
+      setHighlightedIndex(step.index)
 
-        // Step 1: 確保停在目標位置 (黃框)
-        setHighlightedIndex(targetIndex)
+      // 排程下一步
+      stepIndex++
+      setTimeout(() => {
+        animationFrameRef.current = requestAnimationFrame(runStep)
+      }, step.delay)
+    }
 
-        // Step 2: 等待移動到位 (200ms) -> 變綠色
+    // 啟動
+    runStep()
+
+    const finishAnimation = () => {
+      console.log('🎉 動畫結束，停在索引:', targetIndex)
+
+      // Step 1: 確保停在目標位置 (黃框)
+      setHighlightedIndex(targetIndex)
+
+      // Step 2: 等待移動到位 (200ms) -> 變綠色
+      setTimeout(() => {
+        setIsAnimating(false) // 變綠色
+
+        // Step 3: 等待綠框展示 (800ms) -> 開始慶祝
         setTimeout(() => {
-          setIsAnimating(false) // 變綠色
-
-          // Step 3: 等待綠框展示 (800ms) -> 開始慶祝
-          setTimeout(() => {
-            const winnerPhoto = photosToUse[targetIndex]
-            startCelebration(winnerPhoto)
-          }, 800)
-        }, 200)
-      }
+          const winnerPhoto = photosToUse[targetIndex]
+          startCelebration(winnerPhoto)
+        }, 800)
+      }, 200)
     }
-
-    // 開始動畫
-    animationFrameRef.current = requestAnimationFrame(animate)
   }
 
   // 清理動畫
@@ -794,13 +811,22 @@ export default function LotteryLivePage() {
 
         {/* 照片 Grid 顯示 */}
         <div className={`relative z-10 px-10 transition-opacity duration-1000 ${showingWinner || zoomingWinner ? 'opacity-0' : 'opacity-100'}`}>
-          <PhotoGrid
-            photos={photos}
-            highlightedIndex={highlightedIndex}
-            isAnimating={isAnimating}
-            gridLayout={gridLayout}
-            winnerPhotoRef={winnerPhotoRef}
-          />
+          <div className="relative">
+            {/* The Grid of Photos (Static) */}
+            <StaticPhotoGrid
+              photos={photos}
+              winnerIndex={isAnimating ? -1 : highlightedIndex}
+              gridLayout={gridLayout}
+            />
+
+            {/* The Floating Highlight (Dynamic) */}
+            <FloatingHighlight
+              highlightedIndex={highlightedIndex}
+              gridLayout={gridLayout}
+              isAnimating={isAnimating}
+              winnerRef={winnerPhotoRef}
+            />
+          </div>
         </div>
 
       </div>
