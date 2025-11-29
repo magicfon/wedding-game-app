@@ -198,9 +198,10 @@ interface StaticPhotoGridProps {
 const StaticPhotoGrid = memo(({ photos, winnerIndex, gridLayout }: StaticPhotoGridProps) => {
   return (
     <div
-      className="grid gap-5 items-center"
+      className="grid items-center"
       style={{
-        gridTemplateColumns: `repeat(${gridLayout.cols}, ${gridLayout.size}px)`
+        gridTemplateColumns: `repeat(${gridLayout.cols}, ${gridLayout.size}px)`,
+        gap: '20px' // Force pixel-perfect gap to match FloatingHighlight calculation
       }}
     >
       {photos.map((photo, index) => {
@@ -614,7 +615,8 @@ export default function LotteryLivePage() {
       // Step 1: 確保停在目標位置 (黃框)
       setHighlightedIndex(targetIndex)
 
-      // Step 2: 等待移動到位 (200ms) -> 變綠色
+      // Step 2: 等待移動到位 (400ms) -> 變綠色
+      // 必須大於 CSS transition duration (300ms)
       setTimeout(() => {
         setIsAnimating(false) // 變綠色
 
@@ -623,7 +625,7 @@ export default function LotteryLivePage() {
           const winnerPhoto = photosToUse[targetIndex]
           startCelebration(winnerPhoto)
         }, 800)
-      }, 200)
+      }, 400)
     }
   }
 
