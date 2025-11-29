@@ -198,7 +198,7 @@ interface StaticPhotoGridProps {
 const StaticPhotoGrid = memo(({ photos, winnerIndex, gridLayout }: StaticPhotoGridProps) => {
   return (
     <div
-      className="grid gap-5 justify-center items-center"
+      className="grid gap-5 items-center"
       style={{
         gridTemplateColumns: `repeat(${gridLayout.cols}, ${gridLayout.size}px)`
       }}
@@ -811,7 +811,7 @@ export default function LotteryLivePage() {
 
         {/* 照片 Grid 顯示 */}
         <div className={`relative z-10 px-10 transition-opacity duration-1000 ${showingWinner || zoomingWinner ? 'opacity-0' : 'opacity-100'}`}>
-          <div className="relative">
+          <div className="relative w-fit mx-auto">
             {/* The Grid of Photos (Static) */}
             <StaticPhotoGrid
               photos={photos}
