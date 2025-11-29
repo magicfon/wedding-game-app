@@ -750,133 +750,151 @@ export default function LotteryLivePage() {
           />
         </div>
 
-        {/* 中獎照片放大動畫 - 從原位置放大到左側900x900位置 */}
-        {!isAnimating && zoomingWinner && winnerPhoto && winnerPhotoRect && (() => {
-          // 目標尺寸（左側大照片）
-          const targetSize = 900
+      </div>
 
-          // 計算目標位置（左側照片的中心位置）
-          // 設計尺寸: 1920x1080, padding: 32px
-          // 左側照片位置: 32px + 900px/2 = 482px (從設計稿左側算)
-          const designLeftPhotoCenter = 32 + targetSize / 2  // 482px
+      {/* 中獎照片放大動畫 - 從原位置放大到左側900x900位置 */}
+      {!isAnimating && zoomingWinner && winnerPhoto && winnerPhotoRect && (() => {
+        // 目標尺寸（左側大照片）
+        const targetSize = 900
 
-          // 考慮縮放比例，計算實際螢幕上的位置
-          const screenCenterY = window.innerHeight / 2
+        // 計算目標位置（左側照片的中心位置）
+        // 設計尺寸: 1920x1080, padding: 32px
+        // 左側照片位置: 32px + 900px/2 = 482px (從設計稿左側算)
+        const designLeftPhotoCenter = 32 + targetSize / 2  // 482px
 
-          // 計算左側照片在實際螢幕上的中心 X 位置
-          // 使用 scale 來計算實際位置
-          const scaledDesignWidth = DESIGN_WIDTH * scale
-          const screenOffsetX = (window.innerWidth - scaledDesignWidth) / 2
-          const targetCenterX = screenOffsetX + designLeftPhotoCenter * scale
+        // 考慮縮放比例，計算實際螢幕上的位置
+        const screenCenterY = window.innerHeight / 2
 
-          // 計算當前照片的中心位置
-          const currentCenterX = winnerPhotoRect.left + winnerPhotoRect.width / 2
-          const currentCenterY = winnerPhotoRect.top + winnerPhotoRect.height / 2
+        // 計算左側照片在實際螢幕上的中心 X 位置
+        // 使用 scale 來計算實際位置
+        const scaledDesignWidth = DESIGN_WIDTH * scale
+        const screenOffsetX = (window.innerWidth - scaledDesignWidth) / 2
+        const targetCenterX = screenOffsetX + designLeftPhotoCenter * scale
 
-          // 計算需要移動的距離
-          const translateX = targetCenterX - currentCenterX
-          const translateY = screenCenterY - currentCenterY
+        // 計算當前照片的中心位置
+        const currentCenterX = winnerPhotoRect.left + winnerPhotoRect.width / 2
+        const currentCenterY = winnerPhotoRect.top + winnerPhotoRect.height / 2
 
-          // 計算縮放比例
-          const scaleFactor = (targetSize * scale) / winnerPhotoRect.width
+        // 計算需要移動的距離
+        const translateX = targetCenterX - currentCenterX
+        const translateY = screenCenterY - currentCenterY
 
-          console.log('🎬 放大動畫參數:', {
-            targetSize,
-            scale,
-            targetCenterX,
-            currentCenterX,
-            translateX,
-            translateY,
-            scaleFactor
-          })
+        // 計算縮放比例
+        const scaleFactor = (targetSize * scale) / winnerPhotoRect.width
 
-          return (
-            <div
-              className="fixed z-50 pointer-events-none"
-              style={{
-                left: `${winnerPhotoRect.left}px`,
-                top: `${winnerPhotoRect.top}px`,
-                width: `${winnerPhotoRect.width}px`,
-                height: `${winnerPhotoRect.height}px`,
-                '--translate-x': `${translateX}px`,
-                '--translate-y': `${translateY}px`,
-                '--scale-factor': scaleFactor,
-                animation: 'zoomToCenter 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards'
-              } as React.CSSProperties}
-            >
-              <div className="relative w-full h-full">
-                <div className="absolute -inset-6 bg-gradient-to-r from-yellow-400 via-orange-400 to-pink-400 rounded-3xl animate-pulse blur-2xl opacity-75"></div>
-                <img
-                  src={winnerPhoto.image_url}
-                  alt={winnerPhoto.display_name}
-                  className="relative w-full h-full object-cover rounded-3xl border-8 border-white shadow-2xl"
-                  onError={(e) => {
-                    e.currentTarget.src = '/default-avatar.png'
-                  }}
-                />
-              </div>
+        console.log('🎬 放大動畫參數:', {
+          targetSize,
+          scale,
+          targetCenterX,
+          currentCenterX,
+          translateX,
+          translateY,
+          scaleFactor
+        })
+
+        return (
+          <div
+            className="fixed z-50 pointer-events-none"
+            style={{
+              left: `${winnerPhotoRect.left}px`,
+              top: `${winnerPhotoRect.top}px`,
+              width: `${winnerPhotoRect.width}px`,
+              height: `${winnerPhotoRect.height}px`,
+              '--translate-x': `${translateX}px`,
+              '--translate-y': `${translateY}px`,
+              '--scale-factor': scaleFactor,
+              animation: 'zoomToCenter 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards'
+            } as React.CSSProperties}
+          >
+            <div className="relative w-full h-full">
+              <div className="absolute -inset-6 bg-gradient-to-r from-yellow-400 via-orange-400 to-pink-400 rounded-3xl animate-pulse blur-2xl opacity-75"></div>
+              <img
+                src={winnerPhoto.image_url}
+                alt={winnerPhoto.display_name}
+                className="relative w-full h-full object-cover rounded-3xl border-8 border-white shadow-2xl"
+                onError={(e) => {
+                  e.currentTarget.src = '/default-avatar.png'
+                }}
+              />
             </div>
-          )
-        })()}
+          </div>
+        )
+      })()}
 
-        {/* 中獎照片放大特寫 - 左右分欄布局 */}
-        {!isAnimating && showingWinner && !zoomingWinner && winnerPhoto && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm animate-in fade-in duration-500">
-            <div className="flex items-center justify-center gap-12 px-8" style={{ width: `${DESIGN_WIDTH}px`, height: `${DESIGN_HEIGHT}px` }}>
-              {/* 左側：中獎照片 */}
-              <div className="relative flex-shrink-0 animate-in zoom-in duration-500">
-                <div className="absolute -inset-6 bg-gradient-to-r from-yellow-400 via-orange-400 to-pink-400 rounded-3xl animate-pulse blur-2xl opacity-75"></div>
-                <img
-                  src={winnerPhoto.image_url}
-                  alt={winnerPhoto.display_name}
-                  className="relative w-[900px] h-[900px] object-cover rounded-3xl border-8 border-white shadow-2xl"
-                  onError={(e) => {
-                    e.currentTarget.src = '/default-avatar.png'
-                  }}
-                />
+      {/* 中獎照片放大特寫 - 左右分欄布局 */}
+      {!isAnimating && showingWinner && !zoomingWinner && winnerPhoto && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm animate-in fade-in duration-500">
+          <div className="flex items-center justify-center gap-12 px-8" style={{ width: `${DESIGN_WIDTH * scale}px`, height: `${DESIGN_HEIGHT * scale}px` }}>
+            {/* 左側：中獎照片 */}
+            <div className="relative flex-shrink-0 animate-in zoom-in duration-500">
+              <div className="absolute -inset-6 bg-gradient-to-r from-yellow-400 via-orange-400 to-pink-400 rounded-3xl animate-pulse blur-2xl opacity-75"></div>
+              <img
+                src={winnerPhoto.image_url}
+                alt={winnerPhoto.display_name}
+                style={{
+                  width: `${900 * scale}px`,
+                  height: `${900 * scale}px`
+                }}
+                className="relative object-cover rounded-3xl border-8 border-white shadow-2xl"
+                onError={(e) => {
+                  e.currentTarget.src = '/default-avatar.png'
+                }}
+              />
+            </div>
+
+            {/* 右側：恭喜文字 + 資訊卡片 */}
+            <div className="flex flex-col justify-center gap-8 flex-1" style={{ maxWidth: `${880 * scale}px` }}>
+              {/* 恭喜文字 */}
+              <div className="text-center animate-in slide-in-from-right duration-500">
+                <h1
+                  className="font-bold text-white drop-shadow-2xl animate-pulse leading-tight mb-4"
+                  style={{ fontSize: `${6 * scale}rem` }} // 96px * scale
+                >
+                  🎉 恭喜中獎 🎉
+                </h1>
               </div>
 
-              {/* 右側：恭喜文字 + 資訊卡片 */}
-              <div className="flex flex-col justify-center gap-8 flex-1 max-w-[880px]">
-                {/* 恭喜文字 */}
-                <div className="text-center animate-in slide-in-from-right duration-500">
-                  <h1 className="text-8xl font-bold text-white drop-shadow-2xl animate-pulse leading-tight mb-4">
-                    🎉 恭喜中獎 🎉
-                  </h1>
+              {/* 中獎者資訊卡片 */}
+              <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl animate-in slide-in-from-right duration-500 delay-150" style={{ padding: `${2.5 * scale}rem` }}>
+                <div className="flex items-center mb-8" style={{ gap: `${2 * scale}rem` }}>
+                  <img
+                    src={winnerPhoto.avatar_url || '/default-avatar.png'}
+                    alt={winnerPhoto.display_name}
+                    className="rounded-full border-8 border-green-400 shadow-lg flex-shrink-0"
+                    style={{ width: `${8 * scale}rem`, height: `${8 * scale}rem` }}
+                  />
+                  <div className="flex items-center flex-1 min-w-0" style={{ gap: `${1 * scale}rem` }}>
+                    <Gift className="text-green-500 flex-shrink-0" style={{ width: `${3 * scale}rem`, height: `${3 * scale}rem` }} />
+                    <h2
+                      className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-500 to-emerald-500 break-words leading-tight"
+                      style={{ fontSize: `${3.75 * scale}rem` }} // 60px * scale
+                    >
+                      {winnerPhoto.display_name}
+                    </h2>
+                  </div>
                 </div>
 
-                {/* 中獎者資訊卡片 */}
-                <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl p-10 animate-in slide-in-from-right duration-500 delay-150">
-                  <div className="flex items-center gap-8 mb-8">
-                    <img
-                      src={winnerPhoto.avatar_url || '/default-avatar.png'}
-                      alt={winnerPhoto.display_name}
-                      className="w-32 h-32 rounded-full border-8 border-green-400 shadow-lg flex-shrink-0"
-                    />
-                    <div className="flex items-center gap-4 flex-1 min-w-0">
-                      <Gift className="w-12 h-12 text-green-500 flex-shrink-0" />
-                      <h2 className="text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-500 to-emerald-500 break-words leading-tight">
-                        {winnerPhoto.display_name}
-                      </h2>
+                {winnerPhoto.blessing_message && (
+                  <div className="flex items-start" style={{ gap: `${1 * scale}rem` }}>
+                    <Heart className="text-red-500 mt-1 flex-shrink-0" style={{ width: `${2.5 * scale}rem`, height: `${2.5 * scale}rem` }} />
+                    <div className="flex-1 min-w-0">
+                      <p
+                        className="text-gray-700 italic leading-relaxed break-words whitespace-pre-wrap overflow-y-auto pr-3"
+                        style={{
+                          fontSize: `${1.875 * scale}rem`, // 30px * scale
+                          maxHeight: `${400 * scale}px`
+                        }}
+                      >
+                        「{winnerPhoto.blessing_message}」
+                      </p>
                     </div>
                   </div>
-
-                  {winnerPhoto.blessing_message && (
-                    <div className="flex items-start gap-4">
-                      <Heart className="w-10 h-10 text-red-500 mt-1 flex-shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-3xl text-gray-700 italic leading-relaxed break-words whitespace-pre-wrap max-h-[400px] overflow-y-auto pr-3">
-                          「{winnerPhoto.blessing_message}」
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                )}
               </div>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   )
 }
