@@ -645,6 +645,28 @@ export default function LotteryLivePage() {
         setShowingWinner(true)
         setZoomingWinner(false)
         console.log('✅ 中獎畫面顯示完成，等待管理員操作...')
+
+        // 觸發 LINE 通知
+        if (currentDrawRef.current?.id) {
+          console.log('📨 觸發 LINE 通知...')
+          fetch('/api/lottery/notify-winner', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              lotteryId: currentDrawRef.current.id
+            })
+          }).then(res => res.json())
+            .then(data => {
+              if (data.success) {
+                console.log('✅ LINE 通知發送成功')
+              } else {
+                console.error('❌ LINE 通知發送失敗:', data.error)
+              }
+            })
+            .catch(err => console.error('❌ LINE 通知請求失敗:', err))
+        }
       }, 800)
     }, 1500)
   }

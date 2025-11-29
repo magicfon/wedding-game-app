@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServer } from '@/lib/supabase-server'
-import { Client } from '@line/bot-sdk'
 
 // 執行抽獎
 export async function POST(request: NextRequest) {
@@ -194,38 +193,6 @@ export async function POST(request: NextRequest) {
       console.error('❌ 更新最終狀態失敗:', finalStateError)
     }
 
-    // 7. 發送 LINE 通知
-    try {
-      if (process.env.LINE_CHANNEL_ACCESS_TOKEN && process.env.LINE_CHANNEL_SECRET) {
-        const client = new Client({
-          channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN,
-          channelSecret: process.env.LINE_CHANNEL_SECRET,
-        })
-
-        const now = new Date()
-        const timeString = now.toLocaleString('zh-TW', {
-          timeZone: 'Asia/Taipei',
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit'
-        })
-
-        await client.pushMessage(winner.line_id, {
-          type: 'text',
-          text: `🎉 恭喜您中獎！\n\n您在照片抽獎活動中被選中！\n\n中獎時間：${timeString}`
-        })
-        console.log('✅ LINE 通知發送成功')
-      } else {
-        console.log('⚠️ 未設定 LINE Token，跳過通知')
-      }
-    } catch (lineError) {
-      console.error('❌ LINE 通知發送失敗:', lineError)
-      // 不影響抽獎結果，僅記錄錯誤
-    }
-
     console.log('✅ 抽獎完成！')
 
     return NextResponse.json({
@@ -265,4 +232,3 @@ export async function POST(request: NextRequest) {
     }, { status: 500 })
   }
 }
-
