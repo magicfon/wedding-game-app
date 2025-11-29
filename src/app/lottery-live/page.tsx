@@ -626,6 +626,15 @@ export default function LotteryLivePage() {
         const rect = winnerPhotoRef.current.getBoundingClientRect()
         setWinnerPhotoRect(rect)
         console.log('📍 中獎照片位置:', rect)
+      } else {
+        console.error('❌ 無法獲取中獎照片位置 (winnerPhotoRef is null)')
+        // 嘗試查找 DOM
+        const el = document.querySelector('.border-green-400')
+        if (el) {
+          const rect = el.getBoundingClientRect()
+          setWinnerPhotoRect(rect)
+          console.log('📍 透過 DOM 找到中獎照片位置:', rect)
+        }
       }
 
       // 先觸發縮放動畫
@@ -641,7 +650,14 @@ export default function LotteryLivePage() {
   }
 
   // 找出中獎照片
+  // 優先使用視覺上選中的照片 (highlightedIndex)，確保動畫和結果一致
   const getWinnerPhoto = () => {
+    // 1. 如果有高亮索引，且在有效範圍內，直接返回該照片
+    if (highlightedIndex !== -1 && photos[highlightedIndex]) {
+      return photos[highlightedIndex]
+    }
+
+    // 2. 降級策略：根據 ID 查找
     if (!currentDraw || photos.length === 0) return null
     return photos.find(photo => photo.user_id === currentDraw.winner_line_id) || null
   }
