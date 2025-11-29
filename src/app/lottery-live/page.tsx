@@ -647,17 +647,23 @@ export default function LotteryLivePage() {
         console.log('✅ 中獎畫面顯示完成，等待管理員操作...')
 
         // 觸發 LINE 通知
-        if (currentDrawRef.current?.id) {
-          console.log('📨 觸發 LINE 通知...')
+        const currentId = currentDrawRef.current?.id
+        console.log('📨 準備觸發 LINE 通知, currentDrawId:', currentId)
+
+        if (currentId) {
+          console.log('📨 發送請求到 /api/lottery/notify-winner...')
           fetch('/api/lottery/notify-winner', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-              lotteryId: currentDrawRef.current.id
+              lotteryId: currentId
             })
-          }).then(res => res.json())
+          }).then(res => {
+            console.log('📨 API 回應狀態:', res.status)
+            return res.json()
+          })
             .then(data => {
               if (data.success) {
                 console.log('✅ LINE 通知發送成功')
@@ -666,6 +672,8 @@ export default function LotteryLivePage() {
               }
             })
             .catch(err => console.error('❌ LINE 通知請求失敗:', err))
+        } else {
+          console.error('❌ 無法發送通知: currentDrawRef.current.id 為空')
         }
       }, 800)
     }, 1500)

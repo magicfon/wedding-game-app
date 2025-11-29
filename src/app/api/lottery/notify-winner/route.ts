@@ -7,7 +7,10 @@ export async function POST(request: NextRequest) {
         const body = await request.json()
         const { lotteryId } = body
 
+        console.log('📨 收到發送通知請求:', { lotteryId })
+
         if (!lotteryId) {
+            console.error('❌ 缺少 lotteryId')
             return NextResponse.json({ error: 'Missing lotteryId' }, { status: 400 })
         }
 
@@ -28,10 +31,16 @@ export async function POST(request: NextRequest) {
         const winnerLineId = lotteryRecord.winner_line_id
 
         if (!winnerLineId) {
+            console.error('❌ 找不到中獎者 LINE ID')
             return NextResponse.json({ error: 'Winner LINE ID not found' }, { status: 404 })
         }
 
         // 發送 LINE 通知
+        console.log('🔑 檢查 LINE 設定:', {
+            hasAccessToken: !!process.env.LINE_CHANNEL_ACCESS_TOKEN,
+            hasChannelSecret: !!process.env.LINE_CHANNEL_SECRET
+        })
+
         if (process.env.LINE_CHANNEL_ACCESS_TOKEN && process.env.LINE_CHANNEL_SECRET) {
             const client = new Client({
                 channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN,
@@ -49,6 +58,7 @@ export async function POST(request: NextRequest) {
                 second: '2-digit'
             })
 
+            console.log('📨 準備發送 LINE 訊息給:', winnerLineId)
             await client.pushMessage(winnerLineId, {
                 type: 'text',
                 text: `🎉 恭喜您中獎！\n\n您在照片抽獎活動中被選中！\n\n中獎時間：${timeString}`
