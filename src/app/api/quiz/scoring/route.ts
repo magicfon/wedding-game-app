@@ -7,7 +7,8 @@ const SCORING_RULES = {
   SPEED_BONUS_MULTIPLIER: 0.5, // 速度加成倍數（基於剩餘時間比例）
   TOP_ANSWER_BONUS: [50, 30, 20], // 前三名答對者額外加分
   WRONG_ANSWER_PENALTY: 0, // 答錯不扣分
-  TIMEOUT_PENALTY_DEFAULT: 10, // 未答題默認扣分
+  TIMEOUT_PENALTY_DEFAULT: 0, // 未答題默認扣分 (改為0)
+  PARTICIPATION_SCORE: 10, // 答錯參加獎
 }
 
 interface AnswerSubmission {
@@ -165,14 +166,14 @@ async function calculateScore({
       ? question.timeout_penalty_score
       : SCORING_RULES.TIMEOUT_PENALTY_DEFAULT
 
-    result.penalty = timeoutPenalty
-    result.final_score = -timeoutPenalty
+    result.penalty = 0
+    result.final_score = 0
     return result
   }
 
   // 處理答錯情況（不扣分）
   if (selected_answer !== question.correct_answer) {
-    result.final_score = 0
+    result.final_score = SCORING_RULES.PARTICIPATION_SCORE
     return result
   }
 

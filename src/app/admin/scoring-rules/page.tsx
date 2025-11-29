@@ -2,10 +2,10 @@
 
 import { useState } from 'react'
 import AdminLayout from '@/components/AdminLayout'
-import { 
-  Trophy, 
-  Timer, 
-  Target, 
+import {
+  Trophy,
+  Timer,
+  Target,
   Award,
   Save,
   RotateCcw,
@@ -16,7 +16,7 @@ import {
 interface ScoringRules {
   speed_bonus_multiplier: number
   top_answer_bonus: number[]
-  wrong_answer_penalty: number
+  participation_score: number
   timeout_penalty_default: number
   max_bonus_points: number
 }
@@ -25,13 +25,13 @@ export default function ScoringRulesPage() {
   const [rules, setRules] = useState<ScoringRules>({
     speed_bonus_multiplier: 0.5,
     top_answer_bonus: [50, 30, 20],
-    wrong_answer_penalty: 0,
-    timeout_penalty_default: 10,
+    participation_score: 10,
+    timeout_penalty_default: 0,
     max_bonus_points: 50
   })
-  
+
   const [loading, setLoading] = useState(false)
-  const [message, setMessage] = useState<{type: 'success' | 'error', text: string} | null>(null)
+  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
 
   const showMessage = (type: 'success' | 'error', text: string) => {
     setMessage({ type, text })
@@ -56,8 +56,8 @@ export default function ScoringRulesPage() {
     setRules({
       speed_bonus_multiplier: 0.5,
       top_answer_bonus: [50, 30, 20],
-      wrong_answer_penalty: 0,
-      timeout_penalty_default: 10,
+      participation_score: 10,
+      timeout_penalty_default: 0,
       max_bonus_points: 50
     })
     showMessage('success', '已重置為預設值')
@@ -68,11 +68,10 @@ export default function ScoringRulesPage() {
       <div className="space-y-8">
         {/* 訊息提示 */}
         {message && (
-          <div className={`p-4 rounded-lg flex items-center space-x-2 ${
-            message.type === 'success' 
-              ? 'bg-green-100 text-green-800 border border-green-200' 
-              : 'bg-red-100 text-red-800 border border-red-200'
-          }`}>
+          <div className={`p-4 rounded-lg flex items-center space-x-2 ${message.type === 'success'
+            ? 'bg-green-100 text-green-800 border border-green-200'
+            : 'bg-red-100 text-red-800 border border-red-200'
+            }`}>
             <CheckCircle className="w-5 h-5" />
             <span>{message.text}</span>
           </div>
@@ -90,8 +89,8 @@ export default function ScoringRulesPage() {
               <p>基礎分數 + 速度加成 + 排名加分</p>
             </div>
             <div>
-              <h3 className="font-medium mb-2">❌ 答錯處理</h3>
-              <p>不扣分（可設定扣分規則）</p>
+              <h3 className="font-medium mb-2">🎁 答錯參加獎</h3>
+              <p>答錯給予基本參加分（不扣分）</p>
             </div>
             <div>
               <h3 className="font-medium mb-2">⏰ 未答題扣分</h3>
@@ -110,7 +109,7 @@ export default function ScoringRulesPage() {
             <Timer className="w-6 h-6 text-pink-500" />
             <h2 className="text-xl font-bold">速度加成設定</h2>
           </div>
-          
+
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -164,15 +163,14 @@ export default function ScoringRulesPage() {
             <Award className="w-6 h-6 text-yellow-500" />
             <h2 className="text-xl font-bold">前三名排名加分</h2>
           </div>
-          
+
           <div className="grid grid-cols-3 gap-4">
             {[0, 1, 2].map((index) => (
               <div key={index} className="text-center">
-                <div className={`w-16 h-16 mx-auto mb-3 rounded-full flex items-center justify-center text-white font-bold text-xl ${
-                  index === 0 ? 'bg-yellow-500' :
+                <div className={`w-16 h-16 mx-auto mb-3 rounded-full flex items-center justify-center text-white font-bold text-xl ${index === 0 ? 'bg-yellow-500' :
                   index === 1 ? 'bg-gray-400' :
-                  'bg-orange-500'
-                }`}>
+                    'bg-orange-500'
+                  }`}>
                   {index + 1}
                 </div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -197,7 +195,7 @@ export default function ScoringRulesPage() {
               </div>
             ))}
           </div>
-          
+
           <div className="mt-4 p-3 bg-gray-50 rounded-lg">
             <p className="text-sm text-gray-600">
               💡 排名加分會在所有人答題完畢後，根據答題速度自動給予前三名答對者額外分數
@@ -211,25 +209,25 @@ export default function ScoringRulesPage() {
             <Target className="w-6 h-6 text-red-500" />
             <h2 className="text-xl font-bold">扣分規則設定</h2>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                答錯扣分
+                答錯參加獎
               </label>
               <input
                 type="number"
                 min="0"
                 max="50"
-                value={rules.wrong_answer_penalty}
+                value={rules.participation_score}
                 onChange={(e) => setRules({
                   ...rules,
-                  wrong_answer_penalty: parseInt(e.target.value) || 0
+                  participation_score: parseInt(e.target.value) || 0
                 })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 text-black"
               />
               <p className="text-xs text-gray-500 mt-1">
-                設為 0 表示答錯不扣分（推薦設定）
+                答錯時給予的鼓勵分數（預設 10 分）
               </p>
             </div>
 
@@ -261,36 +259,36 @@ export default function ScoringRulesPage() {
             <Trophy className="w-6 h-6 text-purple-500" />
             <h2 className="text-xl font-bold">計分預覽</h2>
           </div>
-          
+
           <div className="bg-gray-50 rounded-lg p-4">
             <h3 className="font-medium mb-3">假設情境：基礎分數 100 分的題目</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
               <div className="bg-green-100 p-3 rounded">
                 <h4 className="font-medium text-green-800">第1名答對</h4>
                 <p className="text-green-700">
-                  100 + {Math.floor(100 * rules.speed_bonus_multiplier * 0.8)} + {rules.top_answer_bonus[0]} 
+                  100 + {Math.floor(100 * rules.speed_bonus_multiplier * 0.8)} + {rules.top_answer_bonus[0]}
                   = {100 + Math.floor(100 * rules.speed_bonus_multiplier * 0.8) + rules.top_answer_bonus[0]} 分
                 </p>
                 <p className="text-xs text-green-600">剩餘時間80%</p>
               </div>
-              
+
               <div className="bg-blue-100 p-3 rounded">
                 <h4 className="font-medium text-blue-800">第2名答對</h4>
                 <p className="text-blue-700">
-                  100 + {Math.floor(100 * rules.speed_bonus_multiplier * 0.6)} + {rules.top_answer_bonus[1]} 
+                  100 + {Math.floor(100 * rules.speed_bonus_multiplier * 0.6)} + {rules.top_answer_bonus[1]}
                   = {100 + Math.floor(100 * rules.speed_bonus_multiplier * 0.6) + rules.top_answer_bonus[1]} 分
                 </p>
                 <p className="text-xs text-blue-600">剩餘時間60%</p>
               </div>
-              
-              <div className="bg-red-100 p-3 rounded">
-                <h4 className="font-medium text-red-800">答錯</h4>
-                <p className="text-red-700">
-                  -{rules.wrong_answer_penalty} = {-rules.wrong_answer_penalty} 分
+
+              <div className="bg-orange-100 p-3 rounded">
+                <h4 className="font-medium text-orange-800">答錯</h4>
+                <p className="text-orange-700">
+                  +{rules.participation_score} 分
                 </p>
-                <p className="text-xs text-red-600">不論速度</p>
+                <p className="text-xs text-orange-600">參加獎勵</p>
               </div>
-              
+
               <div className="bg-gray-100 p-3 rounded">
                 <h4 className="font-medium text-gray-800">未答題</h4>
                 <p className="text-gray-700">
@@ -311,7 +309,7 @@ export default function ScoringRulesPage() {
             <RotateCcw className="w-5 h-5" />
             <span>重置預設值</span>
           </button>
-          
+
           <button
             onClick={handleSave}
             disabled={loading}
