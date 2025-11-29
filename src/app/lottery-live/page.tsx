@@ -819,7 +819,8 @@ export default function LotteryLivePage() {
               '--translate-x': `${translateX}px`,
               '--translate-y': `${translateY}px`,
               '--scale-factor': scaleFactor,
-              animation: 'zoomToCenter 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards'
+              animation: 'zoomToCenter 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards',
+              willChange: 'transform' // 效能優化
             } as React.CSSProperties}
           >
             <div className="relative w-full h-full">
@@ -839,10 +840,10 @@ export default function LotteryLivePage() {
 
       {/* 中獎照片放大特寫 - 左右分欄布局 */}
       {!isAnimating && showingWinner && !zoomingWinner && winnerPhoto && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm animate-in fade-in duration-500">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 animate-in fade-in duration-500">
           <div className="flex items-center justify-center gap-12 px-8" style={{ width: `${DESIGN_WIDTH * scale}px`, height: `${DESIGN_HEIGHT * scale}px` }}>
             {/* 左側：中獎照片 */}
-            <div className="relative flex-shrink-0 animate-in zoom-in duration-500">
+            <div className="relative flex-shrink-0 animate-in zoom-in duration-500" style={{ willChange: 'transform' }}>
               <div className="absolute -inset-6 bg-gradient-to-r from-yellow-400 via-orange-400 to-pink-400 rounded-3xl animate-pulse blur-2xl opacity-75"></div>
               <img
                 src={winnerPhoto.image_url}
@@ -859,7 +860,7 @@ export default function LotteryLivePage() {
             </div>
 
             {/* 右側：恭喜文字 + 資訊卡片 */}
-            <div className="flex flex-col justify-center gap-8 flex-1" style={{ maxWidth: `${880 * scale}px` }}>
+            <div className="flex flex-col justify-center gap-8 flex-1" style={{ maxWidth: `${880 * scale}px`, willChange: 'transform' }}>
               {/* 恭喜文字 */}
               <div className="text-center animate-in slide-in-from-right duration-500">
                 <h1
@@ -871,7 +872,7 @@ export default function LotteryLivePage() {
               </div>
 
               {/* 中獎者資訊卡片 */}
-              <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl animate-in slide-in-from-right duration-500 delay-150" style={{ padding: `${2.5 * scale}rem` }}>
+              <div className="bg-white/95 rounded-3xl shadow-2xl animate-in slide-in-from-right duration-500 delay-150" style={{ padding: `${2.5 * scale}rem` }}>
                 <div className="flex items-center mb-8" style={{ gap: `${2 * scale}rem` }}>
                   <img
                     src={winnerPhoto.avatar_url || '/default-avatar.png'}
