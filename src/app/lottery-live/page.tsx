@@ -367,7 +367,8 @@ export default function LotteryLivePage() {
 
       if (data.success) {
         // 檢測重置操作：沒有 current_draw_id 且我們之前有 currentDraw
-        if (!data.state.current_draw_id && latestCurrentDraw !== null) {
+        // 重要：如果正在抽獎中 (is_drawing)，不要重置！這可能是狀態更新的 race condition
+        if (!data.state.current_draw_id && latestCurrentDraw !== null && !data.state.is_drawing) {
           console.log('🔄 檢測到重置操作 - 清除中獎狀態')
           resetToInitialState()
           // 重置後直接返回，不再執行後續狀態更新
