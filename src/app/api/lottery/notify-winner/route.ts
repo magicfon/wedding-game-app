@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
         const body = await request.json()
         const { lotteryId, winnerPhotoUrl } = body
 
-        console.log('📨 收到發送通知請求:', { lotteryId, hasPhoto: !!winnerPhotoUrl })
+        console.log('📨 收到發送通知請求:', { lotteryId, winnerPhotoUrl })
 
         if (!lotteryId) {
             console.error('❌ 缺少 lotteryId')

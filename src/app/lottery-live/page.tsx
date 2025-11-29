@@ -594,7 +594,8 @@ export default function LotteryLivePage() {
 
           // Step 3: 等待綠框展示 (800ms) -> 開始慶祝
           setTimeout(() => {
-            startCelebration()
+            const winnerPhoto = photosToUse[targetIndex]
+            startCelebration(winnerPhoto)
           }, 800)
         }, 200)
       }
@@ -613,7 +614,7 @@ export default function LotteryLivePage() {
     }
   }, [])
 
-  const startCelebration = () => {
+  const startCelebration = (winnerPhoto?: Photo) => {
     console.log('🎊 開始慶祝動畫')
     setCelebrating(true)
 
