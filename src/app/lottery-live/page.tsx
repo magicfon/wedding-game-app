@@ -658,7 +658,8 @@ export default function LotteryLivePage() {
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-              lotteryId: currentId
+              lotteryId: currentId,
+              winnerPhotoUrl: winnerPhoto?.image_url
             })
           }).then(res => {
             console.log('📨 API 回應狀態:', res.status)

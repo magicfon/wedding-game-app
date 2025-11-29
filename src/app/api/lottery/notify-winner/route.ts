@@ -5,9 +5,9 @@ import { Client } from '@line/bot-sdk'
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json()
-        const { lotteryId } = body
+        const { lotteryId, winnerPhotoUrl } = body
 
-        console.log('📨 收到發送通知請求:', { lotteryId })
+        console.log('📨 收到發送通知請求:', { lotteryId, hasPhoto: !!winnerPhotoUrl })
 
         if (!lotteryId) {
             console.error('❌ 缺少 lotteryId')
@@ -59,10 +59,83 @@ export async function POST(request: NextRequest) {
             })
 
             console.log('📨 準備發送 LINE 訊息給:', winnerLineId)
-            await client.pushMessage(winnerLineId, {
-                type: 'text',
-                text: `🎉 恭喜您中獎！\n\n您在照片抽獎活動中被選中！\n\n中獎時間：${timeString}`
-            })
+
+            if (winnerPhotoUrl) {
+                // 發送 Flex Message 包含照片
+                await client.pushMessage(winnerLineId, {
+                    type: 'flex',
+                    altText: '🎉 恭喜您中獎！',
+                    contents: {
+                        type: 'bubble',
+                        hero: {
+                            type: 'image',
+                            url: winnerPhotoUrl,
+                            size: 'full',
+                            aspectRatio: '20:13',
+                            aspectMode: 'cover',
+                            action: {
+                                type: 'uri',
+                                label: '查看照片',
+                                uri: winnerPhotoUrl
+                            }
+                        },
+                        body: {
+                            type: 'box',
+                            layout: 'vertical',
+                            contents: [
+                                {
+                                    type: 'text',
+                                    text: '🎉 恭喜您中獎！',
+                                    weight: 'bold',
+                                    size: 'xl',
+                                    align: 'center',
+                                    color: '#d32f2f'
+                                },
+                                {
+                                    type: 'text',
+                                    text: '您在照片抽獎活動中被選中！',
+                                    margin: 'md',
+                                    align: 'center',
+                                    wrap: true
+                                },
+                                {
+                                    type: 'separator',
+                                    margin: 'lg'
+                                },
+                                {
+                                    type: 'box',
+                                    layout: 'vertical',
+                                    margin: 'lg',
+                                    contents: [
+                                        {
+                                            type: 'text',
+                                            text: '中獎時間',
+                                            size: 'xs',
+                                            color: '#aaaaaa',
+                                            align: 'center'
+                                        },
+                                        {
+                                            type: 'text',
+                                            text: timeString,
+                                            size: 'sm',
+                                            color: '#666666',
+                                            align: 'center',
+                                            margin: 'xs'
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                })
+            } else {
+                // 降級發送純文字
+                await client.pushMessage(winnerLineId, {
+                    type: 'text',
+                    text: `🎉 恭喜您中獎！\n\n您在照片抽獎活動中被選中！\n\n中獎時間：${timeString}`
+                })
+            }
+
             console.log('✅ LINE 通知發送成功')
 
             return NextResponse.json({ success: true })
