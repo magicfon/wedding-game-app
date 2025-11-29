@@ -7,7 +7,7 @@ import {
   Plus, Edit, Trash2, Save, X,
   HelpCircle, Clock, Award, AlertCircle, CheckCircle,
   Image as ImageIcon, Video, FileText,
-  List, Settings
+  List, Settings, Move, ArrowRight
 } from 'lucide-react'
 import { useLiff } from '@/hooks/useLiff'
 import MediaUpload from '@/components/MediaUpload'
@@ -153,6 +153,8 @@ export default function QuestionsManagePage() {
         ? { ...formData, id: editingQuestion.id, updated_by: profile?.userId }
         : { ...formData, created_by: profile?.userId }
 
+      console.log('📝 Submitting question form:', payload)
+
       const response = await fetch(url, {
         method,
         headers: {
@@ -278,6 +280,38 @@ export default function QuestionsManagePage() {
     } catch (error) {
       console.error('Error toggling question status:', error)
       alert('狀態更新時發生錯誤')
+    }
+  }
+
+  // 移動題目分類
+  const handleMoveCategory = async (questionId: number, newCategory: 'formal' | 'test' | 'backup') => {
+    try {
+      console.log(`🔄 Moving question ${questionId} to ${newCategory}...`)
+      const response = await fetch('/api/admin/questions', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: questionId,
+          category: newCategory,
+          updated_by: profile?.userId
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        console.log('✅ 題目分類更新成功')
+        // 重新載入題目列表
+        await fetchQuestions()
+      } else {
+        console.error('❌ 分類更新失敗:', data.error)
+        alert('分類更新失敗：' + data.error)
+      }
+    } catch (error) {
+      console.error('Error moving question category:', error)
+      alert('分類更新時發生錯誤')
     }
   }
 
@@ -751,6 +785,37 @@ ${diagnosis.recommendations?.join('\n') || '無建議'}
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
+                  </div>
+
+                  <div className="flex flex-col space-y-2 ml-2 border-l pl-2 border-gray-100">
+                    <span className="text-xs text-gray-400 font-medium text-center mb-1">移動至</span>
+                    {activeTab !== 'formal' && (
+                      <button
+                        onClick={() => handleMoveCategory(question.id, 'formal')}
+                        className="px-2 py-1 text-xs bg-blue-50 text-blue-600 hover:bg-blue-100 rounded transition-colors whitespace-nowrap"
+                        title="移動至正式題庫"
+                      >
+                        正式題庫
+                      </button>
+                    )}
+                    {activeTab !== 'test' && (
+                      <button
+                        onClick={() => handleMoveCategory(question.id, 'test')}
+                        className="px-2 py-1 text-xs bg-gray-100 text-gray-600 hover:bg-gray-200 rounded transition-colors whitespace-nowrap"
+                        title="移動至測試題庫"
+                      >
+                        測試題庫
+                      </button>
+                    )}
+                    {activeTab !== 'backup' && (
+                      <button
+                        onClick={() => handleMoveCategory(question.id, 'backup')}
+                        className="px-2 py-1 text-xs bg-orange-50 text-orange-600 hover:bg-orange-100 rounded transition-colors whitespace-nowrap"
+                        title="移動至備用題庫"
+                      >
+                        備用題庫
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

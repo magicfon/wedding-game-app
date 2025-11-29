@@ -153,6 +153,8 @@ export async function PUT(request: NextRequest) {
     const body = await request.json()
     const { id, updated_by, ...updateData } = body
 
+    console.log('📝 Updating question:', { id, updateData })
+
     if (!id) {
       return NextResponse.json({ error: 'Question ID is required' }, { status: 400 })
     }
@@ -170,6 +172,8 @@ export async function PUT(request: NextRequest) {
       console.error('Error updating question:', error)
       return NextResponse.json({ error: 'Failed to update question' }, { status: 500 })
     }
+
+    console.log('✅ Question updated successfully:', question)
 
     // 記錄管理員操作（暫時註解，等 admin_actions 表格創建後再啟用）
     // await supabase
