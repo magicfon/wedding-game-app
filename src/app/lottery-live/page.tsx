@@ -473,20 +473,24 @@ export default function LotteryLivePage() {
       const currentPhotos = data.photos
       console.log(`📸 使用 ${currentPhotos.length} 張照片進行抽獎`)
 
-      // 找到中獎照片的索引
-      const winnerIndex = currentPhotos.findIndex((p: Photo) => p.user_id === newDraw.winner_line_id)
+      // 找到中獎者的所有照片
+      const winnerPhotos = currentPhotos.filter((p: Photo) => p.user_id === newDraw.winner_line_id)
 
-      if (winnerIndex === -1) {
+      if (winnerPhotos.length === 0) {
         console.error('❌ 找不到中獎照片！')
         console.error('中獎者 ID:', newDraw.winner_line_id)
-        console.error('照片列表:', currentPhotos.map((p: Photo) => ({ id: p.id, user_id: p.user_id, name: p.display_name })))
         // 即使找不到，也隨機顯示一張
         const randomIndex = Math.floor(Math.random() * currentPhotos.length)
         startCarouselAnimationWithPhotos(currentPhotos, randomIndex)
         return
       }
 
-      console.log('✅ 找到中獎照片，索引:', winnerIndex)
+      // 從中獎者的照片中隨機選一張
+      const randomWinnerPhoto = winnerPhotos[Math.floor(Math.random() * winnerPhotos.length)]
+      const winnerIndex = currentPhotos.findIndex((p: Photo) => p.id === randomWinnerPhoto.id)
+
+      console.log(`✅ 找到中獎者 ${winnerPhotos.length} 張照片，隨機選中 ID: ${randomWinnerPhoto.id}`)
+      console.log('✅ 最終目標索引:', winnerIndex)
       startCarouselAnimationWithPhotos(currentPhotos, winnerIndex)
     } else {
       console.error('❌ 無法載入照片進行抽獎')
