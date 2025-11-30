@@ -48,9 +48,9 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
     <div className="flex min-h-screen bg-gray-100">
       {/* Sidebar - Hidden on mobile, visible on desktop */}
       <div className="hidden lg:block lg:w-64 lg:flex-shrink-0">
-        <div className="fixed inset-y-0 left-0 z-40 w-64 bg-white shadow-lg">
+        <div className="fixed inset-y-0 left-0 z-40 w-64 bg-white shadow-lg flex flex-col">
           {/* Header */}
-          <div className="flex items-center justify-center h-16 bg-gradient-to-r from-pink-500 to-purple-600">
+          <div className="flex-shrink-0 flex items-center justify-center h-16 bg-gradient-to-r from-pink-500 to-purple-600">
             <div className="flex items-center space-x-2">
               <Shield className="w-8 h-8 text-white" />
               <span className="text-xl font-bold text-white">管理員</span>
@@ -58,17 +58,16 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
           </div>
 
           {/* Navigation */}
-          <nav className="mt-8">
+          <nav className="mt-8 flex-1 overflow-y-auto pb-4">
             <div className="px-4 space-y-2">
               {adminMenuItems.map((item) => (
                 <button
                   key={item.href}
                   onClick={() => router.push(item.href)}
-                  className={`w-full flex items-center space-x-3 px-4 py-3 text-left rounded-lg transition-colors ${
-                    pathname === item.href
+                  className={`w-full flex items-center space-x-3 px-4 py-3 text-left rounded-lg transition-colors ${pathname === item.href
                       ? 'bg-pink-100 text-pink-700 border-r-4 border-pink-500'
                       : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                  }`}
+                    }`}
                 >
                   <item.icon className="w-5 h-5" />
                   <span className="font-medium">{item.name}</span>
@@ -103,9 +102,9 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
 
       {/* Mobile sidebar */}
       {isMenuOpen && (
-        <div className="fixed inset-y-0 left-0 z-40 w-64 bg-white shadow-lg transform lg:hidden">
+        <div className="fixed inset-y-0 left-0 z-40 w-64 bg-white shadow-lg transform lg:hidden flex flex-col">
           {/* Header */}
-          <div className="flex items-center justify-center h-16 bg-gradient-to-r from-pink-500 to-purple-600">
+          <div className="flex-shrink-0 flex items-center justify-center h-16 bg-gradient-to-r from-pink-500 to-purple-600">
             <div className="flex items-center space-x-2">
               <Shield className="w-8 h-8 text-white" />
               <span className="text-xl font-bold text-white">管理員</span>
@@ -113,7 +112,7 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
           </div>
 
           {/* Navigation */}
-          <nav className="mt-8">
+          <nav className="mt-8 flex-1 overflow-y-auto pb-4">
             <div className="px-4 space-y-2">
               {adminMenuItems.map((item) => (
                 <button
@@ -122,11 +121,10 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
                     router.push(item.href)
                     setIsMenuOpen(false)
                   }}
-                  className={`w-full flex items-center space-x-3 px-4 py-3 text-left rounded-lg transition-colors ${
-                    pathname === item.href
+                  className={`w-full flex items-center space-x-3 px-4 py-3 text-left rounded-lg transition-colors ${pathname === item.href
                       ? 'bg-pink-100 text-pink-700 border-r-4 border-pink-500'
                       : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                  }`}
+                    }`}
                 >
                   <item.icon className="w-5 h-5" />
                   <span className="font-medium">{item.name}</span>
@@ -171,7 +169,7 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
                   {title || '管理員控制台'}
                 </h1>
               </div>
-              
+
               <div className="flex items-center space-x-4">
                 <div className="text-sm text-gray-500">
                   {new Date().toLocaleDateString('zh-TW', {
