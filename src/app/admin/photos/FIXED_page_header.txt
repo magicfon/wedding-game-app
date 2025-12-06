@@ -1,0 +1,116 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { useLiff } from '@/hooks/useLiff'
+import AdminLayout from '@/components/AdminLayout'
+import { Eye, EyeOff, Download, Trash2, Image as ImageIcon, Clock, User, Heart, Filter, CheckCircle, XCircle, Loader2, Users, HardDrive, CheckSquare, Square, Video, Play } from 'lucide-react'
+import ResponsiveImage from '@/components/ResponsiveImage'
+
+interface PhotoWithUser {
+  id: number
+  image_url: string
+  blessing_message: string | null
+  is_public: boolean
+  vote_count: number
+  created_at: string
+  user_id: string
+  file_size: number | null
+  uploader: {
+    display_name: string
+    avatar_url: string | null
+  }
+  thumbnail_small_url: string | null
+  thumbnail_medium_url: string | null
+  thumbnail_large_url: string | null
+  media_type: 'image' | 'video'
+}
+
+interface VoterInfo {
+  lineId: string
+  displayName: string
+  avatarUrl: string | null
+}
+
+export default function PhotosManagementPage() {
+  const router = useRouter()
+  const { isReady, isLoggedIn, profile, loading: liffLoading } = useLiff()
+  const [photos, setPhotos] = useState<PhotoWithUser[]>([])
+  const [filteredPhotos, setFilteredPhotos] = useState<PhotoWithUser[]>([])
+  const [filter, setFilter] = useState<'all' | 'public' | 'private'>('all')
+  const [loading, setLoading] = useState(true)
+  const [isAdmin, setIsAdmin] = useState(false)
+  const [liffIsAdmin, setLiffIsAdmin] = useState(false)
+  const [adminLoading, setAdminLoading] = useState(true)
+  const [selectedPhoto, setSelectedPhoto] = useState<PhotoWithUser | null>(null)
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [voters, setVoters] = useState<VoterInfo[]>([])
+  const [votersLoading, setVotersLoading] = useState(false)
+  const [votersError, setVotersError] = useState<string | null>(null)
+  const [isBatchMode, setIsBatchMode] = useState(false)
+  const [selectedPhotos, setSelectedPhotos] = useState<Set<number>>(new Set())
+  const [batchDeleting, setBatchDeleting] = useState(false)
+  const [fileSizes, setFileSizes] = useState<Map<number, number>>(new Map())
+  const [loadingSizes, setLoadingSizes] = useState<Set<number>>(new Set())
+
+  useEffect(() => {
+    const checkAdmin = async () => {
+      if (!profile?.userId) {
+        setAdminLoading(false)
+        return
+      }
+
+      try {
+        const response = await fetch('/api/admin/check', {
+          credentials: 'include'
+        })
+        const data = await response.json()
+        setLiffIsAdmin(data.isAdmin)
+      } catch (error) {
+        console.error('檢查管理員權限失敗:', error)
+        setLiffIsAdmin(false)
+      } finally {
+        setAdminLoading(false)
+      }
+    }
+
+    if (isReady && profile) {
+      checkAdmin()
+    }
+  }, [isReady, profile])
+
+  const formatFileSize = (bytes: number | null): string => {
+    if (bytes === null) return '未知'
+    if (bytes < 1024) return bytes + ' B'
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
+    if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
+    return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB'
+  }
+
+  const fetchFileSize = async (photoId: number, imageUrl: string) => {
+    if (!imageUrl || fileSizes.has(photoId) || loadingSizes.has(photoId)) return null
+
+    setLoadingSizes(prev => new Set(prev).add(photoId))
+
+    try {
+      const response = await fetch(imageUrl, { method: 'HEAD' })
+      if (response.ok) {
+        const contentLength = response.headers.get('content-length')
+        if (contentLength) {
+          const fileSize = parseInt(contentLength, 10)
+          setFileSizes(prev => new Map(prev).set(photoId, fileSize))
+          return fileSize
+        }
+      }
+    } catch (error) {
+      console.warn(`無法獲取照片 ${photoId} 的檔案大小:`, error)
+    } finally {
+      setLoadingSizes(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(photoId)
+        return newSet
+      })
+    }
+
+    return null
+  }
