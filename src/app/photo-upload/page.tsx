@@ -79,7 +79,7 @@ export default function PhotoUploadPage() {
         ctx.drawImage(video, 0, 0);
         canvas.toBlob((blob) => {
           if (blob) {
-            const thumbFile = new File([blob], `thumb_${file.name.split('.')[0]}.jpg`, { type: 'image/jpeg' });
+            const thumbFile = new File([blob], 'thumbnail.jpg', { type: 'image/jpeg' });
             resolve(thumbFile);
           } else {
             reject(new Error('Thumbnail failed'));
