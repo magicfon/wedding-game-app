@@ -111,6 +111,7 @@ async function processDirectUploadMetadata({
   let thumbnailLargeUrl = null
 
   if (mediaType === 'video' && thumbnailUrl) {
+    console.log('📥 [API] 收到影片縮圖 URL:', thumbnailUrl);
     // 影片：使用上傳的縮圖作為基礎
     // 假設 thumbnailUrl 已經是 Vercel Blob 或 Supabase Storage 的公開 URL
     // 這裡我們直接使用它, 或者如果支援 Vercel Image Opt, 可以加上參數
@@ -118,6 +119,13 @@ async function processDirectUploadMetadata({
     thumbnailSmallUrl = thumbnailUrl
     thumbnailMediumUrl = thumbnailUrl
     thumbnailLargeUrl = thumbnailUrl
+    console.log('💾 [API] 將存入資料庫的縮圖 URLs:', {
+      small: thumbnailSmallUrl,
+      medium: thumbnailMediumUrl,
+      large: thumbnailLargeUrl
+    });
+  } else if (mediaType === 'video' && !thumbnailUrl) {
+    console.warn('⚠️ [API] 影片但沒有收到 thumbnailUrl！');
   } else if (mediaType === 'image') {
     // 圖片：使用原圖 URL
     // 這裡我們假設使用 Vercel Image Optimization (如果部署在 Vercel)

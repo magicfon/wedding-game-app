@@ -228,6 +228,7 @@ export default function PhotoUploadPage() {
         // 1. 如果是影片，先上傳縮圖
         let thumbnailUrl = '';
         if (preview.type === 'video' && preview.thumbnailFile) {
+          console.log('🎬 [客戶端] 開始上傳影片縮圖:', preview.thumbnailFile.name, preview.thumbnailFile.size);
           const thumbResult = await directUploadToSupabase({
             file: preview.thumbnailFile,
             userId: profile.userId,
@@ -235,6 +236,9 @@ export default function PhotoUploadPage() {
           });
           if (thumbResult.success && thumbResult.data) {
             thumbnailUrl = thumbResult.data.fileUrl; // or publicUrl? library returns fileUrl as publicUrl
+            console.log('✅ [客戶端] 縮圖上傳成功，URL:', thumbnailUrl);
+          } else {
+            console.error('❌ [客戶端] 縮圖上傳失敗:', thumbResult.error);
           }
         }
 
@@ -267,7 +271,10 @@ export default function PhotoUploadPage() {
         metadataFormData.append('uploaderLineId', profile.userId);
         metadataFormData.append('mediaType', preview.type);
         if (thumbnailUrl) {
+          console.log('📤 [客戶端] 發送 thumbnailUrl 到 API:', thumbnailUrl);
           metadataFormData.append('thumbnailUrl', thumbnailUrl);
+        } else if (preview.type === 'video') {
+          console.warn('⚠️ [客戶端] 影片沒有 thumbnailUrl！');
         }
 
         const response = await fetch('/api/photo/upload', {
