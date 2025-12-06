@@ -85,7 +85,7 @@ async function simpleUpload(
 
     // 上傳到 Supabase Storage
     const { data, error } = await supabase.storage
-      .from('wedding-photos')
+      .from('photos')
       .upload(fileName, file, {
         cacheControl: '3600',
         upsert: false
@@ -99,7 +99,7 @@ async function simpleUpload(
 
     // 獲取公開 URL
     const { data: urlData } = supabase.storage
-      .from('wedding-photos')
+      .from('photos')
       .getPublicUrl(fileName)
 
     onProgress?.(100, '上傳完成')
@@ -138,7 +138,7 @@ async function resumableUpload(
     // 使用 Supabase 的 upload 方法進行可恢復上傳
     // Supabase 會自動處理大檔案的分片上傳
     const { data, error } = await supabase.storage
-      .from('wedding-photos')
+      .from('photos')
       .upload(fileName, file, {
         cacheControl: '3600',
         upsert: false,
@@ -154,7 +154,7 @@ async function resumableUpload(
 
     // 獲取公開 URL
     const { data: urlData } = supabase.storage
-      .from('wedding-photos')
+      .from('photos')
       .getPublicUrl(fileName)
 
     onProgress?.(100, '上傳完成')
