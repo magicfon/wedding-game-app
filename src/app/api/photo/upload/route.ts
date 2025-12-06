@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createSupabaseAdmin } from '@/lib/supabase-admin'
+import { createSupabaseAdmin } from '@/lib/supabase-server'
 
 // 系統設定管理類別（不使用資料庫）
 class SystemSettingsManager {
