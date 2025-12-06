@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useLiff } from '@/hooks/useLiff'
 import AdminLayout from '@/components/AdminLayout'
 import { Eye, EyeOff, Download, Trash2, Image as ImageIcon, Clock, User, Heart, Filter, CheckCircle, XCircle, Loader2, Users, HardDrive, CheckSquare, Square, Video, Play } from 'lucide-react'
-import Image from 'next/image'
+// import Image from 'next/image' // Removed to avoid Vercel Image Optimization issues
 
 interface PhotoWithUser {
   id: number
@@ -416,8 +416,8 @@ export default function PhotosManagePage() {
                   <button
                     onClick={() => setFilter('all')}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === 'all'
-                        ? 'bg-blue-500 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }`}
                   >
                     全部 ({photos.length})
@@ -425,8 +425,8 @@ export default function PhotosManagePage() {
                   <button
                     onClick={() => setFilter('public')}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === 'public'
-                        ? 'bg-green-500 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      ? 'bg-green-500 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }`}
                   >
                     公開 ({publicCount})
@@ -434,8 +434,8 @@ export default function PhotosManagePage() {
                   <button
                     onClick={() => setFilter('private')}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === 'private'
-                        ? 'bg-purple-500 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      ? 'bg-purple-500 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }`}
                   >
                     隱私 ({privateCount})
@@ -450,8 +450,8 @@ export default function PhotosManagePage() {
                     setSelectedPhotos(new Set())
                   }}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${isBatchMode
-                      ? 'bg-orange-500 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    ? 'bg-orange-500 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
                 >
                   {isBatchMode ? '取消批量選擇' : '批量選擇'}
@@ -573,8 +573,8 @@ export default function PhotosManagePage() {
                     {isBatchMode && (
                       <div className="absolute top-2 left-2 z-10">
                         <div className={`w-6 h-6 rounded-md border-2 flex items-center justify-center ${selectedPhotos.has(photo.id)
-                            ? 'bg-blue-500 border-blue-500'
-                            : 'bg-white border-gray-300'
+                          ? 'bg-blue-500 border-blue-500'
+                          : 'bg-white border-gray-300'
                           }`}>
                           {selectedPhotos.has(photo.id) && (
                             <CheckSquare className="w-4 h-4 text-white" />
@@ -668,12 +668,10 @@ export default function PhotosManagePage() {
                   </video>
                 ) : (
                   <div className="relative w-full h-full">
-                    <Image
+                    <img
                       src={selectedPhoto.image_url}
                       alt={selectedPhoto.blessing_message || '照片'}
-                      fill
-                      className="object-contain"
-                      unoptimized
+                      className="w-full h-full object-contain"
                     />
                   </div>
                 )}
@@ -738,8 +736,8 @@ export default function PhotosManagePage() {
                   <button
                     onClick={() => togglePhotoVisibility(selectedPhoto.id, selectedPhoto.is_public)}
                     className={`flex-1 flex items-center justify-center space-x-2 py-3 px-4 rounded-lg font-medium transition-colors ${selectedPhoto.is_public
-                        ? 'bg-purple-100 text-purple-700 hover:bg-purple-200'
-                        : 'bg-green-100 text-green-700 hover:bg-green-200'
+                      ? 'bg-purple-100 text-purple-700 hover:bg-purple-200'
+                      : 'bg-green-100 text-green-700 hover:bg-green-200'
                       }`}
                   >
                     {selectedPhoto.is_public ? (
@@ -863,8 +861,8 @@ export default function PhotosManagePage() {
       {/* 訊息顯示 */}
       {message && (
         <div className={`fixed bottom-4 right-4 z-50 rounded-xl p-4 flex items-center space-x-3 max-w-md ${message.type === 'success'
-            ? 'bg-green-50 border-2 border-green-200 text-green-800'
-            : 'bg-red-50 border-2 border-red-200 text-red-800'
+          ? 'bg-green-50 border-2 border-green-200 text-green-800'
+          : 'bg-red-50 border-2 border-red-200 text-red-800'
           }`}>
           {message.type === 'success' ? (
             <CheckCircle className="w-6 h-6 flex-shrink-0" />
