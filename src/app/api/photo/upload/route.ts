@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createSupabaseAdmin } from '@/lib/supabase-server'
+import { createSupabaseAdmin } from '@/lib/supabase-admin'
 
 // 系統設定管理類別（不使用資料庫）
 class SystemSettingsManager {
@@ -67,6 +67,136 @@ async function getMaxPhotoUploadCount(): Promise<number> {
   return maxCount;
 }
 
+// 處理直接上傳的元數據
+async function processDirectUploadMetadata({
+  fileName,
+  fileUrl,
+  fileSize,
+  fileType,
+  blessingMessage,
+  isPublic,
+  uploaderLineId,
+  mediaType = 'image',
+  thumbnailUrl
+}: {
+  fileName: string
+  fileUrl: string
+  fileSize: number
+  fileType: string
+  blessingMessage: string
+  isPublic: boolean
+  uploaderLineId: string
+  mediaType?: 'image' | 'video'
+  thumbnailUrl?: string
+}) {
+  const supabaseAdmin = createSupabaseAdmin()
+
+  // 驗證檔案類型
+  const allowedImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+  const allowedVideoTypes = ['video/mp4', 'video/webm']
+
+  if (mediaType === 'video') {
+    if (!allowedVideoTypes.includes(fileType)) {
+      throw new Error(`不支援的影片類型: ${fileType}`)
+    }
+  } else {
+    if (!allowedImageTypes.includes(fileType)) {
+      throw new Error(`不支援的圖片類型: ${fileType}`)
+    }
+  }
+
+  // 縮圖 URL 處理
+  let thumbnailSmallUrl = null
+  let thumbnailMediumUrl = null
+  let thumbnailLargeUrl = null
+
+  if (mediaType === 'video' && thumbnailUrl) {
+    // 影片：使用上傳的縮圖作為基礎
+    // 假設 thumbnailUrl 已經是 Vercel Blob 或 Supabase Storage 的公開 URL
+    // 這裡我們直接使用它, 或者如果支援 Vercel Image Opt, 可以加上參數
+    // 但通常影片縮圖已經是 jpg, 可以直接用
+    thumbnailSmallUrl = thumbnailUrl
+    thumbnailMediumUrl = thumbnailUrl
+    thumbnailLargeUrl = thumbnailUrl
+  } else if (mediaType === 'image') {
+    // 圖片：使用原圖 URL
+    // 這裡我們假設使用 Vercel Image Optimization (如果部署在 Vercel)
+    // 或者 Supabase 的 Image Transformation
+    const baseUrl = fileUrl
+    // 簡單起見，直接存儲原圖 URL，前端負責添加寬高參數
+    thumbnailSmallUrl = baseUrl
+    thumbnailMediumUrl = baseUrl
+    thumbnailLargeUrl = baseUrl
+  }
+
+  // 儲存到資料庫
+  const { data, error } = await supabaseAdmin
+    .from('photos')
+    .insert({
+      image_url: fileUrl,
+      user_id: uploaderLineId,
+      blessing_message: blessingMessage,
+      is_public: isPublic,
+      file_size: fileSize,
+      media_type: mediaType,
+      thumbnail_small_url: thumbnailSmallUrl,
+      thumbnail_medium_url: thumbnailMediumUrl,
+      thumbnail_large_url: thumbnailLargeUrl,
+      thumbnail_generated_at: new Date().toISOString()
+    })
+    .select()
+    .single()
+
+  if (error) throw error
+
+  return data
+}
+
+// 處理單張照片上傳 (傳統方式)
+async function uploadSinglePhoto({
+  file,
+  blessingMessage,
+  isPublic,
+  uploaderLineId
+}: {
+  file: File
+  blessingMessage: string
+  isPublic: boolean
+  uploaderLineId: string
+}) {
+  const supabaseAdmin = createSupabaseAdmin()
+
+  const fileExt = file.name.split('.').pop();
+  const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+  const filePath = `${uploaderLineId}/${fileName}`;
+
+  const { error: uploadError } = await supabaseAdmin
+    .storage
+    .from('photos')
+    .upload(filePath, file, {
+      contentType: file.type
+    });
+
+  if (uploadError) throw uploadError;
+
+  const { data: { publicUrl } } = supabaseAdmin
+    .storage
+    .from('photos')
+    .getPublicUrl(filePath);
+
+  // 2. Metadata
+  return processDirectUploadMetadata({
+    fileName: file.name,
+    fileUrl: publicUrl,
+    fileSize: file.size,
+    fileType: file.type,
+    blessingMessage,
+    isPublic,
+    uploaderLineId,
+    mediaType: file.type.startsWith('video/') ? 'video' : 'image'
+  });
+}
+
 export async function POST(request: NextRequest) {
   try {
     const supabase = createSupabaseAdmin();
@@ -83,6 +213,8 @@ export async function POST(request: NextRequest) {
       const blessingMessage = formData.get('blessingMessage') as string || '';
       const isPublic = formData.get('isPublic') === 'true';
       const uploaderLineId = formData.get('uploaderLineId') as string;
+      const mediaType = (formData.get('mediaType') as 'image' | 'video') || 'image';
+      const thumbnailUrl = formData.get('thumbnailUrl') as string;
 
       if (!uploaderLineId) {
         return NextResponse.json({
@@ -98,7 +230,9 @@ export async function POST(request: NextRequest) {
           fileType,
           blessingMessage,
           isPublic,
-          uploaderLineId
+          uploaderLineId,
+          mediaType,
+          thumbnailUrl
         });
 
         return NextResponse.json({
