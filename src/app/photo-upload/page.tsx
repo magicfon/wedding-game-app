@@ -100,18 +100,46 @@ export default function PhotoUploadPage() {
       return;
     }
 
-    // 驗證每個檔案（移除大小限制）
+    // 驗證每個檔案的類型和大小
+    const invalidTypeFiles: string[] = [];
+    const oversizedFiles: { name: string; size: number }[] = [];
+
     const validFiles = files.filter(file => {
       if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
+        invalidTypeFiles.push(file.name);
         return false;
       }
+
+      // 檢查檔案大小（5GB limit for Supabase Pro）
+      const MAX_SIZE = 5 * 1024 * 1024 * 1024; // 5GB
+      if (file.size > MAX_SIZE) {
+        oversizedFiles.push({ name: file.name, size: file.size });
+        return false;
+      }
+
       return true;
     });
+
+    // 顯示具體的錯誤訊息
+    if (invalidTypeFiles.length > 0) {
+      setError(`以下檔案格式不支援：${invalidTypeFiles.join(', ')}`);
+      return;
+    }
+
+    if (oversizedFiles.length > 0) {
+      const fileList = oversizedFiles.map(f => {
+        const sizeGB = (f.size / (1024 * 1024 * 1024)).toFixed(2);
+        return `${f.name} (${sizeGB} GB)`;
+      }).join('\n');
+      setError(`以下檔案超過 5 GB 限制：\n${fileList}`);
+      return;
+    }
 
     if (validFiles.length !== files.length) {
       setError('部分檔案不符合要求，請選擇圖片或影片');
       return;
     }
+
 
     // 生成預覽
     const newPreviews = await Promise.all(validFiles.map(async (file, index) => {
@@ -486,8 +514,8 @@ export default function PhotoUploadPage() {
               onClick={handleUpload}
               disabled={previews.length === 0 || isUploading}
               className={`px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-200 ${previews.length === 0 || isUploading
-                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white shadow-lg hover:shadow-xl transform hover:scale-105'
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                : 'bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white shadow-lg hover:shadow-xl transform hover:scale-105'
                 }`}
             >
               {isUploading ? (

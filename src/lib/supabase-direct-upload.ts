@@ -6,6 +6,9 @@ import { createSupabaseBrowser } from './supabase'
 // 檔案大小閾值（6MB），超過此大小使用 Resumable Upload
 const RESUMABLE_UPLOAD_THRESHOLD = 6 * 1024 * 1024
 
+// Supabase Pro 儲存空間單檔上傳大小限制（5GB）
+export const MAX_FILE_SIZE = 5 * 1024 * 1024 * 1024
+
 // 上傳進度回調類型
 export interface UploadProgressCallback {
   (progress: number, status: string): void
@@ -48,6 +51,16 @@ export async function directUploadToSupabase(options: DirectUploadOptions): Prom
     // 驗證檔案類型
     if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
       return { success: false, error: '請選擇圖片或影片檔案' }
+    }
+
+    // 檢查檔案大小限制
+    if (file.size > MAX_FILE_SIZE) {
+      const fileSizeGB = (file.size / (1024 * 1024 * 1024)).toFixed(2)
+      const maxSizeGB = (MAX_FILE_SIZE / (1024 * 1024 * 1024)).toFixed(0)
+      return {
+        success: false,
+        error: `檔案太大（${fileSizeGB} GB），單檔最大限制為 ${maxSizeGB} GB`
+      }
     }
 
     // 生成唯一檔名
