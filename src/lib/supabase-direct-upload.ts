@@ -92,6 +92,15 @@ async function simpleUpload(
       })
 
     if (error) {
+      console.error('❌ Supabase Storage Upload Error (Simple):', {
+        message: error.message,
+        name: error.name,
+        statusCode: (error as any).statusCode,
+        fileName: fileName,
+        fileSize: file.size,
+        fileType: file.type,
+        fullError: JSON.parse(JSON.stringify(error)),
+      })
       throw new Error(`上傳失敗: ${error.message}`)
     }
 
@@ -147,6 +156,15 @@ async function resumableUpload(
       })
 
     if (error) {
+      console.error('❌ Supabase Storage Upload Error (Resumable):', {
+        message: error.message,
+        name: error.name,
+        statusCode: (error as any).statusCode,
+        fileName: fileName,
+        fileSize: file.size,
+        fileType: file.type,
+        fullError: JSON.parse(JSON.stringify(error)),
+      })
       throw new Error(`上傳失敗: ${error.message}`)
     }
 
