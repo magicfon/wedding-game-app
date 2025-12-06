@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLiff } from '@/hooks/useLiff'
 import AdminLayout from '@/components/AdminLayout'
-import { Eye, EyeOff, Download, Trash2, Image as ImageIcon, Clock, User, Heart, Filter, CheckCircle, XCircle, Loader2, Users, HardDrive, CheckSquare, Square } from 'lucide-react'
+import { Eye, EyeOff, Download, Trash2, Image as ImageIcon, Clock, User, Heart, Filter, CheckCircle, XCircle, Loader2, Users, HardDrive, CheckSquare, Square, Video, Play } from 'lucide-react'
 import Image from 'next/image'
 
 interface PhotoWithUser {
@@ -24,6 +24,7 @@ interface PhotoWithUser {
   thumbnail_medium_url?: string
   thumbnail_large_url?: string
   thumbnail_generated_at?: string
+  media_type?: 'image' | 'video'
 }
 
 interface Voter {
@@ -70,18 +71,18 @@ export default function PhotosManagePage() {
     if (fileSizes.has(photoId)) {
       return fileSizes.get(photoId)!
     }
-    
+
     // 檢查是否正在載入
     if (loadingSizes.has(photoId)) {
       return null
     }
-    
+
     setLoadingSizes(prev => new Set(prev).add(photoId))
-    
+
     try {
       const response = await fetch(imageUrl, { method: 'HEAD' })
       const contentLength = response.headers.get('content-length')
-      
+
       if (contentLength) {
         const fileSize = parseInt(contentLength, 10)
         setFileSizes(prev => new Map(prev).set(photoId, fileSize))
@@ -96,7 +97,7 @@ export default function PhotosManagePage() {
         return newSet
       })
     }
-    
+
     return null
   }
 
@@ -104,7 +105,7 @@ export default function PhotosManagePage() {
   useEffect(() => {
     if (filteredPhotos.length > 0) {
       const visiblePhotos = filteredPhotos.slice(0, 20) // 限制前 20 張照片
-      
+
       visiblePhotos.forEach(photo => {
         if (!fileSizes.has(photo.id) && !loadingSizes.has(photo.id)) {
           fetchFileSize(photo.id, photo.image_url)
@@ -148,9 +149,9 @@ export default function PhotosManagePage() {
       console.log('隱私照片數量:', privatePhotos.length)
       setFilteredPhotos(privatePhotos)
     }
-    console.log('filteredPhotos 將更新為:', filter === 'all' ? photos.length : 
-                filter === 'public' ? photos.filter(p => p.is_public).length :
-                photos.filter(p => !p.is_public).length)
+    console.log('filteredPhotos 將更新為:', filter === 'all' ? photos.length :
+      filter === 'public' ? photos.filter(p => p.is_public).length :
+        photos.filter(p => !p.is_public).length)
   }, [filter, photos])
 
   // 獲取所有照片
@@ -195,7 +196,7 @@ export default function PhotosManagePage() {
       const data = await response.json()
 
       if (response.ok) {
-        setPhotos(photos.map(photo => 
+        setPhotos(photos.map(photo =>
           photo.id === photoId ? { ...photo, is_public: !currentStatus } : photo
         ))
         alert(`照片已${!currentStatus ? '公開' : '設為隱私'}`)
@@ -244,7 +245,7 @@ export default function PhotosManagePage() {
     }
 
     setBatchDeleting(true)
-    
+
     try {
       const response = await fetch('/api/admin/photos/batch-delete', {
         method: 'DELETE',
@@ -307,10 +308,10 @@ export default function PhotosManagePage() {
   // 獲取照片投票者資訊
   const fetchPhotoVoters = async (photoId: number) => {
     if (!photoId) return
-    
+
     setVotersLoading(true)
     setVotersError(null)
-    
+
     try {
       console.log(`開始獲取照片 ${photoId} 的投票者資訊...`)
       const response = await fetch(`/api/admin/photos/voters?photoId=${photoId}`)
@@ -414,54 +415,50 @@ export default function PhotosManagePage() {
                 <div className="flex space-x-2">
                   <button
                     onClick={() => setFilter('all')}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      filter === 'all'
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === 'all'
                         ? 'bg-blue-500 text-white'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
+                      }`}
                   >
                     全部 ({photos.length})
                   </button>
                   <button
                     onClick={() => setFilter('public')}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      filter === 'public'
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === 'public'
                         ? 'bg-green-500 text-white'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
+                      }`}
                   >
                     公開 ({publicCount})
                   </button>
                   <button
                     onClick={() => setFilter('private')}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      filter === 'private'
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === 'private'
                         ? 'bg-purple-500 text-white'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
+                      }`}
                   >
                     隱私 ({privateCount})
                   </button>
                 </div>
               </div>
-              
+
               <div className="flex items-center space-x-2">
                 <button
                   onClick={() => {
                     setIsBatchMode(!isBatchMode)
                     setSelectedPhotos(new Set())
                   }}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    isBatchMode
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${isBatchMode
                       ? 'bg-orange-500 text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
+                    }`}
                 >
                   {isBatchMode ? '取消批量選擇' : '批量選擇'}
                 </button>
               </div>
             </div>
-            
+
             {/* 批量操作工具列 */}
             {isBatchMode && (
               <div className="mt-4 pt-4 border-t border-gray-200 flex items-center justify-between">
@@ -483,7 +480,7 @@ export default function PhotosManagePage() {
                     已選擇 {selectedPhotos.size} 張照片
                   </span>
                 </div>
-                
+
                 {selectedPhotos.size > 0 && (
                   <button
                     onClick={() => batchDeletePhotos(Array.from(selectedPhotos))}
@@ -513,9 +510,9 @@ export default function PhotosManagePage() {
             <div className="bg-white rounded-xl shadow-md p-12 text-center">
               <ImageIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
               <p className="text-gray-500 text-lg">
-                {filter === 'all' ? '目前沒有照片' : 
-                 filter === 'public' ? '目前沒有公開照片' : 
-                 '目前沒有隱私照片'}
+                {filter === 'all' ? '目前沒有照片' :
+                  filter === 'public' ? '目前沒有公開照片' :
+                    '目前沒有隱私照片'}
               </p>
             </div>
           ) : (
@@ -523,9 +520,8 @@ export default function PhotosManagePage() {
               {filteredPhotos.map((photo) => (
                 <div
                   key={photo.id}
-                  className={`group relative bg-white rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 ${
-                    isBatchMode ? 'cursor-pointer' : ''
-                  }`}
+                  className={`group relative bg-white rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 ${isBatchMode ? 'cursor-pointer' : ''
+                    }`}
                   onClick={() => {
                     if (isBatchMode) {
                       togglePhotoSelection(photo.id)
@@ -535,9 +531,31 @@ export default function PhotosManagePage() {
                   }}
                 >
                   <div className="aspect-square w-full relative overflow-hidden bg-gray-100">
-                    {photo.image_url ? (
+                    {photo.media_type === 'video' ? (
+                      <div className="w-full h-full relative">
+                        <img
+                          src={photo.thumbnail_medium_url || photo.thumbnail_small_url || photo.image_url} // Fallback might fail for video if no thumbnail
+                          alt={photo.blessing_message || '影片'}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            // If thumbnail fails, show generic video icon placeholder
+                            e.currentTarget.style.display = 'none';
+                            e.currentTarget.parentElement?.querySelector('.video-placeholder')?.classList.remove('hidden');
+                          }}
+                        />
+                        <div className="video-placeholder hidden absolute inset-0 flex items-center justify-center bg-gray-200">
+                          <Video className="w-12 h-12 text-gray-400" />
+                        </div>
+                        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black/50 rounded-full p-2">
+                          <Play className="w-6 h-6 text-white fill-current" />
+                        </div>
+                        <div className="absolute top-2 right-2 z-20 bg-black/60 px-1.5 py-0.5 rounded text-white text-xs font-medium flex items-center">
+                          <Video className="w-3 h-3 mr-1" /> 影片
+                        </div>
+                      </div>
+                    ) : photo.image_url ? (
                       <img
-                        src={photo.image_url}
+                        src={photo.thumbnail_medium_url || photo.image_url}
                         alt={photo.blessing_message || '照片'}
                         className="w-full h-full object-cover"
                         onError={(e) => {
@@ -550,22 +568,21 @@ export default function PhotosManagePage() {
                         <ImageIcon className="w-12 h-12 text-gray-400" />
                       </div>
                     )}
-                    
+
                     {/* 批量選擇模式下的選擇框 */}
                     {isBatchMode && (
                       <div className="absolute top-2 left-2 z-10">
-                        <div className={`w-6 h-6 rounded-md border-2 flex items-center justify-center ${
-                          selectedPhotos.has(photo.id)
+                        <div className={`w-6 h-6 rounded-md border-2 flex items-center justify-center ${selectedPhotos.has(photo.id)
                             ? 'bg-blue-500 border-blue-500'
                             : 'bg-white border-gray-300'
-                        }`}>
+                          }`}>
                           {selectedPhotos.has(photo.id) && (
                             <CheckSquare className="w-4 h-4 text-white" />
                           )}
                         </div>
                       </div>
                     )}
-                    
+
                     {/* 公開/隱私標記 */}
                     <div className={`absolute top-2 z-10 ${isBatchMode ? 'right-2' : 'right-2'}`}>
                       {photo.is_public ? (
@@ -637,15 +654,29 @@ export default function PhotosManagePage() {
               className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* 照片 */}
-              <div className="relative w-full aspect-video bg-gray-100">
-                <Image
-                  src={selectedPhoto.image_url}
-                  alt={selectedPhoto.blessing_message || '照片'}
-                  fill
-                  className="object-contain"
-                  unoptimized
-                />
+              {/* 照片或影片 */}
+              <div className="relative w-full aspect-video bg-black flex items-center justify-center">
+                {selectedPhoto.media_type === 'video' ? (
+                  <video
+                    src={selectedPhoto.image_url}
+                    poster={selectedPhoto.thumbnail_large_url || selectedPhoto.thumbnail_medium_url}
+                    controls
+                    autoPlay
+                    className="max-h-[70vh] w-auto h-auto max-w-full"
+                  >
+                    您的瀏覽器不支援影片標籤。
+                  </video>
+                ) : (
+                  <div className="relative w-full h-full">
+                    <Image
+                      src={selectedPhoto.image_url}
+                      alt={selectedPhoto.blessing_message || '照片'}
+                      fill
+                      className="object-contain"
+                      unoptimized
+                    />
+                  </div>
+                )}
               </div>
 
               {/* 照片資訊 */}
@@ -706,11 +737,10 @@ export default function PhotosManagePage() {
                 <div className="flex items-center space-x-3 pt-4 border-t">
                   <button
                     onClick={() => togglePhotoVisibility(selectedPhoto.id, selectedPhoto.is_public)}
-                    className={`flex-1 flex items-center justify-center space-x-2 py-3 px-4 rounded-lg font-medium transition-colors ${
-                      selectedPhoto.is_public
+                    className={`flex-1 flex items-center justify-center space-x-2 py-3 px-4 rounded-lg font-medium transition-colors ${selectedPhoto.is_public
                         ? 'bg-purple-100 text-purple-700 hover:bg-purple-200'
                         : 'bg-green-100 text-green-700 hover:bg-green-200'
-                    }`}
+                      }`}
                   >
                     {selectedPhoto.is_public ? (
                       <>
@@ -832,11 +862,10 @@ export default function PhotosManagePage() {
 
       {/* 訊息顯示 */}
       {message && (
-        <div className={`fixed bottom-4 right-4 z-50 rounded-xl p-4 flex items-center space-x-3 max-w-md ${
-          message.type === 'success'
+        <div className={`fixed bottom-4 right-4 z-50 rounded-xl p-4 flex items-center space-x-3 max-w-md ${message.type === 'success'
             ? 'bg-green-50 border-2 border-green-200 text-green-800'
             : 'bg-red-50 border-2 border-red-200 text-red-800'
-        }`}>
+          }`}>
           {message.type === 'success' ? (
             <CheckCircle className="w-6 h-6 flex-shrink-0" />
           ) : (
@@ -852,6 +881,6 @@ export default function PhotosManagePage() {
         </div>
       )}
     </AdminLayout>
-)
+  )
 }
 

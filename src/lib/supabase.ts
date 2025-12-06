@@ -66,6 +66,10 @@ export interface Photo {
   is_public: boolean
   vote_count: number
   created_at: string  // 創建時間
+  thumbnail_small_url?: string
+  thumbnail_medium_url?: string
+  thumbnail_large_url?: string
+  media_type?: 'image' | 'video'
   updated_at?: string  // 更新時間（可選）
 }
 

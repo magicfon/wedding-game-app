@@ -46,8 +46,8 @@ export async function directUploadToSupabase(options: DirectUploadOptions): Prom
     }
 
     // 驗證檔案類型
-    if (!file.type.startsWith('image/')) {
-      return { success: false, error: '請選擇圖片檔案' }
+    if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
+      return { success: false, error: '請選擇圖片或影片檔案' }
     }
 
     // 生成唯一檔名
@@ -181,11 +181,11 @@ async function resumableUpload(
  */
 export function formatFileSize(bytes: number): string {
   if (bytes === 0) return '0 Bytes'
-  
+
   const k = 1024
   const sizes = ['Bytes', 'KB', 'MB', 'GB']
   const i = Math.floor(Math.log(bytes) / Math.log(k))
-  
+
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 

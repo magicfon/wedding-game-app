@@ -4,9 +4,9 @@ import { createSupabaseAdmin } from '@/lib/supabase-admin'
 export async function GET(request: NextRequest) {
   try {
     const supabaseAdmin = createSupabaseAdmin()
-    
+
     console.log('=== 所有照片 API 開始 ===')
-    
+
     // 獲取所有照片（公開和隱私）
     const { data: photos, error: photosError } = await supabaseAdmin
       .from('photos')
@@ -22,14 +22,18 @@ export async function GET(request: NextRequest) {
         uploader:users!photos_user_id_fkey (
           display_name,
           avatar_url
-        )
+        ),
+        thumbnail_small_url,
+        thumbnail_medium_url,
+        thumbnail_large_url,
+        media_type
       `)
       .order('created_at', { ascending: false })
 
-    console.log('所有照片查詢結果:', { 
-      success: !photosError, 
+    console.log('所有照片查詢結果:', {
+      success: !photosError,
       count: photos?.length || 0,
-      error: photosError 
+      error: photosError
     })
 
     if (photosError) {

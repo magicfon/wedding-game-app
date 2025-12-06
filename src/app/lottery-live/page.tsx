@@ -30,6 +30,10 @@ interface Photo {
   display_name: string
   blessing_message: string
   avatar_url: string
+  thumbnail_small_url?: string
+  thumbnail_medium_url?: string
+  thumbnail_large_url?: string
+  media_type?: 'image' | 'video'
 }
 
 // 固定設計尺寸 (基準: 1920x1080)
@@ -111,11 +115,15 @@ const PhotoItem = memo(({ photo, size, isWinner }: PhotoItemProps) => {
         ${isWinner ? 'scale-110 z-20' : 'scale-100'}
       `}>
         <img
-          src={photo.image_url}
+          src={photo.media_type === 'video' ? (photo.thumbnail_medium_url || photo.thumbnail_large_url || photo.image_url) : photo.image_url}
           alt={photo.display_name}
           className="w-full h-full object-cover"
           onError={(e) => {
-            e.currentTarget.src = '/default-avatar.png'
+            if (photo.media_type !== 'video') {
+              e.currentTarget.src = '/default-avatar.png'
+            }
+            // For video, if thumbnail fails (e.g. video URL used directly), it might just show broken image. 
+            // Better fallback? Maybe just keep it simple for now.
           }}
         />
 
@@ -910,18 +918,32 @@ export default function LotteryLivePage() {
             {/* 左側：中獎照片 */}
             <div className="relative flex-shrink-0 animate-in zoom-in duration-500" style={{ willChange: 'transform' }}>
               <div className="absolute -inset-6 bg-gradient-to-r from-yellow-400 via-orange-400 to-pink-400 rounded-3xl animate-pulse blur-2xl opacity-75"></div>
-              <img
-                src={winnerPhoto.image_url}
-                alt={winnerPhoto.display_name}
-                style={{
-                  width: `${900 * scale}px`,
-                  height: `${900 * scale}px`
-                }}
-                className="relative object-cover rounded-3xl border-8 border-white shadow-2xl"
-                onError={(e) => {
-                  e.currentTarget.src = '/default-avatar.png'
-                }}
-              />
+              {winnerPhoto.media_type === 'video' ? (
+                <video
+                  src={winnerPhoto.image_url}
+                  poster={winnerPhoto.thumbnail_large_url}
+                  autoPlay
+                  controls
+                  className="relative object-cover rounded-3xl border-8 border-white shadow-2xl bg-black"
+                  style={{
+                    width: `${900 * scale}px`,
+                    height: `${900 * scale}px`
+                  }}
+                />
+              ) : (
+                <img
+                  src={winnerPhoto.image_url}
+                  alt={winnerPhoto.display_name}
+                  style={{
+                    width: `${900 * scale}px`,
+                    height: `${900 * scale}px`
+                  }}
+                  className="relative object-cover rounded-3xl border-8 border-white shadow-2xl"
+                  onError={(e) => {
+                    e.currentTarget.src = '/default-avatar.png'
+                  }}
+                />
+              )}
             </div>
 
             {/* 右側：恭喜文字 + 資訊卡片 */}

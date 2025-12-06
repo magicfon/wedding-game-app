@@ -1,15 +1,12 @@
 import { Photo } from '@/lib/supabase'
 
-// 定義 PhotoWithUser 類型
 export interface PhotoWithUser extends Photo {
   uploader: {
     display_name: string
     avatar_url: string
   }
   user_vote_count?: number
-  thumbnail_small_url?: string
-  thumbnail_medium_url?: string
-  thumbnail_large_url?: string
+  // thumbnail_small_url, etc are now in base Photo type
 }
 
 /**
@@ -29,18 +26,18 @@ export const getColumnCount = (width: number): number => {
  * @returns 二維數組，每個子數組代表一列的照片
  */
 export const distributePhotosToColumns = (
-  photos: PhotoWithUser[], 
+  photos: PhotoWithUser[],
   columnCount: number
 ): PhotoWithUser[][] => {
   // 初始化列數組
   const columns: PhotoWithUser[][] = Array.from({ length: columnCount }, () => [])
-  
+
   // 按橫向順序分配照片
   photos.forEach((photo, index) => {
     const columnIndex = index % columnCount
     columns[columnIndex].push(photo)
   })
-  
+
   return columns
 }
 
@@ -59,7 +56,7 @@ export const getCurrentColumnCount = (): number => {
  * @returns 包含行和列信息的對象
  */
 export const getPhotoPosition = (
-  index: number, 
+  index: number,
   columnCount: number
 ): { row: number; column: number } => {
   return {
@@ -75,7 +72,7 @@ export const getPhotoPosition = (
  * @returns 是否需要重新分配
  */
 export const shouldRedistribute = (
-  oldColumnCount: number, 
+  oldColumnCount: number,
   newColumnCount: number
 ): boolean => {
   return oldColumnCount !== newColumnCount
@@ -92,27 +89,27 @@ export const validatePhotoDistribution = (
   columns: PhotoWithUser[][]
 ): { isValid: boolean; errors: string[] } => {
   const errors: string[] = []
-  
+
   // 檢查總數是否一致
   const totalInColumns = columns.reduce((sum, column) => sum + column.length, 0)
   if (totalInColumns !== photos.length) {
     errors.push(`照片總數不一致：原始 ${photos.length}，分配後 ${totalInColumns}`)
   }
-  
+
   // 檢查橫向排序
   const columnCount = columns.length
   for (let i = 0; i < photos.length; i++) {
     const expectedColumn = i % columnCount
     const expectedRow = Math.floor(i / columnCount)
-    const actualColumn = columns.findIndex(column => 
+    const actualColumn = columns.findIndex(column =>
       column.some(photo => photo.id === photos[i].id)
     )
-    
+
     if (actualColumn !== expectedColumn) {
       errors.push(`照片 ${photos[i].id} 位置錯誤：期望列 ${expectedColumn}，實際列 ${actualColumn}`)
     }
   }
-  
+
   return {
     isValid: errors.length === 0,
     errors

@@ -6,7 +6,7 @@ import { createSupabaseBrowser, Photo } from '@/lib/supabase'
 import { useLiff } from '@/hooks/useLiff'
 import Layout from '@/components/Layout'
 import ResponsiveImage from '@/components/ResponsiveImage'
-import { Heart, User, Clock, Trophy, X, MessageSquare } from 'lucide-react'
+import { Heart, User, Clock, Trophy, X, MessageSquare, Video, Play } from 'lucide-react'
 import { useResponsiveColumns } from '@/hooks/useResponsiveColumns'
 import { usePhotoDistribution } from '@/hooks/usePhotoDistribution'
 import { PhotoWithUser } from '@/lib/photo-distribution'
@@ -31,14 +31,14 @@ export default function PhotoWallPage() {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const [votingInProgress, setVotingInProgress] = useState<Set<number>>(new Set())
   const [showVoteLimitModal, setShowVoteLimitModal] = useState(false)
-  
+
   const router = useRouter()
   const supabase = createSupabaseBrowser()
   const { isReady, isLoggedIn, profile, loading: liffLoading } = useLiff()
-  
+
   // 添加響應式列數管理
   const { columnCount } = useResponsiveColumns()
-  
+
   // 使用照片分配 Hook
   const { columns } = usePhotoDistribution(displayedPhotos, columnCount)
 
@@ -61,7 +61,7 @@ export default function PhotoWallPage() {
         .single()
 
       if (error) throw error
-      
+
       setVotingEnabled(data.voting_enabled)
       setAvailableVotes(data.votes_per_user)
     } catch (error) {
@@ -86,7 +86,7 @@ export default function PhotoWallPage() {
       data.forEach(vote => {
         voteCount[vote.photo_id] = (voteCount[vote.photo_id] || 0) + 1
       })
-      
+
       setUserVotes(voteCount)
     } catch (error) {
       console.error('Error fetching user votes:', error)
@@ -109,20 +109,21 @@ export default function PhotoWallPage() {
           thumbnail_small_url,
           thumbnail_medium_url,
           thumbnail_large_url,
+          media_type,
           uploader:users!photos_user_id_fkey(display_name, avatar_url)
         `)
         .eq('is_public', true)
         .order(sortBy === 'votes' ? 'vote_count' : 'created_at',
-               { ascending: sortBy === 'votes' ? false : false })
+          { ascending: sortBy === 'votes' ? false : false })
 
       if (error) throw error
-      
+
       // 轉換資料結構以符合 PhotoWithUser 介面
       const transformedData = (data || []).map((photo: any) => ({
         ...photo,
         uploader: Array.isArray(photo.uploader) ? photo.uploader[0] : photo.uploader
       })) as PhotoWithUser[]
-      
+
       setPhotos(transformedData)
       setDisplayedPhotos(transformedData.slice(0, PHOTOS_PER_PAGE))
       setPage(1)
@@ -218,7 +219,7 @@ export default function PhotoWallPage() {
 
     const hasVoted = userVotes[photoId] > 0
     const totalUsedVotes = Object.values(userVotes).reduce((sum, count) => sum + count, 0)
-    
+
     // 如果沒投過票，檢查是否還有額度
     if (!hasVoted && totalUsedVotes >= availableVotes) {
       setShowVoteLimitModal(true)
@@ -243,9 +244,9 @@ export default function PhotoWallPage() {
           [photoId]: 0
         }))
         // 立即減少票數
-        const updatePhotoCount = (p: any) => 
+        const updatePhotoCount = (p: any) =>
           p.id === photoId ? { ...p, vote_count: Math.max(0, p.vote_count - 1) } : p
-        
+
         setPhotos(prev => prev.map(updatePhotoCount))
         setDisplayedPhotos(prev => prev.map(updatePhotoCount))
         if (selectedPhoto?.id === photoId) {
@@ -258,9 +259,9 @@ export default function PhotoWallPage() {
           [photoId]: (prev[photoId] || 0) + 1
         }))
         // 立即增加票數
-        const updatePhotoCount = (p: any) => 
+        const updatePhotoCount = (p: any) =>
           p.id === photoId ? { ...p, vote_count: p.vote_count + 1 } : p
-        
+
         setPhotos(prev => prev.map(updatePhotoCount))
         setDisplayedPhotos(prev => prev.map(updatePhotoCount))
         if (selectedPhoto?.id === photoId) {
@@ -295,10 +296,10 @@ export default function PhotoWallPage() {
       console.log(`✅ ${hasVoted ? '取消投票' : '投票'}成功！照片 ${photoId} 確切票數: ${newVoteCount}`)
 
       // 用 API 返回的確切值更新票數（校正）
-      setPhotos(prev => prev.map(p => 
+      setPhotos(prev => prev.map(p =>
         p.id === photoId ? { ...p, vote_count: newVoteCount } : p
       ))
-      setDisplayedPhotos(prev => prev.map(p => 
+      setDisplayedPhotos(prev => prev.map(p =>
         p.id === photoId ? { ...p, vote_count: newVoteCount } : p
       ))
       if (selectedPhoto?.id === photoId) {
@@ -307,13 +308,13 @@ export default function PhotoWallPage() {
 
     } catch (error) {
       console.error('❌ 投票錯誤:', error)
-      
+
       // 回滾狀態（恢復到投票前）
       setUserVotes(previousUserVotes)
       setPhotos(previousPhotos)
       setDisplayedPhotos(previousDisplayedPhotos)
       setSelectedPhoto(previousSelectedPhoto)
-      
+
       alert(error instanceof Error ? error.message : '操作失敗，請稍後再試')
     } finally {
       // 移除投票中標記
@@ -354,10 +355,10 @@ export default function PhotoWallPage() {
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (pullStartY === 0 || window.scrollY > 0) return
-    
+
     const currentY = e.touches[0].clientY
     const distance = currentY - pullStartY
-    
+
     if (distance > 0 && distance < 150) {
       setPullDistance(distance)
     }
@@ -384,7 +385,7 @@ export default function PhotoWallPage() {
 
   return (
     <Layout title="照片牆">
-      <div 
+      <div
         ref={containerRef}
         className="max-w-6xl mx-auto"
         onTouchStart={handleTouchStart}
@@ -397,7 +398,7 @@ export default function PhotoWallPage() {
       >
         {/* 下拉刷新指示器 */}
         {pullDistance > 0 && (
-          <div 
+          <div
             className="absolute top-0 left-0 right-0 flex items-center justify-center"
             style={{
               transform: `translateY(-${Math.min(pullDistance, 80)}px)`,
@@ -424,7 +425,7 @@ export default function PhotoWallPage() {
             </div>
           </div>
         )}
-        
+
         {/* 頂部控制列 */}
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
           <div className="flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0">
@@ -438,39 +439,35 @@ export default function PhotoWallPage() {
             <div className="flex items-center space-x-4">
               {/* 投票狀態 */}
               {votingEnabled && (
-                <div className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
-                  getRemainingVotes() === 0 
-                    ? 'bg-red-50 border-2 border-red-200' 
+                <div className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${getRemainingVotes() === 0
+                    ? 'bg-red-50 border-2 border-red-200'
                     : getRemainingVotes() <= 2
-                    ? 'bg-orange-50 border-2 border-orange-200'
-                    : 'bg-blue-50 border-2 border-blue-200'
-                }`}>
-                  <Trophy className={`w-5 h-5 ${
-                    getRemainingVotes() === 0 
-                      ? 'text-red-600' 
+                      ? 'bg-orange-50 border-2 border-orange-200'
+                      : 'bg-blue-50 border-2 border-blue-200'
+                  }`}>
+                  <Trophy className={`w-5 h-5 ${getRemainingVotes() === 0
+                      ? 'text-red-600'
                       : getRemainingVotes() <= 2
-                      ? 'text-orange-600'
-                      : 'text-blue-600'
-                  }`} />
-                  <div className="flex flex-col">
-                    <span className={`font-bold text-lg ${
-                      getRemainingVotes() === 0 
-                        ? 'text-red-700' 
-                        : getRemainingVotes() <= 2
-                        ? 'text-orange-700'
-                        : 'text-blue-700'
-                    }`}>
-                      {getRemainingVotes()} 票
-                    </span>
-                    <span className={`text-xs ${
-                      getRemainingVotes() === 0 
-                        ? 'text-red-600' 
-                        : getRemainingVotes() <= 2
                         ? 'text-orange-600'
                         : 'text-blue-600'
-                    }`}>
-                      {getRemainingVotes() === 0 
-                        ? '額度已用完' 
+                    }`} />
+                  <div className="flex flex-col">
+                    <span className={`font-bold text-lg ${getRemainingVotes() === 0
+                        ? 'text-red-700'
+                        : getRemainingVotes() <= 2
+                          ? 'text-orange-700'
+                          : 'text-blue-700'
+                      }`}>
+                      {getRemainingVotes()} 票
+                    </span>
+                    <span className={`text-xs ${getRemainingVotes() === 0
+                        ? 'text-red-600'
+                        : getRemainingVotes() <= 2
+                          ? 'text-orange-600'
+                          : 'text-blue-600'
+                      }`}>
+                      {getRemainingVotes() === 0
+                        ? '額度已用完'
                         : `共 ${availableVotes} 票`
                       }
                     </span>
@@ -482,22 +479,20 @@ export default function PhotoWallPage() {
               <div className="flex items-center space-x-2 bg-gray-100 rounded-lg p-1">
                 <button
                   onClick={() => setSortBy('votes')}
-                  className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center space-x-2 ${
-                    sortBy === 'votes'
+                  className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center space-x-2 ${sortBy === 'votes'
                       ? 'bg-white text-pink-600 shadow-md'
                       : 'text-gray-600 hover:text-gray-800'
-                  }`}
+                    }`}
                 >
                   <Trophy className="w-4 h-4" />
                   <span>票數</span>
                 </button>
                 <button
                   onClick={() => setSortBy('time')}
-                  className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center space-x-2 ${
-                    sortBy === 'time'
+                  className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center space-x-2 ${sortBy === 'time'
                       ? 'bg-white text-pink-600 shadow-md'
                       : 'text-gray-600 hover:text-gray-800'
-                  }`}
+                    }`}
                 >
                   <Clock className="w-4 h-4" />
                   <span>時間</span>
@@ -551,12 +546,19 @@ export default function PhotoWallPage() {
                             }}
                             sizes="(max-width: 640px) 200px, (max-width: 1024px) 400px, 800px"
                           />
-                           
+
                           {/* 票數顯示 */}
                           <div className="absolute bottom-2 left-2 sm:bottom-3 sm:left-3 bg-black/70 text-white px-2 py-1 sm:px-3 sm:py-1.5 rounded-full flex items-center space-x-1">
                             <Heart className="w-3 h-3 sm:w-4 sm:h-4 fill-current" />
                             <span className="text-xs sm:text-sm font-semibold">{photo.vote_count}</span>
                           </div>
+
+                          {/* 影片標示 */}
+                          {photo.media_type === 'video' && (
+                            <div className="absolute top-2 right-2 sm:top-3 sm:right-3 bg-black/50 p-1.5 rounded-full backdrop-blur-sm">
+                              <Video className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                            </div>
+                          )}
                         </div>
 
                         {/* 簡化資訊 */}
@@ -600,7 +602,7 @@ export default function PhotoWallPage() {
 
       {/* 照片放大檢視模態框 */}
       {selectedPhoto && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4 animate-fadeIn"
           onClick={() => setSelectedPhoto(null)}
         >
@@ -620,7 +622,7 @@ export default function PhotoWallPage() {
                   </p>
                 </div>
               </div>
-              
+
               <button
                 onClick={() => setSelectedPhoto(null)}
                 className="p-2 hover:bg-white/10 rounded-full transition-colors"
@@ -630,7 +632,7 @@ export default function PhotoWallPage() {
             </div>
 
             {/* 可滾動的內容區域 */}
-            <div 
+            <div
               className="flex-1 overflow-y-auto overflow-x-hidden px-4 pb-4 photo-lightbox-scroll"
               onClick={(e) => e.stopPropagation()}
               style={{
@@ -640,22 +642,34 @@ export default function PhotoWallPage() {
             >
               {/* 照片容器 */}
               <div className="flex items-center justify-center relative min-h-0 mb-4">
-                <ResponsiveImage
-                  src={selectedPhoto.image_url}
-                  alt="Wedding photo"
-                  className="max-w-full max-h-[70vh] w-auto h-auto"
-                  lightboxMode={true}  // 🎯 放大模式強制使用原圖
-                  progressiveLoad={true}  // 🎯 啟用漸進式載入：先顯示縮圖，再載入原圖
-                  thumbnailUrls={{
-                    small: selectedPhoto.thumbnail_small_url,
-                    medium: selectedPhoto.thumbnail_medium_url,
-                    large: selectedPhoto.thumbnail_large_url
-                  }}
-                  sizes={undefined}  // 🎯 放大模式下不使用響應式尺寸
-                  priority={true}
-                  quality={100}  // 🎯 放大模式下使用最高品質
-                />
-              
+                {selectedPhoto.media_type === 'video' ? (
+                  <video
+                    src={selectedPhoto.image_url} // 影片 URL 存儲在 image_url 欄位
+                    controls
+                    autoPlay
+                    className="max-w-full max-h-[70vh] w-auto h-auto rounded-lg shadow-2xl"
+                    poster={selectedPhoto.thumbnail_large_url || selectedPhoto.thumbnail_medium_url}
+                  >
+                    您的瀏覽器不支援影片播放
+                  </video>
+                ) : (
+                  <ResponsiveImage
+                    src={selectedPhoto.image_url}
+                    alt="Wedding photo"
+                    className="max-w-full max-h-[70vh] w-auto h-auto"
+                    lightboxMode={true}  // 🎯 放大模式強制使用原圖
+                    progressiveLoad={true}  // 🎯 啟用漸進式載入：先顯示縮圖，再載入原圖
+                    thumbnailUrls={{
+                      small: selectedPhoto.thumbnail_small_url,
+                      medium: selectedPhoto.thumbnail_medium_url,
+                      large: selectedPhoto.thumbnail_large_url
+                    }}
+                    sizes={undefined}  // 🎯 放大模式下不使用響應式尺寸
+                    priority={true}
+                    quality={100}  // 🎯 放大模式下使用最高品質
+                  />
+                )}
+
                 {/* 投票區域 - 右上角 */}
                 {votingEnabled && (
                   <div className="absolute top-4 right-4 flex items-center space-x-3">
@@ -664,7 +678,7 @@ export default function PhotoWallPage() {
                       <Heart className="w-5 h-5 fill-current text-white" />
                       <span className="font-semibold text-white">{selectedPhoto.vote_count}</span>
                     </div>
-                     
+
                     {/* 投票按鈕 */}
                     <button
                       onClick={(e) => {
@@ -672,32 +686,30 @@ export default function PhotoWallPage() {
                         // 檢查是否已經沒有票數
                         const hasVoted = userVotes[selectedPhoto.id] > 0
                         const totalUsedVotes = Object.values(userVotes).reduce((sum, count) => sum + count, 0)
-                         
+
                         if (!hasVoted && totalUsedVotes >= availableVotes) {
                           setShowVoteLimitModal(true)
                           return
                         }
-                         
+
                         handleVote(selectedPhoto.id)
-                        }}
+                      }}
                       disabled={votingInProgress.has(selectedPhoto.id)}
-                      className={`p-3 rounded-full shadow-2xl transition-all duration-200 backdrop-blur-sm ${
-                        votingInProgress.has(selectedPhoto.id)
+                      className={`p-3 rounded-full shadow-2xl transition-all duration-200 backdrop-blur-sm ${votingInProgress.has(selectedPhoto.id)
                           ? 'bg-white/60 cursor-wait'
                           : (!userVotes[selectedPhoto.id] && getRemainingVotes() <= 0)
-                          ? 'bg-white/80 cursor-not-allowed'
-                          : 'bg-white/90 hover:bg-white hover:scale-110'
-                      }`}
+                            ? 'bg-white/80 cursor-not-allowed'
+                            : 'bg-white/90 hover:bg-white hover:scale-110'
+                        }`}
                     >
-                      <Heart className={`w-8 h-8 transition-all ${
-                        votingInProgress.has(selectedPhoto.id)
+                      <Heart className={`w-8 h-8 transition-all ${votingInProgress.has(selectedPhoto.id)
                           ? 'text-gray-400 animate-pulse'
                           : userVotes[selectedPhoto.id] > 0
-                          ? 'text-red-500 fill-current drop-shadow-lg'
-                          : getRemainingVotes() <= 0
-                          ? 'text-gray-400'
-                          : 'text-gray-400 hover:text-pink-500'
-                      }`} />
+                            ? 'text-red-500 fill-current drop-shadow-lg'
+                            : getRemainingVotes() <= 0
+                              ? 'text-gray-400'
+                              : 'text-gray-400 hover:text-pink-500'
+                        }`} />
                     </button>
                   </div>
                 )}
@@ -705,7 +717,7 @@ export default function PhotoWallPage() {
 
               {/* 祝福訊息區域 */}
               {selectedPhoto.blessing_message && (
-                <div 
+                <div
                   className="bg-white/10 backdrop-blur-md rounded-2xl p-6 text-white"
                   onClick={(e) => e.stopPropagation()}
                 >
@@ -724,11 +736,11 @@ export default function PhotoWallPage() {
 
       {/* 投票額度用完提示 Modal */}
       {showVoteLimitModal && (
-        <div 
+        <div
           className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
           onClick={() => setShowVoteLimitModal(false)}
         >
-          <div 
+          <div
             className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden transform transition-all"
             onClick={(e) => e.stopPropagation()}
           >
