@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useLiff } from '@/hooks/useLiff'
 import AdminLayout from '@/components/AdminLayout'
 import { Eye, EyeOff, Download, Trash2, Image as ImageIcon, Clock, User, Heart, Filter, CheckCircle, XCircle, Loader2, Users, HardDrive, CheckSquare, Square, Video, Play } from 'lucide-react'
-// import Image from 'next/image' // Removed to avoid Vercel Image Optimization issues
+import ResponsiveImage from '@/components/ResponsiveImage'
 
 interface PhotoWithUser {
   id: number
@@ -533,19 +533,17 @@ export default function PhotosManagePage() {
                   <div className="aspect-square w-full relative overflow-hidden bg-gray-100">
                     {photo.media_type === 'video' ? (
                       <div className="w-full h-full relative">
-                        <img
-                          src={photo.thumbnail_medium_url || photo.thumbnail_small_url || photo.image_url} // Fallback might fail for video if no thumbnail
+                        <ResponsiveImage
+                          src={photo.image_url}
                           alt={photo.blessing_message || '影片'}
                           className="w-full h-full object-cover"
-                          onError={(e) => {
-                            // If thumbnail fails, show generic video icon placeholder
-                            e.currentTarget.style.display = 'none';
-                            e.currentTarget.parentElement?.querySelector('.video-placeholder')?.classList.remove('hidden');
+                          thumbnailUrls={{
+                            small: photo.thumbnail_small_url,
+                            medium: photo.thumbnail_medium_url,
+                            large: photo.thumbnail_large_url
                           }}
+                          sizes="200px"
                         />
-                        <div className="video-placeholder hidden absolute inset-0 flex items-center justify-center bg-gray-200">
-                          <Video className="w-12 h-12 text-gray-400" />
-                        </div>
                         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black/50 rounded-full p-2">
                           <Play className="w-6 h-6 text-white fill-current" />
                         </div>
@@ -554,14 +552,16 @@ export default function PhotosManagePage() {
                         </div>
                       </div>
                     ) : photo.image_url ? (
-                      <img
-                        src={photo.thumbnail_medium_url || photo.image_url}
+                      <ResponsiveImage
+                        src={photo.image_url}
                         alt={photo.blessing_message || '照片'}
                         className="w-full h-full object-cover"
-                        onError={(e) => {
-                          console.error('圖片載入失敗:', photo.image_url)
-                          e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect width="100" height="100" fill="%23ddd"/%3E%3C/svg%3E'
+                        thumbnailUrls={{
+                          small: photo.thumbnail_small_url,
+                          medium: photo.thumbnail_medium_url,
+                          large: photo.thumbnail_large_url
                         }}
+                        sizes="200px"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
