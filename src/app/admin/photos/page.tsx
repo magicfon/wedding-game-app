@@ -534,7 +534,7 @@ export default function PhotosManagePage() {
                     {photo.media_type === 'video' ? (
                       <div className="w-full h-full relative">
                         <ResponsiveImage
-                          src={photo.image_url}
+                          src={photo.thumbnail_medium_url || photo.thumbnail_small_url || photo.image_url}
                           alt={photo.blessing_message || '影片'}
                           className="w-full h-full object-cover"
                           thumbnailUrls={{

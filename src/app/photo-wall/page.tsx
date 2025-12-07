@@ -440,31 +440,31 @@ export default function PhotoWallPage() {
               {/* 投票狀態 */}
               {votingEnabled && (
                 <div className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${getRemainingVotes() === 0
-                    ? 'bg-red-50 border-2 border-red-200'
-                    : getRemainingVotes() <= 2
-                      ? 'bg-orange-50 border-2 border-orange-200'
-                      : 'bg-blue-50 border-2 border-blue-200'
+                  ? 'bg-red-50 border-2 border-red-200'
+                  : getRemainingVotes() <= 2
+                    ? 'bg-orange-50 border-2 border-orange-200'
+                    : 'bg-blue-50 border-2 border-blue-200'
                   }`}>
                   <Trophy className={`w-5 h-5 ${getRemainingVotes() === 0
-                      ? 'text-red-600'
-                      : getRemainingVotes() <= 2
-                        ? 'text-orange-600'
-                        : 'text-blue-600'
+                    ? 'text-red-600'
+                    : getRemainingVotes() <= 2
+                      ? 'text-orange-600'
+                      : 'text-blue-600'
                     }`} />
                   <div className="flex flex-col">
                     <span className={`font-bold text-lg ${getRemainingVotes() === 0
-                        ? 'text-red-700'
-                        : getRemainingVotes() <= 2
-                          ? 'text-orange-700'
-                          : 'text-blue-700'
+                      ? 'text-red-700'
+                      : getRemainingVotes() <= 2
+                        ? 'text-orange-700'
+                        : 'text-blue-700'
                       }`}>
                       {getRemainingVotes()} 票
                     </span>
                     <span className={`text-xs ${getRemainingVotes() === 0
-                        ? 'text-red-600'
-                        : getRemainingVotes() <= 2
-                          ? 'text-orange-600'
-                          : 'text-blue-600'
+                      ? 'text-red-600'
+                      : getRemainingVotes() <= 2
+                        ? 'text-orange-600'
+                        : 'text-blue-600'
                       }`}>
                       {getRemainingVotes() === 0
                         ? '額度已用完'
@@ -480,8 +480,8 @@ export default function PhotoWallPage() {
                 <button
                   onClick={() => setSortBy('votes')}
                   className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center space-x-2 ${sortBy === 'votes'
-                      ? 'bg-white text-pink-600 shadow-md'
-                      : 'text-gray-600 hover:text-gray-800'
+                    ? 'bg-white text-pink-600 shadow-md'
+                    : 'text-gray-600 hover:text-gray-800'
                     }`}
                 >
                   <Trophy className="w-4 h-4" />
@@ -490,8 +490,8 @@ export default function PhotoWallPage() {
                 <button
                   onClick={() => setSortBy('time')}
                   className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center space-x-2 ${sortBy === 'time'
-                      ? 'bg-white text-pink-600 shadow-md'
-                      : 'text-gray-600 hover:text-gray-800'
+                    ? 'bg-white text-pink-600 shadow-md'
+                    : 'text-gray-600 hover:text-gray-800'
                     }`}
                 >
                   <Clock className="w-4 h-4" />
@@ -536,7 +536,10 @@ export default function PhotoWallPage() {
                         {/* 照片 */}
                         <div className="relative">
                           <ResponsiveImage
-                            src={photo.image_url}
+                            src={photo.media_type === 'video'
+                              ? (photo.thumbnail_medium_url || photo.thumbnail_small_url || photo.image_url)
+                              : photo.image_url
+                            }
                             alt="Wedding photo"
                             className="w-full h-auto"
                             thumbnailUrls={{
@@ -696,19 +699,19 @@ export default function PhotoWallPage() {
                       }}
                       disabled={votingInProgress.has(selectedPhoto.id)}
                       className={`p-3 rounded-full shadow-2xl transition-all duration-200 backdrop-blur-sm ${votingInProgress.has(selectedPhoto.id)
-                          ? 'bg-white/60 cursor-wait'
-                          : (!userVotes[selectedPhoto.id] && getRemainingVotes() <= 0)
-                            ? 'bg-white/80 cursor-not-allowed'
-                            : 'bg-white/90 hover:bg-white hover:scale-110'
+                        ? 'bg-white/60 cursor-wait'
+                        : (!userVotes[selectedPhoto.id] && getRemainingVotes() <= 0)
+                          ? 'bg-white/80 cursor-not-allowed'
+                          : 'bg-white/90 hover:bg-white hover:scale-110'
                         }`}
                     >
                       <Heart className={`w-8 h-8 transition-all ${votingInProgress.has(selectedPhoto.id)
-                          ? 'text-gray-400 animate-pulse'
-                          : userVotes[selectedPhoto.id] > 0
-                            ? 'text-red-500 fill-current drop-shadow-lg'
-                            : getRemainingVotes() <= 0
-                              ? 'text-gray-400'
-                              : 'text-gray-400 hover:text-pink-500'
+                        ? 'text-gray-400 animate-pulse'
+                        : userVotes[selectedPhoto.id] > 0
+                          ? 'text-red-500 fill-current drop-shadow-lg'
+                          : getRemainingVotes() <= 0
+                            ? 'text-gray-400'
+                            : 'text-gray-400 hover:text-pink-500'
                         }`} />
                     </button>
                   </div>
