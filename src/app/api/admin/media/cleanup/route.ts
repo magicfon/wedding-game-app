@@ -158,7 +158,7 @@ export async function POST(request: NextRequest) {
         message: '所有檔案都在使用中，無需清理',
         deleted_count: 0,
         total_files: allFiles.length,
-        used_files: usedFiles.size
+        used_files: allFiles.length // 全部檔案都在使用中
       })
     }
 
@@ -199,7 +199,7 @@ export async function POST(request: NextRequest) {
       message: `成功清理 ${deleteResult?.length || 0} 個未使用的媒體檔案`,
       deleted_count: deleteResult?.length || 0,
       total_files: allFiles.length,
-      used_files: usedFiles.size,
+      used_files: allFiles.length - unusedFiles.length, // 實際在 Storage 中被使用的檔案數
       remaining_files: allFiles.length - (deleteResult?.length || 0),
       deleted_files: deletedFilesSizes,
       total_size_saved: totalSizeSaved,
@@ -361,13 +361,13 @@ export async function GET(request: NextRequest) {
       success: true,
       analysis: {
         total_files: files?.length || 0,
-        used_files: usedFiles.size,
+        used_files: (files?.length || 0) - unusedFiles.length, // 實際在 Storage 中被使用的檔案數
         unused_files: unusedFiles.length,
         total_size_bytes: totalSize,
         unused_size_bytes: unusedSize,
         total_size_mb: (totalSize / (1024 * 1024)).toFixed(2),
         unused_size_mb: (unusedSize / (1024 * 1024)).toFixed(2),
-        space_utilization: files?.length ? ((usedFiles.size / files.length) * 100).toFixed(1) : '0'
+        space_utilization: files?.length ? (((files.length - unusedFiles.length) / files.length) * 100).toFixed(1) : '0'
       },
       unused_files: unusedFiles.map(file => ({
         name: file.name,
