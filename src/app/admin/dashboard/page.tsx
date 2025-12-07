@@ -227,13 +227,6 @@ export default function AdminDashboard() {
       color: 'bg-gray-500'
     },
     {
-      title: 'LINE 選單',
-      description: '管理 LINE Bot 選單',
-      icon: Settings,
-      href: '/admin/line-menu',
-      color: 'bg-green-600'
-    },
-    {
       title: '系統設定',
       description: '系統配置和管理員設置',
       icon: Settings,

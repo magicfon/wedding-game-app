@@ -32,7 +32,7 @@ export default function SimpleDashboard() {
 
   useEffect(() => {
     console.log('SimpleDashboard - Effect triggered', { isLoggedIn, profile })
-    
+
     if (!isLoggedIn || !profile?.userId) {
       console.log('Not logged in, redirecting to auth')
       router.push('/admin/simple-auth')
@@ -45,7 +45,7 @@ export default function SimpleDashboard() {
 
   const verifyAdmin = async (lineId: string) => {
     console.log('Verifying admin for:', lineId)
-    
+
     try {
       const response = await fetch('/api/admin/check-line-admin', {
         method: 'POST',
@@ -143,13 +143,6 @@ export default function SimpleDashboard() {
       color: 'bg-gray-500'
     },
     {
-      title: 'LINE 選單',
-      description: '管理 LINE Bot 選單',
-      icon: Settings,
-      href: '/admin/line-menu',
-      color: 'bg-green-600'
-    },
-    {
       title: '系統設定',
       description: '系統配置和管理員設置',
       icon: Settings,
@@ -208,7 +201,7 @@ export default function SimpleDashboard() {
                 <p className="text-sm text-gray-600">簡化版管理系統</p>
               </div>
             </div>
-            
+
             <div className="flex items-center space-x-4">
               {adminInfo && (
                 <div className="flex items-center space-x-2">
@@ -218,7 +211,7 @@ export default function SimpleDashboard() {
                   </span>
                 </div>
               )}
-              
+
               <button
                 onClick={() => router.push('/')}
                 className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
@@ -226,7 +219,7 @@ export default function SimpleDashboard() {
                 <Home className="w-4 h-4" />
                 <span className="text-sm">返回首頁</span>
               </button>
-              
+
               <button
                 onClick={() => router.push('/')}
                 className="flex items-center space-x-2 text-red-600 hover:text-red-700 px-3 py-2 rounded-lg hover:bg-red-50 transition-colors"
@@ -251,7 +244,7 @@ export default function SimpleDashboard() {
               <Users className="w-8 h-8 text-blue-500" />
             </div>
           </div>
-          
+
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -261,7 +254,7 @@ export default function SimpleDashboard() {
               <HelpCircle className="w-8 h-8 text-green-500" />
             </div>
           </div>
-          
+
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -271,7 +264,7 @@ export default function SimpleDashboard() {
               <Camera className="w-8 h-8 text-pink-500" />
             </div>
           </div>
-          
+
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -318,9 +311,9 @@ export default function SimpleDashboard() {
               調試信息
             </summary>
             <pre className="mt-2 p-2 bg-gray-100 rounded text-xs overflow-auto">
-              {JSON.stringify({ 
-                isVerified, 
-                adminInfo, 
+              {JSON.stringify({
+                isVerified,
+                adminInfo,
                 profile: profile ? {
                   userId: profile.userId,
                   displayName: profile.displayName

@@ -40,7 +40,6 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
     { name: '批量設定', href: '/admin/batch-settings', icon: Settings },
     { name: '計分規則', href: '/admin/scoring-rules', icon: Settings },
     { name: '媒體清理', href: '/admin/media-cleanup', icon: HardDrive },
-    { name: 'LINE 選單', href: '/admin/line-menu', icon: Settings },
     { name: '系統設定', href: '/admin/system-settings', icon: Settings },
   ]
 
@@ -65,8 +64,8 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
                   key={item.href}
                   onClick={() => router.push(item.href)}
                   className={`w-full flex items-center space-x-3 px-4 py-3 text-left rounded-lg transition-colors ${pathname === item.href
-                      ? 'bg-pink-100 text-pink-700 border-r-4 border-pink-500'
-                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                    ? 'bg-pink-100 text-pink-700 border-r-4 border-pink-500'
+                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                     }`}
                 >
                   <item.icon className="w-5 h-5" />
@@ -122,8 +121,8 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
                     setIsMenuOpen(false)
                   }}
                   className={`w-full flex items-center space-x-3 px-4 py-3 text-left rounded-lg transition-colors ${pathname === item.href
-                      ? 'bg-pink-100 text-pink-700 border-r-4 border-pink-500'
-                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                    ? 'bg-pink-100 text-pink-700 border-r-4 border-pink-500'
+                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                     }`}
                 >
                   <item.icon className="w-5 h-5" />

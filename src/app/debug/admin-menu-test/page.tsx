@@ -15,7 +15,6 @@ export default function AdminMenuTestPage() {
     { name: '分數管理', href: '/admin/scores', icon: 'Trophy' },
     { name: '積分歷史', href: '/admin/score-history', icon: 'Trophy' },
     { name: '計分規則', href: '/admin/scoring-rules', icon: 'Settings' },
-    { name: 'LINE 選單', href: '/admin/line-menu', icon: 'Settings' },
     { name: '媒體清理', href: '/admin/media-cleanup', icon: 'HardDrive' },
     { name: '用戶管理', href: '/admin/users', icon: 'Users' },
     { name: '照片管理', href: '/admin/photos', icon: 'Camera' },
@@ -70,7 +69,7 @@ export default function AdminMenuTestPage() {
     <div className="min-h-screen bg-gray-100 p-8">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold text-gray-900 mb-8">管理員選單診斷</h1>
-        
+
         {/* 用戶狀態 */}
         <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
           <h2 className="text-xl font-semibold mb-4">用戶狀態</h2>
@@ -89,11 +88,10 @@ export default function AdminMenuTestPage() {
           <h2 className="text-xl font-semibold mb-4">管理員選單項目</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {menuItems.map((item, index) => (
-              <div 
-                key={index} 
-                className={`p-3 rounded-lg border ${
-                  item.name === '媒體清理' ? 'bg-yellow-100 border-yellow-300' : 'bg-gray-50 border-gray-200'
-                }`}
+              <div
+                key={index}
+                className={`p-3 rounded-lg border ${item.name === '媒體清理' ? 'bg-yellow-100 border-yellow-300' : 'bg-gray-50 border-gray-200'
+                  }`}
               >
                 <div className="flex items-center space-x-2">
                   <span className="font-mono text-sm">{item.icon}</span>
@@ -118,7 +116,7 @@ export default function AdminMenuTestPage() {
             >
               🔗 測試媒體清理頁面是否可訪問
             </button>
-            
+
             <button
               onClick={testMediaCleanupAPI}
               className="w-full bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg transition-colors"
