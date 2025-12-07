@@ -556,9 +556,10 @@ export default function PhotoWallPage() {
                             <span className="text-xs sm:text-sm font-semibold">{photo.vote_count}</span>
                           </div>
 
+
                           {/* 影片標示 */}
                           {photo.media_type === 'video' && (
-                            <div className="absolute top-2 right-2 sm:top-3 sm:right-3 bg-black/50 p-1.5 rounded-full backdrop-blur-sm">
+                            <div className="absolute top-2 left-2 sm:top-3 sm:left-3 bg-black/50 p-1.5 rounded-full backdrop-blur-sm">
                               <Video className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                             </div>
                           )}
