@@ -88,6 +88,45 @@ NEXTAUTH_SECRET=your-random-secret-string-here
 
 ---
 
+## 第三步半：設定 LINE Rich Menu 兩分頁功能（新功能）
+
+### 概述
+婚禮互動遊戲現在支援兩個可切換的 LINE Rich Menu 分頁：
+- **會場資訊分頁**：交通資訊、菜單、桌次
+- **現場活動分頁**：照片上傳、照片牆、快問快答
+
+### 設定步驟
+
+1. **執行資料庫遷移**
+   - 在 Supabase SQL Editor 中執行 `database/add-line-richmenu-tables.sql`
+   - 這會建立 Rich Menu 設定相關的資料表
+
+2. **創建 Rich Menu**
+   - 訪問後台管理介面：`https://wedding-game-app.vercel.app/admin/richmenu`
+   - 輸入管理員密碼進行登入
+   - 點擊「創建 Rich Menu」按鈕
+   - 系統會在 LINE Platform 上創建三個 Rich Menu
+
+3. **上傳 Rich Menu 圖片**
+   - 準備符合規格的圖片（2500x1686 像素）
+   - 在後台上傳每個 Rich Menu 的對應圖片
+   - 詳細說明請參考 [`RICHMENU_SETUP_GUIDE.md`](RICHMENU_SETUP_GUIDE.md)
+
+4. **設定預設分頁和啟用狀態**
+   - 選擇預設開啟的分頁（會場資訊或現場活動）
+   - 控制每個分頁的啟用/停用狀態
+   - 點擊「儲存設定」
+
+### 用戶使用流程
+
+1. 用戶加入 LINE Bot 好友
+2. 打開 Rich Menu（預設顯示設定的預設分頁）
+3. 點擊功能按鈕進入對應頁面
+4. 點擊「進入遊戲分頁」或「進入會場資訊分頁」切換分頁
+5. 當分頁停用時，會顯示「未開放」狀態
+
+---
+
 ## 第四步：測試 Line 整合
 
 ### 1. 測試 Line Bot

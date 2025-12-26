@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Client, WebhookEvent, MessageEvent, PostbackEvent } from '@line/bot-sdk'
+import { createClient } from '@supabase/supabase-js'
 import crypto from 'crypto'
 
 const config = {
@@ -105,11 +106,57 @@ async function handleMessage(event: MessageEvent) {
   }
 }
 
+// 處理 Rich Menu 分頁切換
+async function handleRichMenuSwitch(userId: string, targetTab: string) {
+  try {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/line/richmenu/switch`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        lineId: userId,
+        targetTab: targetTab
+      })
+    })
+
+    const result = await response.json()
+    return result
+  } catch (error) {
+    console.error('Error handling rich menu switch:', error)
+    return { success: false, error: 'Switch failed' }
+  }
+}
+
 // 處理 Postback 事件
 async function handlePostback(event: PostbackEvent) {
   if (!client) return
   
   const data = event.postback.data
+  const userId = event.source?.userId
+
+  // 處理 Rich Menu 分頁切換
+  if (data.startsWith('switch_tab:')) {
+    if (!userId) {
+      console.error('No userId in postback event')
+      return
+    }
+
+    const targetTab = data.replace('switch_tab:', '')
+    const result = await handleRichMenuSwitch(userId, targetTab)
+
+    if (result.success) {
+      // 不需要回覆訊息，Rich Menu 會自動切換
+      console.log(`Switched user ${userId} to ${targetTab} tab`)
+    } else {
+      // 切換失敗，通知用戶
+      await client.replyMessage(event.replyToken, {
+        type: 'text',
+        text: result.message || '分頁切換失敗，請稍後再試'
+      })
+    }
+    return
+  }
   
   switch (data) {
     case 'show_menu':
