@@ -1,24 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Client } from '@line/bot-sdk'
-import { createClient } from '@supabase/supabase-js'
-
-// 驗證管理員權限
-async function verifyAdmin(request: NextRequest): Promise<boolean> {
-  const authHeader = request.headers.get('authorization')
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return false
-  }
-
-  const token = authHeader.substring(7)
-  const adminPassword = process.env.ADMIN_PASSWORD
-
-  if (!adminPassword) {
-    console.error('ADMIN_PASSWORD not configured')
-    return false
-  }
-
-  return token === adminPassword
-}
+import { createSupabaseAdmin } from '@/lib/supabase-admin'
 
 // 初始化 LINE Client
 function getLineClient(): Client | null {
@@ -28,19 +10,6 @@ function getLineClient(): Client | null {
     return null
   }
   return new Client({ channelAccessToken })
-}
-
-// 初始化 Supabase Client
-function getSupabaseClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-  if (!supabaseUrl || !supabaseServiceKey) {
-    console.error('Supabase configuration missing')
-    return null
-  }
-
-  return createClient(supabaseUrl, supabaseServiceKey)
 }
 
 // 驗證圖片尺寸
@@ -54,12 +23,6 @@ function validateImageDimensions(
 // POST: 上傳 Rich Menu 圖片
 export async function POST(request: NextRequest) {
   try {
-    // 驗證管理員權限
-    const isAdmin = await verifyAdmin(request)
-    if (!isAdmin) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
     const formData = await request.formData()
     const file = formData.get('image') as File
     const menuType = formData.get('menuType') as string
@@ -109,13 +72,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const supabase = getSupabaseClient()
-    if (!supabase) {
-      return NextResponse.json(
-        { error: 'Database configuration error' },
-        { status: 500 }
-      )
-    }
+    const supabase = createSupabaseAdmin()
 
     // 檢查是否已有 Rich Menu ID
     const { data: existingRegistry } = await supabase
@@ -179,12 +136,6 @@ export async function POST(request: NextRequest) {
 // GET: 獲取 Rich Menu 圖片上傳狀態
 export async function GET(request: NextRequest) {
   try {
-    // 驗證管理員權限
-    const isAdmin = await verifyAdmin(request)
-    if (!isAdmin) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
     const { searchParams } = new URL(request.url)
     const menuType = searchParams.get('menuType')
 
@@ -195,13 +146,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const supabase = getSupabaseClient()
-    if (!supabase) {
-      return NextResponse.json(
-        { error: 'Database configuration error' },
-        { status: 500 }
-      )
-    }
+    const supabase = createSupabaseAdmin()
 
     // 獲取 Rich Menu 註冊資訊
     const { data, error } = await supabase

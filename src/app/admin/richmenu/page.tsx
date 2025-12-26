@@ -1,7 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Upload, Save, RefreshCw, CheckCircle, XCircle, AlertCircle, Shield } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { useLiff } from '@/hooks/useLiff'
+import { Upload, Save, RefreshCw, CheckCircle, XCircle, AlertCircle } from 'lucide-react'
 import AdminLayout from '@/components/AdminLayout'
 
 interface RichMenuSettings {
@@ -24,32 +26,37 @@ interface RichMenuStatus {
 }
 
 export default function RichMenuManagementPage() {
+  const router = useRouter()
+  const { isLoggedIn, isAdmin, loading: liffLoading, adminLoading } = useLiff()
+  
   const [settings, setSettings] = useState<RichMenuSettings | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
   const [uploading, setUploading] = useState<{ [key: string]: boolean }>({})
   const [imageStatus, setImageStatus] = useState<{ [key: string]: RichMenuStatus }>({})
-  const [authToken, setAuthToken] = useState('')
 
-  // 從 localStorage 讀取認證 token
+  // 檢查管理員權限
   useEffect(() => {
-    const token = localStorage.getItem('admin_token')
-    if (token) {
-      setAuthToken(token)
-      fetchSettings(token)
-      fetchImageStatus(token)
+    if (liffLoading || adminLoading) {
+      return
     }
-  }, [])
+
+    if (!isLoggedIn || !isAdmin) {
+      router.push('/')
+      return
+    }
+
+    // 是管理員，載入設定
+    fetchSettings()
+    fetchImageStatus()
+    setLoading(false)
+  }, [isLoggedIn, isAdmin, liffLoading, adminLoading, router])
 
   // 獲取設定
-  const fetchSettings = async (token: string) => {
+  const fetchSettings = async () => {
     try {
-      const response = await fetch('/api/admin/richmenu/settings', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
+      const response = await fetch('/api/admin/richmenu/settings')
 
       if (!response.ok) {
         throw new Error('Failed to fetch settings')
@@ -66,17 +73,13 @@ export default function RichMenuManagementPage() {
   }
 
   // 獲取圖片狀態
-  const fetchImageStatus = async (token: string) => {
+  const fetchImageStatus = async () => {
     const menuTypes = ['venue_info', 'activity', 'unavailable']
     const status: { [key: string]: RichMenuStatus } = {}
 
     for (const menuType of menuTypes) {
       try {
-        const response = await fetch(`/api/admin/richmenu/upload-image?menuType=${menuType}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        })
+        const response = await fetch(`/api/admin/richmenu/upload-image?menuType=${menuType}`)
 
         if (response.ok) {
           const data = await response.json()
@@ -100,8 +103,7 @@ export default function RichMenuManagementPage() {
       const response = await fetch('/api/admin/richmenu/settings', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           defaultTab: settings.defaultTab,
@@ -134,9 +136,6 @@ export default function RichMenuManagementPage() {
 
       const response = await fetch('/api/admin/richmenu/upload-image', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${authToken}`
-        },
         body: formData
       })
 
@@ -149,7 +148,7 @@ export default function RichMenuManagementPage() {
       showMessage('success', `${getMenuTypeName(menuType)}圖片上傳成功`)
       
       // 重新獲取圖片狀態
-      fetchImageStatus(authToken)
+      fetchImageStatus()
     } catch (error) {
       console.error('Error uploading image:', error)
       showMessage('error', `圖片上傳失敗: ${error instanceof Error ? error.message : '未知錯誤'}`)
@@ -162,10 +161,7 @@ export default function RichMenuManagementPage() {
   const handleCreateRichMenus = async () => {
     try {
       const response = await fetch('/api/line/setup-richmenu', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${authToken}`
-        }
+        method: 'POST'
       })
 
       if (!response.ok) {
@@ -176,8 +172,8 @@ export default function RichMenuManagementPage() {
       showMessage('success', 'Rich Menu 創建成功')
       
       // 重新獲取設定和圖片狀態
-      fetchSettings(authToken)
-      fetchImageStatus(authToken)
+      fetchSettings()
+      fetchImageStatus()
     } catch (error) {
       console.error('Error creating rich menus:', error)
       showMessage('error', 'Rich Menu 創建失敗')
@@ -200,54 +196,22 @@ export default function RichMenuManagementPage() {
     return names[menuType] || menuType
   }
 
-  if (loading) {
+  if (loading || liffLoading || adminLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-4" />
-          <p>載入中...</p>
-        </div>
-      </div>
-    )
-  }
-
-  // 如果沒有認證 token，顯示登入提示
-  if (!authToken) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md text-center">
-          <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse">
-            <Shield className="w-8 h-8 text-white" />
+      <AdminLayout title="LINE Rich Menu 管理">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-500" />
+            <p className="text-gray-600">載入中...</p>
           </div>
-          
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">需要管理員登入</h1>
-          <p className="text-gray-600 mb-8">請先登入管理員帳號以存取 Rich Menu 管理功能</p>
-          
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <p className="text-sm text-blue-800">
-              💡 請前往控制台頁面進行登入
-            </p>
-          </div>
-          
-          <button
-            onClick={() => window.location.href = '/admin/dashboard'}
-            className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-          >
-            前往控制台
-          </button>
         </div>
-      </div>
+      </AdminLayout>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <AdminLayout title="LINE Rich Menu 管理">
       <div className="max-w-6xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">LINE Rich Menu 管理</h1>
-          <p className="text-gray-600">管理婚禮遊戲的 LINE Rich Menu 設定</p>
-        </div>
-
         {/* 訊息提示 */}
         {message && (
           <div className={`mb-6 p-4 rounded-lg flex items-center gap-3 ${
@@ -263,8 +227,9 @@ export default function RichMenuManagementPage() {
         )}
 
         {/* 基本設定 */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h2 className="text-xl font-semibold mb-4">基本設定</h2>
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">基本設定</h2>
+
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* 預設分頁 */}
@@ -330,7 +295,7 @@ export default function RichMenuManagementPage() {
         </div>
 
         {/* Rich Menu 圖片管理 */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold">Rich Menu 圖片</h2>
             <button
@@ -415,8 +380,8 @@ export default function RichMenuManagementPage() {
         </div>
 
         {/* 使用說明 */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold mb-4">使用說明</h2>
+        <div className="bg-white rounded-lg shadow-sm p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">使用說明</h2>
           <div className="space-y-4 text-sm text-gray-700">
             <div>
               <h3 className="font-medium mb-1">1. 創建 Rich Menu</h3>
@@ -437,6 +402,6 @@ export default function RichMenuManagementPage() {
           </div>
         </div>
       </div>
-    </div>
+    </AdminLayout>
   )
 }

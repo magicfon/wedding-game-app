@@ -1,24 +1,6 @@
 import { NextResponse } from 'next/server'
 import { Client } from '@line/bot-sdk'
-import { createClient } from '@supabase/supabase-js'
-
-// 驗證管理員權限
-async function verifyAdmin(request: Request): Promise<boolean> {
-  const authHeader = request.headers.get('authorization')
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return false
-  }
-
-  const token = authHeader.substring(7)
-  const adminPassword = process.env.ADMIN_PASSWORD
-
-  if (!adminPassword) {
-    console.error('ADMIN_PASSWORD not configured')
-    return false
-  }
-
-  return token === adminPassword
-}
+import { createSupabaseAdmin } from '@/lib/supabase-admin'
 
 // 初始化 LINE Client
 function getLineClient(): Client | null {
@@ -28,19 +10,6 @@ function getLineClient(): Client | null {
     return null
   }
   return new Client({ channelAccessToken })
-}
-
-// 初始化 Supabase Client
-function getSupabaseClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-  if (!supabaseUrl || !supabaseServiceKey) {
-    console.error('Supabase configuration missing')
-    return null
-  }
-
-  return createClient(supabaseUrl, supabaseServiceKey)
 }
 
 // 獲取 LIFF ID
@@ -187,16 +156,10 @@ async function registerRichMenu(
 // POST: 設置 Rich Menu
 export async function POST(request: Request) {
   try {
-    // 驗證管理員權限
-    const isAdmin = await verifyAdmin(request)
-    if (!isAdmin) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
     const lineClient = getLineClient()
-    const supabase = getSupabaseClient()
+    const supabase = createSupabaseAdmin()
 
-    if (!lineClient || !supabase) {
+    if (!lineClient) {
       return NextResponse.json(
         { error: 'Service configuration error' },
         { status: 500 }
@@ -287,9 +250,9 @@ export async function POST(request: Request) {
 export async function GET() {
   try {
     const lineClient = getLineClient()
-    const supabase = getSupabaseClient()
+    const supabase = createSupabaseAdmin()
 
-    if (!lineClient || !supabase) {
+    if (!lineClient) {
       return NextResponse.json(
         { error: 'Service configuration error' },
         { status: 500 }

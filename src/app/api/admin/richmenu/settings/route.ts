@@ -1,44 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-
-// 驗證管理員權限
-async function verifyAdmin(request: NextRequest): Promise<boolean> {
-  const authHeader = request.headers.get('authorization')
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return false
-  }
-
-  const token = authHeader.substring(7)
-  const adminPassword = process.env.ADMIN_PASSWORD
-
-  if (!adminPassword) {
-    console.error('ADMIN_PASSWORD not configured')
-    return false
-  }
-
-  return token === adminPassword
-}
+import { createSupabaseAdmin } from '@/lib/supabase-admin'
 
 // GET: 獲取 Rich Menu 設定
 export async function GET(request: NextRequest) {
   try {
-    // 驗證管理員權限
-    const isAdmin = await verifyAdmin(request)
-    if (!isAdmin) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-    if (!supabaseUrl || !supabaseServiceKey) {
-      return NextResponse.json(
-        { error: 'Database configuration missing' },
-        { status: 500 }
-      )
-    }
-
-    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+    const supabase = createSupabaseAdmin()
 
     // 獲取 Rich Menu 設定
     const { data: settings, error: settingsError } = await supabase
@@ -93,12 +59,6 @@ export async function GET(request: NextRequest) {
 // POST: 更新 Rich Menu 設定
 export async function POST(request: NextRequest) {
   try {
-    // 驗證管理員權限
-    const isAdmin = await verifyAdmin(request)
-    if (!isAdmin) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
     const body = await request.json()
     const { defaultTab, venueTabEnabled, activityTabEnabled } = body
 
@@ -124,17 +84,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-    if (!supabaseUrl || !supabaseServiceKey) {
-      return NextResponse.json(
-        { error: 'Database configuration missing' },
-        { status: 500 }
-      )
-    }
-
-    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+    const supabase = createSupabaseAdmin()
 
     // 構建更新物件
     const updateData: Record<string, any> = {}

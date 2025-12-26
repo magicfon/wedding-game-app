@@ -39,6 +39,7 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
     { name: '批量設定', href: '/admin/batch-settings', icon: Settings },
     { name: '計分規則', href: '/admin/scoring-rules', icon: Settings },
     { name: '媒體清理', href: '/admin/media-cleanup', icon: HardDrive },
+    { name: 'Rich Menu 管理', href: '/admin/richmenu', icon: ImageIcon },
     { name: '系統設定', href: '/admin/system-settings', icon: Settings },
   ]
 
