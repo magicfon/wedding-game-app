@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Upload, Save, RefreshCw, CheckCircle, XCircle, AlertCircle } from 'lucide-react'
+import { Upload, Save, RefreshCw, CheckCircle, XCircle, AlertCircle, Shield } from 'lucide-react'
+import AdminLayout from '@/components/AdminLayout'
 
 interface RichMenuSettings {
   defaultTab: 'venue_info' | 'activity'
@@ -205,6 +206,35 @@ export default function RichMenuManagementPage() {
         <div className="text-center">
           <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-4" />
           <p>載入中...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // 如果沒有認證 token，顯示登入提示
+  if (!authToken) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md text-center">
+          <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse">
+            <Shield className="w-8 h-8 text-white" />
+          </div>
+          
+          <h1 className="text-2xl font-bold text-gray-800 mb-2">需要管理員登入</h1>
+          <p className="text-gray-600 mb-8">請先登入管理員帳號以存取 Rich Menu 管理功能</p>
+          
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <p className="text-sm text-blue-800">
+              💡 請前往控制台頁面進行登入
+            </p>
+          </div>
+          
+          <button
+            onClick={() => window.location.href = '/admin/dashboard'}
+            className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+          >
+            前往控制台
+          </button>
         </div>
       </div>
     )
