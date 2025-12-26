@@ -170,11 +170,18 @@ export async function POST(request: Request) {
 
     const results: any[] = []
 
+    console.log('🔍 Starting Rich Menu creation process...')
+    console.log('📋 LIFF ID:', liffId)
+
     // 創建會場資訊分頁
     try {
+      console.log('🏗️ Creating venue_info rich menu...')
       const venueInfoMenu = createVenueInfoRichMenu(liffId)
+      console.log('📝 Venue info menu config:', JSON.stringify(venueInfoMenu, null, 2))
       const venueInfoId = await lineClient.createRichMenu(venueInfoMenu)
+      console.log('✅ Venue info rich menu created:', venueInfoId)
       const registered = await registerRichMenu(supabase, 'venue_info', venueInfoId)
+      console.log('📝 Venue info registered to database:', registered)
 
       results.push({
         menuType: 'venue_info',
@@ -182,7 +189,7 @@ export async function POST(request: Request) {
         registered
       })
     } catch (error) {
-      console.error('Error creating venue info rich menu:', error)
+      console.error('❌ Error creating venue info rich menu:', error)
       results.push({
         menuType: 'venue_info',
         error: error instanceof Error ? error.message : 'Unknown error'
@@ -191,9 +198,13 @@ export async function POST(request: Request) {
 
     // 創建現場活動分頁
     try {
+      console.log('🏗️ Creating activity rich menu...')
       const activityMenu = createActivityRichMenu(liffId)
+      console.log('📝 Activity menu config:', JSON.stringify(activityMenu, null, 2))
       const activityId = await lineClient.createRichMenu(activityMenu)
+      console.log('✅ Activity rich menu created:', activityId)
       const registered = await registerRichMenu(supabase, 'activity', activityId)
+      console.log('📝 Activity registered to database:', registered)
 
       results.push({
         menuType: 'activity',
@@ -201,7 +212,7 @@ export async function POST(request: Request) {
         registered
       })
     } catch (error) {
-      console.error('Error creating activity rich menu:', error)
+      console.error('❌ Error creating activity rich menu:', error)
       results.push({
         menuType: 'activity',
         error: error instanceof Error ? error.message : 'Unknown error'
@@ -210,9 +221,13 @@ export async function POST(request: Request) {
 
     // 創建未開放分頁
     try {
+      console.log('🏗️ Creating unavailable rich menu...')
       const unavailableMenu = createUnavailableRichMenu()
+      console.log('📝 Unavailable menu config:', JSON.stringify(unavailableMenu, null, 2))
       const unavailableId = await lineClient.createRichMenu(unavailableMenu)
+      console.log('✅ Unavailable rich menu created:', unavailableId)
       const registered = await registerRichMenu(supabase, 'unavailable', unavailableId)
+      console.log('📝 Unavailable registered to database:', registered)
 
       results.push({
         menuType: 'unavailable',
@@ -220,20 +235,22 @@ export async function POST(request: Request) {
         registered
       })
     } catch (error) {
-      console.error('Error creating unavailable rich menu:', error)
+      console.error('❌ Error creating unavailable rich menu:', error)
       results.push({
         menuType: 'unavailable',
         error: error instanceof Error ? error.message : 'Unknown error'
       })
     }
 
+    console.log('📊 Rich Menu creation results:', JSON.stringify(results, null, 2))
+    
     return NextResponse.json({
       success: true,
       message: 'Rich menus created successfully',
       results,
       nextSteps: [
         'Please upload images for each rich menu using the upload-image API',
-        'After uploading images, you can set the default rich menu for users'
+        'After uploading images, you can check the LINE Developers Console to see the created rich menus'
       ]
     })
 
