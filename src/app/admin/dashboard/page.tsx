@@ -232,6 +232,13 @@ export default function AdminDashboard() {
       icon: Settings,
       href: '/admin/settings',
       color: 'bg-red-500'
+    },
+    {
+      title: 'Rich Menu 管理',
+      description: '管理 LINE Rich Menu 分頁和圖片',
+      icon: Settings,
+      href: '/admin/richmenu',
+      color: 'bg-cyan-500'
     }
   ]
 
