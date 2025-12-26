@@ -244,6 +244,28 @@ export async function POST(request: Request) {
 
     console.log('📊 Rich Menu creation results:', JSON.stringify(results, null, 2))
     
+    // 驗證 Rich Menu 是否真的創建成功
+    try {
+      console.log('🔍 Verifying rich menus on LINE Platform...')
+      const richMenuList = await lineClient.getRichMenuList()
+      console.log('📋 Current rich menus on LINE Platform:', richMenuList.length)
+      richMenuList.forEach(menu => {
+        console.log(`  - ${menu.richMenuId}: ${menu.name}`)
+      })
+      
+      // 設置預設 Rich Menu（使用會場資訊分頁）
+      if (richMenuList.length > 0) {
+        const venueInfoMenu = richMenuList.find(m => m.name.includes('會場資訊'))
+        if (venueInfoMenu) {
+          console.log('⭐ Setting default rich menu:', venueInfoMenu.richMenuId)
+          await lineClient.setDefaultRichMenu(venueInfoMenu.richMenuId)
+          console.log('✅ Default rich menu set successfully')
+        }
+      }
+    } catch (verifyError) {
+      console.error('❌ Error verifying rich menus:', verifyError)
+    }
+    
     return NextResponse.json({
       success: true,
       message: 'Rich menus created successfully',
