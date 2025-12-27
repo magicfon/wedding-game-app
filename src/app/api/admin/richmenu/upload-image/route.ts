@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
     // 檢查是否已有 Rich Menu ID
     const { data: existingRegistry } = await supabase
       .from('line_richmenu_registry')
-      .select('richmenu_id')
+      .select('richmenu_id, has_image')
       .eq('menu_type', menuType)
       .single()
 
@@ -87,6 +87,15 @@ export async function POST(request: NextRequest) {
       // 更新現有 Rich Menu 的圖片
       richMenuId = existingRegistry.richmenu_id
       await (lineClient as any).setRichMenuImage(richMenuId, Buffer.from(imageBuffer))
+      
+      // 更新 has_image 狀態
+      await supabase
+        .from('line_richmenu_registry')
+        .update({
+          has_image: true,
+          updated_at: new Date().toISOString()
+        })
+        .eq('menu_type', menuType)
     } else {
       // 創建新的 Rich Menu
       const richMenu = {
@@ -105,12 +114,13 @@ export async function POST(request: NextRequest) {
       // 上傳圖片到 Rich Menu
       await (lineClient as any).setRichMenuImage(richMenuId, Buffer.from(imageBuffer))
 
-      // 註冊 Rich Menu ID
+      // 註冊 Rich Menu ID，並標記已上傳圖片
       await supabase
         .from('line_richmenu_registry')
         .upsert({
           menu_type: menuType,
           richmenu_id: richMenuId,
+          has_image: true,
           updated_at: new Date().toISOString()
         }, {
           onConflict: 'menu_type'
@@ -166,12 +176,13 @@ export async function GET(request: NextRequest) {
     if (!data) {
       return NextResponse.json({
         hasImage: false,
-        message: 'No image uploaded for this menu type'
+        message: 'No rich menu found for this menu type'
       })
     }
 
+    // 根據 has_image 欄位判斷是否已上傳圖片
     return NextResponse.json({
-      hasImage: true,
+      hasImage: data.has_image || false,
       richMenuId: data.richmenu_id,
       createdAt: data.created_at,
       updatedAt: data.updated_at
