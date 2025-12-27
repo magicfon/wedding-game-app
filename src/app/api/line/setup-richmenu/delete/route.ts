@@ -38,6 +38,19 @@ export async function POST(request: Request) {
 
     console.log('🗑️ Deleting rich menu:', richMenuId)
 
+    // 檢查是否為預設 Rich Menu，如果是則先清除預設
+    try {
+      const defaultResponse = await apiClient.getDefaultRichMenuId()
+      if (defaultResponse?.richMenuId === richMenuId) {
+        console.log('⚠️ This is the default rich menu, clearing default first...')
+        await apiClient.cancelDefaultRichMenu()
+        console.log('✅ Default rich menu cleared')
+      }
+    } catch (err: any) {
+      // 如果沒有預設選單，忽略錯誤
+      console.log('ℹ️ No default rich menu set or error checking:', err?.message)
+    }
+
     // 從 LINE Platform 刪除 Rich Menu
     await apiClient.deleteRichMenu(richMenuId)
     console.log('✅ Rich menu deleted from LINE Platform:', richMenuId)
