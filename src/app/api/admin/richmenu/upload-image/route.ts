@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { messagingApi } from '@line/bot-sdk'
 import { createSupabaseAdmin } from '@/lib/supabase-admin'
 
-const { MessagingApiBlobClient } = messagingApi
+const { MessagingApiBlobClient, MessagingApiClient } = messagingApi
 
 // 初始化 LINE Blob Client (用於圖片上傳)
 function getLineBlobClient(): InstanceType<typeof MessagingApiBlobClient> | null {
@@ -12,6 +12,72 @@ function getLineBlobClient(): InstanceType<typeof MessagingApiBlobClient> | null
     return null
   }
   return new MessagingApiBlobClient({ channelAccessToken })
+}
+
+// 初始化 LINE Messaging API Client (用於 Rich Menu 管理)
+function getLineApiClient(): InstanceType<typeof MessagingApiClient> | null {
+  const channelAccessToken = process.env.LINE_CHANNEL_ACCESS_TOKEN
+  if (!channelAccessToken) {
+    console.error('LINE_CHANNEL_ACCESS_TOKEN not configured')
+    return null
+  }
+  return new MessagingApiClient({ channelAccessToken })
+}
+
+// 獲取 LIFF ID
+function getLiffId(): string {
+  const liffId = process.env.NEXT_PUBLIC_LIFF_ID
+  if (!liffId) {
+    throw new Error('NEXT_PUBLIC_LIFF_ID not configured')
+  }
+  return liffId
+}
+
+// 創建會場資訊分頁 Rich Menu 配置
+function createVenueInfoRichMenu(liffId: string) {
+  return {
+    size: {
+      width: 2500,
+      height: 1686
+    },
+    selected: false,
+    name: "婚禮遊戲 - 會場資訊",
+    chatBarText: "會場資訊",
+    areas: [
+      {
+        bounds: { x: 0, y: 0, width: 1250, height: 843 },
+        action: {
+          type: "uri" as const,
+          uri: `https://liff.line.me/${liffId}/venue-info/transport`,
+          label: "交通資訊"
+        }
+      },
+      {
+        bounds: { x: 1250, y: 0, width: 1250, height: 843 },
+        action: {
+          type: "uri" as const,
+          uri: `https://liff.line.me/${liffId}/venue-info/menu`,
+          label: "菜單"
+        }
+      },
+      {
+        bounds: { x: 0, y: 843, width: 1250, height: 843 },
+        action: {
+          type: "uri" as const,
+          uri: `https://liff.line.me/${liffId}/venue-info/table`,
+          label: "桌次"
+        }
+      },
+      {
+        bounds: { x: 1250, y: 843, width: 1250, height: 843 },
+        action: {
+          type: "postback" as const,
+          data: "switch_tab:activity",
+          label: "進入遊戲分頁"
+        }
+      }
+    ]
+  }
 }
 
 // 驗證圖片尺寸
@@ -57,7 +123,7 @@ export async function POST(request: NextRequest) {
     // 從資料庫獲取 Rich Menu ID
     const { data: registryData, error: registryError } = await supabase
       .from('line_richmenu_registry')
-      .select('richmenu_id')
+      .select('richmenu_id, has_image')
       .eq('menu_type', menuType)
       .single()
 
@@ -68,7 +134,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const richMenuId = registryData.richmenu_id
+    let richMenuId = registryData.richmenu_id
 
     // 驗證圖片尺寸
     const imageBuffer = await file.arrayBuffer()
@@ -99,7 +165,9 @@ export async function POST(request: NextRequest) {
     }
 
     const blobClient = getLineBlobClient()
-    if (!blobClient) {
+    const apiClient = getLineApiClient()
+
+    if (!blobClient || !apiClient) {
       return NextResponse.json(
         { error: 'LINE client configuration error' },
         { status: 500 }
@@ -109,19 +177,13 @@ export async function POST(request: NextRequest) {
     console.log('📤 Uploading image to rich menu:', richMenuId, '(menu type:', menuType + ')')
     console.log('📊 Image size:', imageBuffer.byteLength, 'bytes')
     console.log('📊 Image type:', file.type)
+    console.log('📊 Has existing image:', registryData.has_image)
+
+    // 準備圖片 Blob
+    const imageBlob = new Blob([imageBuffer], { type: file.type })
 
     // 上傳圖片到 Rich Menu
     try {
-      // 使用 LINE Bot SDK v10 的 MessagingApiBlobClient
-      // setRichMenuImage 方法需要 Blob 類型
-      const imageBlob = new Blob([imageBuffer], { type: file.type })
-      console.log('📤 Image blob size:', imageBlob.size, 'bytes')
-      console.log('📤 Image blob type:', imageBlob.type)
-      console.log('📤 Content-Type:', file.type)
-      console.log('📤 Rich Menu ID:', richMenuId)
-      console.log('📤 API endpoint:', `/richmenu/${richMenuId}/content`)
-
-      // 使用 MessagingApiBlobClient.setRichMenuImage 方法上傳圖片
       console.log('📤 Calling setRichMenuImage with MessagingApiBlobClient:')
       console.log('  - richMenuId:', richMenuId)
       console.log('  - blob size:', imageBlob.size)
@@ -131,37 +193,72 @@ export async function POST(request: NextRequest) {
       console.log('✅ Image uploaded successfully')
     } catch (uploadError: any) {
       console.error('❌ Error uploading image to LINE:', uploadError)
-      console.error('❌ Error name:', uploadError.name)
-      console.error('❌ Error message:', uploadError.message)
-      console.error('❌ Error code:', uploadError.code)
 
-      // 提取 LINE API 的錯誤細節
-      if (uploadError.response) {
-        console.error('❌ Response status:', uploadError.response.status)
-        console.error('❌ Response statusText:', uploadError.response.statusText)
-        console.error('❌ Response data:', JSON.stringify(uploadError.response.data, null, 2))
+      // 檢查是否是「圖片已存在」錯誤
+      const errorBody = uploadError?.body || ''
+      const isImageAlreadyExists =
+        errorBody.includes('An image has already been uploaded') ||
+        (uploadError.status === 400 && registryData.has_image)
 
-        const errorData = uploadError.response.data
+      if (isImageAlreadyExists) {
+        console.log('🔄 Rich menu already has an image. Recreating rich menu...')
 
-        // 嘗試從不同的可能位置提取錯誤信息
-        let lineErrorMessage = 'Unknown LINE API error'
-        if (typeof errorData === 'string') {
-          lineErrorMessage = errorData
-        } else if (errorData.message) {
-          lineErrorMessage = errorData.message
-        } else if (errorData.error) {
-          lineErrorMessage = errorData.error
-        } else if (errorData.error?.message) {
-          lineErrorMessage = errorData.error.message
-        } else if (typeof errorData === 'object' && Object.keys(errorData).length === 0) {
-          lineErrorMessage = 'No error details provided'
-        } else {
-          lineErrorMessage = JSON.stringify(errorData)
+        try {
+          const liffId = getLiffId()
+
+          // 1. 刪除舊的 Rich Menu
+          console.log('🗑️ Deleting old rich menu:', richMenuId)
+          await apiClient.deleteRichMenu(richMenuId)
+          console.log('✅ Old rich menu deleted')
+
+          // 2. 創建新的 Rich Menu
+          console.log('🏗️ Creating new rich menu...')
+          const menuConfig = createVenueInfoRichMenu(liffId)
+          const newRichMenuResponse = await apiClient.createRichMenu(menuConfig)
+          const newRichMenuId = newRichMenuResponse.richMenuId
+          console.log('✅ New rich menu created:', newRichMenuId)
+
+          // 3. 上傳圖片到新的 Rich Menu
+          console.log('📤 Uploading image to new rich menu...')
+          await blobClient.setRichMenuImage(newRichMenuId, imageBlob)
+          console.log('✅ Image uploaded to new rich menu')
+
+          // 4. 設置為預設 Rich Menu
+          console.log('🎯 Setting as default rich menu...')
+          await apiClient.setDefaultRichMenu(newRichMenuId)
+          console.log('✅ Set as default rich menu')
+
+          // 5. 更新資料庫
+          const { error: updateError } = await supabase
+            .from('line_richmenu_registry')
+            .update({
+              richmenu_id: newRichMenuId,
+              has_image: true,
+              updated_at: new Date().toISOString()
+            })
+            .eq('menu_type', menuType)
+
+          if (updateError) {
+            console.error('Error updating registry:', updateError)
+          }
+
+          richMenuId = newRichMenuId
+
+          return NextResponse.json({
+            success: true,
+            message: 'Rich menu recreated and image uploaded successfully',
+            richMenuId: newRichMenuId,
+            menuType,
+            recreated: true
+          })
+
+        } catch (recreateError: any) {
+          console.error('❌ Error recreating rich menu:', recreateError)
+          throw new Error(`Failed to recreate rich menu: ${recreateError.message || recreateError}`)
         }
-
-        throw new Error(`LINE API error (${uploadError.response.status}): ${lineErrorMessage}`)
       }
 
+      // 其他錯誤，直接拋出
       throw uploadError
     }
 
