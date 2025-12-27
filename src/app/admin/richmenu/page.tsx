@@ -69,10 +69,6 @@ export default function RichMenuManagementPage() {
   // 預設 Rich Menu ID (從 LINE Platform 獲取)
   const [defaultRichMenuId, setDefaultRichMenuId] = useState<string | null>(null)
 
-  // Rich Menu Aliases
-  const [aliases, setAliases] = useState<Array<{ aliasId: string; richMenuId: string }>>([])
-  const [loadingAliases, setLoadingAliases] = useState(false)
-
   // 檢查管理員權限
   useEffect(() => {
     if (liffLoading || adminLoading) {
@@ -87,7 +83,6 @@ export default function RichMenuManagementPage() {
     // 是管理員，載入設定
     fetchSettings()
     fetchRichMenuList()
-    fetchAliases()
     setLoading(false)
   }, [isLoggedIn, isAdmin, liffLoading, adminLoading, router])
 
@@ -141,24 +136,6 @@ export default function RichMenuManagementPage() {
       console.error('Error fetching rich menu list:', error)
     } finally {
       setLoadingRichMenuList(false)
-    }
-  }
-
-  // 獲取 Rich Menu Aliases
-  const fetchAliases = async () => {
-    setLoadingAliases(true)
-    try {
-      const response = await fetch('/api/line/setup-richmenu/aliases')
-      if (response.ok) {
-        const data = await response.json()
-        if (data.success && data.aliases) {
-          setAliases(data.aliases)
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching aliases:', error)
-    } finally {
-      setLoadingAliases(false)
     }
   }
 
@@ -714,7 +691,7 @@ export default function RichMenuManagementPage() {
             </div>
             <div className="flex gap-2">
               <button
-                onClick={() => { fetchRichMenuList(); fetchAliases(); }}
+                onClick={fetchRichMenuList}
                 disabled={loadingRichMenuList}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
               >
@@ -730,27 +707,6 @@ export default function RichMenuManagementPage() {
               >
                 <RefreshCw className="w-4 h-4" />
                 創建 Rich Menu
-              </button>
-              <button
-                onClick={async () => {
-                  try {
-                    const response = await fetch('/api/line/setup-richmenu/aliases', {
-                      method: 'POST'
-                    })
-                    const result = await response.json()
-                    if (result.success) {
-                      showMessage('success', `Aliases 創建成功: ${result.message}`)
-                      fetchAliases()
-                    } else {
-                      showMessage('error', result.error || 'Aliases 創建失敗')
-                    }
-                  } catch (error) {
-                    showMessage('error', 'Aliases 創建失敗')
-                  }
-                }}
-                className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
-              >
-                創建 Aliases
               </button>
             </div>
           </div>
@@ -802,22 +758,6 @@ export default function RichMenuManagementPage() {
                       </div>
                       <p className="text-sm text-gray-600">Chat Bar Text: {menu.chatBarText}</p>
                       <p className="text-sm text-gray-600">尺寸: {menu.size?.width} x {menu.size?.height}</p>
-                      {/* Alias 顯示 */}
-                      {(() => {
-                        const menuAliases = aliases.filter(a => a.richMenuId === menu.richMenuId)
-                        if (menuAliases.length > 0) {
-                          return (
-                            <div className="mt-1">
-                              {menuAliases.map(a => (
-                                <span key={a.aliasId} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 mr-1">
-                                  {a.aliasId}
-                                </span>
-                              ))}
-                            </div>
-                          )
-                        }
-                        return null
-                      })()}
                       <div className="mt-2">
                         {menu.hasImage ? (
                           <div className="flex items-center gap-1 text-green-600">
@@ -1178,55 +1118,69 @@ export default function RichMenuManagementPage() {
                         </div>
 
                         {/* 動作 */}
-                        <div className="grid grid-cols-3 gap-2">
-                          <div>
-                            <label className="block text-xs text-gray-600 mb-1">類型</label>
-                            <select
-                              value={area.action.type}
-                              onChange={(e) => updateEditingArea(index, 'action.type', e.target.value)}
-                              className="w-full px-2 py-1 text-sm border rounded text-gray-900"
-                            >
-                              <option value="uri">URI (連結)</option>
-                              <option value="postback">Postback</option>
-                              <option value="message">訊息</option>
-                              <option value="richmenuswitch">選單切換</option>
-                            </select>
-                          </div>
-                          <div>
-                            <label className="block text-xs text-gray-600 mb-1">
-                              {area.action.type === 'uri' ? 'URI' :
-                                area.action.type === 'richmenuswitch' ? 'Alias ID' :
-                                  area.action.type === 'postback' ? 'Data' : '文字'}
-                            </label>
-                            {area.action.type === 'richmenuswitch' ? (
+                        <div className="space-y-2">
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <label className="block text-xs text-gray-600 mb-1">類型</label>
                               <select
-                                value={(area.action as any).richMenuAliasId || ''}
-                                onChange={(e) => updateEditingArea(index, 'action.richMenuAliasId', e.target.value)}
+                                value={area.action.type}
+                                onChange={(e) => updateEditingArea(index, 'action.type', e.target.value)}
                                 className="w-full px-2 py-1 text-sm border rounded text-gray-900"
                               >
-                                <option value="">選擇目標選單</option>
-                                <option value="richmenu-alias-venue-info">會場資訊</option>
-                                <option value="richmenu-alias-activity">現場活動</option>
+                                <option value="uri">URI (連結)</option>
+                                <option value="richmenuswitch">切換選單 (Rich Menu)</option>
+                                <option value="postback">Postback</option>
+                                <option value="message">訊息</option>
                               </select>
-                            ) : (
+                            </div>
+                            <div>
+                              <label className="block text-xs text-gray-600 mb-1">標籤</label>
+                              <input
+                                type="text"
+                                value={area.action.label || ''}
+                                onChange={(e) => updateEditingArea(index, 'action.label', e.target.value)}
+                                className="w-full px-2 py-1 text-sm border rounded text-gray-900"
+                              />
+                            </div>
+                          </div>
+
+                          {/* 根據類型顯示不同的欄位 */}
+                          {area.action.type === 'richmenuswitch' ? (
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <label className="block text-xs text-gray-600 mb-1">Rich Menu Alias ID</label>
+                                <input
+                                  type="text"
+                                  value={area.action.richMenuAliasId || ''}
+                                  onChange={(e) => updateEditingArea(index, 'action.richMenuAliasId', e.target.value)}
+                                  placeholder="richmenu-alias-xxx"
+                                  className="w-full px-2 py-1 text-sm border rounded text-gray-900"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs text-gray-600 mb-1">Data (可選)</label>
+                                <input
+                                  type="text"
+                                  value={area.action.data || ''}
+                                  onChange={(e) => updateEditingArea(index, 'action.data', e.target.value)}
+                                  placeholder="switch_tab:xxx"
+                                  className="w-full px-2 py-1 text-sm border rounded text-gray-900"
+                                />
+                              </div>
+                            </div>
+                          ) : (
+                            <div>
+                              <label className="block text-xs text-gray-600 mb-1">
+                                {area.action.type === 'uri' ? 'URI' : area.action.type === 'postback' ? 'Data' : '文字'}
+                              </label>
                               <input
                                 type="text"
                                 value={area.action.type === 'uri' ? (area.action.uri || '') : (area.action.data || '')}
                                 onChange={(e) => updateEditingArea(index, area.action.type === 'uri' ? 'action.uri' : 'action.data', e.target.value)}
                                 className="w-full px-2 py-1 text-sm border rounded text-gray-900"
                               />
-                            )}
-                          </div>
-                          <div>
-                            <label className="block text-xs text-gray-600 mb-1">標籤/Data</label>
-                            <input
-                              type="text"
-                              value={area.action.type === 'richmenuswitch' ? (area.action.data || '') : (area.action.label || '')}
-                              onChange={(e) => updateEditingArea(index, area.action.type === 'richmenuswitch' ? 'action.data' : 'action.label', e.target.value)}
-                              placeholder={area.action.type === 'richmenuswitch' ? 'switch_tab:xxx' : ''}
-                              className="w-full px-2 py-1 text-sm border rounded text-gray-900"
-                            />
-                          </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}
