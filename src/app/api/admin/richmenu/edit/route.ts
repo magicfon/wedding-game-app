@@ -153,12 +153,19 @@ export async function POST(request: NextRequest) {
 
         // 5. 更新資料庫
         if (menuType) {
+            const updateData: any = {
+                richmenu_id: newRichMenuId,
+                updated_at: new Date().toISOString()
+            }
+
+            // 如果成功保留了圖片，確保 has_image 為 true
+            if (imageBuffer) {
+                updateData.has_image = true
+            }
+
             const { error: updateError } = await supabase
                 .from('line_richmenu_registry')
-                .update({
-                    richmenu_id: newRichMenuId,
-                    updated_at: new Date().toISOString()
-                })
+                .update(updateData)
                 .eq('menu_type', menuType)
 
             if (updateError) {
