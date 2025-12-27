@@ -120,8 +120,8 @@ export async function POST(request: NextRequest) {
 
     // 上傳圖片到 Rich Menu
     try {
-      // 使用 LINE Bot SDK 的 postBinary 方法
-      // 根據 LINE API 文檔，需要 POST 到 /richmenu/{richMenuId}/content
+      // 使用 LINE Bot SDK 的 setRichMenuImage 方法
+      // 根據 LINE Bot SDK 文檔，該方法接受 richMenuId, body, contentType
       const imageBufferData = Buffer.from(imageBuffer)
       console.log('📤 Image buffer size:', imageBufferData.length, 'bytes')
       console.log('📤 Image buffer type:', imageBufferData.constructor.name)
@@ -129,32 +129,19 @@ export async function POST(request: NextRequest) {
       console.log('📤 Rich Menu ID:', richMenuId)
       console.log('📤 API endpoint:', `/richmenu/${richMenuId}/content`)
       
-      // 使用 postBinary 方法上傳圖片到 LINE API
-      // 該方法接受三個參數：path, body, contentType
-      console.log('📤 Calling postBinary with:')
-      console.log('  - path:', `/richmenu/${richMenuId}/content`)
+      // 使用 setRichMenuImage 方法上傳圖片
+      // 該方法接受三個參數：richMenuId, body, contentType
+      console.log('📤 Calling setRichMenuImage with:')
+      console.log('  - richMenuId:', richMenuId)
       console.log('  - body length:', imageBufferData.length)
       console.log('  - contentType:', file.type)
       
-      // 嘗試使用 setRichMenuImage 方法
-      try {
-        console.log('📤 Trying setRichMenuImage method...')
-        await (lineClient as any).setRichMenuImage(
-          richMenuId,
-          imageBufferData,
-          file.type
-        )
-        console.log('✅ Image uploaded successfully using setRichMenuImage')
-      } catch (setRichMenuImageError) {
-        console.log('⚠️ setRichMenuImage failed, trying postBinary:', setRichMenuImageError)
-        // 如果 setRichMenuImage 失敗，嘗試使用 postBinary
-        await (lineClient as any).postBinary(
-          `/richmenu/${richMenuId}/content`,
-          imageBufferData,
-          file.type
-        )
-        console.log('✅ Image uploaded successfully using postBinary')
-      }
+      await (lineClient as any).setRichMenuImage(
+        richMenuId,
+        imageBufferData,
+        file.type
+      )
+      console.log('✅ Image uploaded successfully')
     } catch (uploadError: any) {
       console.error('❌ Error uploading image to LINE:', uploadError)
       console.error('❌ Error name:', uploadError.name)

@@ -145,33 +145,12 @@ export async function POST(request: NextRequest) {
     } catch (setRichMenuImageError: any) {
       console.error('❌ setRichMenuImage failed:', setRichMenuImageError)
       
-      try {
-        // 嘗試使用 postBinary 方法
-        console.log('📤 Trying postBinary method...')
-        await (lineClient as any).postBinary(
-          `/richmenu/${richMenuId}/content`,
-          testImageData,
-          'image/png'
-        )
-        console.log('✅ Image uploaded successfully using postBinary')
-        
-        return NextResponse.json({
-          success: true,
-          message: 'Test image uploaded successfully',
-          method: 'postBinary',
-          richMenuId
-        })
-      } catch (postBinaryError: any) {
-        console.error('❌ postBinary failed:', postBinaryError)
-        
-        return NextResponse.json({
-          success: false,
-          error: 'Both methods failed',
-          richMenuId,
-          setRichMenuImageError: setRichMenuImageError.message,
-          postBinaryError: postBinaryError.message
-        })
-      }
+      return NextResponse.json({
+        success: false,
+        error: 'Failed to upload test image',
+        richMenuId,
+        details: setRichMenuImageError.message
+      })
     }
 
   } catch (error) {

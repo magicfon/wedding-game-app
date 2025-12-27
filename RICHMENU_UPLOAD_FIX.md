@@ -19,35 +19,27 @@ Error uploading image to LINE: Request failed with status code 400
 
 ## 可能的原因
 
-1. **LINE Bot SDK 方法使用不正確**：`postBinary` 方法的參數順序或格式可能不正確
+1. **LINE Bot SDK 方法使用不正確**：`postBinary` 方法不存在於 LINE Bot SDK 的 Client 物件中
 2. **圖片數據格式問題**：圖片數據可能需要特定的編碼或格式
 3. **Content-Type 設置問題**：Content-Type 可能需要更精確的設置
+4. **Rich Menu 尺寸不匹配**：圖片尺寸與創建 Rich Menu 時設置的尺寸不一致
 
 ## 解決方案
 
-### 1. 添加備用方案
+### 1. 修正 LINE Bot SDK 方法使用
 
-修改了 `src/app/api/admin/richmenu/upload-image/route.ts`，添加了兩種上傳方法的備用方案：
+修改了 `src/app/api/admin/richmenu/upload-image/route.ts`，只使用正確的 `setRichMenuImage` 方法：
 
 ```typescript
-// 先嘗試使用 setRichMenuImage 方法
-try {
-  await (lineClient as any).setRichMenuImage(
-    richMenuId,
-    imageBufferData,
-    file.type
-  )
-  console.log('✅ Image uploaded successfully using setRichMenuImage')
-} catch (setRichMenuImageError) {
-  // 如果失敗，嘗試使用 postBinary 方法
-  await (lineClient as any).postBinary(
-    `/richmenu/${richMenuId}/content`,
-    imageBufferData,
-    file.type
-  )
-  console.log('✅ Image uploaded successfully using postBinary')
-}
+// 使用 setRichMenuImage 方法上傳圖片
+await (lineClient as any).setRichMenuImage(
+  richMenuId,
+  imageBufferData,
+  file.type
+)
 ```
+
+**重要**：LINE Bot SDK 的 Client 物件沒有 `postBinary` 方法，只能使用 `setRichMenuImage` 方法。
 
 ### 2. 添加詳細的調試信息
 
@@ -141,6 +133,15 @@ npm list @line/bot-sdk
 echo $LINE_CHANNEL_ACCESS_TOKEN
 ```
 
+### 4. 檢查 Rich Menu 創建配置
+
+確認 Rich Menu 創建時設置的尺寸是否與圖片尺寸一致：
+
+```bash
+# 使用調試端點獲取 Rich Menu 信息
+curl https://wedding-game-app.vercel.app/api/admin/richmenu/debug-upload
+```
+
 ## 已知的 LINE API 限制
 
 根據 LINE API 文檔，Rich Menu 圖片有以下限制：
@@ -173,7 +174,7 @@ A: 400 錯誤通常表示請求格式不正確。可能的原因包括：
 
 ### Q: 如何確認圖片尺寸是否正確？
 
-A: 使用圖片編輯軟或命令行工具檢查：
+A: 使用圖片編輯器或命令行工具檢查：
 
 ```bash
 # 使用 identify 命令（需要 ImageMagick）
@@ -195,6 +196,15 @@ curl https://wedding-game-app.vercel.app/api/admin/richmenu/debug-upload
 curl -H "Authorization: Bearer {token}" \
   https://api-data.line.me/v2/bot/richmenu/{richMenuId}
 ```
+
+### Q: 如果 setRichMenuImage 方法失敗怎麼辦？
+
+A: 檢查以下事項：
+1. 確認 Rich Menu ID 是否正確
+2. 確認圖片尺寸是否與 Rich Menu 設置一致
+3. 確認圖片格式是否為 PNG 或 JPEG
+4. 確認 Content-Type 是否正確設置
+5. 查看詳細的錯誤日誌
 
 ## 參考資料
 
