@@ -28,7 +28,7 @@ function createVenueInfoRichMenu(liffId: string) {
       width: 2500,
       height: 1686
     },
-    selected: false,
+    selected: true,
     name: "婚禮遊戲 - 會場資訊",
     chatBarText: "會場資訊",
     areas: [
@@ -75,7 +75,7 @@ function createActivityRichMenu(liffId: string) {
       width: 2500,
       height: 1686
     },
-    selected: false,
+    selected: true,
     name: "婚禮遊戲 - 現場活動",
     chatBarText: "現場活動",
     areas: [
@@ -122,7 +122,7 @@ function createUnavailableRichMenu() {
       width: 2500,
       height: 1686
     },
-    selected: false,
+    selected: true,
     name: "婚禮遊戲 - 未開放",
     chatBarText: "未開放",
     areas: [] // 無按鈕
