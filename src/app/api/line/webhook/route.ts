@@ -9,33 +9,33 @@ const config = {
 }
 
 // 只有在有真實 token 時才創建 client
-const client = process.env.LINE_CHANNEL_ACCESS_TOKEN 
-  ? new Client(config) 
+const client = process.env.LINE_CHANNEL_ACCESS_TOKEN
+  ? new Client(config)
   : null
 
 // 驗證 Line 簽名
 function validateSignature(body: string, signature: string): boolean {
   if (!config.channelSecret || config.channelSecret === 'dummy_secret') return true // 開發模式跳過驗證
-  
+
   const hash = crypto
     .createHmac('SHA256', config.channelSecret)
     .update(body)
     .digest('base64')
-  
+
   return hash === signature
 }
 
 // 主選單訊息 - 使用 LIFF URL
 const getMainMenuMessage = () => {
   const liffId = process.env.NEXT_PUBLIC_LIFF_ID
-  
+
   if (!liffId) {
     return {
       type: 'text' as const,
       text: '⚠️ 系統設定錯誤：LIFF ID 未配置\n請聯絡管理員'
     }
   }
-  
+
   return {
     type: 'text' as const,
     text: `🎉 歡迎來到婚禮互動遊戲！
@@ -76,7 +76,7 @@ async function handleMessage(event: MessageEvent) {
   if (!client || event.message.type !== 'text') return
 
   const text = event.message.text.toLowerCase()
-  
+
   if (text.includes('選單') || text.includes('menu') || text.includes('開始')) {
     await client.replyMessage(event.replyToken, getMainMenuMessage())
   } else if (text.includes('help') || text.includes('幫助')) {
@@ -131,7 +131,7 @@ async function handleRichMenuSwitch(userId: string, targetTab: string) {
 // 處理 Postback 事件
 async function handlePostback(event: PostbackEvent) {
   if (!client) return
-  
+
   const data = event.postback.data
   const userId = event.source?.userId
 
@@ -157,16 +157,15 @@ async function handlePostback(event: PostbackEvent) {
     }
     return
   }
-  
+
   switch (data) {
     case 'show_menu':
       await client.replyMessage(event.replyToken, getMainMenuMessage())
       break
     default:
-      await client.replyMessage(event.replyToken, {
-        type: 'text',
-        text: '請使用選單中的按鈕來操作遊戲功能！'
-      })
+      console.log('Unknown postback data:', data)
+      // 不回覆錯誤訊息，避免干擾 Rich Menu 切換或其他未處理的操作
+      break
   }
 }
 
@@ -194,8 +193,8 @@ export async function POST(request: NextRequest) {
             // 用戶加入好友時的歡迎訊息
             if (client) {
               await client.replyMessage(event.replyToken, {
-              type: 'text',
-              text: `🎉 歡迎加入婚禮互動遊戲！
+                type: 'text',
+                text: `🎉 歡迎加入婚禮互動遊戲！
 
 感謝您的參與！這裡有豐富的互動功能等著您：
 
