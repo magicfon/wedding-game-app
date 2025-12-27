@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { messagingApi } from '@line/bot-sdk'
+import { Readable } from 'stream'
 
 const { MessagingApiBlobClient } = messagingApi
 
@@ -11,6 +12,15 @@ function getLineBlobClient(): InstanceType<typeof MessagingApiBlobClient> | null
     return null
   }
   return new MessagingApiBlobClient({ channelAccessToken })
+}
+
+// 將 Node.js Readable stream 轉換為 Buffer
+async function streamToBuffer(stream: Readable): Promise<Buffer> {
+  const chunks: Buffer[] = []
+  for await (const chunk of stream) {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk))
+  }
+  return Buffer.concat(chunks)
 }
 
 // GET: 獲取 Rich Menu 圖片
@@ -40,24 +50,8 @@ export async function GET(request: NextRequest) {
     // 使用 LINE Bot SDK v10 的 MessagingApiBlobClient 獲取圖片
     const imageStream = await blobClient.getRichMenuImage(richMenuId)
 
-    // 將 ReadableStream 轉換為 ArrayBuffer
-    const reader = imageStream.getReader()
-    const chunks: Uint8Array[] = []
-
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-      chunks.push(value)
-    }
-
-    // 合併所有 chunks
-    const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0)
-    const imageBuffer = new Uint8Array(totalLength)
-    let offset = 0
-    for (const chunk of chunks) {
-      imageBuffer.set(chunk, offset)
-      offset += chunk.length
-    }
+    // 將 Readable stream 轉換為 Buffer
+    const imageBuffer = await streamToBuffer(imageStream as unknown as Readable)
 
     // 返回圖片
     return new NextResponse(imageBuffer, {
