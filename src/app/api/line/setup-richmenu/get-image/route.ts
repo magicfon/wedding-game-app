@@ -53,8 +53,8 @@ export async function GET(request: NextRequest) {
     // 將 Readable stream 轉換為 Buffer
     const imageBuffer = await streamToBuffer(imageStream as unknown as Readable)
 
-    // 返回圖片
-    return new NextResponse(imageBuffer, {
+    // 返回圖片（轉換為 Uint8Array 以符合 NextResponse 類型要求）
+    return new NextResponse(new Uint8Array(imageBuffer), {
       headers: {
         'Content-Type': 'image/png',
         'Cache-Control': 'public, max-age=3600', // 快取 1 小時
