@@ -57,6 +57,9 @@ export default function RichMenuManagementPage() {
   const [loadingEdit, setLoadingEdit] = useState(false)
   const [savingEdit, setSavingEdit] = useState(false)
 
+  // 預設 Rich Menu ID (從 LINE Platform 獲取)
+  const [defaultRichMenuId, setDefaultRichMenuId] = useState<string | null>(null)
+
   // 檢查管理員權限
   useEffect(() => {
     if (liffLoading || adminLoading) {
@@ -103,6 +106,13 @@ export default function RichMenuManagementPage() {
       }
       const data = await response.json()
       if (data.success && data.status?.linePlatform?.menus) {
+        // 設置預設 Rich Menu ID
+        if (data.status.linePlatform.defaultRichMenuId) {
+          setDefaultRichMenuId(data.status.linePlatform.defaultRichMenuId)
+        } else {
+          setDefaultRichMenuId(null)
+        }
+
         // 合併資料庫中的圖片狀態
         const menusWithImageStatus = data.status.linePlatform.menus.map((menu: any) => {
           const registryEntry = data.status?.database?.menus?.find((r: any) => r.richmenu_id === menu.richMenuId)
@@ -586,7 +596,7 @@ export default function RichMenuManagementPage() {
                       </div>
                     </div>
                     <div className="ml-4 flex flex-col gap-2">
-                      {menu.selected ? (
+                      {menu.richMenuId === defaultRichMenuId ? (
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                           預設
                         </span>
@@ -602,9 +612,9 @@ export default function RichMenuManagementPage() {
                       )}
                       <button
                         onClick={() => handleDeleteRichMenu(menu.richMenuId)}
-                        disabled={deleting[menu.richMenuId] || menu.selected}
+                        disabled={deleting[menu.richMenuId] || menu.richMenuId === defaultRichMenuId}
                         className="flex items-center gap-1 px-3 py-1.5 bg-red-600 text-white text-xs rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                        title={menu.selected ? '無法刪除預設 Rich Menu' : ''}
+                        title={menu.richMenuId === defaultRichMenuId ? '無法刪除預設 Rich Menu' : ''}
                       >
                         <Trash2 className="w-3 h-3" />
                         {deleting[menu.richMenuId] ? '刪除中...' : '刪除'}

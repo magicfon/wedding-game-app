@@ -283,11 +283,22 @@ export async function GET() {
       )
     }
 
+    // 獲取當前預設 Rich Menu
+    let defaultRichMenuId: string | null = null
+    try {
+      const defaultResponse = await lineClient.getDefaultRichMenuId()
+      defaultRichMenuId = defaultResponse.richMenuId || null
+      console.log('📌 Current default rich menu:', defaultRichMenuId)
+    } catch (error) {
+      console.log('⚠️ No default rich menu set or error fetching:', error)
+    }
+
     // 構建狀態報告
     const statusReport = {
       linePlatform: {
         total: richMenus.length,
-        menus: richMenus
+        menus: richMenus,
+        defaultRichMenuId: defaultRichMenuId
       },
       database: {
         total: registry.length,
