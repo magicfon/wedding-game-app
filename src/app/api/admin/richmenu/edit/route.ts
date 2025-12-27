@@ -88,24 +88,40 @@ export async function POST(request: NextRequest) {
             console.log('⚠️ Rich menu not found in registry, will not update database')
         }
 
-        const menuType = registryData?.menu_type || null
+        let menuType = registryData?.menu_type || null
         const hasImage = registryData?.has_image || false
+
+        // 嘗試從 Alias 推斷 menuType (如果資料庫找不到)
+        if (!menuType) {
+            try {
+                const aliasList = await apiClient.getRichMenuAliasList()
+                const alias = aliasList.aliases.find(a => a.richMenuId === richMenuId)
+                if (alias) {
+                    if (alias.richMenuAliasId === 'richmenu-alias-venue-info') menuType = 'venue_info'
+                    if (alias.richMenuAliasId === 'richmenu-alias-activity') menuType = 'activity'
+                }
+            } catch (e) {
+                console.warn('Failed to deduce menuType from alias:', e)
+            }
+        }
 
         console.log('📝 Editing rich menu:', richMenuId)
         console.log('📊 Menu type:', menuType)
-        console.log('📊 Has image:', hasImage)
+        console.log('📊 Database has image:', hasImage)
 
-        // 1. 如果有圖片，先下載圖片
+        // 1. 嘗試下載現有圖片 (不依賴資料庫 has_image 狀態)
         let imageBuffer: Buffer | null = null
-        if (hasImage) {
-            try {
-                console.log('📥 Downloading existing image...')
-                const imageStream = await blobClient.getRichMenuImage(richMenuId)
-                imageBuffer = await streamToBuffer(imageStream as unknown as Readable)
-                console.log('✅ Image downloaded, size:', imageBuffer.length)
-            } catch (downloadError) {
+        try {
+            console.log('📥 Attempting to download existing image...')
+            const imageStream = await blobClient.getRichMenuImage(richMenuId)
+            imageBuffer = await streamToBuffer(imageStream as unknown as Readable)
+            console.log('✅ Image downloaded, size:', imageBuffer.length)
+        } catch (downloadError: any) {
+            // 404 表示沒有圖片，這是正常的
+            if (downloadError.status === 404) {
+                console.log('ℹ️ No existing image found (404)')
+            } else {
                 console.error('❌ Error downloading image:', downloadError)
-                // 繼續執行，只是沒有圖片
             }
         }
 
