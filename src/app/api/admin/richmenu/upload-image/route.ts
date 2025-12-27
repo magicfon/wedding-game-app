@@ -80,6 +80,81 @@ function createVenueInfoRichMenu(liffId: string) {
   }
 }
 
+// 創建現場活動分頁 Rich Menu 配置
+function createActivityRichMenu(liffId: string) {
+  return {
+    size: {
+      width: 2500,
+      height: 1686
+    },
+    selected: false,
+    name: "婚禮遊戲 - 現場活動",
+    chatBarText: "現場活動",
+    areas: [
+      {
+        bounds: { x: 0, y: 0, width: 1250, height: 843 },
+        action: {
+          type: "uri" as const,
+          uri: `https://liff.line.me/${liffId}/photo-upload`,
+          label: "照片上傳"
+        }
+      },
+      {
+        bounds: { x: 1250, y: 0, width: 1250, height: 843 },
+        action: {
+          type: "uri" as const,
+          uri: `https://liff.line.me/${liffId}/photo-wall`,
+          label: "祝福照片牆"
+        }
+      },
+      {
+        bounds: { x: 0, y: 843, width: 1250, height: 843 },
+        action: {
+          type: "uri" as const,
+          uri: `https://liff.line.me/${liffId}/quiz`,
+          label: "快問快答"
+        }
+      },
+      {
+        bounds: { x: 1250, y: 843, width: 1250, height: 843 },
+        action: {
+          type: "postback" as const,
+          data: "switch_tab:venue_info",
+          label: "進入會場資訊分頁"
+        }
+      }
+    ]
+  }
+}
+
+// 創建未開放分頁 Rich Menu 配置
+function createUnavailableRichMenu() {
+  return {
+    size: {
+      width: 2500,
+      height: 1686
+    },
+    selected: false,
+    name: "婚禮遊戲 - 未開放",
+    chatBarText: "未開放",
+    areas: [] as Array<{ bounds: { x: number; y: number; width: number; height: number }; action: { type: string; data?: string; uri?: string; label?: string } }>
+  }
+}
+
+// 根據 menu type 獲取對應的 Rich Menu 配置
+function getRichMenuConfig(menuType: string, liffId: string) {
+  switch (menuType) {
+    case 'venue_info':
+      return createVenueInfoRichMenu(liffId)
+    case 'activity':
+      return createActivityRichMenu(liffId)
+    case 'unavailable':
+      return createUnavailableRichMenu()
+    default:
+      throw new Error(`Unknown menu type: ${menuType}`)
+  }
+}
+
 // 驗證圖片尺寸
 function validateImageDimensions(
   width: number,
@@ -129,7 +204,7 @@ export async function POST(request: NextRequest) {
 
     if (registryError || !registryData) {
       return NextResponse.json(
-        { error: 'Rich menu not found for this menu type' },
+        { error: 'Rich menu not found for this menu type. Please create the rich menu first using /api/line/setup-richmenu' },
         { status: 404 }
       )
     }
@@ -144,7 +219,6 @@ export async function POST(request: NextRequest) {
     let imageHeight = 0
 
     try {
-      // 嘗試使用 sharp 來獲取圖片尺寸
       const sharp = (await import('sharp')).default
       const metadata = await sharp(Buffer.from(imageBuffer)).metadata()
       imageWidth = metadata.width || 0
@@ -154,7 +228,6 @@ export async function POST(request: NextRequest) {
       console.warn('⚠️ Sharp not available, skipping dimension check:', sharpError)
     }
 
-    // 如果無法獲取尺寸，讓 LINE API 來驗證
     if (imageWidth > 0 && imageHeight > 0) {
       if (!validateImageDimensions(imageWidth, imageHeight)) {
         return NextResponse.json(
@@ -182,17 +255,16 @@ export async function POST(request: NextRequest) {
     // 準備圖片 Blob
     const imageBlob = new Blob([imageBuffer], { type: file.type })
 
-    // 上傳圖片到 Rich Menu
+    // 嘗試上傳圖片到 Rich Menu
     try {
-      console.log('📤 Calling setRichMenuImage with MessagingApiBlobClient:')
+      console.log('📤 First attempt: Calling setRichMenuImage')
       console.log('  - richMenuId:', richMenuId)
       console.log('  - blob size:', imageBlob.size)
-      console.log('  - blob type:', imageBlob.type)
 
       await blobClient.setRichMenuImage(richMenuId, imageBlob)
-      console.log('✅ Image uploaded successfully')
+      console.log('✅ Image uploaded successfully (first attempt)')
     } catch (uploadError: any) {
-      console.error('❌ Error uploading image to LINE:', uploadError)
+      console.error('❌ First attempt failed:', uploadError)
 
       // 檢查是否是「圖片已存在」錯誤
       const errorBody = uploadError?.body || ''
@@ -201,7 +273,7 @@ export async function POST(request: NextRequest) {
         (uploadError.status === 400 && registryData.has_image)
 
       if (isImageAlreadyExists) {
-        console.log('🔄 Rich menu already has an image. Recreating rich menu...')
+        console.log('🔄 Rich menu already has an image. Recreating rich menu for type:', menuType)
 
         try {
           const liffId = getLiffId()
@@ -211,9 +283,9 @@ export async function POST(request: NextRequest) {
           await apiClient.deleteRichMenu(richMenuId)
           console.log('✅ Old rich menu deleted')
 
-          // 2. 創建新的 Rich Menu
-          console.log('🏗️ Creating new rich menu...')
-          const menuConfig = createVenueInfoRichMenu(liffId)
+          // 2. 創建新的 Rich Menu（使用對應的 menu type 配置）
+          console.log('🏗️ Creating new rich menu for type:', menuType)
+          const menuConfig = getRichMenuConfig(menuType, liffId)
           const newRichMenuResponse = await apiClient.createRichMenu(menuConfig)
           const newRichMenuId = newRichMenuResponse.richMenuId
           console.log('✅ New rich menu created:', newRichMenuId)
@@ -223,12 +295,7 @@ export async function POST(request: NextRequest) {
           await blobClient.setRichMenuImage(newRichMenuId, imageBlob)
           console.log('✅ Image uploaded to new rich menu')
 
-          // 4. 設置為預設 Rich Menu
-          console.log('🎯 Setting as default rich menu...')
-          await apiClient.setDefaultRichMenu(newRichMenuId)
-          console.log('✅ Set as default rich menu')
-
-          // 5. 更新資料庫
+          // 4. 更新資料庫（不設為預設，讓用戶自行管理）
           const { error: updateError } = await supabase
             .from('line_richmenu_registry')
             .update({
@@ -240,16 +307,19 @@ export async function POST(request: NextRequest) {
 
           if (updateError) {
             console.error('Error updating registry:', updateError)
+          } else {
+            console.log('✅ Database registry updated')
           }
 
           richMenuId = newRichMenuId
 
           return NextResponse.json({
             success: true,
-            message: 'Rich menu recreated and image uploaded successfully',
+            message: `Rich menu (${menuType}) recreated and image uploaded successfully`,
             richMenuId: newRichMenuId,
             menuType,
-            recreated: true
+            recreated: true,
+            note: 'The rich menu was recreated because LINE does not allow re-uploading images. Please update any Rich Menu Aliases if needed.'
           })
 
         } catch (recreateError: any) {
@@ -277,7 +347,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'Rich menu image uploaded successfully',
+      message: `Rich menu (${menuType}) image uploaded successfully`,
       richMenuId,
       menuType
     })
@@ -294,7 +364,8 @@ export async function POST(request: NextRequest) {
 // GET: 獲取 Rich Menu 圖片上傳狀態
 export async function GET(request: NextRequest) {
   try {
-    const menuType = 'venue_info' // 固定使用 venue_info
+    const { searchParams } = new URL(request.url)
+    const menuType = searchParams.get('menuType') || 'venue_info'
 
     const supabase = createSupabaseAdmin()
 
@@ -316,14 +387,14 @@ export async function GET(request: NextRequest) {
     if (!data) {
       return NextResponse.json({
         hasImage: false,
-        message: 'No rich menu found'
+        message: 'No rich menu found for this type'
       })
     }
 
-    // 根據 has_image 欄位判斷是否已上傳圖片
     return NextResponse.json({
       hasImage: data.has_image || false,
       richMenuId: data.richmenu_id,
+      menuType: data.menu_type,
       createdAt: data.created_at,
       updatedAt: data.updated_at
     })
