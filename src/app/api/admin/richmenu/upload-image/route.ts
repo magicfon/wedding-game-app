@@ -307,7 +307,16 @@ export async function POST(request: NextRequest) {
         (uploadError.status === 400 && hasExistingImage)
 
       if (isImageAlreadyExists) {
-        console.log('🔄 Rich menu already has an image. Recreating rich menu for type:', menuType)
+        console.log('🔄 Rich menu already has an image. Need to recreate.')
+
+        // 如果不知道 menu type，無法重建，返回明確錯誤
+        if (!registryMenuType) {
+          return NextResponse.json({
+            error: 'This rich menu already has an image and cannot be updated',
+            details: 'This rich menu is not registered in the database, so it cannot be automatically recreated. Please delete this rich menu manually and create a new one.',
+            richMenuId
+          }, { status: 400 })
+        }
 
         try {
           const liffId = getLiffId()
@@ -319,9 +328,6 @@ export async function POST(request: NextRequest) {
 
           // 2. 創建新的 Rich Menu（使用對應的 menu type 配置）
           console.log('📝 Creating new rich menu for type:', registryMenuType)
-          if (!registryMenuType) {
-            throw new Error('Cannot recreate rich menu: menu type is unknown')
-          }
           const menuConfig = getRichMenuConfig(registryMenuType, liffId)
           const newRichMenuResponse = await apiClient.createRichMenu(menuConfig)
           const newRichMenuId = newRichMenuResponse.richMenuId
