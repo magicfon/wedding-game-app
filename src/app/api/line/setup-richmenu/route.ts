@@ -154,7 +154,7 @@ async function registerRichMenu(
   return true
 }
 
-// POST: 設置 Rich Menu
+// POST: 設置 Rich Menu（創建全部 3 種類型）
 export async function POST(request: Request) {
   try {
     const lineClient = getLineClient()
@@ -172,52 +172,74 @@ export async function POST(request: Request) {
     console.log('🔍 Starting Rich Menu creation process...')
     console.log('📋 LIFF ID:', liffId)
 
-    // 只創建一個 Rich Menu（會場資訊）
-    try {
-      console.log('🏗️ Creating rich menu...')
-      const menu = createVenueInfoRichMenu(liffId)
-      console.log('📝 Menu config:', JSON.stringify(menu, null, 2))
-      const richMenuId = await lineClient.createRichMenu(menu)
-      console.log('✅ Rich menu created:', richMenuId)
-      const registered = await registerRichMenu(supabase, 'venue_info', richMenuId)
-      console.log('📝 Rich menu registered to database:', registered)
+    // 定義所有要創建的 Rich Menu 類型
+    const menuTypes = [
+      { type: 'venue_info', name: '會場資訊', createFn: () => createVenueInfoRichMenu(liffId) },
+      { type: 'activity', name: '現場活動', createFn: () => createActivityRichMenu(liffId) },
+      { type: 'unavailable', name: '未開放', createFn: () => createUnavailableRichMenu() }
+    ]
 
-      // 設置為預設 Rich Menu
+    const results: Array<{ type: string; richMenuId: string; registered: boolean }> = []
+    let defaultRichMenuId: string | null = null
+
+    // 創建所有 3 種 Rich Menu
+    for (const menuConfig of menuTypes) {
+      try {
+        console.log(`🏗️ Creating ${menuConfig.name} rich menu...`)
+        const menu = menuConfig.createFn()
+        console.log(`📝 ${menuConfig.name} config created`)
+
+        const richMenuId = await lineClient.createRichMenu(menu)
+        console.log(`✅ ${menuConfig.name} rich menu created:`, richMenuId)
+
+        const registered = await registerRichMenu(supabase, menuConfig.type, richMenuId)
+        console.log(`📝 ${menuConfig.name} registered to database:`, registered)
+
+        results.push({ type: menuConfig.type, richMenuId, registered })
+
+        // 設定 venue_info 為預設 Rich Menu
+        if (menuConfig.type === 'venue_info') {
+          defaultRichMenuId = richMenuId
+        }
+      } catch (error) {
+        console.error(`❌ Error creating ${menuConfig.name} rich menu:`, error)
+        results.push({ type: menuConfig.type, richMenuId: '', registered: false })
+      }
+    }
+
+    // 設置預設 Rich Menu
+    if (defaultRichMenuId) {
       try {
         console.log('🎯 Setting default rich menu...')
-        await lineClient.setDefaultRichMenu(richMenuId)
-        console.log('✅ Default rich menu set:', richMenuId)
+        await lineClient.setDefaultRichMenu(defaultRichMenuId)
+        console.log('✅ Default rich menu set:', defaultRichMenuId)
       } catch (error) {
         console.error('❌ Error setting default rich menu:', error)
       }
-
-      // 嘗試獲取並顯示當前 Rich Menu 列表
-      try {
-        console.log('📋 Fetching current rich menu list...')
-        const richMenuList = await lineClient.getRichMenuList()
-        console.log('📋 Current rich menu list:', JSON.stringify(richMenuList, null, 2))
-      } catch (error) {
-        console.error('❌ Error fetching rich menu list:', error)
-      }
-
-      return NextResponse.json({
-        success: true,
-        message: 'Rich menu created successfully',
-        richMenuId,
-        registered,
-        nextSteps: [
-          'Please upload an image for the rich menu using the upload-image API',
-          'After uploading the image, you can check the LINE Developers Console to see the created rich menu',
-          'The rich menu has been set as default'
-        ]
-      })
-    } catch (error) {
-      console.error('❌ Error creating rich menu:', error)
-      return NextResponse.json(
-        { error: 'Failed to create rich menu', details: error instanceof Error ? error.message : 'Unknown error' },
-        { status: 500 }
-      )
     }
+
+    // 獲取並顯示當前 Rich Menu 列表
+    try {
+      console.log('📋 Fetching current rich menu list...')
+      const richMenuList = await lineClient.getRichMenuList()
+      console.log('📋 Current rich menu list count:', richMenuList.length)
+    } catch (error) {
+      console.error('❌ Error fetching rich menu list:', error)
+    }
+
+    const successCount = results.filter(r => r.richMenuId).length
+
+    return NextResponse.json({
+      success: successCount > 0,
+      message: `Created ${successCount}/3 rich menus successfully`,
+      results,
+      defaultRichMenuId,
+      nextSteps: [
+        'Please upload images for each rich menu using the upload-image API',
+        'After uploading images, rich menus will be visible to users',
+        `venue_info (${defaultRichMenuId}) has been set as default`
+      ]
+    })
 
   } catch (error) {
     console.error('Error in POST /api/line/setup-richmenu:', error)

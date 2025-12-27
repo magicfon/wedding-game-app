@@ -338,7 +338,7 @@ export async function POST(request: NextRequest) {
           await blobClient.setRichMenuImage(newRichMenuId, imageBlob)
           console.log('✅ Image uploaded to new rich menu')
 
-          // 4. 更新資料庫（不設為預設，讓用戶自行管理）
+          // 4. 更新資料庫
           const { error: updateError } = await supabase
             .from('line_richmenu_registry')
             .update({
@@ -346,7 +346,7 @@ export async function POST(request: NextRequest) {
               has_image: true,
               updated_at: new Date().toISOString()
             })
-            .eq('menu_type', menuType)
+            .eq('menu_type', registryMenuType)
 
           if (updateError) {
             console.error('Error updating registry:', updateError)
@@ -358,9 +358,9 @@ export async function POST(request: NextRequest) {
 
           return NextResponse.json({
             success: true,
-            message: `Rich menu (${menuType}) recreated and image uploaded successfully`,
+            message: `Rich menu (${registryMenuType}) recreated and image uploaded successfully`,
             richMenuId: newRichMenuId,
-            menuType,
+            menuType: registryMenuType,
             recreated: true,
             note: 'The rich menu was recreated because LINE does not allow re-uploading images. Please update any Rich Menu Aliases if needed.'
           })
@@ -376,23 +376,25 @@ export async function POST(request: NextRequest) {
     }
 
     // 更新資料庫中的 has_image 狀態
-    const { error: updateError } = await supabase
-      .from('line_richmenu_registry')
-      .update({
-        has_image: true,
-        updated_at: new Date().toISOString()
-      })
-      .eq('menu_type', menuType)
+    if (registryMenuType) {
+      const { error: updateError } = await supabase
+        .from('line_richmenu_registry')
+        .update({
+          has_image: true,
+          updated_at: new Date().toISOString()
+        })
+        .eq('menu_type', registryMenuType)
 
-    if (updateError) {
-      console.error('Error updating has_image status:', updateError)
+      if (updateError) {
+        console.error('Error updating has_image status:', updateError)
+      }
     }
 
     return NextResponse.json({
       success: true,
-      message: `Rich menu (${menuType}) image uploaded successfully`,
+      message: `Rich menu image uploaded successfully`,
       richMenuId,
-      menuType
+      menuType: registryMenuType
     })
 
   } catch (error) {
