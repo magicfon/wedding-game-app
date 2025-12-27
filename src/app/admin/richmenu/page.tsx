@@ -36,6 +36,7 @@ interface EditingRichMenu {
   chatBarText: string
   selected: boolean
   areas: RichMenuArea[]
+  richMenuAliasId?: string
 }
 
 export default function RichMenuManagementPage() {
@@ -329,7 +330,8 @@ export default function RichMenuManagementPage() {
           name: data.richMenu.name,
           chatBarText: data.richMenu.chatBarText,
           selected: data.richMenu.selected,
-          areas: data.richMenu.areas || []
+          areas: data.richMenu.areas || [],
+          richMenuAliasId: data.richMenu.richMenuAliasId || ''
         })
       }
     } catch (error) {
@@ -351,6 +353,7 @@ export default function RichMenuManagementPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           richMenuId: editingMenu.richMenuId,
+          richMenuAliasId: editingMenu.richMenuAliasId || null,
           config: {
             name: editingMenu.name,
             chatBarText: editingMenu.chatBarText,
@@ -932,6 +935,23 @@ export default function RichMenuManagementPage() {
                 <label htmlFor="selected" className="text-sm font-medium text-gray-700">
                   預設展開 (selected)
                 </label>
+              </div>
+
+              {/* Rich Menu Alias */}
+              <div>
+                <label className="block text-sm font-medium text-gray-900 mb-1">
+                  Rich Menu Alias ID (用於切換選單)
+                </label>
+                <input
+                  type="text"
+                  value={editingMenu.richMenuAliasId || ''}
+                  onChange={(e) => setEditingMenu({ ...editingMenu, richMenuAliasId: e.target.value })}
+                  placeholder="richmenu-alias-xxx"
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  設定此選單的別名，其他選單可透過此 ID 切換到這個選單
+                </p>
               </div>
 
               {/* 視覺化按鈕區域編輯器 */}

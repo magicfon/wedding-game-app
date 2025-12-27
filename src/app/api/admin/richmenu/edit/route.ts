@@ -39,7 +39,7 @@ async function streamToBuffer(stream: Readable): Promise<Buffer> {
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json()
-        const { richMenuId, config } = body
+        const { richMenuId, richMenuAliasId, config } = body
 
         // 驗證輸入
         if (!richMenuId) {
@@ -168,13 +168,41 @@ export async function POST(request: NextRequest) {
             }
         }
 
+        // 6. 處理 Rich Menu Alias
+        let aliasCreated = false
+        if (richMenuAliasId && richMenuAliasId.trim()) {
+            try {
+                console.log(`🔗 Creating/updating alias: ${richMenuAliasId}...`)
+
+                // 先嘗試刪除舊的 alias
+                try {
+                    await apiClient.deleteRichMenuAlias(richMenuAliasId)
+                    console.log(`🗑️ Deleted existing alias: ${richMenuAliasId}`)
+                } catch (deleteErr: any) {
+                    console.log(`⚠️ No existing alias to delete: ${richMenuAliasId}`)
+                }
+
+                // 創建新的 alias
+                await apiClient.createRichMenuAlias({
+                    richMenuAliasId: richMenuAliasId.trim(),
+                    richMenuId: newRichMenuId
+                })
+                console.log(`✅ Created alias: ${richMenuAliasId} -> ${newRichMenuId}`)
+                aliasCreated = true
+            } catch (aliasError: any) {
+                console.error(`❌ Error creating alias ${richMenuAliasId}:`, aliasError)
+            }
+        }
+
         return NextResponse.json({
             success: true,
             message: 'Rich menu updated successfully',
             oldRichMenuId: richMenuId,
             newRichMenuId: newRichMenuId,
             menuType,
-            imagePreserved: !!imageBuffer
+            imagePreserved: !!imageBuffer,
+            aliasCreated,
+            richMenuAliasId: aliasCreated ? richMenuAliasId : null
         })
 
     } catch (error) {
@@ -213,6 +241,20 @@ export async function GET(request: NextRequest) {
         // 從 LINE API 獲取 Rich Menu 詳細資訊
         const richMenu = await apiClient.getRichMenu(richMenuId)
 
+        // 嘗試獲取指向此 Rich Menu 的 alias
+        let richMenuAliasId: string | null = null
+        try {
+            const aliasListResponse = await apiClient.getRichMenuAliasList()
+            const aliases = aliasListResponse.aliases || []
+            const matchingAlias = aliases.find(alias => alias.richMenuId === richMenuId)
+            if (matchingAlias) {
+                richMenuAliasId = matchingAlias.richMenuAliasId
+                console.log('📌 Found existing alias:', richMenuAliasId)
+            }
+        } catch (aliasError) {
+            console.log('⚠️ Could not fetch aliases:', aliasError)
+        }
+
         return NextResponse.json({
             success: true,
             richMenu: {
@@ -221,7 +263,8 @@ export async function GET(request: NextRequest) {
                 chatBarText: richMenu.chatBarText,
                 selected: richMenu.selected,
                 size: richMenu.size,
-                areas: richMenu.areas
+                areas: richMenu.areas,
+                richMenuAliasId: richMenuAliasId
             }
         })
 
