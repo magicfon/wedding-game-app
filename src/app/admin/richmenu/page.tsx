@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLiff } from '@/hooks/useLiff'
-import { Upload, Save, RefreshCw, CheckCircle, XCircle, AlertCircle } from 'lucide-react'
+import { Upload, Save, RefreshCw, CheckCircle, XCircle, AlertCircle, Trash2, Star } from 'lucide-react'
 import AdminLayout from '@/components/AdminLayout'
 
 interface RichMenuSettings {
@@ -37,6 +37,8 @@ export default function RichMenuManagementPage() {
   const [imageStatus, setImageStatus] = useState<{ [key: string]: RichMenuStatus }>({})
   const [richMenuList, setRichMenuList] = useState<any[] | null>(null)
   const [loadingRichMenuList, setLoadingRichMenuList] = useState(false)
+  const [deleting, setDeleting] = useState<{ [key: string]: boolean }>({})
+  const [settingDefault, setSettingDefault] = useState<string | null>(null)
 
   // 檢查管理員權限
   useEffect(() => {
@@ -113,6 +115,62 @@ export default function RichMenuManagementPage() {
       console.error('Error fetching rich menu list:', error)
     } finally {
       setLoadingRichMenuList(false)
+    }
+  }
+
+  // 刪除 Rich Menu
+  const handleDeleteRichMenu = async (richMenuId: string) => {
+    if (!confirm('確定要刪除這個 Rich Menu 嗎？此操作無法復原。')) {
+      return
+    }
+
+    setDeleting(prev => ({ ...prev, [richMenuId]: true }))
+    try {
+      const response = await fetch('/api/line/setup-richmenu/delete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ richMenuId })
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to delete rich menu')
+      }
+
+      showMessage('success', 'Rich Menu 刪除成功')
+      fetchRichMenuList()
+    } catch (error) {
+      console.error('Error deleting rich menu:', error)
+      showMessage('error', 'Rich Menu 刪除失敗')
+    } finally {
+      setDeleting(prev => ({ ...prev, [richMenuId]: false }))
+    }
+  }
+
+  // 設置預設 Rich Menu
+  const handleSetDefaultRichMenu = async (richMenuId: string) => {
+    setSettingDefault(richMenuId)
+    try {
+      const response = await fetch('/api/line/setup-richmenu/set-default', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ richMenuId })
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to set default rich menu')
+      }
+
+      showMessage('success', '預設 Rich Menu 設置成功')
+      fetchRichMenuList()
+    } catch (error) {
+      console.error('Error setting default rich menu:', error)
+      showMessage('error', '預設 Rich Menu 設置失敗')
+    } finally {
+      setSettingDefault(null)
     }
   }
 
@@ -349,20 +407,40 @@ export default function RichMenuManagementPage() {
                 <div key={menu.richMenuId} className="p-4 bg-gray-50 rounded-lg">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <h3 className="font-medium text-gray-900">{menu.name}</h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-medium text-gray-900">{menu.name}</h3>
+                        {menu.selected && (
+                          <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                        )}
+                      </div>
                       <p className="text-sm text-gray-600 mt-1">ID: {menu.richMenuId}</p>
                       <p className="text-sm text-gray-600">Chat Bar Text: {menu.chatBarText}</p>
+                      <p className="text-sm text-gray-600">尺寸: {menu.size?.width} x {menu.size?.height}</p>
                     </div>
-                    <div className="ml-4">
+                    <div className="ml-4 flex flex-col gap-2">
                       {menu.selected ? (
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                           預設
                         </span>
                       ) : (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                          未設定
-                        </span>
+                        <button
+                          onClick={() => handleSetDefaultRichMenu(menu.richMenuId)}
+                          disabled={settingDefault === menu.richMenuId}
+                          className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 disabled:opacity-50"
+                        >
+                          <Star className="w-3 h-3" />
+                          {settingDefault === menu.richMenuId ? '設定中...' : '設為預設'}
+                        </button>
                       )}
+                      <button
+                        onClick={() => handleDeleteRichMenu(menu.richMenuId)}
+                        disabled={deleting[menu.richMenuId] || menu.selected}
+                        className="flex items-center gap-1 px-3 py-1.5 bg-red-600 text-white text-xs rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        title={menu.selected ? '無法刪除預設 Rich Menu' : ''}
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        {deleting[menu.richMenuId] ? '刪除中...' : '刪除'}
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -472,15 +550,25 @@ export default function RichMenuManagementPage() {
               <p>點擊「創建 Rich Menu」按鈕，系統會在 LINE Platform 上創建三個 Rich Menu（會場資訊、現場活動、未開放）。</p>
             </div>
             <div>
-              <h3 className="font-medium mb-1">2. 上傳圖片</h3>
+              <h3 className="font-medium mb-1">2. 管理 Rich Menu</h3>
+              <p>在「LINE Platform 上的 Rich Menu 列表」區塊中，您可以：</p>
+              <ul className="list-disc list-inside mt-1 space-y-1">
+                <li>查看所有 Rich Menu 的名稱、ID、Chat Bar Text 和尺寸</li>
+                <li>點擊「設為預設」按鈕將某個 Rich Menu 設為預設（用戶首次看到）</li>
+                <li>點擊「刪除」按鈕刪除不需要的 Rich Menu（無法刪除預設的 Rich Menu）</li>
+                <li>點擊「重新整理」按鈕更新列表</li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-medium mb-1">3. 上傳圖片</h3>
               <p>為每個 Rich Menu 上傳對應的圖片。圖片尺寸必須為 2500x1686 像素。</p>
             </div>
             <div>
-              <h3 className="font-medium mb-1">3. 設定預設分頁</h3>
+              <h3 className="font-medium mb-1">4. 設定預設分頁</h3>
               <p>選擇用戶首次打開 Rich Menu 時顯示的預設分頁。</p>
             </div>
             <div>
-              <h3 className="font-medium mb-1">4. 啟用/停用分頁</h3>
+              <h3 className="font-medium mb-1">5. 啟用/停用分頁</h3>
               <p>可以隨時啟用或停用分頁。停用的分頁會顯示「未開放」狀態。</p>
             </div>
           </div>
