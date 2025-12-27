@@ -19,6 +19,23 @@ export default function TransportPage() {
 
       {/* 主要內容 */}
       <div className="max-w-4xl mx-auto px-4 py-6">
+        {/* 停車優惠資訊 - 置頂醒目 */}
+        <div className="bg-gradient-to-r from-red-500 via-orange-500 to-amber-500 rounded-2xl p-1 mb-6 shadow-xl animate-pulse">
+          <div className="bg-white rounded-xl p-5">
+            <div className="flex items-center justify-center gap-3 mb-3">
+              <Car className="w-8 h-8 text-red-500" />
+              <h3 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-amber-600">
+                🚗 停車優惠 🚗
+              </h3>
+              <Car className="w-8 h-8 text-red-500" />
+            </div>
+            <p className="text-xl font-bold text-center text-gray-800 leading-relaxed">
+              B3-B6空間自由停放<br />
+              <span className="text-red-600">於喜宴當日提供4小時停車券給賓客折抵~~</span>
+            </p>
+          </div>
+        </div>
+
         {/* 交通路線圖 - 標題 */}
         <h2 className="text-2xl font-bold text-amber-800 mb-6 text-center">交通路線圖</h2>
 
@@ -98,23 +115,6 @@ export default function TransportPage() {
             height={500}
             className="w-full h-auto"
           />
-        </div>
-
-        {/* 停車優惠資訊 */}
-        <div className="bg-gradient-to-r from-amber-50 to-yellow-50 rounded-2xl p-6 border border-amber-200">
-          <div className="flex items-start gap-4">
-            <div className="p-3 bg-amber-100 rounded-xl flex-shrink-0">
-              <Car className="w-6 h-6 text-amber-600" />
-            </div>
-            <div>
-              <h3 className="font-bold text-lg text-amber-900 mb-2">
-                停車優惠
-              </h3>
-              <p className="text-amber-800 leading-relaxed">
-                B3-B6空間自由停放,於喜宴當日提供4小時停車券給賓客折抵~~
-              </p>
-            </div>
-          </div>
         </div>
       </div>
     </div>
