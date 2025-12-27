@@ -101,9 +101,22 @@ export async function POST(request: NextRequest) {
       
       // 提取 LINE API 的錯誤細節
       if (uploadError.response?.data) {
-        console.error('❌ LINE API error details:', uploadError.response.data)
-        const lineErrorMessage = uploadError.response.data.message || uploadError.response.data.error || 'Unknown LINE API error'
-        throw new Error(`LINE API error: ${lineErrorMessage}`)
+        console.error('❌ LINE API error details:', JSON.stringify(uploadError.response.data, null, 2))
+        const errorData = uploadError.response.data
+        
+        // 嘗試從不同的可能位置提取錯誤信息
+        let lineErrorMessage = 'Unknown LINE API error'
+        if (typeof errorData === 'string') {
+          lineErrorMessage = errorData
+        } else if (errorData.message) {
+          lineErrorMessage = errorData.message
+        } else if (errorData.error) {
+          lineErrorMessage = errorData.error
+        } else if (errorData.error?.message) {
+          lineErrorMessage = errorData.error.message
+        }
+        
+        throw new Error(`LINE API error (${uploadError.response.status}): ${lineErrorMessage}`)
       }
       
       throw uploadError
