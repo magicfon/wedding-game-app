@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { Client } from '@line/bot-sdk'
+import { messagingApi } from '@line/bot-sdk'
 
-// 初始化 LINE Client
-function getLineClient(): Client | null {
+const { MessagingApiBlobClient } = messagingApi
+
+// 初始化 LINE Blob Client (用於圖片操作)
+function getLineBlobClient(): InstanceType<typeof MessagingApiBlobClient> | null {
   const channelAccessToken = process.env.LINE_CHANNEL_ACCESS_TOKEN
   if (!channelAccessToken) {
     console.error('LINE_CHANNEL_ACCESS_TOKEN not configured')
     return null
   }
-  return new Client({ channelAccessToken })
+  return new MessagingApiBlobClient({ channelAccessToken })
 }
 
 // GET: 獲取 Rich Menu 圖片
@@ -24,9 +26,9 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const lineClient = getLineClient()
+    const blobClient = getLineBlobClient()
 
-    if (!lineClient) {
+    if (!blobClient) {
       return NextResponse.json(
         { error: 'Service configuration error' },
         { status: 500 }
@@ -35,8 +37,27 @@ export async function GET(request: NextRequest) {
 
     console.log('🖼️ Fetching rich menu image:', richMenuId)
 
-    // 獲取 Rich Menu 圖片
-    const imageBuffer = await (lineClient as any).getRichMenuImage(richMenuId)
+    // 使用 LINE Bot SDK v10 的 MessagingApiBlobClient 獲取圖片
+    const imageStream = await blobClient.getRichMenuImage(richMenuId)
+
+    // 將 ReadableStream 轉換為 ArrayBuffer
+    const reader = imageStream.getReader()
+    const chunks: Uint8Array[] = []
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      chunks.push(value)
+    }
+
+    // 合併所有 chunks
+    const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0)
+    const imageBuffer = new Uint8Array(totalLength)
+    let offset = 0
+    for (const chunk of chunks) {
+      imageBuffer.set(chunk, offset)
+      offset += chunk.length
+    }
 
     // 返回圖片
     return new NextResponse(imageBuffer, {
@@ -46,8 +67,17 @@ export async function GET(request: NextRequest) {
       },
     })
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in GET /api/line/setup-richmenu/get-image:', error)
+
+    // 如果是 404，表示沒有圖片
+    if (error.status === 404) {
+      return NextResponse.json(
+        { error: 'No image found for this rich menu' },
+        { status: 404 }
+      )
+    }
+
     return NextResponse.json(
       { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
