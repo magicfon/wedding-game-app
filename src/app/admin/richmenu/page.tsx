@@ -201,16 +201,16 @@ export default function RichMenuManagementPage() {
   }
 
   // 上傳圖片
-  const handleImageUpload = async (richMenuId: string, file: File) => {
-    console.log('📤 handleImageUpload called with richMenuId:', richMenuId)
+  const handleImageUpload = async (menuType: string, file: File) => {
+    console.log('📤 handleImageUpload called with menuType:', menuType)
     console.log('📊 File:', file.name, file.size, file.type)
     
-    setUploading(prev => ({ ...prev, [richMenuId]: true }))
+    setUploading(prev => ({ ...prev, [menuType]: true }))
 
     try {
       const formData = new FormData()
       formData.append('image', file)
-      formData.append('richMenuId', richMenuId)
+      formData.append('menuType', menuType)
 
       console.log('📤 Sending upload request...')
 
@@ -237,7 +237,7 @@ export default function RichMenuManagementPage() {
       console.error('❌ Error uploading image:', error)
       showMessage('error', `圖片上傳失敗: ${error instanceof Error ? error.message : '未知錯誤'}`)
     } finally {
-      setUploading(prev => ({ ...prev, [richMenuId]: false }))
+      setUploading(prev => ({ ...prev, [menuType]: false }))
     }
   }
 
@@ -493,7 +493,7 @@ export default function RichMenuManagementPage() {
                       </button>
                       <label className="flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white text-xs rounded hover:bg-green-700 cursor-pointer disabled:opacity-50">
                         <Upload className="w-3 h-3" />
-                        {uploading[menu.richMenuId] ? '上傳中...' : '上傳圖片'}
+                        {uploading['venue_info'] ? '上傳中...' : '上傳圖片'}
                         <input
                           type="file"
                           accept="image/*"
@@ -501,10 +501,10 @@ export default function RichMenuManagementPage() {
                           onChange={(e) => {
                             const file = e.target.files?.[0]
                             if (file) {
-                              handleImageUpload(menu.richMenuId, file)
+                              handleImageUpload('venue_info', file)
                             }
                           }}
-                          disabled={uploading[menu.richMenuId]}
+                          disabled={uploading['venue_info']}
                         />
                       </label>
                     </div>

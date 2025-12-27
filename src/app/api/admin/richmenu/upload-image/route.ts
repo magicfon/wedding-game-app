@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
     const file = formData.get('image') as File
-    const richMenuId = formData.get('richMenuId') as string
+    const menuType = formData.get('menuType') as string
 
     // 驗證輸入
     if (!file) {
@@ -35,9 +35,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (!richMenuId) {
+    if (!menuType || !['venue_info', 'activity', 'unavailable'].includes(menuType)) {
       return NextResponse.json(
-        { error: 'Rich Menu ID is required' },
+        { error: 'Invalid menu type' },
         { status: 400 }
       )
     }
@@ -49,6 +49,24 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+
+    const supabase = createSupabaseAdmin()
+
+    // 從資料庫獲取 Rich Menu ID
+    const { data: registryData, error: registryError } = await supabase
+      .from('line_richmenu_registry')
+      .select('richmenu_id')
+      .eq('menu_type', menuType)
+      .single()
+
+    if (registryError || !registryData) {
+      return NextResponse.json(
+        { error: 'Rich menu not found for this menu type' },
+        { status: 404 }
+      )
+    }
+
+    const richMenuId = registryData.richmenu_id
 
     // 驗證圖片尺寸
     const imageBuffer = await file.arrayBuffer()
@@ -86,9 +104,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const supabase = createSupabaseAdmin()
-
-    console.log('📤 Uploading image to rich menu:', richMenuId)
+    console.log('📤 Uploading image to rich menu:', richMenuId, '(menu type:', menuType + ')')
     console.log('📊 Image size:', imageBuffer.byteLength, 'bytes')
     console.log('📊 Image type:', file.type)
 
@@ -124,22 +140,23 @@ export async function POST(request: NextRequest) {
     }
     
     // 更新資料庫中的 has_image 狀態
-    const { error } = await supabase
+    const { error: updateError } = await supabase
       .from('line_richmenu_registry')
       .update({
         has_image: true,
         updated_at: new Date().toISOString()
       })
-      .eq('richmenu_id', richMenuId)
+      .eq('menu_type', menuType)
 
-    if (error) {
-      console.error('Error updating has_image status:', error)
+    if (updateError) {
+      console.error('Error updating has_image status:', updateError)
     }
 
     return NextResponse.json({
       success: true,
       message: 'Rich menu image uploaded successfully',
-      richMenuId
+      richMenuId,
+      menuType
     })
 
   } catch (error) {
