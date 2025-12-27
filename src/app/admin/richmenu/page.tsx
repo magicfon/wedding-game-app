@@ -159,23 +159,30 @@ export default function RichMenuManagementPage() {
 
   // 創建 Rich Menu
   const handleCreateRichMenus = async () => {
+    console.log('🔘 handleCreateRichMenus called')
     try {
+      console.log('📤 Sending POST request to /api/line/setup-richmenu')
       const response = await fetch('/api/line/setup-richmenu', {
         method: 'POST'
       })
 
+      console.log('📥 Response status:', response.status, response.statusText)
+      
       if (!response.ok) {
+        const errorText = await response.text()
+        console.error('❌ Response not OK:', errorText)
         throw new Error('Failed to create rich menus')
       }
 
       const result = await response.json()
+      console.log('✅ Response data:', result)
       showMessage('success', 'Rich Menu 創建成功')
       
       // 重新獲取設定和圖片狀態
       fetchSettings()
       fetchImageStatus()
     } catch (error) {
-      console.error('Error creating rich menus:', error)
+      console.error('❌ Error creating rich menus:', error)
       showMessage('error', 'Rich Menu 創建失敗')
     }
   }
@@ -299,7 +306,10 @@ export default function RichMenuManagementPage() {
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold">Rich Menu 圖片</h2>
             <button
-              onClick={handleCreateRichMenus}
+              onClick={() => {
+                console.log('🖱️ 創建 Rich Menu 按鈕被點擊')
+                handleCreateRichMenus()
+              }}
               className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
             >
               <RefreshCw className="w-4 h-4" />
