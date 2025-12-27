@@ -98,6 +98,7 @@ export async function POST(request: NextRequest) {
       console.log('✅ Image uploaded successfully')
     } catch (uploadError: any) {
       console.error('❌ Error uploading image to LINE:', uploadError)
+      console.error('❌ Full error object:', JSON.stringify(uploadError, null, 2))
       
       // 提取 LINE API 的錯誤細節
       if (uploadError.response?.data) {
