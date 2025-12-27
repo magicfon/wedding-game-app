@@ -27,7 +27,7 @@ interface RichMenuStatus {
 
 interface RichMenuArea {
   bounds: { x: number; y: number; width: number; height: number }
-  action: { type: string; uri?: string; data?: string; label?: string }
+  action: { type: string; uri?: string; data?: string; label?: string; richMenuAliasId?: string }
 }
 
 interface EditingRichMenu {
@@ -1129,25 +1129,41 @@ export default function RichMenuManagementPage() {
                               <option value="uri">URI (連結)</option>
                               <option value="postback">Postback</option>
                               <option value="message">訊息</option>
+                              <option value="richmenuswitch">選單切換</option>
                             </select>
                           </div>
                           <div>
                             <label className="block text-xs text-gray-600 mb-1">
-                              {area.action.type === 'uri' ? 'URI' : area.action.type === 'postback' ? 'Data' : '文字'}
+                              {area.action.type === 'uri' ? 'URI' :
+                                area.action.type === 'richmenuswitch' ? 'Alias ID' :
+                                  area.action.type === 'postback' ? 'Data' : '文字'}
                             </label>
-                            <input
-                              type="text"
-                              value={area.action.type === 'uri' ? (area.action.uri || '') : (area.action.data || '')}
-                              onChange={(e) => updateEditingArea(index, area.action.type === 'uri' ? 'action.uri' : 'action.data', e.target.value)}
-                              className="w-full px-2 py-1 text-sm border rounded text-gray-900"
-                            />
+                            {area.action.type === 'richmenuswitch' ? (
+                              <select
+                                value={(area.action as any).richMenuAliasId || ''}
+                                onChange={(e) => updateEditingArea(index, 'action.richMenuAliasId', e.target.value)}
+                                className="w-full px-2 py-1 text-sm border rounded text-gray-900"
+                              >
+                                <option value="">選擇目標選單</option>
+                                <option value="richmenu-alias-venue-info">會場資訊</option>
+                                <option value="richmenu-alias-activity">現場活動</option>
+                              </select>
+                            ) : (
+                              <input
+                                type="text"
+                                value={area.action.type === 'uri' ? (area.action.uri || '') : (area.action.data || '')}
+                                onChange={(e) => updateEditingArea(index, area.action.type === 'uri' ? 'action.uri' : 'action.data', e.target.value)}
+                                className="w-full px-2 py-1 text-sm border rounded text-gray-900"
+                              />
+                            )}
                           </div>
                           <div>
-                            <label className="block text-xs text-gray-600 mb-1">標籤</label>
+                            <label className="block text-xs text-gray-600 mb-1">標籤/Data</label>
                             <input
                               type="text"
-                              value={area.action.label || ''}
-                              onChange={(e) => updateEditingArea(index, 'action.label', e.target.value)}
+                              value={area.action.type === 'richmenuswitch' ? (area.action.data || '') : (area.action.label || '')}
+                              onChange={(e) => updateEditingArea(index, area.action.type === 'richmenuswitch' ? 'action.data' : 'action.label', e.target.value)}
+                              placeholder={area.action.type === 'richmenuswitch' ? 'switch_tab:xxx' : ''}
                               className="w-full px-2 py-1 text-sm border rounded text-gray-900"
                             />
                           </div>
