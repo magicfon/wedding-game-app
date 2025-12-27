@@ -35,6 +35,8 @@ export default function RichMenuManagementPage() {
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
   const [uploading, setUploading] = useState<{ [key: string]: boolean }>({})
   const [imageStatus, setImageStatus] = useState<{ [key: string]: RichMenuStatus }>({})
+  const [richMenuList, setRichMenuList] = useState<any[] | null>(null)
+  const [loadingRichMenuList, setLoadingRichMenuList] = useState(false)
 
   // 檢查管理員權限
   useEffect(() => {
@@ -50,6 +52,7 @@ export default function RichMenuManagementPage() {
     // 是管理員，載入設定
     fetchSettings()
     fetchImageStatus()
+    fetchRichMenuList()
     setLoading(false)
   }, [isLoggedIn, isAdmin, liffLoading, adminLoading, router])
 
@@ -92,6 +95,25 @@ export default function RichMenuManagementPage() {
     }
 
     setImageStatus(status)
+  }
+
+  // 獲取 Rich Menu 列表
+  const fetchRichMenuList = async () => {
+    setLoadingRichMenuList(true)
+    try {
+      const response = await fetch('/api/line/setup-richmenu')
+      if (!response.ok) {
+        throw new Error('Failed to fetch rich menu list')
+      }
+      const data = await response.json()
+      if (data.success && data.status?.linePlatform?.menus) {
+        setRichMenuList(data.status.linePlatform.menus)
+      }
+    } catch (error) {
+      console.error('Error fetching rich menu list:', error)
+    } finally {
+      setLoadingRichMenuList(false)
+    }
   }
 
   // 儲存設定
@@ -178,9 +200,10 @@ export default function RichMenuManagementPage() {
       console.log('✅ Response data:', result)
       showMessage('success', 'Rich Menu 創建成功')
       
-      // 重新獲取設定和圖片狀態
+      // 重新獲取設定、圖片狀態和 Rich Menu 列表
       fetchSettings()
       fetchImageStatus()
+      fetchRichMenuList()
     } catch (error) {
       console.error('❌ Error creating rich menus:', error)
       showMessage('error', 'Rich Menu 創建失敗')
@@ -299,6 +322,57 @@ export default function RichMenuManagementPage() {
               {saving ? '儲存中...' : '儲存設定'}
             </button>
           </div>
+        </div>
+
+        {/* Rich Menu 列表 */}
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold">LINE Platform 上的 Rich Menu 列表</h2>
+            <button
+              onClick={fetchRichMenuList}
+              disabled={loadingRichMenuList}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            >
+              <RefreshCw className={`w-4 h-4 ${loadingRichMenuList ? 'animate-spin' : ''}`} />
+              重新整理
+            </button>
+          </div>
+
+          {loadingRichMenuList ? (
+            <div className="flex items-center justify-center py-8">
+              <RefreshCw className="w-6 h-6 animate-spin text-blue-500" />
+              <span className="ml-2 text-gray-600">載入中...</span>
+            </div>
+          ) : richMenuList && richMenuList.length > 0 ? (
+            <div className="space-y-3">
+              {richMenuList.map((menu: any) => (
+                <div key={menu.richMenuId} className="p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h3 className="font-medium text-gray-900">{menu.name}</h3>
+                      <p className="text-sm text-gray-600 mt-1">ID: {menu.richMenuId}</p>
+                      <p className="text-sm text-gray-600">Chat Bar Text: {menu.chatBarText}</p>
+                    </div>
+                    <div className="ml-4">
+                      {menu.selected ? (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          預設
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                          未設定
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <p>目前沒有 Rich Menu，請點擊「創建 Rich Menu」按鈕創建</p>
+            </div>
+          )}
         </div>
 
         {/* Rich Menu 圖片管理 */}

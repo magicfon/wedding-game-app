@@ -244,13 +244,37 @@ export async function POST(request: Request) {
 
     console.log('📊 Rich Menu creation results:', JSON.stringify(results, null, 2))
     
+    // 設置預設 Rich Menu 為「未開放」
+    try {
+      console.log('🎯 Setting default rich menu...')
+      const unavailableResult = results.find(r => r.menuType === 'unavailable')
+      if (unavailableResult && unavailableResult.richMenuId) {
+        await lineClient.setDefaultRichMenu(unavailableResult.richMenuId)
+        console.log('✅ Default rich menu set:', unavailableResult.richMenuId)
+      } else {
+        console.warn('⚠️ Could not set default rich menu: unavailable menu not found')
+      }
+    } catch (error) {
+      console.error('❌ Error setting default rich menu:', error)
+    }
+    
+    // 嘗試獲取並顯示當前 Rich Menu 列表
+    try {
+      console.log('📋 Fetching current rich menu list...')
+      const richMenuList = await lineClient.getRichMenuList()
+      console.log('📋 Current rich menu list:', JSON.stringify(richMenuList, null, 2))
+    } catch (error) {
+      console.error('❌ Error fetching rich menu list:', error)
+    }
+    
     return NextResponse.json({
       success: true,
       message: 'Rich menus created successfully',
       results,
       nextSteps: [
         'Please upload images for each rich menu using the upload-image API',
-        'After uploading images, you can check the LINE Developers Console to see the created rich menus'
+        'After uploading images, you can check the LINE Developers Console to see the created rich menus',
+        'Default rich menu has been set to "unavailable" tab'
       ]
     })
 
