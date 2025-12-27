@@ -316,80 +316,107 @@ export async function POST(request: NextRequest) {
         (uploadError.status === 400 && hasExistingImage)
 
       if (isImageAlreadyExists) {
-        console.log('🔄 Rich menu already has an image. Need to recreate.')
-
-        // 如果不知道 menu type，無法重建，返回明確錯誤
-        if (!registryMenuType) {
-          return NextResponse.json({
-            error: 'This rich menu already has an image and cannot be updated',
-            details: 'This rich menu is not registered in the database, so it cannot be automatically recreated. Please delete this rich menu manually and create a new one.',
-            richMenuId
-          }, { status: 400 })
-        }
+        console.log('🔄 Rich menu already has an image. Recreating while preserving parameters...')
 
         try {
-          const liffId = getLiffId()
+          // 1. 獲取現有的 Rich Menu 配置和 Alias
+          console.log('📋 Fetching existing rich menu config...')
+          const existingMenu = await apiClient.getRichMenu(richMenuId)
 
-          // 1. 刪除舊的 Rich Menu
+          // 查找指向此 Menu 的 Alias
+          let existingAliasId: string | null = null
+          try {
+            const aliasList = await apiClient.getRichMenuAliasList()
+            const alias = aliasList.aliases.find(a => a.richMenuId === richMenuId)
+            if (alias) {
+              existingAliasId = alias.richMenuAliasId
+              console.log('🔗 Found existing alias:', existingAliasId)
+            }
+          } catch (err) {
+            console.warn('⚠️ Failed to fetch aliases (continuing):', err)
+          }
+
+          // 2. 刪除舊的 Rich Menu
           console.log('🗑️ Deleting old rich menu:', richMenuId)
           await apiClient.deleteRichMenu(richMenuId)
           console.log('✅ Old rich menu deleted')
 
-          // 2. 創建新的 Rich Menu（使用對應的 menu type 配置）
-          console.log('📝 Creating new rich menu for type:', registryMenuType)
-          const menuConfig = getRichMenuConfig(registryMenuType, liffId)
+          // 3. 創建新的 Rich Menu (使用原有配置)
+          const menuConfig: RichMenuRequest = {
+            size: existingMenu.size,
+            selected: existingMenu.selected,
+            name: existingMenu.name,
+            chatBarText: existingMenu.chatBarText,
+            areas: existingMenu.areas
+          }
+
+          console.log('📝 Creating new rich menu with preserved config...')
           const newRichMenuResponse = await apiClient.createRichMenu(menuConfig)
           const newRichMenuId = newRichMenuResponse.richMenuId
           console.log('✅ New rich menu created:', newRichMenuId)
 
-          // 3. 上傳圖片到新的 Rich Menu
+          // 4. 上傳圖片到新的 Rich Menu
           console.log('📤 Uploading image to new rich menu...')
           await blobClient.setRichMenuImage(newRichMenuId, imageBlob)
           console.log('✅ Image uploaded to new rich menu')
 
-          // 4. 更新資料庫
-          const { error: updateError } = await supabase
-            .from('line_richmenu_registry')
-            .update({
-              richmenu_id: newRichMenuId,
-              has_image: true,
-              updated_at: new Date().toISOString()
-            })
-            .eq('menu_type', registryMenuType)
+          // 5. 更新資料庫 (如果該 Menu 有在 registry 中)
+          if (registryMenuType) {
+            const { error: updateError } = await supabase
+              .from('line_richmenu_registry')
+              .update({
+                richmenu_id: newRichMenuId,
+                has_image: true,
+                updated_at: new Date().toISOString()
+              })
+              .eq('menu_type', registryMenuType)
 
-          if (updateError) {
-            console.error('Error updating registry:', updateError)
-          } else {
-            console.log('✅ Database registry updated')
+            if (updateError) {
+              console.error('Error updating registry:', updateError)
+            } else {
+              console.log('✅ Database registry updated')
+            }
           }
 
-          // 5. 更新 Rich Menu Alias（重要：否則分頁切換會失效）
-          const aliasId = registryMenuType === 'venue_info'
-            ? 'richmenu-alias-venue-info'
-            : registryMenuType === 'activity'
-              ? 'richmenu-alias-activity'
-              : null
-
-          if (aliasId) {
+          // 6. 恢復 Rich Menu Alias
+          if (existingAliasId) {
             try {
-              console.log(`🔗 Updating alias ${aliasId} to new rich menu...`)
+              console.log(`🔗 Restoring alias ${existingAliasId} to new rich menu...`)
 
-              // 先嘗試刪除舊的 alias
+              // 先嘗試刪除舊的 alias (雖然 rich menu 刪除後 alias 應該會自動無效，但為了確保乾淨還是顯式刪除)
               try {
-                await apiClient.deleteRichMenuAlias(aliasId)
-                console.log(`🗑️ Deleted existing alias: ${aliasId}`)
-              } catch (deleteErr: any) {
-                console.log(`⚠️ No existing alias to delete: ${aliasId}`)
+                await apiClient.deleteRichMenuAlias(existingAliasId)
+              } catch (deleteErr) {
+                // Ignore
               }
 
               // 創建新的 alias
               await apiClient.createRichMenuAlias({
-                richMenuAliasId: aliasId,
+                richMenuAliasId: existingAliasId,
                 richMenuId: newRichMenuId
               })
-              console.log(`✅ Updated alias: ${aliasId} -> ${newRichMenuId}`)
+              console.log(`✅ Restored alias: ${existingAliasId} -> ${newRichMenuId}`)
             } catch (aliasError: any) {
-              console.error(`❌ Error updating alias ${aliasId}:`, aliasError)
+              console.error(`❌ Error restoring alias ${existingAliasId}:`, aliasError)
+            }
+          } else if (registryMenuType) {
+            // 如果沒有找到現有 alias，但知道 menu type，嘗試根據規則建立預設 alias
+            const defaultAliasId = registryMenuType === 'venue_info'
+              ? 'richmenu-alias-venue-info'
+              : registryMenuType === 'activity'
+                ? 'richmenu-alias-activity'
+                : null
+
+            if (defaultAliasId) {
+              try {
+                await apiClient.createRichMenuAlias({
+                  richMenuAliasId: defaultAliasId,
+                  richMenuId: newRichMenuId
+                })
+                console.log(`✅ Created default alias: ${defaultAliasId} -> ${newRichMenuId}`)
+              } catch (err) {
+                console.log(`ℹ️ Skipped default alias creation (might already exist or not needed)`)
+              }
             }
           }
 
@@ -397,12 +424,12 @@ export async function POST(request: NextRequest) {
 
           return NextResponse.json({
             success: true,
-            message: `Rich menu (${registryMenuType}) recreated and image uploaded successfully`,
+            message: `Rich menu recreated and image uploaded successfully`,
             richMenuId: newRichMenuId,
             menuType: registryMenuType,
             recreated: true,
-            aliasUpdated: !!aliasId,
-            note: 'The rich menu was recreated with updated alias for tab switching.'
+            aliasRestored: !!existingAliasId,
+            note: 'The rich menu was recreated to allow image update, preserving existing configuration.'
           })
 
         } catch (recreateError: any) {
