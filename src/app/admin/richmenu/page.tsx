@@ -69,6 +69,10 @@ export default function RichMenuManagementPage() {
   // 預設 Rich Menu ID (從 LINE Platform 獲取)
   const [defaultRichMenuId, setDefaultRichMenuId] = useState<string | null>(null)
 
+  // Rich Menu Aliases
+  const [aliases, setAliases] = useState<Array<{ aliasId: string; richMenuId: string }>>([])
+  const [loadingAliases, setLoadingAliases] = useState(false)
+
   // 檢查管理員權限
   useEffect(() => {
     if (liffLoading || adminLoading) {
@@ -83,6 +87,7 @@ export default function RichMenuManagementPage() {
     // 是管理員，載入設定
     fetchSettings()
     fetchRichMenuList()
+    fetchAliases()
     setLoading(false)
   }, [isLoggedIn, isAdmin, liffLoading, adminLoading, router])
 
@@ -136,6 +141,24 @@ export default function RichMenuManagementPage() {
       console.error('Error fetching rich menu list:', error)
     } finally {
       setLoadingRichMenuList(false)
+    }
+  }
+
+  // 獲取 Rich Menu Aliases
+  const fetchAliases = async () => {
+    setLoadingAliases(true)
+    try {
+      const response = await fetch('/api/line/setup-richmenu/aliases')
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.aliases) {
+          setAliases(data.aliases)
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching aliases:', error)
+    } finally {
+      setLoadingAliases(false)
     }
   }
 
@@ -691,7 +714,7 @@ export default function RichMenuManagementPage() {
             </div>
             <div className="flex gap-2">
               <button
-                onClick={fetchRichMenuList}
+                onClick={() => { fetchRichMenuList(); fetchAliases(); }}
                 disabled={loadingRichMenuList}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
               >
@@ -758,6 +781,22 @@ export default function RichMenuManagementPage() {
                       </div>
                       <p className="text-sm text-gray-600">Chat Bar Text: {menu.chatBarText}</p>
                       <p className="text-sm text-gray-600">尺寸: {menu.size?.width} x {menu.size?.height}</p>
+                      {/* Alias 顯示 */}
+                      {(() => {
+                        const menuAliases = aliases.filter(a => a.richMenuId === menu.richMenuId)
+                        if (menuAliases.length > 0) {
+                          return (
+                            <div className="mt-1">
+                              {menuAliases.map(a => (
+                                <span key={a.aliasId} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 mr-1">
+                                  🏷️ {a.aliasId}
+                                </span>
+                              ))}
+                            </div>
+                          )
+                        }
+                        return null
+                      })()}
                       <div className="mt-2">
                         {menu.hasImage ? (
                           <div className="flex items-center gap-1 text-green-600">
