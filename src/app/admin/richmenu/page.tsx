@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLiff } from '@/hooks/useLiff'
-import { Upload, Save, RefreshCw, CheckCircle, XCircle, AlertCircle, Trash2, Star, Copy } from 'lucide-react'
+import { Upload, Save, RefreshCw, CheckCircle, XCircle, AlertCircle, Trash2, Star, Copy, Edit2, Plus, Minus, X } from 'lucide-react'
 import AdminLayout from '@/components/AdminLayout'
 
 interface RichMenuSettings {
@@ -25,6 +25,19 @@ interface RichMenuStatus {
   updatedAt?: string
 }
 
+interface RichMenuArea {
+  bounds: { x: number; y: number; width: number; height: number }
+  action: { type: string; uri?: string; data?: string; label?: string }
+}
+
+interface EditingRichMenu {
+  richMenuId: string
+  name: string
+  chatBarText: string
+  selected: boolean
+  areas: RichMenuArea[]
+}
+
 export default function RichMenuManagementPage() {
   const router = useRouter()
   const { isLoggedIn, isAdmin, loading: liffLoading, adminLoading } = useLiff()
@@ -38,6 +51,11 @@ export default function RichMenuManagementPage() {
   const [loadingRichMenuList, setLoadingRichMenuList] = useState(false)
   const [deleting, setDeleting] = useState<{ [key: string]: boolean }>({})
   const [settingDefault, setSettingDefault] = useState<string | null>(null)
+
+  // 編輯相關 state
+  const [editingMenu, setEditingMenu] = useState<EditingRichMenu | null>(null)
+  const [loadingEdit, setLoadingEdit] = useState(false)
+  const [savingEdit, setSavingEdit] = useState(false)
 
   // 檢查管理員權限
   useEffect(() => {
@@ -277,6 +295,107 @@ export default function RichMenuManagementPage() {
     setTimeout(() => setMessage(null), 3000)
   }
 
+  // 開啟編輯 Modal
+  const openEditModal = async (richMenuId: string) => {
+    setLoadingEdit(true)
+    try {
+      const response = await fetch(`/api/admin/richmenu/edit?richMenuId=${richMenuId}`)
+      if (!response.ok) {
+        throw new Error('Failed to fetch rich menu details')
+      }
+      const data = await response.json()
+      if (data.success && data.richMenu) {
+        setEditingMenu({
+          richMenuId: data.richMenu.richMenuId,
+          name: data.richMenu.name,
+          chatBarText: data.richMenu.chatBarText,
+          selected: data.richMenu.selected,
+          areas: data.richMenu.areas || []
+        })
+      }
+    } catch (error) {
+      console.error('Error fetching rich menu details:', error)
+      showMessage('error', '無法載入 Rich Menu 資訊')
+    } finally {
+      setLoadingEdit(false)
+    }
+  }
+
+  // 儲存編輯
+  const saveEdit = async () => {
+    if (!editingMenu) return
+
+    setSavingEdit(true)
+    try {
+      const response = await fetch('/api/admin/richmenu/edit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          richMenuId: editingMenu.richMenuId,
+          config: {
+            name: editingMenu.name,
+            chatBarText: editingMenu.chatBarText,
+            selected: editingMenu.selected,
+            areas: editingMenu.areas
+          }
+        })
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to save')
+      }
+
+      showMessage('success', 'Rich Menu 更新成功')
+      setEditingMenu(null)
+      fetchRichMenuList()
+    } catch (error) {
+      console.error('Error saving rich menu:', error)
+      showMessage('error', `儲存失敗: ${error instanceof Error ? error.message : '未知錯誤'}`)
+    } finally {
+      setSavingEdit(false)
+    }
+  }
+
+  // 更新編輯中的區域
+  const updateEditingArea = (index: number, field: string, value: any) => {
+    if (!editingMenu) return
+    const newAreas = [...editingMenu.areas]
+
+    if (field.startsWith('bounds.')) {
+      const boundsField = field.split('.')[1]
+      newAreas[index] = {
+        ...newAreas[index],
+        bounds: { ...newAreas[index].bounds, [boundsField]: parseInt(value) || 0 }
+      }
+    } else if (field.startsWith('action.')) {
+      const actionField = field.split('.')[1]
+      newAreas[index] = {
+        ...newAreas[index],
+        action: { ...newAreas[index].action, [actionField]: value }
+      }
+    }
+
+    setEditingMenu({ ...editingMenu, areas: newAreas })
+  }
+
+  // 新增區域
+  const addArea = () => {
+    if (!editingMenu) return
+    const newArea: RichMenuArea = {
+      bounds: { x: 0, y: 0, width: 1250, height: 843 },
+      action: { type: 'uri', uri: '', label: '新按鈕' }
+    }
+    setEditingMenu({ ...editingMenu, areas: [...editingMenu.areas, newArea] })
+  }
+
+  // 移除區域
+  const removeArea = (index: number) => {
+    if (!editingMenu) return
+    const newAreas = editingMenu.areas.filter((_, i) => i !== index)
+    setEditingMenu({ ...editingMenu, areas: newAreas })
+  }
+
   if (loading || liffLoading || adminLoading) {
     return (
       <AdminLayout title="LINE Rich Menu 管理">
@@ -490,6 +609,14 @@ export default function RichMenuManagementPage() {
                         <Trash2 className="w-3 h-3" />
                         {deleting[menu.richMenuId] ? '刪除中...' : '刪除'}
                       </button>
+                      <button
+                        onClick={() => openEditModal(menu.richMenuId)}
+                        disabled={loadingEdit}
+                        className="flex items-center gap-1 px-3 py-1.5 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 disabled:opacity-50"
+                      >
+                        <Edit2 className="w-3 h-3" />
+                        編輯
+                      </button>
                       <label className="flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white text-xs rounded hover:bg-green-700 cursor-pointer disabled:opacity-50">
                         <Upload className="w-3 h-3" />
                         {uploading[menu.richMenuId] ? '上傳中...' : '上傳圖片'}
@@ -565,6 +692,192 @@ export default function RichMenuManagementPage() {
           </div>
         </div>
       </div>
+
+      {/* 編輯 Modal */}
+      {editingMenu && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between">
+              <h2 className="text-lg font-semibold">編輯 Rich Menu</h2>
+              <button
+                onClick={() => setEditingMenu(null)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* 基本資訊 */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    名稱 (管理用)
+                  </label>
+                  <input
+                    type="text"
+                    value={editingMenu.name}
+                    onChange={(e) => setEditingMenu({ ...editingMenu, name: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Chat Bar 文字 (用戶可見)
+                  </label>
+                  <input
+                    type="text"
+                    value={editingMenu.chatBarText}
+                    onChange={(e) => setEditingMenu({ ...editingMenu, chatBarText: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="selected"
+                  checked={editingMenu.selected}
+                  onChange={(e) => setEditingMenu({ ...editingMenu, selected: e.target.checked })}
+                  className="w-4 h-4"
+                />
+                <label htmlFor="selected" className="text-sm font-medium text-gray-700">
+                  預設展開 (selected)
+                </label>
+              </div>
+
+              {/* 按鈕區域 */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-gray-900">按鈕區域 ({editingMenu.areas.length})</h3>
+                  <button
+                    onClick={addArea}
+                    className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+                  >
+                    <Plus className="w-3 h-3" />
+                    新增區域
+                  </button>
+                </div>
+
+                {editingMenu.areas.length === 0 ? (
+                  <p className="text-gray-500 text-sm">無按鈕區域</p>
+                ) : (
+                  <div className="space-y-4">
+                    {editingMenu.areas.map((area, index) => (
+                      <div key={index} className="p-4 bg-gray-50 rounded-lg">
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-sm font-medium">區域 {index + 1}</span>
+                          <button
+                            onClick={() => removeArea(index)}
+                            className="text-red-600 hover:text-red-800"
+                          >
+                            <Minus className="w-4 h-4" />
+                          </button>
+                        </div>
+
+                        {/* 座標 */}
+                        <div className="grid grid-cols-4 gap-2 mb-3">
+                          <div>
+                            <label className="block text-xs text-gray-600 mb-1">X</label>
+                            <input
+                              type="number"
+                              value={area.bounds.x}
+                              onChange={(e) => updateEditingArea(index, 'bounds.x', e.target.value)}
+                              className="w-full px-2 py-1 text-sm border rounded"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-600 mb-1">Y</label>
+                            <input
+                              type="number"
+                              value={area.bounds.y}
+                              onChange={(e) => updateEditingArea(index, 'bounds.y', e.target.value)}
+                              className="w-full px-2 py-1 text-sm border rounded"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-600 mb-1">寬度</label>
+                            <input
+                              type="number"
+                              value={area.bounds.width}
+                              onChange={(e) => updateEditingArea(index, 'bounds.width', e.target.value)}
+                              className="w-full px-2 py-1 text-sm border rounded"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-600 mb-1">高度</label>
+                            <input
+                              type="number"
+                              value={area.bounds.height}
+                              onChange={(e) => updateEditingArea(index, 'bounds.height', e.target.value)}
+                              className="w-full px-2 py-1 text-sm border rounded"
+                            />
+                          </div>
+                        </div>
+
+                        {/* 動作 */}
+                        <div className="grid grid-cols-3 gap-2">
+                          <div>
+                            <label className="block text-xs text-gray-600 mb-1">類型</label>
+                            <select
+                              value={area.action.type}
+                              onChange={(e) => updateEditingArea(index, 'action.type', e.target.value)}
+                              className="w-full px-2 py-1 text-sm border rounded"
+                            >
+                              <option value="uri">URI (連結)</option>
+                              <option value="postback">Postback</option>
+                              <option value="message">訊息</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-600 mb-1">
+                              {area.action.type === 'uri' ? 'URI' : area.action.type === 'postback' ? 'Data' : '文字'}
+                            </label>
+                            <input
+                              type="text"
+                              value={area.action.type === 'uri' ? (area.action.uri || '') : (area.action.data || '')}
+                              onChange={(e) => updateEditingArea(index, area.action.type === 'uri' ? 'action.uri' : 'action.data', e.target.value)}
+                              className="w-full px-2 py-1 text-sm border rounded"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-600 mb-1">標籤</label>
+                            <input
+                              type="text"
+                              value={area.action.label || ''}
+                              onChange={(e) => updateEditingArea(index, 'action.label', e.target.value)}
+                              className="w-full px-2 py-1 text-sm border rounded"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* 底部按鈕 */}
+            <div className="sticky bottom-0 bg-gray-50 border-t px-6 py-4 flex justify-end gap-3">
+              <button
+                onClick={() => setEditingMenu(null)}
+                className="px-4 py-2 text-gray-700 border rounded-lg hover:bg-gray-100"
+              >
+                取消
+              </button>
+              <button
+                onClick={saveEdit}
+                disabled={savingEdit}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              >
+                <Save className="w-4 h-4" />
+                {savingEdit ? '儲存中...' : '儲存變更'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AdminLayout>
   )
 }
