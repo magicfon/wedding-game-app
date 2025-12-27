@@ -1,6 +1,6 @@
 'use client'
 
-import { ArrowLeft, Car, Train, Bus } from 'lucide-react'
+import { ArrowLeft, Car, Train, MapPin, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 
@@ -19,8 +19,26 @@ export default function TransportPage() {
 
       {/* 主要內容 */}
       <div className="max-w-4xl mx-auto px-4 py-6">
+        {/* Google 地圖連結 - 置頂 */}
+        <a
+          href="https://maps.app.goo.gl/JVNdXEmNhxJU3wdr6"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl p-4 mb-6 shadow-lg hover:from-blue-600 hover:to-blue-700 transition-all"
+        >
+          <div className="flex items-center justify-center gap-3 text-white">
+            <MapPin className="w-6 h-6" />
+            <div className="text-center">
+              <h3 className="text-xl font-bold">承億酒店</h3>
+              <p className="text-blue-100 text-sm">806高雄市前鎮區林森四路189號</p>
+            </div>
+            <ExternalLink className="w-5 h-5" />
+          </div>
+          <p className="text-center text-blue-200 text-sm mt-2">👆 點擊開啟 Google 地圖導航</p>
+        </a>
+
         {/* 停車優惠資訊 - 置頂醒目 */}
-        <div className="bg-gradient-to-r from-red-500 via-orange-500 to-amber-500 rounded-2xl p-1 mb-6 shadow-xl animate-pulse">
+        <div className="bg-gradient-to-r from-red-500 via-orange-500 to-amber-500 rounded-2xl p-1 mb-4 shadow-xl animate-pulse">
           <div className="bg-white rounded-xl p-5">
             <div className="flex items-center justify-center gap-3 mb-3">
               <Car className="w-8 h-8 text-red-500" />
@@ -34,6 +52,17 @@ export default function TransportPage() {
               <span className="text-red-600">於喜宴當日提供4小時停車券給賓客折抵~~</span>
             </p>
           </div>
+        </div>
+
+        {/* 停車場入口照片 */}
+        <div className="bg-white rounded-2xl shadow-lg overflow-hidden mb-6">
+          <Image
+            src="/transport/parking-entrance.jpg"
+            alt="停車場入口"
+            width={800}
+            height={500}
+            className="w-full h-auto"
+          />
         </div>
 
         {/* 交通路線圖 - 標題 */}
@@ -106,16 +135,7 @@ export default function TransportPage() {
           />
         </div>
 
-        {/* 停車場入口照片 */}
-        <div className="bg-white rounded-2xl shadow-lg overflow-hidden mb-6">
-          <Image
-            src="/transport/parking-entrance.jpg"
-            alt="停車場入口"
-            width={800}
-            height={500}
-            className="w-full h-auto"
-          />
-        </div>
+
       </div>
     </div>
   )
