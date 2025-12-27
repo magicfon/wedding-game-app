@@ -253,6 +253,16 @@ export async function POST(request: Request) {
         console.log(`  - ${menu.richMenuId}: ${menu.name}`)
       })
       
+      // 檢查新創建的 Rich Menu 是否在列表中
+      const createdIds = results.map(r => r.richMenuId).filter(id => id)
+      const foundIds = richMenuList.map(m => m.richMenuId)
+      
+      console.log('📝 Created IDs:', createdIds)
+      console.log('📝 Found IDs on LINE Platform:', foundIds)
+      
+      const allCreatedFound = createdIds.every(id => foundIds.includes(id))
+      console.log(allCreatedFound ? '✅ All created rich menus found on LINE Platform' : '❌ Some created rich menus not found on LINE Platform')
+      
       // 設置預設 Rich Menu（使用會場資訊分頁）
       if (richMenuList.length > 0) {
         const venueInfoMenu = richMenuList.find(m => m.name.includes('會場資訊'))
