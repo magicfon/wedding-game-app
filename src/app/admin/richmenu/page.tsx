@@ -424,7 +424,25 @@ export default function RichMenuManagementPage() {
             <div className="space-y-3">
               {richMenuList.map((menu: any) => (
                 <div key={menu.richMenuId} className="p-4 bg-gray-50 rounded-lg">
-                  <div className="flex items-start justify-between">
+                  <div className="flex items-start gap-4">
+                    {/* Rich Menu 圖片預覽 */}
+                    <div className="flex-shrink-0">
+                      {menu.hasImage ? (
+                        <img
+                          src={`/api/line/setup-richmenu/get-image?richMenuId=${menu.richMenuId}`}
+                          alt={menu.name}
+                          className="w-24 h-16 object-cover rounded border border-gray-200"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none'
+                          }}
+                        />
+                      ) : (
+                        <div className="w-24 h-16 bg-gray-200 rounded border border-gray-200 flex items-center justify-center">
+                          <span className="text-xs text-gray-500">無圖片</span>
+                        </div>
+                      )}
+                    </div>
+
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <h3 className="font-medium text-gray-900">{menu.name}</h3>
