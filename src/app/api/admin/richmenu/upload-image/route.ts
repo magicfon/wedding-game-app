@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
     const supabase = createSupabaseAdmin()
 
     // 上傳圖片到 Rich Menu
-    await (lineClient as any).setRichMenuImage(richMenuId, Buffer.from(imageBuffer))
+    await (lineClient.setRichMenuImage as any)(richMenuId, Buffer.from(imageBuffer), file.type)
     
     // 更新資料庫中的 has_image 狀態
     const { error } = await supabase
