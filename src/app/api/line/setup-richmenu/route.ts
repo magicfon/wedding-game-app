@@ -169,115 +169,55 @@ export async function POST(request: Request) {
 
     const liffId = getLiffId()
 
-    const results: any[] = []
-
     console.log('🔍 Starting Rich Menu creation process...')
     console.log('📋 LIFF ID:', liffId)
 
-    // 創建會場資訊分頁
+    // 只創建一個 Rich Menu（會場資訊）
     try {
-      console.log('🏗️ Creating venue_info rich menu...')
-      const venueInfoMenu = createVenueInfoRichMenu(liffId)
-      console.log('📝 Venue info menu config:', JSON.stringify(venueInfoMenu, null, 2))
-      const venueInfoId = await lineClient.createRichMenu(venueInfoMenu)
-      console.log('✅ Venue info rich menu created:', venueInfoId)
-      const registered = await registerRichMenu(supabase, 'venue_info', venueInfoId)
-      console.log('📝 Venue info registered to database:', registered)
+      console.log('🏗️ Creating rich menu...')
+      const menu = createVenueInfoRichMenu(liffId)
+      console.log('📝 Menu config:', JSON.stringify(menu, null, 2))
+      const richMenuId = await lineClient.createRichMenu(menu)
+      console.log('✅ Rich menu created:', richMenuId)
+      const registered = await registerRichMenu(supabase, 'venue_info', richMenuId)
+      console.log('📝 Rich menu registered to database:', registered)
 
-      results.push({
-        menuType: 'venue_info',
-        richMenuId: venueInfoId,
-        registered
-      })
-    } catch (error) {
-      console.error('❌ Error creating venue info rich menu:', error)
-      results.push({
-        menuType: 'venue_info',
-        error: error instanceof Error ? error.message : 'Unknown error'
-      })
-    }
-
-    // 創建現場活動分頁
-    try {
-      console.log('🏗️ Creating activity rich menu...')
-      const activityMenu = createActivityRichMenu(liffId)
-      console.log('📝 Activity menu config:', JSON.stringify(activityMenu, null, 2))
-      const activityId = await lineClient.createRichMenu(activityMenu)
-      console.log('✅ Activity rich menu created:', activityId)
-      const registered = await registerRichMenu(supabase, 'activity', activityId)
-      console.log('📝 Activity registered to database:', registered)
-
-      results.push({
-        menuType: 'activity',
-        richMenuId: activityId,
-        registered
-      })
-    } catch (error) {
-      console.error('❌ Error creating activity rich menu:', error)
-      results.push({
-        menuType: 'activity',
-        error: error instanceof Error ? error.message : 'Unknown error'
-      })
-    }
-
-    // 創建未開放分頁
-    try {
-      console.log('🏗️ Creating unavailable rich menu...')
-      const unavailableMenu = createUnavailableRichMenu()
-      console.log('📝 Unavailable menu config:', JSON.stringify(unavailableMenu, null, 2))
-      const unavailableId = await lineClient.createRichMenu(unavailableMenu)
-      console.log('✅ Unavailable rich menu created:', unavailableId)
-      const registered = await registerRichMenu(supabase, 'unavailable', unavailableId)
-      console.log('📝 Unavailable registered to database:', registered)
-
-      results.push({
-        menuType: 'unavailable',
-        richMenuId: unavailableId,
-        registered
-      })
-    } catch (error) {
-      console.error('❌ Error creating unavailable rich menu:', error)
-      results.push({
-        menuType: 'unavailable',
-        error: error instanceof Error ? error.message : 'Unknown error'
-      })
-    }
-
-    console.log('📊 Rich Menu creation results:', JSON.stringify(results, null, 2))
-    
-    // 設置預設 Rich Menu 為「未開放」
-    try {
-      console.log('🎯 Setting default rich menu...')
-      const unavailableResult = results.find(r => r.menuType === 'unavailable')
-      if (unavailableResult && unavailableResult.richMenuId) {
-        await lineClient.setDefaultRichMenu(unavailableResult.richMenuId)
-        console.log('✅ Default rich menu set:', unavailableResult.richMenuId)
-      } else {
-        console.warn('⚠️ Could not set default rich menu: unavailable menu not found')
+      // 設置為預設 Rich Menu
+      try {
+        console.log('🎯 Setting default rich menu...')
+        await lineClient.setDefaultRichMenu(richMenuId)
+        console.log('✅ Default rich menu set:', richMenuId)
+      } catch (error) {
+        console.error('❌ Error setting default rich menu:', error)
       }
+
+      // 嘗試獲取並顯示當前 Rich Menu 列表
+      try {
+        console.log('📋 Fetching current rich menu list...')
+        const richMenuList = await lineClient.getRichMenuList()
+        console.log('📋 Current rich menu list:', JSON.stringify(richMenuList, null, 2))
+      } catch (error) {
+        console.error('❌ Error fetching rich menu list:', error)
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: 'Rich menu created successfully',
+        richMenuId,
+        registered,
+        nextSteps: [
+          'Please upload an image for the rich menu using the upload-image API',
+          'After uploading the image, you can check the LINE Developers Console to see the created rich menu',
+          'The rich menu has been set as default'
+        ]
+      })
     } catch (error) {
-      console.error('❌ Error setting default rich menu:', error)
+      console.error('❌ Error creating rich menu:', error)
+      return NextResponse.json(
+        { error: 'Failed to create rich menu', details: error instanceof Error ? error.message : 'Unknown error' },
+        { status: 500 }
+      )
     }
-    
-    // 嘗試獲取並顯示當前 Rich Menu 列表
-    try {
-      console.log('📋 Fetching current rich menu list...')
-      const richMenuList = await lineClient.getRichMenuList()
-      console.log('📋 Current rich menu list:', JSON.stringify(richMenuList, null, 2))
-    } catch (error) {
-      console.error('❌ Error fetching rich menu list:', error)
-    }
-    
-    return NextResponse.json({
-      success: true,
-      message: 'Rich menus created successfully',
-      results,
-      nextSteps: [
-        'Please upload images for each rich menu using the upload-image API',
-        'After uploading images, you can check the LINE Developers Console to see the created rich menus',
-        'Default rich menu has been set to "unavailable" tab'
-      ]
-    })
 
   } catch (error) {
     console.error('Error in POST /api/line/setup-richmenu:', error)

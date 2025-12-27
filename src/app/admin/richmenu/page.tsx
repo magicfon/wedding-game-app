@@ -33,8 +33,8 @@ export default function RichMenuManagementPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
-  const [uploading, setUploading] = useState<{ [key: string]: boolean }>({})
-  const [imageStatus, setImageStatus] = useState<{ [key: string]: RichMenuStatus }>({})
+  const [uploading, setUploading] = useState(false)
+  const [imageStatus, setImageStatus] = useState<RichMenuStatus | null>(null)
   const [richMenuList, setRichMenuList] = useState<any[] | null>(null)
   const [loadingRichMenuList, setLoadingRichMenuList] = useState(false)
   const [deleting, setDeleting] = useState<{ [key: string]: boolean }>({})
@@ -79,24 +79,17 @@ export default function RichMenuManagementPage() {
 
   // 獲取圖片狀態
   const fetchImageStatus = async () => {
-    const menuTypes = ['venue_info', 'activity', 'unavailable']
-    const status: { [key: string]: RichMenuStatus } = {}
+    try {
+      const response = await fetch('/api/admin/richmenu/upload-image')
 
-    for (const menuType of menuTypes) {
-      try {
-        const response = await fetch(`/api/admin/richmenu/upload-image?menuType=${menuType}`)
-
-        if (response.ok) {
-          const data = await response.json()
-          status[menuType] = data
-        }
-      } catch (error) {
-        console.error(`Error fetching image status for ${menuType}:`, error)
-        status[menuType] = { hasImage: false }
+      if (response.ok) {
+        const data = await response.json()
+        setImageStatus(data)
       }
+    } catch (error) {
+      console.error('Error fetching image status:', error)
+      setImageStatus({ hasImage: false })
     }
-
-    setImageStatus(status)
   }
 
   // 獲取 Rich Menu 列表
@@ -225,13 +218,12 @@ export default function RichMenuManagementPage() {
   }
 
   // 上傳圖片
-  const handleImageUpload = async (menuType: string, file: File) => {
-    setUploading(prev => ({ ...prev, [menuType]: true }))
+  const handleImageUpload = async (file: File) => {
+    setUploading(true)
 
     try {
       const formData = new FormData()
       formData.append('image', file)
-      formData.append('menuType', menuType)
 
       const response = await fetch('/api/admin/richmenu/upload-image', {
         method: 'POST',
@@ -244,7 +236,7 @@ export default function RichMenuManagementPage() {
       }
 
       const result = await response.json()
-      showMessage('success', `${getMenuTypeName(menuType)}圖片上傳成功`)
+      showMessage('success', '圖片上傳成功')
       
       // 重新獲取圖片狀態
       fetchImageStatus()
@@ -252,7 +244,7 @@ export default function RichMenuManagementPage() {
       console.error('Error uploading image:', error)
       showMessage('error', `圖片上傳失敗: ${error instanceof Error ? error.message : '未知錯誤'}`)
     } finally {
-      setUploading(prev => ({ ...prev, [menuType]: false }))
+      setUploading(false)
     }
   }
 
@@ -291,16 +283,6 @@ export default function RichMenuManagementPage() {
   const showMessage = (type: 'success' | 'error', text: string) => {
     setMessage({ type, text })
     setTimeout(() => setMessage(null), 3000)
-  }
-
-  // 獲取選單類型名稱
-  const getMenuTypeName = (menuType: string): string => {
-    const names: { [key: string]: string } = {
-      venue_info: '會場資訊',
-      activity: '現場活動',
-      unavailable: '未開放'
-    }
-    return names[menuType] || menuType
   }
 
   if (loading || liffLoading || adminLoading) {
@@ -401,18 +383,35 @@ export default function RichMenuManagementPage() {
           </div>
         </div>
 
-        {/* Rich Menu 列表 */}
+        {/* Rich Menu 管理 */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold">LINE Platform 上的 Rich Menu 列表</h2>
-            <button
-              onClick={fetchRichMenuList}
-              disabled={loadingRichMenuList}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-            >
-              <RefreshCw className={`w-4 h-4 ${loadingRichMenuList ? 'animate-spin' : ''}`} />
-              重新整理
-            </button>
+            <div>
+              <h2 className="text-xl font-semibold">Rich Menu 管理</h2>
+              <p className="text-sm text-gray-600 mt-1">
+                當前總數: <span className="font-semibold text-blue-600">{richMenuList?.length || 0}</span> 個
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={fetchRichMenuList}
+                disabled={loadingRichMenuList}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              >
+                <RefreshCw className={`w-4 h-4 ${loadingRichMenuList ? 'animate-spin' : ''}`} />
+                重新整理
+              </button>
+              <button
+                onClick={() => {
+                  console.log('🖱️ 創建 Rich Menu 按鈕被點擊')
+                  handleCreateRichMenus()
+                }}
+                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+              >
+                <RefreshCw className="w-4 h-4" />
+                創建 Rich Menu
+              </button>
+            </div>
           </div>
 
           {loadingRichMenuList ? (
@@ -421,7 +420,7 @@ export default function RichMenuManagementPage() {
               <span className="ml-2 text-gray-600">載入中...</span>
             </div>
           ) : richMenuList && richMenuList.length > 0 ? (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {richMenuList.map((menu: any) => (
                 <div key={menu.richMenuId} className="p-4 bg-gray-50 rounded-lg">
                   <div className="flex items-start gap-4">
@@ -431,13 +430,13 @@ export default function RichMenuManagementPage() {
                         <img
                           src={`/api/line/setup-richmenu/get-image?richMenuId=${menu.richMenuId}`}
                           alt={menu.name}
-                          className="w-24 h-16 object-cover rounded border border-gray-200"
+                          className="w-32 h-24 object-cover rounded border border-gray-200"
                           onError={(e) => {
                             e.currentTarget.style.display = 'none'
                           }}
                         />
                       ) : (
-                        <div className="w-24 h-16 bg-gray-200 rounded border border-gray-200 flex items-center justify-center">
+                        <div className="w-32 h-24 bg-gray-200 rounded border border-gray-200 flex items-center justify-center">
                           <span className="text-xs text-gray-500">無圖片</span>
                         </div>
                       )}
@@ -510,78 +509,60 @@ export default function RichMenuManagementPage() {
               <p>目前沒有 Rich Menu，請點擊「創建 Rich Menu」按鈕創建</p>
             </div>
           )}
-        </div>
 
-        {/* Rich Menu 圖片管理 */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold">Rich Menu 圖片</h2>
-            <button
-              onClick={() => {
-                console.log('🖱️ 創建 Rich Menu 按鈕被點擊')
-                handleCreateRichMenus()
-              }}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-            >
-              <RefreshCw className="w-4 h-4" />
-              創建 Rich Menu
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {['venue_info', 'activity', 'unavailable'].map((menuType) => (
-              <div key={menuType} className="border border-gray-200 rounded-lg p-4">
-                <h3 className="font-medium mb-3">{getMenuTypeName(menuType)}</h3>
-
-                {/* 圖片狀態 */}
-                <div className="mb-4">
-                  {imageStatus[menuType]?.hasImage ? (
-                    <div className="flex items-center gap-2 text-green-600">
-                      <CheckCircle className="w-4 h-4" />
-                      <span className="text-sm">已上傳</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2 text-gray-500">
-                      <XCircle className="w-4 h-4" />
-                      <span className="text-sm">未上傳</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* 上傳按鈕 */}
-                <div>
-                  <label className="block">
-                    <span className="sr-only">選擇圖片</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0]
-                        if (file) {
-                          handleImageUpload(menuType, file)
-                        }
-                      }}
-                      disabled={uploading[menuType]}
-                      className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                    />
-                  </label>
-                  {uploading[menuType] && (
-                    <div className="mt-2 flex items-center gap-2 text-sm text-blue-600">
-                      <RefreshCw className="w-4 h-4 animate-spin" />
-                      上傳中...
-                    </div>
-                  )}
-                </div>
-
-                {/* Rich Menu ID */}
-                {settings?.richMenuIds[menuType as keyof typeof settings.richMenuIds] && (
-                  <div className="mt-4 p-2 bg-gray-50 rounded text-xs text-gray-600 break-all">
-                    ID: {settings.richMenuIds[menuType as keyof typeof settings.richMenuIds]}
+          {/* 圖片上傳 */}
+          {richMenuList && richMenuList.length > 0 && (
+            <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+              <h3 className="font-medium mb-3">上傳 Rich Menu 圖片</h3>
+              
+              {/* 圖片狀態 */}
+              <div className="mb-4">
+                {imageStatus?.hasImage ? (
+                  <div className="flex items-center gap-2 text-green-600">
+                    <CheckCircle className="w-4 h-4" />
+                    <span className="text-sm">已上傳圖片</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 text-gray-500">
+                    <XCircle className="w-4 h-4" />
+                    <span className="text-sm">未上傳圖片</span>
                   </div>
                 )}
               </div>
-            ))}
-          </div>
+
+              {/* 上傳按鈕 */}
+              <div>
+                <label className="block">
+                  <span className="sr-only">選擇圖片</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      if (file) {
+                        handleImageUpload(file)
+                      }
+                    }}
+                    disabled={uploading}
+                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                  />
+                </label>
+                {uploading && (
+                  <div className="mt-2 flex items-center gap-2 text-sm text-blue-600">
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    上傳中...
+                  </div>
+                )}
+              </div>
+
+              {/* Rich Menu ID */}
+              {imageStatus?.richMenuId && (
+                <div className="mt-4 p-2 bg-white rounded text-xs text-gray-600 break-all">
+                  ID: {imageStatus.richMenuId}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* 說明 */}
           <div className="mt-6 p-4 bg-blue-50 rounded-lg">
@@ -606,28 +587,26 @@ export default function RichMenuManagementPage() {
           <div className="space-y-4 text-sm text-gray-700">
             <div>
               <h3 className="font-medium mb-1">1. 創建 Rich Menu</h3>
-              <p>點擊「創建 Rich Menu」按鈕，系統會在 LINE Platform 上創建三個 Rich Menu（會場資訊、現場活動、未開放）。</p>
+              <p>點擊「創建 Rich Menu」按鈕，系統會在 LINE Platform 上創建一個 Rich Menu。</p>
             </div>
             <div>
               <h3 className="font-medium mb-1">2. 管理 Rich Menu</h3>
-              <p>在「LINE Platform 上的 Rich Menu 列表」區塊中，您可以：</p>
+              <p>在「Rich Menu 管理」區塊中，您可以：</p>
               <ul className="list-disc list-inside mt-1 space-y-1">
                 <li>查看所有 Rich Menu 的名稱、ID、Chat Bar Text 和尺寸</li>
+                <li>查看 Rich Menu 的圖片預覽</li>
                 <li>點擊「設為預設」按鈕將某個 Rich Menu 設為預設（用戶首次看到）</li>
                 <li>點擊「刪除」按鈕刪除不需要的 Rich Menu（無法刪除預設的 Rich Menu）</li>
                 <li>點擊「重新整理」按鈕更新列表</li>
+                <li>上傳 Rich Menu 圖片</li>
               </ul>
             </div>
             <div>
-              <h3 className="font-medium mb-1">3. 上傳圖片</h3>
-              <p>為每個 Rich Menu 上傳對應的圖片。圖片尺寸必須為 2500x1686 像素。</p>
-            </div>
-            <div>
-              <h3 className="font-medium mb-1">4. 設定預設分頁</h3>
+              <h3 className="font-medium mb-1">3. 設定預設分頁</h3>
               <p>選擇用戶首次打開 Rich Menu 時顯示的預設分頁。</p>
             </div>
             <div>
-              <h3 className="font-medium mb-1">5. 啟用/停用分頁</h3>
+              <h3 className="font-medium mb-1">4. 啟用/停用分頁</h3>
               <p>可以隨時啟用或停用分頁。停用的分頁會顯示「未開放」狀態。</p>
             </div>
           </div>

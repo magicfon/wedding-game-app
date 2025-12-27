@@ -25,19 +25,12 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
     const file = formData.get('image') as File
-    const menuType = formData.get('menuType') as string
+    const menuType = 'venue_info' // 固定使用 venue_info
 
     // 驗證輸入
     if (!file) {
       return NextResponse.json(
         { error: 'Image file is required' },
-        { status: 400 }
-      )
-    }
-
-    if (!menuType || !['venue_info', 'activity', 'unavailable'].includes(menuType)) {
-      return NextResponse.json(
-        { error: 'Invalid menu type' },
         { status: 400 }
       )
     }
@@ -104,8 +97,8 @@ export async function POST(request: NextRequest) {
           height: 1686
         },
         selected: false,
-        name: `Wedding Game ${menuType} Menu`,
-        chatBarText: menuType === 'unavailable' ? '未開放' : '選單',
+        name: 'Wedding Game Menu',
+        chatBarText: '選單',
         areas: []
       }
 
@@ -146,15 +139,7 @@ export async function POST(request: NextRequest) {
 // GET: 獲取 Rich Menu 圖片上傳狀態
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const menuType = searchParams.get('menuType')
-
-    if (!menuType || !['venue_info', 'activity', 'unavailable'].includes(menuType)) {
-      return NextResponse.json(
-        { error: 'Invalid menu type' },
-        { status: 400 }
-      )
-    }
+    const menuType = 'venue_info' // 固定使用 venue_info
 
     const supabase = createSupabaseAdmin()
 
@@ -176,7 +161,7 @@ export async function GET(request: NextRequest) {
     if (!data) {
       return NextResponse.json({
         hasImage: false,
-        message: 'No rich menu found for this menu type'
+        message: 'No rich menu found'
       })
     }
 
