@@ -482,19 +482,72 @@ export default function RichMenuManagementPage() {
     }
   }, [editingMenu, updateImageContainerSize])
 
-  // 滑鼠事件處理 - 開始繪製
-  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+  // 監聽 Escape 鍵取消繪製
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isDrawing) {
+        setIsDrawing(false)
+        setDrawStart(null)
+        setDrawCurrent(null)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isDrawing])
+
+  // 滑鼠事件處理 - 點擊開始/結束繪製
+  const handleCanvasClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!isDrawMode || !imageContainerRef.current) return
+
     const rect = imageContainerRef.current.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const y = e.clientY - rect.top
-    setIsDrawing(true)
-    setDrawStart({ x, y })
-    setDrawCurrent({ x, y })
-    setSelectedAreaIndex(null)
+    const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width))
+    const y = Math.max(0, Math.min(e.clientY - rect.top, rect.height))
+
+    if (!isDrawing) {
+      // 第一次點擊：開始繪製
+      setIsDrawing(true)
+      setDrawStart({ x, y })
+      setDrawCurrent({ x, y })
+      setSelectedAreaIndex(null)
+    } else {
+      // 第二次點擊：完成繪製
+      if (!drawStart || !editingMenu) {
+        setIsDrawing(false)
+        setDrawStart(null)
+        setDrawCurrent(null)
+        return
+      }
+
+      // 計算矩形
+      const minX = Math.min(drawStart.x, x)
+      const minY = Math.min(drawStart.y, y)
+      const width = Math.abs(x - drawStart.x)
+      const height = Math.abs(y - drawStart.y)
+
+      // 只有當矩形足夠大時才新增區域 (至少 20px)
+      if (width > 20 && height > 20) {
+        const actualBounds = canvasToActual(minX, minY, width, height)
+        const newArea: RichMenuArea = {
+          bounds: {
+            x: actualBounds.x,
+            y: actualBounds.y,
+            width: actualBounds.width,
+            height: actualBounds.height
+          },
+          action: { type: 'uri', uri: '', label: `區域 ${editingMenu.areas.length + 1}` }
+        }
+        const newAreas = [...editingMenu.areas, newArea]
+        setEditingMenu({ ...editingMenu, areas: newAreas })
+        setSelectedAreaIndex(newAreas.length - 1)
+      }
+
+      setIsDrawing(false)
+      setDrawStart(null)
+      setDrawCurrent(null)
+    }
   }
 
-  // 滑鼠事件處理 - 繪製中
+  // 滑鼠事件處理 - 繪製中移動滑鼠更新預覽
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!isDrawing || !imageContainerRef.current) return
     const rect = imageContainerRef.current.getBoundingClientRect()
@@ -503,35 +556,8 @@ export default function RichMenuManagementPage() {
     setDrawCurrent({ x, y })
   }
 
-  // 滑鼠事件處理 - 完成繪製
-  const handleMouseUp = () => {
-    if (!isDrawing || !drawStart || !drawCurrent || !editingMenu) {
-      setIsDrawing(false)
-      return
-    }
-
-    // 計算矩形
-    const minX = Math.min(drawStart.x, drawCurrent.x)
-    const minY = Math.min(drawStart.y, drawCurrent.y)
-    const width = Math.abs(drawCurrent.x - drawStart.x)
-    const height = Math.abs(drawCurrent.y - drawStart.y)
-
-    // 只有當矩形足夠大時才新增區域 (至少 20px)
-    if (width > 20 && height > 20) {
-      const actualBounds = canvasToActual(minX, minY, width, height)
-      const newArea: RichMenuArea = {
-        bounds: {
-          x: actualBounds.x,
-          y: actualBounds.y,
-          width: actualBounds.width,
-          height: actualBounds.height
-        },
-        action: { type: 'uri', uri: '', label: `區域 ${editingMenu.areas.length + 1}` }
-      }
-      setEditingMenu({ ...editingMenu, areas: [...editingMenu.areas, newArea] })
-      setSelectedAreaIndex(editingMenu.areas.length)
-    }
-
+  // 取消繪製 (按 Escape 或點擊外部)
+  const cancelDrawing = () => {
     setIsDrawing(false)
     setDrawStart(null)
     setDrawCurrent(null)
@@ -940,7 +966,7 @@ export default function RichMenuManagementPage() {
                 <div className="mb-4 p-4 bg-gray-100 rounded-lg">
                   <div className="text-xs text-gray-600 mb-2">
                     {isDrawMode
-                      ? '💡 在圖片上拖曳滑鼠繪製新的按鈕區域'
+                      ? (isDrawing ? '💡 移動滑鼠調整大小，再點一下確定範圍 (按 Esc 取消)' : '💡 點一下開始繪製按鈕區域')
                       : '💡 點擊區域可選中編輯，切換到繪製模式可新增區域'}
                   </div>
                   <div
@@ -950,14 +976,8 @@ export default function RichMenuManagementPage() {
                       aspectRatio: '2500 / 1686',
                       cursor: isDrawMode ? 'crosshair' : 'default'
                     }}
-                    onMouseDown={handleMouseDown}
+                    onClick={handleCanvasClick}
                     onMouseMove={handleMouseMove}
-                    onMouseUp={handleMouseUp}
-                    onMouseLeave={() => {
-                      if (isDrawing) {
-                        handleMouseUp()
-                      }
-                    }}
                   >
                     {/* Rich Menu 圖片背景 */}
                     <img
@@ -1038,8 +1058,8 @@ export default function RichMenuManagementPage() {
                       <div
                         key={index}
                         className={`p-4 rounded-lg cursor-pointer transition-colors ${selectedAreaIndex === index
-                            ? 'bg-blue-100 border-2 border-blue-500'
-                            : 'bg-gray-50 border-2 border-transparent hover:bg-gray-100'
+                          ? 'bg-blue-100 border-2 border-blue-500'
+                          : 'bg-gray-50 border-2 border-transparent hover:bg-gray-100'
                           }`}
                         onClick={() => setSelectedAreaIndex(selectedAreaIndex === index ? null : index)}
                       >
