@@ -711,25 +711,25 @@ export default function RichMenuManagementPage() {
               {/* 基本資訊 */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-900 mb-1">
                     名稱 (管理用)
                   </label>
                   <input
                     type="text"
                     value={editingMenu.name}
                     onChange={(e) => setEditingMenu({ ...editingMenu, name: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-900 mb-1">
                     Chat Bar 文字 (用戶可見)
                   </label>
                   <input
                     type="text"
                     value={editingMenu.chatBarText}
                     onChange={(e) => setEditingMenu({ ...editingMenu, chatBarText: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900"
                   />
                 </div>
               </div>
@@ -784,7 +784,7 @@ export default function RichMenuManagementPage() {
                               type="number"
                               value={area.bounds.x}
                               onChange={(e) => updateEditingArea(index, 'bounds.x', e.target.value)}
-                              className="w-full px-2 py-1 text-sm border rounded"
+                              className="w-full px-2 py-1 text-sm border rounded text-gray-900"
                             />
                           </div>
                           <div>
@@ -793,7 +793,7 @@ export default function RichMenuManagementPage() {
                               type="number"
                               value={area.bounds.y}
                               onChange={(e) => updateEditingArea(index, 'bounds.y', e.target.value)}
-                              className="w-full px-2 py-1 text-sm border rounded"
+                              className="w-full px-2 py-1 text-sm border rounded text-gray-900"
                             />
                           </div>
                           <div>
@@ -802,7 +802,7 @@ export default function RichMenuManagementPage() {
                               type="number"
                               value={area.bounds.width}
                               onChange={(e) => updateEditingArea(index, 'bounds.width', e.target.value)}
-                              className="w-full px-2 py-1 text-sm border rounded"
+                              className="w-full px-2 py-1 text-sm border rounded text-gray-900"
                             />
                           </div>
                           <div>
@@ -811,7 +811,7 @@ export default function RichMenuManagementPage() {
                               type="number"
                               value={area.bounds.height}
                               onChange={(e) => updateEditingArea(index, 'bounds.height', e.target.value)}
-                              className="w-full px-2 py-1 text-sm border rounded"
+                              className="w-full px-2 py-1 text-sm border rounded text-gray-900"
                             />
                           </div>
                         </div>
@@ -823,7 +823,7 @@ export default function RichMenuManagementPage() {
                             <select
                               value={area.action.type}
                               onChange={(e) => updateEditingArea(index, 'action.type', e.target.value)}
-                              className="w-full px-2 py-1 text-sm border rounded"
+                              className="w-full px-2 py-1 text-sm border rounded text-gray-900"
                             >
                               <option value="uri">URI (連結)</option>
                               <option value="postback">Postback</option>
@@ -838,7 +838,7 @@ export default function RichMenuManagementPage() {
                               type="text"
                               value={area.action.type === 'uri' ? (area.action.uri || '') : (area.action.data || '')}
                               onChange={(e) => updateEditingArea(index, area.action.type === 'uri' ? 'action.uri' : 'action.data', e.target.value)}
-                              className="w-full px-2 py-1 text-sm border rounded"
+                              className="w-full px-2 py-1 text-sm border rounded text-gray-900"
                             />
                           </div>
                           <div>
@@ -847,7 +847,7 @@ export default function RichMenuManagementPage() {
                               type="text"
                               value={area.action.label || ''}
                               onChange={(e) => updateEditingArea(index, 'action.label', e.target.value)}
-                              className="w-full px-2 py-1 text-sm border rounded"
+                              className="w-full px-2 py-1 text-sm border rounded text-gray-900"
                             />
                           </div>
                         </div>
