@@ -1,25 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { Client } from '@line/bot-sdk'
+import { messagingApi } from '@line/bot-sdk'
 import { createSupabaseAdmin } from '@/lib/supabase-admin'
 
-// 獲取 LINE Channel Access Token
-function getLineChannelAccessToken(): string | null {
-  const token = process.env.LINE_CHANNEL_ACCESS_TOKEN
-  if (!token) {
-    console.error('LINE_CHANNEL_ACCESS_TOKEN not configured')
-    return null
-  }
-  return token
-}
+const { MessagingApiBlobClient } = messagingApi
 
-// 初始化 LINE Client
-function getLineClient(): Client | null {
+// 初始化 LINE Blob Client (用於圖片上傳)
+function getLineBlobClient(): InstanceType<typeof MessagingApiBlobClient> | null {
   const channelAccessToken = process.env.LINE_CHANNEL_ACCESS_TOKEN
   if (!channelAccessToken) {
     console.error('LINE_CHANNEL_ACCESS_TOKEN not configured')
     return null
   }
-  return new Client({ channelAccessToken })
+  return new MessagingApiBlobClient({ channelAccessToken })
 }
 
 // 驗證圖片尺寸
@@ -80,11 +72,11 @@ export async function POST(request: NextRequest) {
 
     // 驗證圖片尺寸
     const imageBuffer = await file.arrayBuffer()
-    
+
     // 使用 sharp 來驗證圖片尺寸
     let imageWidth = 0
     let imageHeight = 0
-    
+
     try {
       // 嘗試使用 sharp 來獲取圖片尺寸
       const sharp = (await import('sharp')).default
@@ -106,8 +98,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const lineClient = getLineClient()
-    if (!lineClient) {
+    const blobClient = getLineBlobClient()
+    if (!blobClient) {
       return NextResponse.json(
         { error: 'LINE client configuration error' },
         { status: 500 }
@@ -120,42 +112,37 @@ export async function POST(request: NextRequest) {
 
     // 上傳圖片到 Rich Menu
     try {
-      // 使用 LINE Bot SDK 的 setRichMenuImage 方法
-      // 根據 LINE Bot SDK 文檔，該方法接受 richMenuId, body, contentType
-      const imageBufferData = Buffer.from(imageBuffer)
-      console.log('📤 Image buffer size:', imageBufferData.length, 'bytes')
-      console.log('📤 Image buffer type:', imageBufferData.constructor.name)
+      // 使用 LINE Bot SDK v10 的 MessagingApiBlobClient
+      // setRichMenuImage 方法需要 Blob 類型
+      const imageBlob = new Blob([imageBuffer], { type: file.type })
+      console.log('📤 Image blob size:', imageBlob.size, 'bytes')
+      console.log('📤 Image blob type:', imageBlob.type)
       console.log('📤 Content-Type:', file.type)
       console.log('📤 Rich Menu ID:', richMenuId)
       console.log('📤 API endpoint:', `/richmenu/${richMenuId}/content`)
-      
-      // 使用 setRichMenuImage 方法上傳圖片
-      // 該方法接受三個參數：richMenuId, body, contentType
-      console.log('📤 Calling setRichMenuImage with:')
+
+      // 使用 MessagingApiBlobClient.setRichMenuImage 方法上傳圖片
+      console.log('📤 Calling setRichMenuImage with MessagingApiBlobClient:')
       console.log('  - richMenuId:', richMenuId)
-      console.log('  - body length:', imageBufferData.length)
-      console.log('  - contentType:', file.type)
-      
-      await (lineClient as any).setRichMenuImage(
-        richMenuId,
-        imageBufferData,
-        file.type
-      )
+      console.log('  - blob size:', imageBlob.size)
+      console.log('  - blob type:', imageBlob.type)
+
+      await blobClient.setRichMenuImage(richMenuId, imageBlob)
       console.log('✅ Image uploaded successfully')
     } catch (uploadError: any) {
       console.error('❌ Error uploading image to LINE:', uploadError)
       console.error('❌ Error name:', uploadError.name)
       console.error('❌ Error message:', uploadError.message)
       console.error('❌ Error code:', uploadError.code)
-      
+
       // 提取 LINE API 的錯誤細節
       if (uploadError.response) {
         console.error('❌ Response status:', uploadError.response.status)
         console.error('❌ Response statusText:', uploadError.response.statusText)
         console.error('❌ Response data:', JSON.stringify(uploadError.response.data, null, 2))
-        
+
         const errorData = uploadError.response.data
-        
+
         // 嘗試從不同的可能位置提取錯誤信息
         let lineErrorMessage = 'Unknown LINE API error'
         if (typeof errorData === 'string') {
@@ -171,13 +158,13 @@ export async function POST(request: NextRequest) {
         } else {
           lineErrorMessage = JSON.stringify(errorData)
         }
-        
+
         throw new Error(`LINE API error (${uploadError.response.status}): ${lineErrorMessage}`)
       }
-      
+
       throw uploadError
     }
-    
+
     // 更新資料庫中的 has_image 狀態
     const { error: updateError } = await supabase
       .from('line_richmenu_registry')
