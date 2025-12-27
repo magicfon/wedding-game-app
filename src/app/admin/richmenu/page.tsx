@@ -202,6 +202,9 @@ export default function RichMenuManagementPage() {
 
   // 上傳圖片
   const handleImageUpload = async (richMenuId: string, file: File) => {
+    console.log('📤 handleImageUpload called with richMenuId:', richMenuId)
+    console.log('📊 File:', file.name, file.size, file.type)
+    
     setUploading(prev => ({ ...prev, [richMenuId]: true }))
 
     try {
@@ -209,23 +212,29 @@ export default function RichMenuManagementPage() {
       formData.append('image', file)
       formData.append('richMenuId', richMenuId)
 
+      console.log('📤 Sending upload request...')
+
       const response = await fetch('/api/admin/richmenu/upload-image', {
         method: 'POST',
         body: formData
       })
 
+      console.log('📥 Response status:', response.status, response.statusText)
+
       if (!response.ok) {
         const error = await response.json()
+        console.error('❌ Upload error response:', error)
         throw new Error(error.error || 'Upload failed')
       }
 
       const result = await response.json()
+      console.log('✅ Upload success:', result)
       showMessage('success', '圖片上傳成功')
       
       // 重新獲取 Rich Menu 列表
       fetchRichMenuList()
     } catch (error) {
-      console.error('Error uploading image:', error)
+      console.error('❌ Error uploading image:', error)
       showMessage('error', `圖片上傳失敗: ${error instanceof Error ? error.message : '未知錯誤'}`)
     } finally {
       setUploading(prev => ({ ...prev, [richMenuId]: false }))

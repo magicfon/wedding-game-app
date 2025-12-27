@@ -74,8 +74,18 @@ export async function POST(request: NextRequest) {
 
     const supabase = createSupabaseAdmin()
 
+    console.log('📤 Uploading image to rich menu:', richMenuId)
+    console.log('📊 Image size:', imageBuffer.byteLength, 'bytes')
+    console.log('📊 Image type:', file.type)
+
     // 上傳圖片到 Rich Menu
-    await (lineClient.setRichMenuImage as any)(richMenuId, Buffer.from(imageBuffer), file.type)
+    try {
+      await (lineClient.setRichMenuImage as any)(richMenuId, Buffer.from(imageBuffer), file.type)
+      console.log('✅ Image uploaded successfully')
+    } catch (uploadError) {
+      console.error('❌ Error uploading image to LINE:', uploadError)
+      throw uploadError
+    }
     
     // 更新資料庫中的 has_image 狀態
     const { error } = await supabase
