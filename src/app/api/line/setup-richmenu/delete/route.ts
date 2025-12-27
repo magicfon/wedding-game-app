@@ -1,15 +1,17 @@
 import { NextResponse } from 'next/server'
-import { Client } from '@line/bot-sdk'
+import { messagingApi } from '@line/bot-sdk'
 import { createSupabaseAdmin } from '@/lib/supabase-admin'
 
-// 初始化 LINE Client
-function getLineClient(): Client | null {
+const { MessagingApiClient } = messagingApi
+
+// 初始化 LINE Messaging API Client
+function getLineApiClient(): InstanceType<typeof MessagingApiClient> | null {
   const channelAccessToken = process.env.LINE_CHANNEL_ACCESS_TOKEN
   if (!channelAccessToken) {
     console.error('LINE_CHANNEL_ACCESS_TOKEN not configured')
     return null
   }
-  return new Client({ channelAccessToken })
+  return new MessagingApiClient({ channelAccessToken })
 }
 
 // POST: 刪除 Rich Menu
@@ -24,10 +26,10 @@ export async function POST(request: Request) {
       )
     }
 
-    const lineClient = getLineClient()
+    const apiClient = getLineApiClient()
     const supabase = createSupabaseAdmin()
 
-    if (!lineClient) {
+    if (!apiClient) {
       return NextResponse.json(
         { error: 'Service configuration error' },
         { status: 500 }
@@ -37,7 +39,7 @@ export async function POST(request: Request) {
     console.log('🗑️ Deleting rich menu:', richMenuId)
 
     // 從 LINE Platform 刪除 Rich Menu
-    await lineClient.deleteRichMenu(richMenuId)
+    await apiClient.deleteRichMenu(richMenuId)
     console.log('✅ Rich menu deleted from LINE Platform:', richMenuId)
 
     // 從資料庫刪除對應的記錄

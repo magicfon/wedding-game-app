@@ -1,15 +1,17 @@
 import { NextResponse } from 'next/server'
-import { Client } from '@line/bot-sdk'
+import { messagingApi } from '@line/bot-sdk'
 import { createSupabaseAdmin } from '@/lib/supabase-admin'
 
-// 初始化 LINE Client
-function getLineClient(): Client | null {
+const { MessagingApiClient } = messagingApi
+
+// 初始化 LINE Messaging API Client
+function getLineClient(): InstanceType<typeof MessagingApiClient> | null {
   const channelAccessToken = process.env.LINE_CHANNEL_ACCESS_TOKEN
   if (!channelAccessToken) {
     console.error('LINE_CHANNEL_ACCESS_TOKEN not configured')
     return null
   }
-  return new Client({ channelAccessToken })
+  return new MessagingApiClient({ channelAccessToken })
 }
 
 // 獲取 LIFF ID
@@ -189,7 +191,8 @@ export async function POST(request: Request) {
         const menu = menuConfig.createFn()
         console.log(`📝 ${menuConfig.name} config created`)
 
-        const richMenuId = await lineClient.createRichMenu(menu)
+        const richMenuResponse = await lineClient.createRichMenu(menu)
+        const richMenuId = richMenuResponse.richMenuId
         console.log(`✅ ${menuConfig.name} rich menu created:`, richMenuId)
 
         const registered = await registerRichMenu(supabase, menuConfig.type, richMenuId)
@@ -221,8 +224,8 @@ export async function POST(request: Request) {
     // 獲取並顯示當前 Rich Menu 列表
     try {
       console.log('📋 Fetching current rich menu list...')
-      const richMenuList = await lineClient.getRichMenuList()
-      console.log('📋 Current rich menu list count:', richMenuList.length)
+      const richMenuListResponse = await lineClient.getRichMenuList()
+      console.log('📋 Current rich menu list count:', richMenuListResponse.richmenus?.length || 0)
     } catch (error) {
       console.error('❌ Error fetching rich menu list:', error)
     }
@@ -264,7 +267,8 @@ export async function GET() {
     }
 
     // 獲取 LINE Platform 上的 Rich Menu 列表
-    const richMenus = await lineClient.getRichMenuList()
+    const richMenuListResponse = await lineClient.getRichMenuList()
+    const richMenus = richMenuListResponse.richmenus || []
 
     // 獲取資料庫中的註冊資訊
     const { data: registry, error } = await supabase

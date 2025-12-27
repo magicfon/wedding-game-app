@@ -1,15 +1,16 @@
 import { NextResponse } from 'next/server'
-import { Client } from '@line/bot-sdk'
-import { createSupabaseAdmin } from '@/lib/supabase-admin'
+import { messagingApi } from '@line/bot-sdk'
 
-// 初始化 LINE Client
-function getLineClient(): Client | null {
+const { MessagingApiClient } = messagingApi
+
+// 初始化 LINE Messaging API Client
+function getLineApiClient(): InstanceType<typeof MessagingApiClient> | null {
   const channelAccessToken = process.env.LINE_CHANNEL_ACCESS_TOKEN
   if (!channelAccessToken) {
     console.error('LINE_CHANNEL_ACCESS_TOKEN not configured')
     return null
   }
-  return new Client({ channelAccessToken })
+  return new MessagingApiClient({ channelAccessToken })
 }
 
 // POST: 設置預設 Rich Menu
@@ -24,9 +25,9 @@ export async function POST(request: Request) {
       )
     }
 
-    const lineClient = getLineClient()
+    const apiClient = getLineApiClient()
 
-    if (!lineClient) {
+    if (!apiClient) {
       return NextResponse.json(
         { error: 'Service configuration error' },
         { status: 500 }
@@ -36,7 +37,7 @@ export async function POST(request: Request) {
     console.log('⭐ Setting default rich menu:', richMenuId)
 
     // 設置預設 Rich Menu
-    await lineClient.setDefaultRichMenu(richMenuId)
+    await apiClient.setDefaultRichMenu(richMenuId)
     console.log('✅ Default rich menu set:', richMenuId)
 
     return NextResponse.json({
