@@ -140,6 +140,7 @@ async function registerRichMenu(
     .upsert({
       menu_type: menuType,
       richmenu_id: richMenuId,
+      has_image: false, // 創建時尚未上傳圖片
       updated_at: new Date().toISOString()
     }, {
       onConflict: 'menu_type'

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLiff } from '@/hooks/useLiff'
-import { Upload, Save, RefreshCw, CheckCircle, XCircle, AlertCircle, Trash2, Star } from 'lucide-react'
+import { Upload, Save, RefreshCw, CheckCircle, XCircle, AlertCircle, Trash2, Star, Copy } from 'lucide-react'
 import AdminLayout from '@/components/AdminLayout'
 
 interface RichMenuSettings {
@@ -109,7 +109,15 @@ export default function RichMenuManagementPage() {
       }
       const data = await response.json()
       if (data.success && data.status?.linePlatform?.menus) {
-        setRichMenuList(data.status.linePlatform.menus)
+        // 合併資料庫中的圖片狀態
+        const menusWithImageStatus = data.status.linePlatform.menus.map((menu: any) => {
+          const registryEntry = data.status?.database?.menus?.find((r: any) => r.richmenu_id === menu.richMenuId)
+          return {
+            ...menu,
+            hasImage: registryEntry?.has_image || false
+          }
+        })
+        setRichMenuList(menusWithImageStatus)
       }
     } catch (error) {
       console.error('Error fetching rich menu list:', error)
@@ -171,6 +179,17 @@ export default function RichMenuManagementPage() {
       showMessage('error', '預設 Rich Menu 設置失敗')
     } finally {
       setSettingDefault(null)
+    }
+  }
+
+  // 複製 Rich Menu ID
+  const handleCopyRichMenuId = async (richMenuId: string) => {
+    try {
+      await navigator.clipboard.writeText(richMenuId)
+      showMessage('success', 'Rich Menu ID 已複製到剪貼板')
+    } catch (error) {
+      console.error('Error copying rich menu ID:', error)
+      showMessage('error', '複製失敗')
     }
   }
 
@@ -413,9 +432,31 @@ export default function RichMenuManagementPage() {
                           <Star className="w-4 h-4 text-yellow-500 fill-current" />
                         )}
                       </div>
-                      <p className="text-sm text-gray-600 mt-1">ID: {menu.richMenuId}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <p className="text-sm text-gray-600">ID: {menu.richMenuId}</p>
+                        <button
+                          onClick={() => handleCopyRichMenuId(menu.richMenuId)}
+                          className="text-blue-600 hover:text-blue-800"
+                          title="複製 ID"
+                        >
+                          <Copy className="w-4 h-4" />
+                        </button>
+                      </div>
                       <p className="text-sm text-gray-600">Chat Bar Text: {menu.chatBarText}</p>
                       <p className="text-sm text-gray-600">尺寸: {menu.size?.width} x {menu.size?.height}</p>
+                      <div className="mt-2">
+                        {menu.hasImage ? (
+                          <div className="flex items-center gap-1 text-green-600">
+                            <CheckCircle className="w-3 h-3" />
+                            <span className="text-xs">已上傳圖片</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1 text-gray-500">
+                            <XCircle className="w-3 h-3" />
+                            <span className="text-xs">未上傳圖片</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <div className="ml-4 flex flex-col gap-2">
                       {menu.selected ? (
