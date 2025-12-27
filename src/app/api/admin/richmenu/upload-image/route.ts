@@ -25,12 +25,19 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
     const file = formData.get('image') as File
-    const menuType = 'venue_info' // 固定使用 venue_info
+    const richMenuId = formData.get('richMenuId') as string
 
     // 驗證輸入
     if (!file) {
       return NextResponse.json(
         { error: 'Image file is required' },
+        { status: 400 }
+      )
+    }
+
+    if (!richMenuId) {
+      return NextResponse.json(
+        { error: 'Rich Menu ID is required' },
         { status: 400 }
       )
     }
@@ -67,64 +74,26 @@ export async function POST(request: NextRequest) {
 
     const supabase = createSupabaseAdmin()
 
-    // 檢查是否已有 Rich Menu ID
-    const { data: existingRegistry } = await supabase
+    // 上傳圖片到 Rich Menu
+    await (lineClient as any).setRichMenuImage(richMenuId, Buffer.from(imageBuffer))
+    
+    // 更新資料庫中的 has_image 狀態
+    const { error } = await supabase
       .from('line_richmenu_registry')
-      .select('richmenu_id, has_image')
-      .eq('menu_type', menuType)
-      .single()
+      .update({
+        has_image: true,
+        updated_at: new Date().toISOString()
+      })
+      .eq('richmenu_id', richMenuId)
 
-    let richMenuId: string
-
-    if (existingRegistry) {
-      // 更新現有 Rich Menu 的圖片
-      richMenuId = existingRegistry.richmenu_id
-      await (lineClient as any).setRichMenuImage(richMenuId, Buffer.from(imageBuffer))
-      
-      // 更新 has_image 狀態
-      await supabase
-        .from('line_richmenu_registry')
-        .update({
-          has_image: true,
-          updated_at: new Date().toISOString()
-        })
-        .eq('menu_type', menuType)
-    } else {
-      // 創建新的 Rich Menu
-      const richMenu = {
-        size: {
-          width: 2500,
-          height: 1686
-        },
-        selected: false,
-        name: 'Wedding Game Menu',
-        chatBarText: '選單',
-        areas: []
-      }
-
-      richMenuId = await lineClient.createRichMenu(richMenu)
-
-      // 上傳圖片到 Rich Menu
-      await (lineClient as any).setRichMenuImage(richMenuId, Buffer.from(imageBuffer))
-
-      // 註冊 Rich Menu ID，並標記已上傳圖片
-      await supabase
-        .from('line_richmenu_registry')
-        .upsert({
-          menu_type: menuType,
-          richmenu_id: richMenuId,
-          has_image: true,
-          updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'menu_type'
-        })
+    if (error) {
+      console.error('Error updating has_image status:', error)
     }
 
     return NextResponse.json({
       success: true,
       message: 'Rich menu image uploaded successfully',
-      richMenuId,
-      menuType
+      richMenuId
     })
 
   } catch (error) {
