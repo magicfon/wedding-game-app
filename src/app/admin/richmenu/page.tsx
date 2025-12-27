@@ -731,6 +731,27 @@ export default function RichMenuManagementPage() {
                 <RefreshCw className="w-4 h-4" />
                 創建 Rich Menu
               </button>
+              <button
+                onClick={async () => {
+                  try {
+                    const response = await fetch('/api/line/setup-richmenu/aliases', {
+                      method: 'POST'
+                    })
+                    const result = await response.json()
+                    if (result.success) {
+                      showMessage('success', `Aliases 創建成功: ${result.message}`)
+                      fetchAliases()
+                    } else {
+                      showMessage('error', result.error || 'Aliases 創建失敗')
+                    }
+                  } catch (error) {
+                    showMessage('error', 'Aliases 創建失敗')
+                  }
+                }}
+                className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+              >
+                🏷️ 創建 Aliases
+              </button>
             </div>
           </div>
 
