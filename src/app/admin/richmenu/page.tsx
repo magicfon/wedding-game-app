@@ -39,6 +39,31 @@ interface EditingRichMenu {
   richMenuAliasId?: string
 }
 
+const RichMenuThumbnail = ({ richMenuId, name, hasImage }: { richMenuId: string, name: string, hasImage: boolean }) => {
+  const [imageError, setImageError] = useState(false)
+
+  // 如果 hasImage 為 true，或者沒有發生錯誤，都嘗試顯示圖片
+  const showImage = !imageError
+
+  return (
+    <>
+      {showImage ? (
+        <img
+          src={`/api/line/setup-richmenu/get-image?richMenuId=${richMenuId}`}
+          alt={name}
+          className="w-32 h-24 object-cover rounded border border-gray-200"
+          onError={() => setImageError(true)}
+        />
+      ) : (
+        <div className="w-32 h-24 bg-gray-200 rounded border border-gray-200 flex flex-col items-center justify-center gap-1">
+          <span className="text-xs text-gray-500">無圖片</span>
+          {hasImage && <span className="text-[10px] text-red-400">(載入失敗)</span>}
+        </div>
+      )}
+    </>
+  )
+}
+
 export default function RichMenuManagementPage() {
   const router = useRouter()
   const { isLoggedIn, isAdmin, loading: liffLoading, adminLoading } = useLiff()
@@ -725,21 +750,13 @@ export default function RichMenuManagementPage() {
                 <div key={menu.richMenuId} className="p-4 bg-gray-50 rounded-lg">
                   <div className="flex items-start gap-4">
                     {/* Rich Menu 圖片預覽 */}
+                    {/* Rich Menu 圖片預覽 */}
                     <div className="flex-shrink-0">
-                      {menu.hasImage ? (
-                        <img
-                          src={`/api/line/setup-richmenu/get-image?richMenuId=${menu.richMenuId}`}
-                          alt={menu.name}
-                          className="w-32 h-24 object-cover rounded border border-gray-200"
-                          onError={(e) => {
-                            e.currentTarget.style.display = 'none'
-                          }}
-                        />
-                      ) : (
-                        <div className="w-32 h-24 bg-gray-200 rounded border border-gray-200 flex items-center justify-center">
-                          <span className="text-xs text-gray-500">無圖片</span>
-                        </div>
-                      )}
+                      <RichMenuThumbnail
+                        richMenuId={menu.richMenuId}
+                        name={menu.name}
+                        hasImage={menu.hasImage}
+                      />
                     </div>
 
                     <div className="flex-1">
