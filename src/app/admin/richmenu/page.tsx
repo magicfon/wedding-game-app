@@ -110,7 +110,7 @@ export default function RichMenuManagementPage() {
   const fetchRichMenuList = async () => {
     setLoadingRichMenuList(true)
     try {
-      const response = await fetch('/api/line/setup-richmenu')
+      const response = await fetch(`/api/line/setup-richmenu?t=${Date.now()}`)
       if (!response.ok) {
         throw new Error('Failed to fetch rich menu list')
       }

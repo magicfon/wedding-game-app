@@ -4,6 +4,9 @@ import { createSupabaseAdmin } from '@/lib/supabase-admin'
 
 const { MessagingApiClient } = messagingApi
 
+export const dynamic = 'force-dynamic'
+
+
 // 初始化 LINE Messaging API Client
 function getLineClient(): InstanceType<typeof MessagingApiClient> | null {
   const channelAccessToken = process.env.LINE_CHANNEL_ACCESS_TOKEN
