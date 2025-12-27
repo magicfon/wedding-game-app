@@ -72,9 +72,9 @@ function createVenueInfoRichMenu(liffId: string): RichMenuRequest {
       {
         bounds: { x: 1250, y: 843, width: 1250, height: 843 },
         action: {
-          type: "postback" as const,
-          data: "switch_tab:activity",
-          label: "進入遊戲分頁"
+          type: "richmenuswitch" as const,
+          richMenuAliasId: "richmenu-alias-activity",
+          data: "switch_tab:activity"
         }
       }
     ]
@@ -119,9 +119,9 @@ function createActivityRichMenu(liffId: string): RichMenuRequest {
       {
         bounds: { x: 1250, y: 843, width: 1250, height: 843 },
         action: {
-          type: "postback" as const,
-          data: "switch_tab:venue_info",
-          label: "進入會場資訊分頁"
+          type: "richmenuswitch" as const,
+          richMenuAliasId: "richmenu-alias-venue-info",
+          data: "switch_tab:venue_info"
         }
       }
     ]
@@ -138,7 +138,16 @@ function createUnavailableRichMenu(): RichMenuRequest {
     selected: true,
     name: "婚禮遊戲 - 未開放",
     chatBarText: "未開放",
-    areas: []
+    areas: [
+      {
+        bounds: { x: 1250, y: 843, width: 1250, height: 843 },
+        action: {
+          type: "richmenuswitch" as const,
+          richMenuAliasId: "richmenu-alias-venue-info",
+          data: "switch_tab:venue_info"
+        }
+      }
+    ]
   }
 }
 
@@ -354,6 +363,36 @@ export async function POST(request: NextRequest) {
             console.log('✅ Database registry updated')
           }
 
+          // 5. 更新 Rich Menu Alias（重要：否則分頁切換會失效）
+          const aliasId = registryMenuType === 'venue_info'
+            ? 'richmenu-alias-venue-info'
+            : registryMenuType === 'activity'
+              ? 'richmenu-alias-activity'
+              : null
+
+          if (aliasId) {
+            try {
+              console.log(`🔗 Updating alias ${aliasId} to new rich menu...`)
+
+              // 先嘗試刪除舊的 alias
+              try {
+                await apiClient.deleteRichMenuAlias(aliasId)
+                console.log(`🗑️ Deleted existing alias: ${aliasId}`)
+              } catch (deleteErr: any) {
+                console.log(`⚠️ No existing alias to delete: ${aliasId}`)
+              }
+
+              // 創建新的 alias
+              await apiClient.createRichMenuAlias({
+                richMenuAliasId: aliasId,
+                richMenuId: newRichMenuId
+              })
+              console.log(`✅ Updated alias: ${aliasId} -> ${newRichMenuId}`)
+            } catch (aliasError: any) {
+              console.error(`❌ Error updating alias ${aliasId}:`, aliasError)
+            }
+          }
+
           richMenuId = newRichMenuId
 
           return NextResponse.json({
@@ -362,7 +401,8 @@ export async function POST(request: NextRequest) {
             richMenuId: newRichMenuId,
             menuType: registryMenuType,
             recreated: true,
-            note: 'The rich menu was recreated because LINE does not allow re-uploading images. Please update any Rich Menu Aliases if needed.'
+            aliasUpdated: !!aliasId,
+            note: 'The rich menu was recreated with updated alias for tab switching.'
           })
 
         } catch (recreateError: any) {

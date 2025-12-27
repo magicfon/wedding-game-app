@@ -61,9 +61,9 @@ function createVenueInfoRichMenu(liffId: string) {
       {
         bounds: { x: 1250, y: 843, width: 1250, height: 843 },
         action: {
-          type: "postback" as const,
-          data: "switch_tab:activity",
-          label: "進入遊戲分頁"
+          type: "richmenuswitch" as const,
+          richMenuAliasId: "richmenu-alias-activity",
+          data: "switch_tab:activity"
         }
       }
     ]
@@ -108,9 +108,9 @@ function createActivityRichMenu(liffId: string) {
       {
         bounds: { x: 1250, y: 843, width: 1250, height: 843 },
         action: {
-          type: "postback" as const,
-          data: "switch_tab:venue_info",
-          label: "進入會場資訊分頁"
+          type: "richmenuswitch" as const,
+          richMenuAliasId: "richmenu-alias-venue-info",
+          data: "switch_tab:venue_info"
         }
       }
     ]
@@ -127,7 +127,16 @@ function createUnavailableRichMenu() {
     selected: true,
     name: "婚禮遊戲 - 未開放",
     chatBarText: "未開放",
-    areas: [] // 無按鈕
+    areas: [
+      {
+        bounds: { x: 1250, y: 843, width: 1250, height: 843 },
+        action: {
+          type: "richmenuswitch" as const,
+          richMenuAliasId: "richmenu-alias-venue-info",
+          data: "switch_tab:venue_info"
+        }
+      }
+    ]
   }
 }
 
@@ -207,6 +216,41 @@ export async function POST(request: Request) {
       } catch (error) {
         console.error(`❌ Error creating ${menuConfig.name} rich menu:`, error)
         results.push({ type: menuConfig.type, richMenuId: '', registered: false })
+      }
+    }
+
+    // 創建 Rich Menu Aliases（用於分頁切換）
+    const aliasConfigs = [
+      { aliasId: 'richmenu-alias-venue-info', menuType: 'venue_info' },
+      { aliasId: 'richmenu-alias-activity', menuType: 'activity' }
+    ]
+
+    for (const aliasConfig of aliasConfigs) {
+      const menuResult = results.find(r => r.type === aliasConfig.menuType)
+      if (menuResult?.richMenuId) {
+        try {
+          console.log(`🔗 Creating alias ${aliasConfig.aliasId} for ${aliasConfig.menuType}...`)
+
+          // 先嘗試刪除舊的 alias（如果存在）
+          try {
+            await lineClient.deleteRichMenuAlias(aliasConfig.aliasId)
+            console.log(`🗑️ Deleted existing alias: ${aliasConfig.aliasId}`)
+          } catch (deleteError: any) {
+            // 忽略 alias 不存在的錯誤
+            if (!deleteError?.message?.includes('not found')) {
+              console.log(`⚠️ No existing alias to delete: ${aliasConfig.aliasId}`)
+            }
+          }
+
+          // 創建新的 alias
+          await lineClient.createRichMenuAlias({
+            richMenuAliasId: aliasConfig.aliasId,
+            richMenuId: menuResult.richMenuId
+          })
+          console.log(`✅ Created alias: ${aliasConfig.aliasId} -> ${menuResult.richMenuId}`)
+        } catch (aliasError) {
+          console.error(`❌ Error creating alias ${aliasConfig.aliasId}:`, aliasError)
+        }
       }
     }
 

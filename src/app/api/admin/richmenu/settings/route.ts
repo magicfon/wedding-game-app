@@ -1,5 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseAdmin } from '@/lib/supabase-admin'
+import { messagingApi } from '@line/bot-sdk'
+
+const { MessagingApiClient } = messagingApi
+
+// 初始化 LINE Messaging API Client
+function getLineClient(): InstanceType<typeof MessagingApiClient> | null {
+  const channelAccessToken = process.env.LINE_CHANNEL_ACCESS_TOKEN
+  if (!channelAccessToken) {
+    console.error('LINE_CHANNEL_ACCESS_TOKEN not configured')
+    return null
+  }
+  return new MessagingApiClient({ channelAccessToken })
+}
 
 // GET: 獲取 Rich Menu 設定
 export async function GET(request: NextRequest) {
@@ -107,9 +120,52 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // 如果 activityTabEnabled 設定有改變，更新 richmenu-alias-activity 的指向
+    let aliasUpdated = false
+    if (activityTabEnabled !== undefined) {
+      const lineClient = getLineClient()
+
+      if (lineClient) {
+        // 獲取目標 menu ID
+        const targetMenuType = activityTabEnabled ? 'activity' : 'unavailable'
+        const { data: targetMenu, error: menuError } = await supabase
+          .from('line_richmenu_registry')
+          .select('richmenu_id')
+          .eq('menu_type', targetMenuType)
+          .single()
+
+        if (!menuError && targetMenu?.richmenu_id) {
+          try {
+            console.log(`🔗 Updating richmenu-alias-activity to ${targetMenuType}...`)
+
+            // 先刪除舊的 alias
+            try {
+              await lineClient.deleteRichMenuAlias('richmenu-alias-activity')
+              console.log('🗑️ Deleted existing alias: richmenu-alias-activity')
+            } catch (deleteErr: any) {
+              console.log('⚠️ No existing alias to delete')
+            }
+
+            // 創建新的 alias
+            await lineClient.createRichMenuAlias({
+              richMenuAliasId: 'richmenu-alias-activity',
+              richMenuId: targetMenu.richmenu_id
+            })
+            console.log(`✅ Updated alias: richmenu-alias-activity -> ${targetMenu.richmenu_id} (${targetMenuType})`)
+            aliasUpdated = true
+          } catch (aliasError: any) {
+            console.error('❌ Error updating alias:', aliasError)
+          }
+        } else {
+          console.warn(`⚠️ Could not find ${targetMenuType} rich menu in registry`)
+        }
+      }
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Rich menu settings updated successfully',
+      aliasUpdated,
       settings: {
         defaultTab: settings.default_tab,
         venueTabEnabled: settings.venue_tab_enabled,
