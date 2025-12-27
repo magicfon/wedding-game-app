@@ -125,12 +125,24 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        // 2. 刪除舊的 Rich Menu
+        // 2. 檢查是否為預設 Rich Menu
+        let isDefault = false
+        try {
+            const defaultMenuId = await apiClient.getDefaultRichMenuId()
+            if (defaultMenuId === richMenuId) {
+                isDefault = true
+                console.log('🌟 This rich menu is the current default.')
+            }
+        } catch (e) {
+            console.warn('Failed to check default rich menu:', e)
+        }
+
+        // 3. 刪除舊的 Rich Menu
         console.log('🗑️ Deleting old rich menu:', richMenuId)
         await apiClient.deleteRichMenu(richMenuId)
         console.log('✅ Old rich menu deleted')
 
-        // 3. 建立新的 Rich Menu 配置
+        // 4. 建立新的 Rich Menu 配置
         const newMenuConfig: RichMenuRequest = {
             size: {
                 width: 2500,
@@ -154,6 +166,16 @@ export async function POST(request: NextRequest) {
         const newRichMenuResponse = await apiClient.createRichMenu(newMenuConfig)
         const newRichMenuId = newRichMenuResponse.richMenuId
         console.log('✅ New rich menu created:', newRichMenuId)
+
+        // 5. 如果原本是預設，則將新的設為預設
+        if (isDefault) {
+            try {
+                await apiClient.setDefaultRichMenu(newRichMenuId)
+                console.log('🌟 Restored default rich menu to:', newRichMenuId)
+            } catch (e) {
+                console.error('❌ Failed to restore default rich menu:', e)
+            }
+        }
 
         // 4. 如果有圖片，重新上傳
         if (imageBuffer) {

@@ -336,6 +336,18 @@ export async function POST(request: NextRequest) {
             console.warn('⚠️ Failed to fetch aliases (continuing):', err)
           }
 
+          // 1.5 檢查是否為預設 Rich Menu
+          let isDefault = false
+          try {
+            const defaultMenuId = await apiClient.getDefaultRichMenuId()
+            if (defaultMenuId.richMenuId === richMenuId) {
+              isDefault = true
+              console.log('🌟 This rich menu is the current default.')
+            }
+          } catch (e) {
+            console.warn('Failed to check default rich menu:', e)
+          }
+
           // 2. 刪除舊的 Rich Menu
           console.log('🗑️ Deleting old rich menu:', richMenuId)
           await apiClient.deleteRichMenu(richMenuId)
@@ -417,6 +429,16 @@ export async function POST(request: NextRequest) {
               } catch (err) {
                 console.log(`ℹ️ Skipped default alias creation (might already exist or not needed)`)
               }
+            }
+          }
+
+          // 7. 如果原本是預設，則將新的設為預設
+          if (isDefault) {
+            try {
+              await apiClient.setDefaultRichMenu(newRichMenuId)
+              console.log('🌟 Restored default rich menu to:', newRichMenuId)
+            } catch (e) {
+              console.error('❌ Failed to restore default rich menu:', e)
             }
           }
 
