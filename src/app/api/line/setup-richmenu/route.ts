@@ -340,6 +340,18 @@ export async function GET() {
       console.log('⚠️ No default rich menu set or error fetching:', error)
     }
 
+    // DEBUG: Log registry comparison
+    console.log('🔎 Debugging rich menu registry:')
+    richMenus.forEach(menu => {
+      const regEntry = registry?.find(r => r.richmenu_id === menu.richMenuId)
+      console.log(`  - LINE ID: ${menu.richMenuId} (${menu.name})`)
+      console.log(`    -> Database Match: ${regEntry ? '✅ Found' : '❌ Not Found'}`)
+      if (regEntry) {
+        console.log(`    -> Has Image: ${regEntry.has_image}`)
+      }
+    })
+    // End DEBUG
+
     // 構建狀態報告
     const statusReport = {
       linePlatform: {
