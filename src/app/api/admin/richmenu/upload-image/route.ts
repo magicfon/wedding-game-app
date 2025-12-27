@@ -2,6 +2,16 @@ import { NextRequest, NextResponse } from 'next/server'
 import { Client } from '@line/bot-sdk'
 import { createSupabaseAdmin } from '@/lib/supabase-admin'
 
+// 獲取 LINE Channel Access Token
+function getLineChannelAccessToken(): string | null {
+  const token = process.env.LINE_CHANNEL_ACCESS_TOKEN
+  if (!token) {
+    console.error('LINE_CHANNEL_ACCESS_TOKEN not configured')
+    return null
+  }
+  return token
+}
+
 // 初始化 LINE Client
 function getLineClient(): Client | null {
   const channelAccessToken = process.env.LINE_CHANNEL_ACCESS_TOKEN
@@ -110,15 +120,53 @@ export async function POST(request: NextRequest) {
 
     // 上傳圖片到 Rich Menu
     try {
-      await (lineClient.setRichMenuImage as any)(richMenuId, Buffer.from(imageBuffer), file.type)
-      console.log('✅ Image uploaded successfully')
+      // 使用 LINE Bot SDK 的 postBinary 方法
+      // 根據 LINE API 文檔，需要 POST 到 /richmenu/{richMenuId}/content
+      const imageBufferData = Buffer.from(imageBuffer)
+      console.log('📤 Image buffer size:', imageBufferData.length, 'bytes')
+      console.log('📤 Image buffer type:', imageBufferData.constructor.name)
+      console.log('📤 Content-Type:', file.type)
+      console.log('📤 Rich Menu ID:', richMenuId)
+      console.log('📤 API endpoint:', `/richmenu/${richMenuId}/content`)
+      
+      // 使用 postBinary 方法上傳圖片到 LINE API
+      // 該方法接受三個參數：path, body, contentType
+      console.log('📤 Calling postBinary with:')
+      console.log('  - path:', `/richmenu/${richMenuId}/content`)
+      console.log('  - body length:', imageBufferData.length)
+      console.log('  - contentType:', file.type)
+      
+      // 嘗試使用 setRichMenuImage 方法
+      try {
+        console.log('📤 Trying setRichMenuImage method...')
+        await (lineClient as any).setRichMenuImage(
+          richMenuId,
+          imageBufferData,
+          file.type
+        )
+        console.log('✅ Image uploaded successfully using setRichMenuImage')
+      } catch (setRichMenuImageError) {
+        console.log('⚠️ setRichMenuImage failed, trying postBinary:', setRichMenuImageError)
+        // 如果 setRichMenuImage 失敗，嘗試使用 postBinary
+        await (lineClient as any).postBinary(
+          `/richmenu/${richMenuId}/content`,
+          imageBufferData,
+          file.type
+        )
+        console.log('✅ Image uploaded successfully using postBinary')
+      }
     } catch (uploadError: any) {
       console.error('❌ Error uploading image to LINE:', uploadError)
-      console.error('❌ Full error object:', JSON.stringify(uploadError, null, 2))
+      console.error('❌ Error name:', uploadError.name)
+      console.error('❌ Error message:', uploadError.message)
+      console.error('❌ Error code:', uploadError.code)
       
       // 提取 LINE API 的錯誤細節
-      if (uploadError.response?.data) {
-        console.error('❌ LINE API error details:', JSON.stringify(uploadError.response.data, null, 2))
+      if (uploadError.response) {
+        console.error('❌ Response status:', uploadError.response.status)
+        console.error('❌ Response statusText:', uploadError.response.statusText)
+        console.error('❌ Response data:', JSON.stringify(uploadError.response.data, null, 2))
+        
         const errorData = uploadError.response.data
         
         // 嘗試從不同的可能位置提取錯誤信息
@@ -131,6 +179,10 @@ export async function POST(request: NextRequest) {
           lineErrorMessage = errorData.error
         } else if (errorData.error?.message) {
           lineErrorMessage = errorData.error.message
+        } else if (typeof errorData === 'object' && Object.keys(errorData).length === 0) {
+          lineErrorMessage = 'No error details provided'
+        } else {
+          lineErrorMessage = JSON.stringify(errorData)
         }
         
         throw new Error(`LINE API error (${uploadError.response.status}): ${lineErrorMessage}`)
