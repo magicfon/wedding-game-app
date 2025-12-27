@@ -50,19 +50,33 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 驗證圖片尺寸 (LINE API 會在實際上傳時驗證)
+    // 驗證圖片尺寸
     const imageBuffer = await file.arrayBuffer()
-    // 注意：由於 canvas 套件在 Vercel 環境可能有相容性問題，
-    // 我們讓 LINE API 來驗證圖片尺寸
-    // 如果需要在本機驗證，可以安裝 canvas 套件並取消註解以下程式碼：
-    // const { createCanvas, loadImage } = await import('canvas')
-    // const image = await loadImage(Buffer.from(imageBuffer))
-    // if (!validateImageDimensions(image.width, image.height)) {
-    //   return NextResponse.json(
-    //     { error: 'Image dimensions must be 2500x1686px' },
-    //     { status: 400 }
-    //   )
-    // }
+    
+    // 使用 sharp 來驗證圖片尺寸
+    let imageWidth = 0
+    let imageHeight = 0
+    
+    try {
+      // 嘗試使用 sharp 來獲取圖片尺寸
+      const sharp = (await import('sharp')).default
+      const metadata = await sharp(Buffer.from(imageBuffer)).metadata()
+      imageWidth = metadata.width || 0
+      imageHeight = metadata.height || 0
+      console.log('📐 Image dimensions:', imageWidth, 'x', imageHeight)
+    } catch (sharpError) {
+      console.warn('⚠️ Sharp not available, skipping dimension check:', sharpError)
+    }
+
+    // 如果無法獲取尺寸，讓 LINE API 來驗證
+    if (imageWidth > 0 && imageHeight > 0) {
+      if (!validateImageDimensions(imageWidth, imageHeight)) {
+        return NextResponse.json(
+          { error: `Image dimensions must be 2500x1686px, got ${imageWidth}x${imageHeight}px` },
+          { status: 400 }
+        )
+      }
+    }
 
     const lineClient = getLineClient()
     if (!lineClient) {
@@ -82,8 +96,16 @@ export async function POST(request: NextRequest) {
     try {
       await (lineClient.setRichMenuImage as any)(richMenuId, Buffer.from(imageBuffer), file.type)
       console.log('✅ Image uploaded successfully')
-    } catch (uploadError) {
+    } catch (uploadError: any) {
       console.error('❌ Error uploading image to LINE:', uploadError)
+      
+      // 提取 LINE API 的錯誤細節
+      if (uploadError.response?.data) {
+        console.error('❌ LINE API error details:', uploadError.response.data)
+        const lineErrorMessage = uploadError.response.data.message || uploadError.response.data.error || 'Unknown LINE API error'
+        throw new Error(`LINE API error: ${lineErrorMessage}`)
+      }
+      
       throw uploadError
     }
     
