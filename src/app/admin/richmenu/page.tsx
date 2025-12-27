@@ -750,7 +750,7 @@ export default function RichMenuManagementPage() {
                 }}
                 className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
               >
-                🏷️ 創建 Aliases
+                創建 Aliases
               </button>
             </div>
           </div>
@@ -810,7 +810,7 @@ export default function RichMenuManagementPage() {
                             <div className="mt-1">
                               {menuAliases.map(a => (
                                 <span key={a.aliasId} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 mr-1">
-                                  🏷️ {a.aliasId}
+                                  {a.aliasId}
                                 </span>
                               ))}
                             </div>
