@@ -3,6 +3,7 @@ import { messagingApi } from '@line/bot-sdk'
 import { createSupabaseAdmin } from '@/lib/supabase-admin'
 
 const { MessagingApiBlobClient, MessagingApiClient } = messagingApi
+type RichMenuRequest = Parameters<InstanceType<typeof MessagingApiClient>['createRichMenu']>[0]
 
 // 初始化 LINE Blob Client (用於圖片上傳)
 function getLineBlobClient(): InstanceType<typeof MessagingApiBlobClient> | null {
@@ -34,7 +35,7 @@ function getLiffId(): string {
 }
 
 // 創建會場資訊分頁 Rich Menu 配置
-function createVenueInfoRichMenu(liffId: string) {
+function createVenueInfoRichMenu(liffId: string): RichMenuRequest {
   return {
     size: {
       width: 2500,
@@ -81,7 +82,7 @@ function createVenueInfoRichMenu(liffId: string) {
 }
 
 // 創建現場活動分頁 Rich Menu 配置
-function createActivityRichMenu(liffId: string) {
+function createActivityRichMenu(liffId: string): RichMenuRequest {
   return {
     size: {
       width: 2500,
@@ -128,7 +129,7 @@ function createActivityRichMenu(liffId: string) {
 }
 
 // 創建未開放分頁 Rich Menu 配置
-function createUnavailableRichMenu() {
+function createUnavailableRichMenu(): RichMenuRequest {
   return {
     size: {
       width: 2500,
@@ -137,7 +138,7 @@ function createUnavailableRichMenu() {
     selected: false,
     name: "婚禮遊戲 - 未開放",
     chatBarText: "未開放",
-    areas: [] as Array<{ bounds: { x: number; y: number; width: number; height: number }; action: { type: string; data?: string; uri?: string; label?: string } }>
+    areas: []
   }
 }
 
