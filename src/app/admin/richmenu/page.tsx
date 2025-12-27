@@ -28,7 +28,7 @@ interface RichMenuStatus {
 export default function RichMenuManagementPage() {
   const router = useRouter()
   const { isLoggedIn, isAdmin, loading: liffLoading, adminLoading } = useLiff()
-  
+
   const [settings, setSettings] = useState<RichMenuSettings | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -201,16 +201,16 @@ export default function RichMenuManagementPage() {
   }
 
   // 上傳圖片
-  const handleImageUpload = async (menuType: string, file: File) => {
-    console.log('📤 handleImageUpload called with menuType:', menuType)
+  const handleImageUpload = async (richMenuId: string, file: File) => {
+    console.log('📤 handleImageUpload called with richMenuId:', richMenuId)
     console.log('📊 File:', file.name, file.size, file.type)
-    
-    setUploading(prev => ({ ...prev, [menuType]: true }))
+
+    setUploading(prev => ({ ...prev, [richMenuId]: true }))
 
     try {
       const formData = new FormData()
       formData.append('image', file)
-      formData.append('menuType', menuType)
+      formData.append('richMenuId', richMenuId)
 
       console.log('📤 Sending upload request...')
 
@@ -230,14 +230,14 @@ export default function RichMenuManagementPage() {
       const result = await response.json()
       console.log('✅ Upload success:', result)
       showMessage('success', '圖片上傳成功')
-      
+
       // 重新獲取 Rich Menu 列表
       fetchRichMenuList()
     } catch (error) {
       console.error('❌ Error uploading image:', error)
       showMessage('error', `圖片上傳失敗: ${error instanceof Error ? error.message : '未知錯誤'}`)
     } finally {
-      setUploading(prev => ({ ...prev, [menuType]: false }))
+      setUploading(prev => ({ ...prev, [richMenuId]: false }))
     }
   }
 
@@ -251,7 +251,7 @@ export default function RichMenuManagementPage() {
       })
 
       console.log('📥 Response status:', response.status, response.statusText)
-      
+
       if (!response.ok) {
         const errorText = await response.text()
         console.error('❌ Response not OK:', errorText)
@@ -261,7 +261,7 @@ export default function RichMenuManagementPage() {
       const result = await response.json()
       console.log('✅ Response data:', result)
       showMessage('success', 'Rich Menu 創建成功')
-      
+
       // 重新獲取設定和 Rich Menu 列表
       fetchSettings()
       fetchRichMenuList()
@@ -295,9 +295,8 @@ export default function RichMenuManagementPage() {
       <div className="max-w-6xl mx-auto">
         {/* 訊息提示 */}
         {message && (
-          <div className={`mb-6 p-4 rounded-lg flex items-center gap-3 ${
-            message.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
-          }`}>
+          <div className={`mb-6 p-4 rounded-lg flex items-center gap-3 ${message.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
+            }`}>
             {message.type === 'success' ? (
               <CheckCircle className="w-5 h-5" />
             ) : (
@@ -493,7 +492,7 @@ export default function RichMenuManagementPage() {
                       </button>
                       <label className="flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white text-xs rounded hover:bg-green-700 cursor-pointer disabled:opacity-50">
                         <Upload className="w-3 h-3" />
-                        {uploading['venue_info'] ? '上傳中...' : '上傳圖片'}
+                        {uploading[menu.richMenuId] ? '上傳中...' : '上傳圖片'}
                         <input
                           type="file"
                           accept="image/*"
@@ -501,10 +500,10 @@ export default function RichMenuManagementPage() {
                           onChange={(e) => {
                             const file = e.target.files?.[0]
                             if (file) {
-                              handleImageUpload('venue_info', file)
+                              handleImageUpload(menu.richMenuId, file)
                             }
                           }}
-                          disabled={uploading['venue_info']}
+                          disabled={uploading[menu.richMenuId]}
                         />
                       </label>
                     </div>

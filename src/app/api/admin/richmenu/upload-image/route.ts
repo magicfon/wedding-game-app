@@ -169,7 +169,8 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
     const file = formData.get('image') as File
-    const menuType = formData.get('menuType') as string
+    const menuType = formData.get('menuType') as string | null
+    const inputRichMenuId = formData.get('richMenuId') as string | null
 
     // 驗證輸入
     if (!file) {
@@ -179,7 +180,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (!menuType || !['venue_info', 'activity', 'unavailable'].includes(menuType)) {
+    // 必須提供 menuType 或 richMenuId 其中之一
+    if (!menuType && !inputRichMenuId) {
+      return NextResponse.json(
+        { error: 'Either menuType or richMenuId is required' },
+        { status: 400 }
+      )
+    }
+
+    if (menuType && !['venue_info', 'activity', 'unavailable'].includes(menuType)) {
       return NextResponse.json(
         { error: 'Invalid menu type' },
         { status: 400 }
@@ -196,21 +205,45 @@ export async function POST(request: NextRequest) {
 
     const supabase = createSupabaseAdmin()
 
-    // 從資料庫獲取 Rich Menu ID
-    const { data: registryData, error: registryError } = await supabase
-      .from('line_richmenu_registry')
-      .select('richmenu_id, has_image')
-      .eq('menu_type', menuType)
-      .single()
+    let richMenuId: string
+    let registryMenuType: string | null = menuType
+    let hasExistingImage = false
 
-    if (registryError || !registryData) {
-      return NextResponse.json(
-        { error: 'Rich menu not found for this menu type. Please create the rich menu first using /api/line/setup-richmenu' },
-        { status: 404 }
-      )
+    if (inputRichMenuId) {
+      // 直接使用傳入的 richMenuId，從資料庫查找對應資訊
+      const { data: registryData, error: registryError } = await supabase
+        .from('line_richmenu_registry')
+        .select('richmenu_id, menu_type, has_image')
+        .eq('richmenu_id', inputRichMenuId)
+        .single()
+
+      if (registryError || !registryData) {
+        // 如果資料庫中沒有這個 richMenuId，可能是未註冊的 rich menu
+        // 仍然嘗試上傳，但不會更新資料庫
+        console.log('⚠️ Rich menu not found in registry, uploading directly:', inputRichMenuId)
+        richMenuId = inputRichMenuId
+      } else {
+        richMenuId = registryData.richmenu_id
+        registryMenuType = registryData.menu_type
+        hasExistingImage = registryData.has_image || false
+      }
+    } else {
+      // 使用 menuType 查找
+      const { data: registryData, error: registryError } = await supabase
+        .from('line_richmenu_registry')
+        .select('richmenu_id, has_image')
+        .eq('menu_type', menuType)
+        .single()
+
+      if (registryError || !registryData) {
+        return NextResponse.json(
+          { error: 'Rich menu not found for this menu type. Please create the rich menu first using /api/line/setup-richmenu' },
+          { status: 404 }
+        )
+      }
+      richMenuId = registryData.richmenu_id
+      hasExistingImage = registryData.has_image || false
     }
-
-    let richMenuId = registryData.richmenu_id
 
     // 驗證圖片尺寸
     const imageBuffer = await file.arrayBuffer()
@@ -248,10 +281,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('📤 Uploading image to rich menu:', richMenuId, '(menu type:', menuType + ')')
+    console.log('📤 Uploading image to rich menu:', richMenuId, '(menu type:', registryMenuType + ')')
     console.log('📊 Image size:', imageBuffer.byteLength, 'bytes')
     console.log('📊 Image type:', file.type)
-    console.log('📊 Has existing image:', registryData.has_image)
+    console.log('📊 Has existing image:', hasExistingImage)
 
     // 準備圖片 Blob
     const imageBlob = new Blob([imageBuffer], { type: file.type })
@@ -271,7 +304,7 @@ export async function POST(request: NextRequest) {
       const errorBody = uploadError?.body || ''
       const isImageAlreadyExists =
         errorBody.includes('An image has already been uploaded') ||
-        (uploadError.status === 400 && registryData.has_image)
+        (uploadError.status === 400 && hasExistingImage)
 
       if (isImageAlreadyExists) {
         console.log('🔄 Rich menu already has an image. Recreating rich menu for type:', menuType)
@@ -285,8 +318,11 @@ export async function POST(request: NextRequest) {
           console.log('✅ Old rich menu deleted')
 
           // 2. 創建新的 Rich Menu（使用對應的 menu type 配置）
-          console.log('🏗️ Creating new rich menu for type:', menuType)
-          const menuConfig = getRichMenuConfig(menuType, liffId)
+          console.log('📝 Creating new rich menu for type:', registryMenuType)
+          if (!registryMenuType) {
+            throw new Error('Cannot recreate rich menu: menu type is unknown')
+          }
+          const menuConfig = getRichMenuConfig(registryMenuType, liffId)
           const newRichMenuResponse = await apiClient.createRichMenu(menuConfig)
           const newRichMenuId = newRichMenuResponse.richMenuId
           console.log('✅ New rich menu created:', newRichMenuId)
