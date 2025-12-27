@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLiff } from '@/hooks/useLiff'
-import { Upload, Save, RefreshCw, CheckCircle, XCircle, AlertCircle, Trash2, Star, Copy, Edit2, Plus, Minus, X } from 'lucide-react'
+import { Upload, Save, RefreshCw, CheckCircle, XCircle, AlertCircle, Trash2, Star, Copy, Edit2, Plus, Minus, X, MousePointer2 } from 'lucide-react'
 import AdminLayout from '@/components/AdminLayout'
 
 interface RichMenuSettings {
@@ -56,6 +56,15 @@ export default function RichMenuManagementPage() {
   const [editingMenu, setEditingMenu] = useState<EditingRichMenu | null>(null)
   const [loadingEdit, setLoadingEdit] = useState(false)
   const [savingEdit, setSavingEdit] = useState(false)
+
+  // 視覺化編輯器 state
+  const [isDrawMode, setIsDrawMode] = useState(false)
+  const [isDrawing, setIsDrawing] = useState(false)
+  const [drawStart, setDrawStart] = useState<{ x: number; y: number } | null>(null)
+  const [drawCurrent, setDrawCurrent] = useState<{ x: number; y: number } | null>(null)
+  const [selectedAreaIndex, setSelectedAreaIndex] = useState<number | null>(null)
+  const [imageContainerSize, setImageContainerSize] = useState<{ width: number; height: number } | null>(null)
+  const imageContainerRef = useRef<HTMLDivElement>(null)
 
   // 預設 Rich Menu ID (從 LINE Platform 獲取)
   const [defaultRichMenuId, setDefaultRichMenuId] = useState<string | null>(null)
@@ -404,7 +413,149 @@ export default function RichMenuManagementPage() {
     if (!editingMenu) return
     const newAreas = editingMenu.areas.filter((_, i) => i !== index)
     setEditingMenu({ ...editingMenu, areas: newAreas })
+    if (selectedAreaIndex === index) {
+      setSelectedAreaIndex(null)
+    } else if (selectedAreaIndex !== null && selectedAreaIndex > index) {
+      setSelectedAreaIndex(selectedAreaIndex - 1)
+    }
   }
+
+  // Rich Menu 實際尺寸
+  const RICH_MENU_WIDTH = 2500
+  const RICH_MENU_HEIGHT = 1686
+
+  // 計算縮放比例
+  const getScale = useCallback(() => {
+    if (!imageContainerSize) return { scaleX: 1, scaleY: 1 }
+    return {
+      scaleX: imageContainerSize.width / RICH_MENU_WIDTH,
+      scaleY: imageContainerSize.height / RICH_MENU_HEIGHT
+    }
+  }, [imageContainerSize])
+
+  // 畫布座標轉實際座標
+  const canvasToActual = useCallback((canvasX: number, canvasY: number, canvasW?: number, canvasH?: number) => {
+    const { scaleX, scaleY } = getScale()
+    const result = {
+      x: Math.round(canvasX / scaleX),
+      y: Math.round(canvasY / scaleY),
+      width: canvasW ? Math.round(canvasW / scaleX) : 0,
+      height: canvasH ? Math.round(canvasH / scaleY) : 0
+    }
+    // 確保不超出邊界
+    result.x = Math.max(0, Math.min(result.x, RICH_MENU_WIDTH))
+    result.y = Math.max(0, Math.min(result.y, RICH_MENU_HEIGHT))
+    if (result.x + result.width > RICH_MENU_WIDTH) {
+      result.width = RICH_MENU_WIDTH - result.x
+    }
+    if (result.y + result.height > RICH_MENU_HEIGHT) {
+      result.height = RICH_MENU_HEIGHT - result.y
+    }
+    return result
+  }, [getScale])
+
+  // 實際座標轉畫布座標
+  const actualToCanvas = useCallback((actualX: number, actualY: number, actualW: number, actualH: number) => {
+    const { scaleX, scaleY } = getScale()
+    return {
+      x: actualX * scaleX,
+      y: actualY * scaleY,
+      width: actualW * scaleX,
+      height: actualH * scaleY
+    }
+  }, [getScale])
+
+  // 更新圖片容器尺寸
+  const updateImageContainerSize = useCallback(() => {
+    if (imageContainerRef.current) {
+      const rect = imageContainerRef.current.getBoundingClientRect()
+      setImageContainerSize({ width: rect.width, height: rect.height })
+    }
+  }, [])
+
+  // 監聽視窗大小變化
+  useEffect(() => {
+    if (editingMenu) {
+      updateImageContainerSize()
+      window.addEventListener('resize', updateImageContainerSize)
+      return () => window.removeEventListener('resize', updateImageContainerSize)
+    }
+  }, [editingMenu, updateImageContainerSize])
+
+  // 滑鼠事件處理 - 開始繪製
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isDrawMode || !imageContainerRef.current) return
+    const rect = imageContainerRef.current.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    setIsDrawing(true)
+    setDrawStart({ x, y })
+    setDrawCurrent({ x, y })
+    setSelectedAreaIndex(null)
+  }
+
+  // 滑鼠事件處理 - 繪製中
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isDrawing || !imageContainerRef.current) return
+    const rect = imageContainerRef.current.getBoundingClientRect()
+    const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width))
+    const y = Math.max(0, Math.min(e.clientY - rect.top, rect.height))
+    setDrawCurrent({ x, y })
+  }
+
+  // 滑鼠事件處理 - 完成繪製
+  const handleMouseUp = () => {
+    if (!isDrawing || !drawStart || !drawCurrent || !editingMenu) {
+      setIsDrawing(false)
+      return
+    }
+
+    // 計算矩形
+    const minX = Math.min(drawStart.x, drawCurrent.x)
+    const minY = Math.min(drawStart.y, drawCurrent.y)
+    const width = Math.abs(drawCurrent.x - drawStart.x)
+    const height = Math.abs(drawCurrent.y - drawStart.y)
+
+    // 只有當矩形足夠大時才新增區域 (至少 20px)
+    if (width > 20 && height > 20) {
+      const actualBounds = canvasToActual(minX, minY, width, height)
+      const newArea: RichMenuArea = {
+        bounds: {
+          x: actualBounds.x,
+          y: actualBounds.y,
+          width: actualBounds.width,
+          height: actualBounds.height
+        },
+        action: { type: 'uri', uri: '', label: `區域 ${editingMenu.areas.length + 1}` }
+      }
+      setEditingMenu({ ...editingMenu, areas: [...editingMenu.areas, newArea] })
+      setSelectedAreaIndex(editingMenu.areas.length)
+    }
+
+    setIsDrawing(false)
+    setDrawStart(null)
+    setDrawCurrent(null)
+  }
+
+  // 點擊區域選擇
+  const handleAreaClick = (index: number, e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (!isDrawMode) {
+      setSelectedAreaIndex(selectedAreaIndex === index ? null : index)
+    }
+  }
+
+  // 取得繪製中的矩形 (畫布座標)
+  const getDrawingRect = () => {
+    if (!drawStart || !drawCurrent) return null
+    return {
+      x: Math.min(drawStart.x, drawCurrent.x),
+      y: Math.min(drawStart.y, drawCurrent.y),
+      width: Math.abs(drawCurrent.x - drawStart.x),
+      height: Math.abs(drawCurrent.y - drawStart.y)
+    }
+  }
+
 
   if (loading || liffLoading || adminLoading) {
     return (
@@ -757,30 +908,150 @@ export default function RichMenuManagementPage() {
                 </label>
               </div>
 
-              {/* 按鈕區域 */}
+              {/* 視覺化按鈕區域編輯器 */}
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-semibold text-gray-900">按鈕區域 ({editingMenu.areas.length})</h3>
-                  <button
-                    onClick={addArea}
-                    className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
-                  >
-                    <Plus className="w-3 h-3" />
-                    新增區域
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        setIsDrawMode(!isDrawMode)
+                        setSelectedAreaIndex(null)
+                      }}
+                      className={`flex items-center gap-1 px-3 py-1.5 text-xs rounded ${isDrawMode
+                        ? 'bg-green-600 text-white hover:bg-green-700'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        }`}
+                    >
+                      <MousePointer2 className="w-3 h-3" />
+                      {isDrawMode ? '繪製模式' : '選擇模式'}
+                    </button>
+                    <button
+                      onClick={addArea}
+                      className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+                    >
+                      <Plus className="w-3 h-3" />
+                      新增區域
+                    </button>
+                  </div>
                 </div>
+
+                {/* 圖片編輯區域 */}
+                <div className="mb-4 p-4 bg-gray-100 rounded-lg">
+                  <div className="text-xs text-gray-600 mb-2">
+                    {isDrawMode
+                      ? '💡 在圖片上拖曳滑鼠繪製新的按鈕區域'
+                      : '💡 點擊區域可選中編輯，切換到繪製模式可新增區域'}
+                  </div>
+                  <div
+                    ref={imageContainerRef}
+                    className="relative w-full bg-gray-200 rounded overflow-hidden select-none"
+                    style={{
+                      aspectRatio: '2500 / 1686',
+                      cursor: isDrawMode ? 'crosshair' : 'default'
+                    }}
+                    onMouseDown={handleMouseDown}
+                    onMouseMove={handleMouseMove}
+                    onMouseUp={handleMouseUp}
+                    onMouseLeave={() => {
+                      if (isDrawing) {
+                        handleMouseUp()
+                      }
+                    }}
+                  >
+                    {/* Rich Menu 圖片背景 */}
+                    <img
+                      src={`/api/line/setup-richmenu/get-image?richMenuId=${editingMenu.richMenuId}`}
+                      alt="Rich Menu"
+                      className="absolute inset-0 w-full h-full object-cover"
+                      onLoad={updateImageContainerSize}
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none'
+                      }}
+                    />
+
+                    {/* 無圖片時的佔位 */}
+                    <div className="absolute inset-0 flex items-center justify-center text-gray-400 text-sm pointer-events-none">
+                      {/* 這會在圖片載入失敗時顯示 */}
+                    </div>
+
+                    {/* 已有的區域覆蓋層 */}
+                    {imageContainerSize && editingMenu.areas.map((area, index) => {
+                      const canvasRect = actualToCanvas(
+                        area.bounds.x,
+                        area.bounds.y,
+                        area.bounds.width,
+                        area.bounds.height
+                      )
+                      return (
+                        <div
+                          key={index}
+                          className={`absolute border-2 transition-colors ${selectedAreaIndex === index
+                            ? 'border-blue-500 bg-blue-500/30'
+                            : 'border-yellow-400 bg-yellow-400/20 hover:bg-yellow-400/30'
+                            }`}
+                          style={{
+                            left: canvasRect.x,
+                            top: canvasRect.y,
+                            width: canvasRect.width,
+                            height: canvasRect.height,
+                            pointerEvents: isDrawMode ? 'none' : 'auto'
+                          }}
+                          onClick={(e) => handleAreaClick(index, e)}
+                        >
+                          <span className={`absolute top-0 left-0 px-1 text-xs font-bold ${selectedAreaIndex === index
+                            ? 'bg-blue-500 text-white'
+                            : 'bg-yellow-400 text-gray-900'
+                            }`}>
+                            {index + 1}
+                          </span>
+                        </div>
+                      )
+                    })}
+
+                    {/* 繪製中的區域 */}
+                    {isDrawing && (() => {
+                      const rect = getDrawingRect()
+                      if (!rect) return null
+                      return (
+                        <div
+                          className="absolute border-2 border-dashed border-green-500 bg-green-500/20"
+                          style={{
+                            left: rect.x,
+                            top: rect.y,
+                            width: rect.width,
+                            height: rect.height,
+                            pointerEvents: 'none'
+                          }}
+                        />
+                      )
+                    })()}
+                  </div>
+                </div>
+
 
                 {editingMenu.areas.length === 0 ? (
                   <p className="text-gray-500 text-sm">無按鈕區域</p>
                 ) : (
                   <div className="space-y-4">
                     {editingMenu.areas.map((area, index) => (
-                      <div key={index} className="p-4 bg-gray-50 rounded-lg">
+                      <div
+                        key={index}
+                        className={`p-4 rounded-lg cursor-pointer transition-colors ${selectedAreaIndex === index
+                            ? 'bg-blue-100 border-2 border-blue-500'
+                            : 'bg-gray-50 border-2 border-transparent hover:bg-gray-100'
+                          }`}
+                        onClick={() => setSelectedAreaIndex(selectedAreaIndex === index ? null : index)}
+                      >
                         <div className="flex items-center justify-between mb-3">
-                          <span className="text-sm font-medium">區域 {index + 1}</span>
+                          <span className={`text-sm font-medium ${selectedAreaIndex === index ? 'text-blue-700' : 'text-gray-900'
+                            }`}>
+                            區域 {index + 1} {selectedAreaIndex === index && '(選中)'}
+                          </span>
                           <button
-                            onClick={() => removeArea(index)}
+                            onClick={(e) => { e.stopPropagation(); removeArea(index) }}
                             className="text-red-600 hover:text-red-800"
+                            title="刪除區域"
                           >
                             <Minus className="w-4 h-4" />
                           </button>
