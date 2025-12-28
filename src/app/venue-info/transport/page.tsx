@@ -1,7 +1,6 @@
 'use client'
 
-import { ArrowLeft, Car, Train, MapPin, ExternalLink } from 'lucide-react'
-import Link from 'next/link'
+import { Car, Train, MapPin, ExternalLink } from 'lucide-react'
 import Image from 'next/image'
 
 export default function TransportPage() {
@@ -9,11 +8,8 @@ export default function TransportPage() {
     <div className="min-h-screen bg-gradient-to-b from-amber-50 to-white">
       {/* 頂部導航 */}
       <div className="bg-white shadow-sm sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center">
-          <Link href="/venue-info" className="p-2 -ml-2">
-            <ArrowLeft className="w-6 h-6 text-gray-600" />
-          </Link>
-          <h1 className="text-xl font-bold text-gray-900 ml-2">交通資訊</h1>
+        <div className="max-w-4xl mx-auto px-4 py-3">
+          <h1 className="text-xl font-bold text-gray-900">交通資訊</h1>
         </div>
       </div>
 

@@ -1,8 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { ArrowLeft, Users, Search } from 'lucide-react'
-import Link from 'next/link'
+import { Users, Search } from 'lucide-react'
 
 interface Guest {
   line_id: string
@@ -21,7 +20,7 @@ export default function TablePage() {
   useState(() => {
     // 模擬載入用戶桌次
     setMyTable('A-1')
-    
+
     // 模擬載入其他賓客資訊
     const mockGuests: Guest[] = [
       { line_id: '1', display_name: '張三', table_number: 'A-1' },
@@ -53,11 +52,8 @@ export default function TablePage() {
     <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">
       {/* 頂部導航 */}
       <div className="bg-white shadow-sm sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center">
-          <Link href="/venue-info" className="p-2 -ml-2">
-            <ArrowLeft className="w-6 h-6 text-gray-600" />
-          </Link>
-          <h1 className="text-xl font-bold text-gray-900 ml-2">桌次</h1>
+        <div className="max-w-4xl mx-auto px-4 py-3">
+          <h1 className="text-xl font-bold text-gray-900">桌次</h1>
         </div>
       </div>
 
