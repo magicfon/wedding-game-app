@@ -246,11 +246,43 @@ export async function POST(request: NextRequest) {
             console.log('✅ Database registry updated with new rich menu ID')
         }
 
-        // 6. 處理 Rich Menu Alias
-        let aliasCreated = false
+        // 6. 處理 Rich Menu Alias - 基於 menu_type 自動更新對應的 alias
+        let aliasUpdated = false
+
+        // 如果有 menu_type，自動更新對應的 alias
+        if (menuType === 'venue_info' || menuType === 'activity') {
+            const aliasId = menuType === 'venue_info'
+                ? 'richmenu-alias-venue-info'
+                : 'richmenu-alias-activity'
+
+            try {
+                console.log(`🔗 Auto-updating alias ${aliasId} for menu_type: ${menuType}...`)
+
+                // 先嘗試刪除舊的 alias
+                try {
+                    await apiClient.deleteRichMenuAlias(aliasId)
+                    console.log(`🗑️ Deleted existing alias: ${aliasId}`)
+                } catch (deleteErr: any) {
+                    console.log(`⚠️ No existing alias to delete: ${aliasId}`)
+                }
+
+                // 創建新的 alias 指向新的 Rich Menu ID
+                await apiClient.createRichMenuAlias({
+                    richMenuAliasId: aliasId,
+                    richMenuId: newRichMenuId
+                })
+                console.log(`✅ Updated alias: ${aliasId} -> ${newRichMenuId}`)
+                aliasUpdated = true
+            } catch (aliasError: any) {
+                console.error(`❌ Error updating alias ${aliasId}:`, aliasError)
+            }
+        }
+
+        // 如果有傳入自訂的 richMenuAliasId，也處理它
+        let customAliasCreated = false
         if (richMenuAliasId && richMenuAliasId.trim()) {
             try {
-                console.log(`🔗 Creating/updating alias: ${richMenuAliasId}...`)
+                console.log(`🔗 Creating/updating custom alias: ${richMenuAliasId}...`)
 
                 // 先嘗試刪除舊的 alias
                 try {
@@ -266,7 +298,7 @@ export async function POST(request: NextRequest) {
                     richMenuId: newRichMenuId
                 })
                 console.log(`✅ Created alias: ${richMenuAliasId} -> ${newRichMenuId}`)
-                aliasCreated = true
+                customAliasCreated = true
             } catch (aliasError: any) {
                 console.error(`❌ Error creating alias ${richMenuAliasId}:`, aliasError)
             }
@@ -279,8 +311,9 @@ export async function POST(request: NextRequest) {
             newRichMenuId: newRichMenuId,
             menuType,
             imagePreserved: !!imageBuffer,
-            aliasCreated,
-            richMenuAliasId: aliasCreated ? richMenuAliasId : null
+            aliasUpdated,
+            customAliasCreated,
+            richMenuAliasId: customAliasCreated ? richMenuAliasId : null
         })
 
     } catch (error) {
