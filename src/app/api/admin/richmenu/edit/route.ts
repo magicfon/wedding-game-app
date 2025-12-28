@@ -189,28 +189,28 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        // 5. 更新資料庫
-        if (menuType) {
-            const updateData: any = {
+        // 5. 更新資料庫 - 刪除舊記錄，創建新記錄（保留 menu_type）
+        // 先刪除舊的 registry 記錄
+        await supabase
+            .from('line_richmenu_registry')
+            .delete()
+            .eq('richmenu_id', richMenuId)
+
+        // 創建新的 registry 記錄，保留 menu_type
+        const { error: insertError } = await supabase
+            .from('line_richmenu_registry')
+            .insert({
                 richmenu_id: newRichMenuId,
+                name: name,
+                menu_type: menuType, // 保留原本的 menu_type（可能是 null）
+                has_image: !!imageBuffer,
                 updated_at: new Date().toISOString()
-            }
+            })
 
-            // 如果成功保留了圖片，確保 has_image 為 true
-            if (imageBuffer) {
-                updateData.has_image = true
-            }
-
-            const { error: updateError } = await supabase
-                .from('line_richmenu_registry')
-                .update(updateData)
-                .eq('menu_type', menuType)
-
-            if (updateError) {
-                console.error('Error updating registry:', updateError)
-            } else {
-                console.log('✅ Database registry updated')
-            }
+        if (insertError) {
+            console.error('Error updating registry:', insertError)
+        } else {
+            console.log('✅ Database registry updated with new rich menu ID')
         }
 
         // 6. 處理 Rich Menu Alias

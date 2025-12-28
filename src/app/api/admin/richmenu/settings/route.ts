@@ -46,17 +46,25 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // 將 registry 轉換為物件格式
+    // 將 registry 轉換為物件格式（只包含有 menu_type 的項目）
     const richMenuIds: Record<string, string> = {}
     registry.forEach(item => {
-      richMenuIds[item.menu_type] = item.richmenu_id
+      if (item.menu_type) {
+        richMenuIds[item.menu_type] = item.richmenu_id
+      }
     })
+
+    // 計算統計資訊
+    const totalMenus = registry.length
+    const assignedMenus = registry.filter(r => r.menu_type !== null).length
 
     return NextResponse.json({
       defaultTab: settings.default_tab,
       venueTabEnabled: settings.venue_tab_enabled,
       activityTabEnabled: settings.activity_tab_enabled,
       richMenuIds,
+      totalMenus,
+      assignedMenus,
       updatedAt: settings.updated_at
     })
 

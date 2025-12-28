@@ -372,22 +372,26 @@ export async function POST(request: NextRequest) {
           await blobClient.setRichMenuImage(newRichMenuId, imageBlob)
           console.log('✅ Image uploaded to new rich menu')
 
-          // 5. 更新資料庫 (如果該 Menu 有在 registry 中)
-          if (registryMenuType) {
-            const { error: updateError } = await supabase
-              .from('line_richmenu_registry')
-              .update({
-                richmenu_id: newRichMenuId,
-                has_image: true,
-                updated_at: new Date().toISOString()
-              })
-              .eq('menu_type', registryMenuType)
+          // 5. 更新資料庫 - 刪除舊記錄，創建新記錄（保留 menu_type）
+          await supabase
+            .from('line_richmenu_registry')
+            .delete()
+            .eq('richmenu_id', richMenuId)
 
-            if (updateError) {
-              console.error('Error updating registry:', updateError)
-            } else {
-              console.log('✅ Database registry updated')
-            }
+          const { error: insertError } = await supabase
+            .from('line_richmenu_registry')
+            .insert({
+              richmenu_id: newRichMenuId,
+              name: existingMenu.name,
+              menu_type: registryMenuType, // 保留原本的 menu_type（可能是 null）
+              has_image: true,
+              updated_at: new Date().toISOString()
+            })
+
+          if (insertError) {
+            console.error('Error updating registry:', insertError)
+          } else {
+            console.log('✅ Database registry updated with new rich menu ID')
           }
 
           // 6. 恢復 Rich Menu Alias
@@ -464,19 +468,17 @@ export async function POST(request: NextRequest) {
       throw uploadError
     }
 
-    // 更新資料庫中的 has_image 狀態
-    if (registryMenuType) {
-      const { error: updateError } = await supabase
-        .from('line_richmenu_registry')
-        .update({
-          has_image: true,
-          updated_at: new Date().toISOString()
-        })
-        .eq('menu_type', registryMenuType)
+    // 更新資料庫中的 has_image 狀態 (使用 richmenu_id 作為條件)
+    const { error: updateError } = await supabase
+      .from('line_richmenu_registry')
+      .update({
+        has_image: true,
+        updated_at: new Date().toISOString()
+      })
+      .eq('richmenu_id', richMenuId)
 
-      if (updateError) {
-        console.error('Error updating has_image status:', updateError)
-      }
+    if (updateError) {
+      console.error('Error updating has_image status:', updateError)
     }
 
     return NextResponse.json({

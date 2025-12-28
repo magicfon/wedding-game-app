@@ -146,29 +146,30 @@ function createUnavailableRichMenu() {
 // 註冊 Rich Menu ID 到資料庫
 async function registerRichMenu(
   supabase: any,
-  menuType: string,
-  richMenuId: string
+  richMenuId: string,
+  name: string
 ): Promise<boolean> {
   const { error } = await supabase
     .from('line_richmenu_registry')
     .upsert({
-      menu_type: menuType,
       richmenu_id: richMenuId,
+      name: name,
+      menu_type: null, // 預設不指定類型
       has_image: false, // 創建時尚未上傳圖片
       updated_at: new Date().toISOString()
     }, {
-      onConflict: 'menu_type'
+      onConflict: 'richmenu_id'
     })
 
   if (error) {
-    console.error(`Error registering rich menu ${menuType}:`, error)
+    console.error(`Error registering rich menu ${richMenuId}:`, error)
     return false
   }
 
   return true
 }
 
-// POST: 設置 Rich Menu（創建全部 3 種類型）
+// POST: 創建一個新的 Rich Menu（不指定類型）
 export async function POST(request: Request) {
   try {
     const lineClient = getLineClient()
@@ -181,113 +182,52 @@ export async function POST(request: Request) {
       )
     }
 
-    const liffId = getLiffId()
+    // 嘗試從 request body 獲取自訂配置
+    let customConfig: any = null
+    try {
+      const body = await request.json()
+      customConfig = body
+    } catch {
+      // 沒有 body，使用預設配置
+    }
 
+    const liffId = getLiffId()
     console.log('🔍 Starting Rich Menu creation process...')
     console.log('📋 LIFF ID:', liffId)
 
-    // 定義所有要創建的 Rich Menu 類型
-    const menuTypes = [
-      { type: 'venue_info', name: '會場資訊', createFn: () => createVenueInfoRichMenu(liffId) },
-      { type: 'activity', name: '現場活動', createFn: () => createActivityRichMenu(liffId) },
-      { type: 'unavailable', name: '未開放', createFn: () => createUnavailableRichMenu() }
-    ]
-
-    const results: Array<{ type: string; richMenuId: string; registered: boolean }> = []
-    let defaultRichMenuId: string | null = null
-
-    // 創建所有 3 種 Rich Menu
-    for (const menuConfig of menuTypes) {
-      try {
-        console.log(`🏗️ Creating ${menuConfig.name} rich menu...`)
-        const menu = menuConfig.createFn()
-        console.log(`📝 ${menuConfig.name} config created`)
-
-        const richMenuResponse = await lineClient.createRichMenu(menu)
-        const richMenuId = richMenuResponse.richMenuId
-        console.log(`✅ ${menuConfig.name} rich menu created:`, richMenuId)
-
-        const registered = await registerRichMenu(supabase, menuConfig.type, richMenuId)
-        console.log(`📝 ${menuConfig.name} registered to database:`, registered)
-
-        results.push({ type: menuConfig.type, richMenuId, registered })
-
-        // 設定 venue_info 為預設 Rich Menu
-        if (menuConfig.type === 'venue_info') {
-          defaultRichMenuId = richMenuId
-        }
-      } catch (error) {
-        console.error(`❌ Error creating ${menuConfig.name} rich menu:`, error)
-        results.push({ type: menuConfig.type, richMenuId: '', registered: false })
-      }
+    // 使用自訂配置或預設（空白 Rich Menu）
+    const menuConfig = customConfig?.config || {
+      size: {
+        width: 2500,
+        height: 1686
+      },
+      selected: true,
+      name: customConfig?.name || `Rich Menu ${new Date().toLocaleDateString('zh-TW')}`,
+      chatBarText: customConfig?.chatBarText || '選單',
+      areas: customConfig?.areas || []
     }
 
-    // 創建 Rich Menu Aliases（用於分頁切換）
-    const aliasConfigs = [
-      { aliasId: 'richmenu-alias-venue-info', menuType: 'venue_info' },
-      { aliasId: 'richmenu-alias-activity', menuType: 'activity' }
-    ]
+    console.log('🏗️ Creating rich menu...')
+    console.log('📝 Config:', JSON.stringify(menuConfig, null, 2))
 
-    for (const aliasConfig of aliasConfigs) {
-      const menuResult = results.find(r => r.type === aliasConfig.menuType)
-      if (menuResult?.richMenuId) {
-        try {
-          console.log(`🔗 Creating alias ${aliasConfig.aliasId} for ${aliasConfig.menuType}...`)
+    const richMenuResponse = await lineClient.createRichMenu(menuConfig)
+    const richMenuId = richMenuResponse.richMenuId
+    console.log('✅ Rich menu created:', richMenuId)
 
-          // 先嘗試刪除舊的 alias（如果存在）
-          try {
-            await lineClient.deleteRichMenuAlias(aliasConfig.aliasId)
-            console.log(`🗑️ Deleted existing alias: ${aliasConfig.aliasId}`)
-          } catch (deleteError: any) {
-            // 忽略 alias 不存在的錯誤
-            if (!deleteError?.message?.includes('not found')) {
-              console.log(`⚠️ No existing alias to delete: ${aliasConfig.aliasId}`)
-            }
-          }
-
-          // 創建新的 alias
-          await lineClient.createRichMenuAlias({
-            richMenuAliasId: aliasConfig.aliasId,
-            richMenuId: menuResult.richMenuId
-          })
-          console.log(`✅ Created alias: ${aliasConfig.aliasId} -> ${menuResult.richMenuId}`)
-        } catch (aliasError) {
-          console.error(`❌ Error creating alias ${aliasConfig.aliasId}:`, aliasError)
-        }
-      }
-    }
-
-    // 設置預設 Rich Menu
-    if (defaultRichMenuId) {
-      try {
-        console.log('🎯 Setting default rich menu...')
-        await lineClient.setDefaultRichMenu(defaultRichMenuId)
-        console.log('✅ Default rich menu set:', defaultRichMenuId)
-      } catch (error) {
-        console.error('❌ Error setting default rich menu:', error)
-      }
-    }
-
-    // 獲取並顯示當前 Rich Menu 列表
-    try {
-      console.log('📋 Fetching current rich menu list...')
-      const richMenuListResponse = await lineClient.getRichMenuList()
-      console.log('📋 Current rich menu list count:', richMenuListResponse.richmenus?.length || 0)
-    } catch (error) {
-      console.error('❌ Error fetching rich menu list:', error)
-    }
-
-    const successCount = results.filter(r => r.richMenuId).length
+    // 註冊到資料庫（不指定 menu_type）
+    const registered = await registerRichMenu(supabase, richMenuId, menuConfig.name)
+    console.log('📝 Registered to database:', registered)
 
     return NextResponse.json({
-      success: successCount > 0,
-      message: `Created ${successCount}/3 rich menus successfully`,
-      results,
-      defaultRichMenuId,
+      success: true,
+      message: 'Rich menu created successfully',
+      richMenuId,
+      name: menuConfig.name,
+      registered,
       nextSteps: [
-        'Please upload images for each rich menu using the upload-image API',
-        'After uploading images, rich menus will be visible to users',
-        `venue_info (${defaultRichMenuId}) has been set as default`
+        'Upload an image using the upload-image API',
+        'Assign a menu_type (venue_info/activity/unavailable) if needed',
+        'Set as default if required'
       ]
     })
 

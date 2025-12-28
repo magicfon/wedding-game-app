@@ -147,12 +147,13 @@ export default function RichMenuManagementPage() {
           setDefaultRichMenuId(null)
         }
 
-        // 合併資料庫中的圖片狀態
+        // 合併資料庫中的圖片狀態和 menu_type
         const menusWithImageStatus = data.status.linePlatform.menus.map((menu: any) => {
           const registryEntry = data.status?.database?.menus?.find((r: any) => r.richmenu_id === menu.richMenuId)
           return {
             ...menu,
-            hasImage: registryEntry?.has_image || false
+            hasImage: registryEntry?.has_image || false,
+            menuType: registryEntry?.menu_type || null
           }
         })
         setRichMenuList(menusWithImageStatus)
@@ -228,6 +229,39 @@ export default function RichMenuManagementPage() {
     } catch (error) {
       console.error('Error copying rich menu ID:', error)
       showMessage('error', '複製失敗')
+    }
+  }
+
+  // 指定 Rich Menu 類型
+  const [assigningType, setAssigningType] = useState<{ [key: string]: boolean }>({})
+
+  const handleAssignMenuType = async (richMenuId: string, menuType: string | null) => {
+    setAssigningType(prev => ({ ...prev, [richMenuId]: true }))
+    try {
+      const response = await fetch('/api/admin/richmenu/assign-type', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          richMenuId,
+          menuType: menuType === '' ? null : menuType
+        })
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to assign menu type')
+      }
+
+      showMessage('success', menuType ? `已設定為 ${menuType}` : '已移除類型設定')
+      fetchRichMenuList()
+      fetchSettings()
+    } catch (error) {
+      console.error('Error assigning menu type:', error)
+      showMessage('error', `設定失敗: ${error instanceof Error ? error.message : '未知錯誤'}`)
+    } finally {
+      setAssigningType(prev => ({ ...prev, [richMenuId]: false }))
     }
   }
 
@@ -645,8 +679,8 @@ export default function RichMenuManagementPage() {
 
           {/* 目前狀態顯示 */}
           <div className={`p-4 rounded-lg border-2 mb-4 ${settings?.activityTabEnabled
-              ? 'bg-green-50 border-green-200'
-              : 'bg-orange-50 border-orange-200'
+            ? 'bg-green-50 border-green-200'
+            : 'bg-orange-50 border-orange-200'
             }`}>
             <div className="flex items-center gap-3">
               <span className="text-3xl">
@@ -857,6 +891,30 @@ export default function RichMenuManagementPage() {
                             <XCircle className="w-3 h-3" />
                             <span className="text-xs">未上傳圖片</span>
                           </div>
+                        )}
+                      </div>
+
+                      {/* 功能類型指定 */}
+                      <div className="mt-3 flex items-center gap-2">
+                        <span className="text-xs text-gray-500">功能類型:</span>
+                        <select
+                          value={menu.menuType || ''}
+                          onChange={(e) => handleAssignMenuType(menu.richMenuId, e.target.value)}
+                          disabled={assigningType[menu.richMenuId]}
+                          className={`text-xs px-2 py-1 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent ${assigningType[menu.richMenuId] ? 'opacity-50 cursor-not-allowed' : ''
+                            } ${menu.menuType === 'venue_info' ? 'bg-blue-50 border-blue-300' :
+                              menu.menuType === 'activity' ? 'bg-green-50 border-green-300' :
+                                menu.menuType === 'unavailable' ? 'bg-orange-50 border-orange-300' :
+                                  'bg-white border-gray-300'
+                            }`}
+                        >
+                          <option value="">未指定</option>
+                          <option value="venue_info">🏢 會場資訊</option>
+                          <option value="activity">🎊 現場活動</option>
+                          <option value="unavailable">🔒 尚未開放</option>
+                        </select>
+                        {assigningType[menu.richMenuId] && (
+                          <RefreshCw className="w-3 h-3 animate-spin text-blue-500" />
                         )}
                       </div>
                     </div>
