@@ -37,11 +37,48 @@ export async function GET() {
     }
 }
 
-// POST: 新增手動賓客
+// POST: 新增手動賓客 (支援單筆或批量)
 export async function POST(request: Request) {
     try {
         const body = await request.json()
-        const { name, table_number, notes } = body
+        const supabase = createSupabaseAdmin()
+
+        // 批量新增
+        if (body.guests && Array.isArray(body.guests)) {
+            const validGuests = body.guests
+                .filter((g: any) => g.name && g.table_number)
+                .map((g: any) => ({
+                    guest_name: g.name.trim(),
+                    table_number: g.table_number.trim(),
+                    adults: parseInt(g.adults) || 1,
+                    children: parseInt(g.children) || 0,
+                    total_guests: parseInt(g.total_guests) || (parseInt(g.adults) || 1) + (parseInt(g.children) || 0),
+                    notes: g.notes?.trim() || null
+                }))
+
+            if (validGuests.length === 0) {
+                return NextResponse.json(
+                    { error: 'No valid guests to import' },
+                    { status: 400 }
+                )
+            }
+
+            const { data, error } = await supabase
+                .from('guest_list')
+                .insert(validGuests)
+                .select()
+
+            if (error) throw error
+
+            return NextResponse.json({
+                success: true,
+                imported: data?.length || 0,
+                guests: data
+            })
+        }
+
+        // 單筆新增
+        const { name, table_number, adults, children, total_guests, notes } = body
 
         if (!name || !table_number) {
             return NextResponse.json(
@@ -50,13 +87,17 @@ export async function POST(request: Request) {
             )
         }
 
-        const supabase = createSupabaseAdmin()
+        const adultsNum = parseInt(adults) || 1
+        const childrenNum = parseInt(children) || 0
 
         const { data, error } = await supabase
             .from('guest_list')
             .insert({
                 guest_name: name,
                 table_number,
+                adults: adultsNum,
+                children: childrenNum,
+                total_guests: parseInt(total_guests) || (adultsNum + childrenNum),
                 notes
             })
             .select()
@@ -101,6 +142,9 @@ export async function PUT(request: Request) {
             // 更新手動賓客
             const updates: any = { table_number }
             if (name) updates.guest_name = name
+            if (body.adults !== undefined) updates.adults = parseInt(body.adults) || 0
+            if (body.children !== undefined) updates.children = parseInt(body.children) || 0
+            if (body.total_guests !== undefined) updates.total_guests = parseInt(body.total_guests) || 0
             if (notes !== undefined) updates.notes = notes
 
             const { error } = await supabase

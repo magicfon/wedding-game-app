@@ -12,7 +12,10 @@ import {
     X,
     User,
     Smartphone,
-    Users
+    Users,
+    Upload,
+    FileText,
+    AlertCircle
 } from 'lucide-react'
 
 interface LineUser {
@@ -26,6 +29,9 @@ interface ManualGuest {
     id: number
     guest_name: string
     table_number: string
+    adults: number
+    children: number
+    total_guests: number
     notes: string | null
 }
 
@@ -41,13 +47,23 @@ export default function GuestManagementPage() {
     const [editingId, setEditingId] = useState<string | number | null>(null)
     const [editTable, setEditTable] = useState('')
     const [editName, setEditName] = useState('')
+    const [editAdults, setEditAdults] = useState(1)
+    const [editChildren, setEditChildren] = useState(0)
     const [editNotes, setEditNotes] = useState('')
 
     // 新增狀態
     const [showAddModal, setShowAddModal] = useState(false)
     const [newGuestName, setNewGuestName] = useState('')
     const [newGuestTable, setNewGuestTable] = useState('')
+    const [newGuestAdults, setNewGuestAdults] = useState(1)
+    const [newGuestChildren, setNewGuestChildren] = useState(0)
     const [newGuestNotes, setNewGuestNotes] = useState('')
+
+    // CSV 匯入狀態
+    const [showImportModal, setShowImportModal] = useState(false)
+    const [csvData, setCsvData] = useState<{ name: string, table_number: string, adults: number, children: number, total_guests: number, notes: string }[]>([])
+    const [csvError, setCsvError] = useState('')
+    const [importing, setImporting] = useState(false)
 
     // 載入資料
     const fetchData = async () => {
@@ -120,6 +136,9 @@ export default function GuestManagementPage() {
                     id: guest.id,
                     name: editName.trim(),
                     table_number: editTable.trim(),
+                    adults: editAdults,
+                    children: editChildren,
+                    total_guests: editAdults + editChildren,
                     notes: editNotes.trim()
                 })
             })
@@ -130,6 +149,9 @@ export default function GuestManagementPage() {
                         ...g,
                         guest_name: editName.trim(),
                         table_number: editTable.trim(),
+                        adults: editAdults,
+                        children: editChildren,
+                        total_guests: editAdults + editChildren,
                         notes: editNotes.trim()
                     } : g
                 ))
@@ -157,6 +179,9 @@ export default function GuestManagementPage() {
                 body: JSON.stringify({
                     name: newGuestName.trim(),
                     table_number: newGuestTable.trim(),
+                    adults: newGuestAdults,
+                    children: newGuestChildren,
+                    total_guests: newGuestAdults + newGuestChildren,
                     notes: newGuestNotes.trim()
                 })
             })
@@ -167,6 +192,8 @@ export default function GuestManagementPage() {
                 setShowAddModal(false)
                 setNewGuestName('')
                 setNewGuestTable('')
+                setNewGuestAdults(1)
+                setNewGuestChildren(0)
                 setNewGuestNotes('')
             } else {
                 alert('新增失敗')
@@ -197,6 +224,96 @@ export default function GuestManagementPage() {
         }
     }
 
+    // CSV 解析
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+
+        setCsvError('')
+        setCsvData([])
+
+        const reader = new FileReader()
+        reader.onload = (event) => {
+            try {
+                const text = event.target?.result as string
+                const lines = text.split(/\r?\n/).filter(line => line.trim())
+
+                if (lines.length < 2) {
+                    setCsvError('CSV 檔案至少需要標題行和一筆資料')
+                    return
+                }
+
+                // 解析標題行
+                const headers = lines[0].split(',').map(h => h.trim().toLowerCase())
+                const nameIdx = headers.findIndex(h => h.includes('name') || h.includes('姓名') || h.includes('名字'))
+                const tableIdx = headers.findIndex(h => h.includes('table') || h.includes('桌') || h.includes('座位'))
+                const adultsIdx = headers.findIndex(h => h.includes('adult') || h.includes('大人'))
+                const childrenIdx = headers.findIndex(h => h.includes('child') || h.includes('小孩') || h.includes('兒童'))
+                const totalIdx = headers.findIndex(h => h.includes('total') || h.includes('總') || h.includes('人數'))
+                const notesIdx = headers.findIndex(h => h.includes('notes') || h.includes('備註') || h.includes('note'))
+
+                if (nameIdx === -1 || tableIdx === -1) {
+                    setCsvError('CSV 需包含「姓名」和「桌次」欄位 (name/姓名, table/桌次)')
+                    return
+                }
+
+                // 解析資料行
+                const parsedData = []
+                for (let i = 1; i < lines.length; i++) {
+                    const values = lines[i].split(',')
+                    const name = values[nameIdx]?.trim()
+                    const table_number = values[tableIdx]?.trim()
+                    const adults = adultsIdx !== -1 ? parseInt(values[adultsIdx]?.trim()) || 1 : 1
+                    const children = childrenIdx !== -1 ? parseInt(values[childrenIdx]?.trim()) || 0 : 0
+                    const total_guests = totalIdx !== -1 ? parseInt(values[totalIdx]?.trim()) || (adults + children) : (adults + children)
+                    const notes = notesIdx !== -1 ? values[notesIdx]?.trim() || '' : ''
+
+                    if (name && table_number) {
+                        parsedData.push({ name, table_number, adults, children, total_guests, notes })
+                    }
+                }
+
+                if (parsedData.length === 0) {
+                    setCsvError('CSV 中沒有有效的資料行')
+                    return
+                }
+
+                setCsvData(parsedData)
+            } catch (err) {
+                setCsvError('CSV 解析失敗，請確認格式正確')
+            }
+        }
+        reader.readAsText(file)
+    }
+
+    // CSV 匯入
+    const handleImportCSV = async () => {
+        if (csvData.length === 0) return
+
+        setImporting(true)
+        try {
+            const response = await fetch('/api/admin/guests', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ guests: csvData })
+            })
+
+            const data = await response.json()
+            if (response.ok) {
+                alert(`成功匯入 ${data.imported} 筆賓客資料！`)
+                setShowImportModal(false)
+                setCsvData([])
+                fetchData() // 重新載入
+            } else {
+                setCsvError(data.error || '匯入失敗')
+            }
+        } catch (error) {
+            setCsvError('匯入發生錯誤')
+        } finally {
+            setImporting(false)
+        }
+    }
+
     // 篩選資料
     const filteredUsers = users.filter(user =>
         user.display_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -220,8 +337,8 @@ export default function GuestManagementPage() {
                         <button
                             onClick={() => setActiveTab('line')}
                             className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'line'
-                                    ? 'bg-white text-purple-600 shadow-sm'
-                                    : 'text-gray-600 hover:text-gray-900'
+                                ? 'bg-white text-purple-600 shadow-sm'
+                                : 'text-gray-600 hover:text-gray-900'
                                 }`}
                         >
                             <span className="flex items-center gap-2">
@@ -232,8 +349,8 @@ export default function GuestManagementPage() {
                         <button
                             onClick={() => setActiveTab('manual')}
                             className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'manual'
-                                    ? 'bg-white text-purple-600 shadow-sm'
-                                    : 'text-gray-600 hover:text-gray-900'
+                                ? 'bg-white text-purple-600 shadow-sm'
+                                : 'text-gray-600 hover:text-gray-900'
                                 }`}
                         >
                             <span className="flex items-center gap-2">
@@ -258,13 +375,22 @@ export default function GuestManagementPage() {
 
                         {/* 新增按鈕 (只在手動名單顯示) */}
                         {activeTab === 'manual' && (
-                            <button
-                                onClick={() => setShowAddModal(true)}
-                                className="flex items-center gap-1 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm transition-colors"
-                            >
-                                <Plus className="w-4 h-4" />
-                                新增賓客
-                            </button>
+                            <>
+                                <button
+                                    onClick={() => setShowImportModal(true)}
+                                    className="flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition-colors"
+                                >
+                                    <Upload className="w-4 h-4" />
+                                    匯入 CSV
+                                </button>
+                                <button
+                                    onClick={() => setShowAddModal(true)}
+                                    className="flex items-center gap-1 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm transition-colors"
+                                >
+                                    <Plus className="w-4 h-4" />
+                                    新增賓客
+                                </button>
+                            </>
                         )}
                     </div>
                 </div>
@@ -364,41 +490,44 @@ export default function GuestManagementPage() {
                             <table className="w-full text-left">
                                 <thead className="bg-gray-50 text-gray-600 text-xs uppercase">
                                     <tr>
-                                        <th className="px-6 py-4 font-medium">賓客姓名</th>
-                                        <th className="px-6 py-4 font-medium">桌次</th>
-                                        <th className="px-6 py-4 font-medium">備註 (搜尋關鍵字)</th>
-                                        <th className="px-6 py-4 font-medium text-right">操作</th>
+                                        <th className="px-4 py-4 font-medium">賓客姓名</th>
+                                        <th className="px-4 py-4 font-medium">桌次</th>
+                                        <th className="px-4 py-4 font-medium text-center">大人</th>
+                                        <th className="px-4 py-4 font-medium text-center">小孩</th>
+                                        <th className="px-4 py-4 font-medium text-center">總人數</th>
+                                        <th className="px-4 py-4 font-medium">備註</th>
+                                        <th className="px-4 py-4 font-medium text-right">操作</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100">
                                     {filteredGuests.length === 0 ? (
                                         <tr>
-                                            <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
+                                            <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
                                                 {guests.length === 0 ? '目前沒有手動名單資料，請點擊「新增賓客」' : '找不到符合的資料'}
                                             </td>
                                         </tr>
                                     ) : (
                                         filteredGuests.map((guest) => (
                                             <tr key={guest.id} className="hover:bg-gray-50">
-                                                <td className="px-6 py-4">
+                                                <td className="px-4 py-3">
                                                     {editingId === guest.id ? (
                                                         <input
                                                             type="text"
                                                             value={editName}
                                                             onChange={(e) => setEditName(e.target.value)}
-                                                            className="w-32 px-2 py-1 border border-purple-300 rounded"
+                                                            className="w-28 px-2 py-1 border border-purple-300 rounded text-sm"
                                                         />
                                                     ) : (
                                                         <span className="font-medium text-gray-900">{guest.guest_name}</span>
                                                     )}
                                                 </td>
-                                                <td className="px-6 py-4">
+                                                <td className="px-4 py-3">
                                                     {editingId === guest.id ? (
                                                         <input
                                                             type="text"
                                                             value={editTable}
                                                             onChange={(e) => setEditTable(e.target.value)}
-                                                            className="w-24 px-2 py-1 border border-purple-300 rounded"
+                                                            className="w-16 px-2 py-1 border border-purple-300 rounded text-sm"
                                                         />
                                                     ) : (
                                                         <span className="bg-green-50 text-green-700 px-2 py-1 rounded text-sm font-medium">
@@ -406,20 +535,49 @@ export default function GuestManagementPage() {
                                                         </span>
                                                     )}
                                                 </td>
-                                                <td className="px-6 py-4">
+                                                <td className="px-4 py-3 text-center">
+                                                    {editingId === guest.id ? (
+                                                        <input
+                                                            type="number"
+                                                            min="0"
+                                                            value={editAdults}
+                                                            onChange={(e) => setEditAdults(parseInt(e.target.value) || 0)}
+                                                            className="w-14 px-2 py-1 border border-purple-300 rounded text-sm text-center"
+                                                        />
+                                                    ) : (
+                                                        <span className="text-gray-700">{guest.adults || 1}</span>
+                                                    )}
+                                                </td>
+                                                <td className="px-4 py-3 text-center">
+                                                    {editingId === guest.id ? (
+                                                        <input
+                                                            type="number"
+                                                            min="0"
+                                                            value={editChildren}
+                                                            onChange={(e) => setEditChildren(parseInt(e.target.value) || 0)}
+                                                            className="w-14 px-2 py-1 border border-purple-300 rounded text-sm text-center"
+                                                        />
+                                                    ) : (
+                                                        <span className="text-gray-700">{guest.children || 0}</span>
+                                                    )}
+                                                </td>
+                                                <td className="px-4 py-3 text-center">
+                                                    <span className="font-bold text-purple-700">{guest.total_guests || ((guest.adults || 1) + (guest.children || 0))}</span>
+                                                </td>
+                                                <td className="px-4 py-3">
                                                     {editingId === guest.id ? (
                                                         <input
                                                             type="text"
                                                             value={editNotes}
                                                             onChange={(e) => setEditNotes(e.target.value)}
-                                                            className="w-full px-2 py-1 border border-purple-300 rounded"
+                                                            className="w-24 px-2 py-1 border border-purple-300 rounded text-sm"
                                                             placeholder="備註"
                                                         />
                                                     ) : (
                                                         <span className="text-gray-500 text-sm">{guest.notes || '-'}</span>
                                                     )}
                                                 </td>
-                                                <td className="px-6 py-4 text-right">
+                                                <td className="px-4 py-3 text-right">
                                                     {editingId === guest.id ? (
                                                         <div className="flex justify-end gap-2">
                                                             <button
@@ -442,6 +600,8 @@ export default function GuestManagementPage() {
                                                                     setEditingId(guest.id)
                                                                     setEditName(guest.guest_name)
                                                                     setEditTable(guest.table_number)
+                                                                    setEditAdults(guest.adults || 1)
+                                                                    setEditChildren(guest.children || 0)
                                                                     setEditNotes(guest.notes || '')
                                                                 }}
                                                                 className="text-gray-400 hover:text-purple-600 transition-colors"
@@ -500,6 +660,33 @@ export default function GuestManagementPage() {
                                 />
                             </div>
 
+                            <div className="flex gap-4">
+                                <div className="flex-1">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        大人人數
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        value={newGuestAdults}
+                                        onChange={(e) => setNewGuestAdults(parseInt(e.target.value) || 0)}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none"
+                                    />
+                                </div>
+                                <div className="flex-1">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        小孩人數
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        value={newGuestChildren}
+                                        onChange={(e) => setNewGuestChildren(parseInt(e.target.value) || 0)}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none"
+                                    />
+                                </div>
+                            </div>
+
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
                                     備註
@@ -527,6 +714,127 @@ export default function GuestManagementPage() {
                                     確認新增
                                 </button>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* CSV 匯入 Modal */}
+            {showImportModal && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
+                        <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-xl font-bold text-gray-900">匯入 CSV 賓客名單</h2>
+                            <button
+                                onClick={() => {
+                                    setShowImportModal(false)
+                                    setCsvData([])
+                                    setCsvError('')
+                                }}
+                                className="p-1 hover:bg-gray-100 rounded"
+                            >
+                                <X className="w-5 h-5 text-gray-500" />
+                            </button>
+                        </div>
+
+                        {/* 說明 */}
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                            <div className="flex items-start gap-2">
+                                <FileText className="w-5 h-5 text-blue-600 mt-0.5" />
+                                <div className="text-sm text-blue-800">
+                                    <p className="font-medium mb-1">CSV 格式說明</p>
+                                    <p>請上傳包含以下欄位的 CSV 檔案：</p>
+                                    <ul className="list-disc list-inside mt-1 space-y-0.5">
+                                        <li><strong>姓名</strong> (必填)：name 或 姓名</li>
+                                        <li><strong>桌次</strong> (必填)：table 或 桌次</li>
+                                        <li><strong>大人</strong> (選填)：adult 或 大人</li>
+                                        <li><strong>小孩</strong> (選填)：child 或 小孩</li>
+                                        <li><strong>總人數</strong> (選填)：total 或 人數</li>
+                                        <li><strong>備註</strong> (選填)：notes 或 備註</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 上傳區域 */}
+                        <div className="mb-4">
+                            <input
+                                type="file"
+                                accept=".csv"
+                                onChange={handleFileChange}
+                                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 cursor-pointer"
+                            />
+                        </div>
+
+                        {/* 錯誤訊息 */}
+                        {csvError && (
+                            <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4 flex items-center gap-2">
+                                <AlertCircle className="w-5 h-5 text-red-600" />
+                                <span className="text-sm text-red-700">{csvError}</span>
+                            </div>
+                        )}
+
+                        {/* 預覽 */}
+                        {csvData.length > 0 && (
+                            <div className="mb-4">
+                                <h3 className="text-sm font-medium text-gray-700 mb-2">
+                                    預覽 ({csvData.length} 筆資料, 共 {csvData.reduce((sum, r) => sum + r.total_guests, 0)} 人)
+                                </h3>
+                                <div className="border rounded-lg overflow-hidden max-h-64 overflow-y-auto">
+                                    <table className="w-full text-sm">
+                                        <thead className="bg-gray-50 sticky top-0">
+                                            <tr>
+                                                <th className="px-2 py-2 text-left font-medium text-gray-600">姓名</th>
+                                                <th className="px-2 py-2 text-left font-medium text-gray-600">桌次</th>
+                                                <th className="px-2 py-2 text-center font-medium text-gray-600">大人</th>
+                                                <th className="px-2 py-2 text-center font-medium text-gray-600">小孩</th>
+                                                <th className="px-2 py-2 text-center font-medium text-gray-600">總人數</th>
+                                                <th className="px-2 py-2 text-left font-medium text-gray-600">備註</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-100">
+                                            {csvData.slice(0, 20).map((row, idx) => (
+                                                <tr key={idx}>
+                                                    <td className="px-2 py-2 text-gray-900">{row.name}</td>
+                                                    <td className="px-2 py-2 text-gray-900">{row.table_number}</td>
+                                                    <td className="px-2 py-2 text-center text-gray-700">{row.adults}</td>
+                                                    <td className="px-2 py-2 text-center text-gray-700">{row.children}</td>
+                                                    <td className="px-2 py-2 text-center font-bold text-purple-700">{row.total_guests}</td>
+                                                    <td className="px-2 py-2 text-gray-500">{row.notes || '-'}</td>
+                                                </tr>
+                                            ))}
+                                            {csvData.length > 20 && (
+                                                <tr>
+                                                    <td colSpan={6} className="px-3 py-2 text-center text-gray-500 italic">
+                                                        ...還有 {csvData.length - 20} 筆資料
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* 按鈕 */}
+                        <div className="flex gap-3 pt-2">
+                            <button
+                                onClick={() => {
+                                    setShowImportModal(false)
+                                    setCsvData([])
+                                    setCsvError('')
+                                }}
+                                className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
+                            >
+                                取消
+                            </button>
+                            <button
+                                onClick={handleImportCSV}
+                                disabled={csvData.length === 0 || importing}
+                                className="flex-1 py-2.5 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg transition-colors font-medium"
+                            >
+                                {importing ? '匯入中...' : `確認匯入 (${csvData.length} 筆)`}
+                            </button>
                         </div>
                     </div>
                 </div>

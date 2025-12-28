@@ -6,6 +6,9 @@ CREATE TABLE IF NOT EXISTS guest_list (
     id SERIAL PRIMARY KEY,
     guest_name VARCHAR(100) NOT NULL,
     table_number VARCHAR(20) NOT NULL,
+    adults INTEGER DEFAULT 1,
+    children INTEGER DEFAULT 0,
+    total_guests INTEGER DEFAULT 1,
     notes TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
