@@ -14,6 +14,11 @@ CREATE TABLE IF NOT EXISTS guest_list (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- 3. 若表格已存在，新增欄位 (防止 CSV 匯入失敗)
+ALTER TABLE guest_list ADD COLUMN IF NOT EXISTS adults INTEGER DEFAULT 1;
+ALTER TABLE guest_list ADD COLUMN IF NOT EXISTS children INTEGER DEFAULT 0;
+ALTER TABLE guest_list ADD COLUMN IF NOT EXISTS total_guests INTEGER DEFAULT 1;
+
 -- 索引
 CREATE INDEX IF NOT EXISTS idx_guest_list_name ON guest_list(guest_name);
 CREATE INDEX IF NOT EXISTS idx_users_table_number ON users(table_number);
