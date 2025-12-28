@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import AdminLayout from '@/components/AdminLayout'
 import {
@@ -15,7 +15,10 @@ import {
     Users,
     Upload,
     FileText,
-    AlertCircle
+    AlertCircle,
+    BarChart3,
+    ChevronDown,
+    ChevronUp
 } from 'lucide-react'
 
 interface LineUser {
@@ -70,6 +73,47 @@ export default function GuestManagementPage() {
     const [csvData, setCsvData] = useState<{ name: string, table_number: string, adults: number, children: number, total_guests: number, notes: string }[]>([])
     const [csvError, setCsvError] = useState('')
     const [importing, setImporting] = useState(false)
+
+    // 統計顯示狀態
+    const [showStats, setShowStats] = useState(false)
+
+    // 計算各桌統計
+    const tableStats = useMemo(() => {
+        const stats: Record<string, { adults: number, children: number, total: number, count: number }> = {}
+
+        guests.forEach(guest => {
+            const table = guest.table_number || '未分配'
+            if (!stats[table]) {
+                stats[table] = { adults: 0, children: 0, total: 0, count: 0 }
+            }
+            stats[table].adults += guest.adults || 1
+            stats[table].children += guest.children || 0
+            stats[table].total += guest.total_guests || ((guest.adults || 1) + (guest.children || 0))
+            stats[table].count += 1
+        })
+
+        // 轉換為陣列並排序
+        return Object.entries(stats)
+            .map(([table, data]) => ({ table, ...data }))
+            .sort((a, b) => a.table.localeCompare(b.table, 'zh-TW', { numeric: true }))
+    }, [guests])
+
+    // 總計
+    const totalStats = useMemo(() => {
+        return tableStats.reduce(
+            (acc, t) => ({
+                adults: acc.adults + t.adults,
+                children: acc.children + t.children,
+                total: acc.total + t.total,
+                count: acc.count + t.count,
+                tables: acc.tables + 1
+            }),
+            { adults: 0, children: 0, total: 0, count: 0, tables: 0 }
+        )
+    }, [tableStats])
+
+    // 最大人數 (用於圖表比例)
+    const maxTableTotal = Math.max(...tableStats.map(t => t.total), 1)
 
     // 載入資料
     const fetchData = async () => {
@@ -423,6 +467,86 @@ export default function GuestManagementPage() {
                     </div>
                 </div>
 
+                {/* 統計區塊 (只在手動名單時顯示) */}
+                {activeTab === 'manual' && guests.length > 0 && (
+                    <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+                        <button
+                            onClick={() => setShowStats(!showStats)}
+                            className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-gray-50 transition-colors"
+                        >
+                            <div className="flex items-center gap-2">
+                                <BarChart3 className="w-5 h-5 text-purple-600" />
+                                <span className="font-medium text-gray-900">桌次人數統計</span>
+                                <span className="text-sm text-gray-500">
+                                    ({totalStats.tables} 桌, {totalStats.total} 人)
+                                </span>
+                            </div>
+                            {showStats ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
+                        </button>
+
+                        {showStats && (
+                            <div className="p-4 border-t border-gray-100">
+                                {/* 總計卡片 */}
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                                    <div className="bg-purple-50 rounded-lg p-3 text-center">
+                                        <div className="text-2xl font-bold text-purple-700">{totalStats.tables}</div>
+                                        <div className="text-xs text-purple-600">桌數</div>
+                                    </div>
+                                    <div className="bg-blue-50 rounded-lg p-3 text-center">
+                                        <div className="text-2xl font-bold text-blue-700">{totalStats.adults}</div>
+                                        <div className="text-xs text-blue-600">大人</div>
+                                    </div>
+                                    <div className="bg-pink-50 rounded-lg p-3 text-center">
+                                        <div className="text-2xl font-bold text-pink-700">{totalStats.children}</div>
+                                        <div className="text-xs text-pink-600">小孩</div>
+                                    </div>
+                                    <div className="bg-green-50 rounded-lg p-3 text-center">
+                                        <div className="text-2xl font-bold text-green-700">{totalStats.total}</div>
+                                        <div className="text-xs text-green-600">總人數</div>
+                                    </div>
+                                </div>
+
+                                {/* 各桌圖表 */}
+                                <div className="space-y-2">
+                                    <h4 className="text-sm font-medium text-gray-700 mb-3">各桌人數分布</h4>
+                                    {tableStats.map((t) => (
+                                        <div key={t.table} className="flex items-center gap-3">
+                                            <div className="w-16 text-right font-medium text-gray-700 text-sm">{t.table}</div>
+                                            <div className="flex-1 h-6 bg-gray-100 rounded-full overflow-hidden flex">
+                                                <div
+                                                    className="h-full bg-blue-500 flex items-center justify-center text-xs text-white font-medium"
+                                                    style={{ width: `${(t.adults / maxTableTotal) * 100}%`, minWidth: t.adults > 0 ? '20px' : '0' }}
+                                                >
+                                                    {t.adults > 0 && t.adults}
+                                                </div>
+                                                <div
+                                                    className="h-full bg-pink-400 flex items-center justify-center text-xs text-white font-medium"
+                                                    style={{ width: `${(t.children / maxTableTotal) * 100}%`, minWidth: t.children > 0 ? '20px' : '0' }}
+                                                >
+                                                    {t.children > 0 && t.children}
+                                                </div>
+                                            </div>
+                                            <div className="w-12 text-right text-sm font-bold text-purple-700">{t.total}</div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* 圖例 */}
+                                <div className="flex items-center justify-center gap-6 mt-4 pt-3 border-t border-gray-100">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                                        <span className="text-xs text-gray-600">大人</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-3 h-3 bg-pink-400 rounded-full"></div>
+                                        <span className="text-xs text-gray-600">小孩</span>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
                 {/* 列表內容 */}
                 <div className="bg-white rounded-xl shadow-sm overflow-hidden min-h-[400px]">
                     {loading ? (
@@ -703,217 +827,221 @@ export default function GuestManagementPage() {
             </div>
 
             {/* 新增 Modal */}
-            {showAddModal && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in-95">
-                        <h2 className="text-xl font-bold text-gray-900 mb-4">新增賓客名單</h2>
+            {
+                showAddModal && (
+                    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                        <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in-95">
+                            <h2 className="text-xl font-bold text-gray-900 mb-4">新增賓客名單</h2>
 
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    賓客姓名 <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                    type="text"
-                                    value={newGuestName}
-                                    onChange={(e) => setNewGuestName(e.target.value)}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none"
-                                    placeholder="請輸入姓名"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    桌次 <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                    type="text"
-                                    value={newGuestTable}
-                                    onChange={(e) => setNewGuestTable(e.target.value)}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none"
-                                    placeholder="例如: 主桌, A1, B2"
-                                />
-                            </div>
-
-                            <div className="flex gap-4">
-                                <div className="flex-1">
+                            <div className="space-y-4">
+                                <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        大人人數
+                                        賓客姓名 <span className="text-red-500">*</span>
                                     </label>
                                     <input
-                                        type="number"
-                                        min="0"
-                                        value={newGuestAdults}
-                                        onChange={(e) => setNewGuestAdults(parseInt(e.target.value) || 0)}
+                                        type="text"
+                                        value={newGuestName}
+                                        onChange={(e) => setNewGuestName(e.target.value)}
                                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none"
+                                        placeholder="請輸入姓名"
                                     />
                                 </div>
-                                <div className="flex-1">
+
+                                <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        小孩人數
+                                        桌次 <span className="text-red-500">*</span>
                                     </label>
                                     <input
-                                        type="number"
-                                        min="0"
-                                        value={newGuestChildren}
-                                        onChange={(e) => setNewGuestChildren(parseInt(e.target.value) || 0)}
+                                        type="text"
+                                        value={newGuestTable}
+                                        onChange={(e) => setNewGuestTable(e.target.value)}
                                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none"
+                                        placeholder="例如: 主桌, A1, B2"
                                     />
                                 </div>
-                            </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    備註
-                                </label>
-                                <input
-                                    type="text"
-                                    value={newGuestNotes}
-                                    onChange={(e) => setNewGuestNotes(e.target.value)}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none"
-                                    placeholder="可選填，將作為額外搜尋關鍵字"
-                                />
-                            </div>
+                                <div className="flex gap-4">
+                                    <div className="flex-1">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            大人人數
+                                        </label>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            value={newGuestAdults}
+                                            onChange={(e) => setNewGuestAdults(parseInt(e.target.value) || 0)}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none"
+                                        />
+                                    </div>
+                                    <div className="flex-1">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            小孩人數
+                                        </label>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            value={newGuestChildren}
+                                            onChange={(e) => setNewGuestChildren(parseInt(e.target.value) || 0)}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none"
+                                        />
+                                    </div>
+                                </div>
 
-                            <div className="flex gap-3 mt-6 pt-2">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        備註
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={newGuestNotes}
+                                        onChange={(e) => setNewGuestNotes(e.target.value)}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none"
+                                        placeholder="可選填，將作為額外搜尋關鍵字"
+                                    />
+                                </div>
+
+                                <div className="flex gap-3 mt-6 pt-2">
+                                    <button
+                                        onClick={() => setShowAddModal(false)}
+                                        className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
+                                    >
+                                        取消
+                                    </button>
+                                    <button
+                                        onClick={handleAddGuest}
+                                        className="flex-1 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors font-medium"
+                                    >
+                                        確認新增
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+
+            {/* CSV 匯入 Modal */}
+            {
+                showImportModal && (
+                    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                        <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
+                            <div className="flex justify-between items-center mb-4">
+                                <h2 className="text-xl font-bold text-gray-900">匯入 CSV 賓客名單</h2>
                                 <button
-                                    onClick={() => setShowAddModal(false)}
+                                    onClick={() => {
+                                        setShowImportModal(false)
+                                        setCsvData([])
+                                        setCsvError('')
+                                    }}
+                                    className="p-1 hover:bg-gray-100 rounded"
+                                >
+                                    <X className="w-5 h-5 text-gray-500" />
+                                </button>
+                            </div>
+
+                            {/* 說明 */}
+                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                                <div className="flex items-start gap-2">
+                                    <FileText className="w-5 h-5 text-blue-600 mt-0.5" />
+                                    <div className="text-sm text-blue-800">
+                                        <p className="font-medium mb-1">CSV 格式說明</p>
+                                        <p>請上傳包含以下欄位的 CSV 檔案：</p>
+                                        <ul className="list-disc list-inside mt-1 space-y-0.5">
+                                            <li><strong>姓名</strong> (必填)：name 或 姓名</li>
+                                            <li><strong>桌次</strong> (必填)：table 或 桌次</li>
+                                            <li><strong>大人</strong> (選填)：adult 或 大人</li>
+                                            <li><strong>小孩</strong> (選填)：child 或 小孩</li>
+                                            <li><strong>總人數</strong> (選填)：total 或 人數</li>
+                                            <li><strong>備註</strong> (選填)：notes 或 備註</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* 上傳區域 */}
+                            <div className="mb-4">
+                                <input
+                                    type="file"
+                                    accept=".csv"
+                                    onChange={handleFileChange}
+                                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 cursor-pointer"
+                                />
+                            </div>
+
+                            {/* 錯誤訊息 */}
+                            {csvError && (
+                                <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4 flex items-center gap-2">
+                                    <AlertCircle className="w-5 h-5 text-red-600" />
+                                    <span className="text-sm text-red-700">{csvError}</span>
+                                </div>
+                            )}
+
+                            {/* 預覽 */}
+                            {csvData.length > 0 && (
+                                <div className="mb-4">
+                                    <h3 className="text-sm font-medium text-gray-700 mb-2">
+                                        預覽 ({csvData.length} 筆資料, 共 {csvData.reduce((sum, r) => sum + r.total_guests, 0)} 人)
+                                    </h3>
+                                    <div className="border rounded-lg overflow-hidden max-h-64 overflow-y-auto">
+                                        <table className="w-full text-sm">
+                                            <thead className="bg-gray-50 sticky top-0">
+                                                <tr>
+                                                    <th className="px-2 py-2 text-left font-medium text-gray-600">姓名</th>
+                                                    <th className="px-2 py-2 text-left font-medium text-gray-600">桌次</th>
+                                                    <th className="px-2 py-2 text-center font-medium text-gray-600">大人</th>
+                                                    <th className="px-2 py-2 text-center font-medium text-gray-600">小孩</th>
+                                                    <th className="px-2 py-2 text-center font-medium text-gray-600">總人數</th>
+                                                    <th className="px-2 py-2 text-left font-medium text-gray-600">備註</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-gray-100">
+                                                {csvData.slice(0, 20).map((row, idx) => (
+                                                    <tr key={idx}>
+                                                        <td className="px-2 py-2 text-gray-900">{row.name}</td>
+                                                        <td className="px-2 py-2 text-gray-900">{row.table_number}</td>
+                                                        <td className="px-2 py-2 text-center text-gray-700">{row.adults}</td>
+                                                        <td className="px-2 py-2 text-center text-gray-700">{row.children}</td>
+                                                        <td className="px-2 py-2 text-center font-bold text-purple-700">{row.total_guests}</td>
+                                                        <td className="px-2 py-2 text-gray-500">{row.notes || '-'}</td>
+                                                    </tr>
+                                                ))}
+                                                {csvData.length > 20 && (
+                                                    <tr>
+                                                        <td colSpan={6} className="px-3 py-2 text-center text-gray-500 italic">
+                                                            ...還有 {csvData.length - 20} 筆資料
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* 按鈕 */}
+                            <div className="flex gap-3 pt-2">
+                                <button
+                                    onClick={() => {
+                                        setShowImportModal(false)
+                                        setCsvData([])
+                                        setCsvError('')
+                                    }}
                                     className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
                                 >
                                     取消
                                 </button>
                                 <button
-                                    onClick={handleAddGuest}
-                                    className="flex-1 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors font-medium"
+                                    onClick={handleImportCSV}
+                                    disabled={csvData.length === 0 || importing}
+                                    className="flex-1 py-2.5 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg transition-colors font-medium"
                                 >
-                                    確認新增
+                                    {importing ? '匯入中...' : `確認匯入 (${csvData.length} 筆)`}
                                 </button>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
-
-            {/* CSV 匯入 Modal */}
-            {showImportModal && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-xl font-bold text-gray-900">匯入 CSV 賓客名單</h2>
-                            <button
-                                onClick={() => {
-                                    setShowImportModal(false)
-                                    setCsvData([])
-                                    setCsvError('')
-                                }}
-                                className="p-1 hover:bg-gray-100 rounded"
-                            >
-                                <X className="w-5 h-5 text-gray-500" />
-                            </button>
-                        </div>
-
-                        {/* 說明 */}
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                            <div className="flex items-start gap-2">
-                                <FileText className="w-5 h-5 text-blue-600 mt-0.5" />
-                                <div className="text-sm text-blue-800">
-                                    <p className="font-medium mb-1">CSV 格式說明</p>
-                                    <p>請上傳包含以下欄位的 CSV 檔案：</p>
-                                    <ul className="list-disc list-inside mt-1 space-y-0.5">
-                                        <li><strong>姓名</strong> (必填)：name 或 姓名</li>
-                                        <li><strong>桌次</strong> (必填)：table 或 桌次</li>
-                                        <li><strong>大人</strong> (選填)：adult 或 大人</li>
-                                        <li><strong>小孩</strong> (選填)：child 或 小孩</li>
-                                        <li><strong>總人數</strong> (選填)：total 或 人數</li>
-                                        <li><strong>備註</strong> (選填)：notes 或 備註</li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* 上傳區域 */}
-                        <div className="mb-4">
-                            <input
-                                type="file"
-                                accept=".csv"
-                                onChange={handleFileChange}
-                                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 cursor-pointer"
-                            />
-                        </div>
-
-                        {/* 錯誤訊息 */}
-                        {csvError && (
-                            <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4 flex items-center gap-2">
-                                <AlertCircle className="w-5 h-5 text-red-600" />
-                                <span className="text-sm text-red-700">{csvError}</span>
-                            </div>
-                        )}
-
-                        {/* 預覽 */}
-                        {csvData.length > 0 && (
-                            <div className="mb-4">
-                                <h3 className="text-sm font-medium text-gray-700 mb-2">
-                                    預覽 ({csvData.length} 筆資料, 共 {csvData.reduce((sum, r) => sum + r.total_guests, 0)} 人)
-                                </h3>
-                                <div className="border rounded-lg overflow-hidden max-h-64 overflow-y-auto">
-                                    <table className="w-full text-sm">
-                                        <thead className="bg-gray-50 sticky top-0">
-                                            <tr>
-                                                <th className="px-2 py-2 text-left font-medium text-gray-600">姓名</th>
-                                                <th className="px-2 py-2 text-left font-medium text-gray-600">桌次</th>
-                                                <th className="px-2 py-2 text-center font-medium text-gray-600">大人</th>
-                                                <th className="px-2 py-2 text-center font-medium text-gray-600">小孩</th>
-                                                <th className="px-2 py-2 text-center font-medium text-gray-600">總人數</th>
-                                                <th className="px-2 py-2 text-left font-medium text-gray-600">備註</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-gray-100">
-                                            {csvData.slice(0, 20).map((row, idx) => (
-                                                <tr key={idx}>
-                                                    <td className="px-2 py-2 text-gray-900">{row.name}</td>
-                                                    <td className="px-2 py-2 text-gray-900">{row.table_number}</td>
-                                                    <td className="px-2 py-2 text-center text-gray-700">{row.adults}</td>
-                                                    <td className="px-2 py-2 text-center text-gray-700">{row.children}</td>
-                                                    <td className="px-2 py-2 text-center font-bold text-purple-700">{row.total_guests}</td>
-                                                    <td className="px-2 py-2 text-gray-500">{row.notes || '-'}</td>
-                                                </tr>
-                                            ))}
-                                            {csvData.length > 20 && (
-                                                <tr>
-                                                    <td colSpan={6} className="px-3 py-2 text-center text-gray-500 italic">
-                                                        ...還有 {csvData.length - 20} 筆資料
-                                                    </td>
-                                                </tr>
-                                            )}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* 按鈕 */}
-                        <div className="flex gap-3 pt-2">
-                            <button
-                                onClick={() => {
-                                    setShowImportModal(false)
-                                    setCsvData([])
-                                    setCsvError('')
-                                }}
-                                className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
-                            >
-                                取消
-                            </button>
-                            <button
-                                onClick={handleImportCSV}
-                                disabled={csvData.length === 0 || importing}
-                                className="flex-1 py-2.5 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg transition-colors font-medium"
-                            >
-                                {importing ? '匯入中...' : `確認匯入 (${csvData.length} 筆)`}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-        </AdminLayout>
+                )
+            }
+        </AdminLayout >
     )
 }
