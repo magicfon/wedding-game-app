@@ -8,10 +8,10 @@ export async function GET() {
     try {
         const supabase = createSupabaseAdmin()
 
-        // 獲取 LINE 用戶
+        // 獲取 LINE 用戶 (全部欄位)
         const { data: users, error: usersError } = await supabase
             .from('users')
-            .select('line_id, display_name, avatar_url, table_number')
+            .select('*')
             .order('created_at', { ascending: false })
 
         if (usersError) throw usersError
@@ -115,11 +115,11 @@ export async function POST(request: Request) {
     }
 }
 
-// PUT: 更新桌次 (支援 LINE 用戶和手動賓客)
+// PUT: 更新用戶資料 (支援 LINE 用戶和手動賓客)
 export async function PUT(request: Request) {
     try {
         const body = await request.json()
-        const { type, id, table_number, name, notes } = body
+        const { type, id, table_number, name, notes, display_name, is_active, total_score } = body
 
         if (!type || !id) {
             return NextResponse.json(
@@ -131,10 +131,16 @@ export async function PUT(request: Request) {
         const supabase = createSupabaseAdmin()
 
         if (type === 'user') {
-            // 更新 LINE 用戶
+            // 更新 LINE 用戶 - 支援多個欄位
+            const updates: Record<string, unknown> = { updated_at: new Date().toISOString() }
+            if (table_number !== undefined) updates.table_number = table_number
+            if (display_name !== undefined) updates.display_name = display_name
+            if (is_active !== undefined) updates.is_active = is_active
+            if (total_score !== undefined) updates.total_score = parseInt(total_score) || 0
+
             const { error } = await supabase
                 .from('users')
-                .update({ table_number })
+                .update(updates)
                 .eq('line_id', id)
 
             if (error) throw error
@@ -170,11 +176,12 @@ export async function PUT(request: Request) {
     }
 }
 
-// DELETE: 刪除手動賓客
+// DELETE: 刪除賓客 (支援 LINE 用戶和手動賓客)
 export async function DELETE(request: Request) {
     try {
         const { searchParams } = new URL(request.url)
         const id = searchParams.get('id')
+        const type = searchParams.get('type') || 'guest' // 預設為 guest
 
         if (!id) {
             return NextResponse.json(
@@ -185,12 +192,23 @@ export async function DELETE(request: Request) {
 
         const supabase = createSupabaseAdmin()
 
-        const { error } = await supabase
-            .from('guest_list')
-            .delete()
-            .eq('id', id)
+        if (type === 'user') {
+            // 刪除 LINE 用戶
+            const { error } = await supabase
+                .from('users')
+                .delete()
+                .eq('line_id', id)
 
-        if (error) throw error
+            if (error) throw error
+        } else {
+            // 刪除手動賓客
+            const { error } = await supabase
+                .from('guest_list')
+                .delete()
+                .eq('id', id)
+
+            if (error) throw error
+        }
 
         return NextResponse.json({ success: true })
     } catch (error) {

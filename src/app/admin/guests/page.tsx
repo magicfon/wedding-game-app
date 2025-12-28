@@ -23,6 +23,10 @@ interface LineUser {
     display_name: string
     avatar_url: string | null
     table_number: string | null
+    total_score: number
+    is_active: boolean
+    join_time: string | null
+    created_at: string | null
 }
 
 interface ManualGuest {
@@ -47,6 +51,8 @@ export default function GuestManagementPage() {
     const [editingId, setEditingId] = useState<string | number | null>(null)
     const [editTable, setEditTable] = useState('')
     const [editName, setEditName] = useState('')
+    const [editDisplayName, setEditDisplayName] = useState('')
+    const [editIsActive, setEditIsActive] = useState(true)
     const [editAdults, setEditAdults] = useState(1)
     const [editChildren, setEditChildren] = useState(0)
     const [editNotes, setEditNotes] = useState('')
@@ -88,13 +94,8 @@ export default function GuestManagementPage() {
         fetchData()
     }, [])
 
-    // 更新 LINE 用戶桌次
+    // 更新 LINE 用戶資料
     const handleUpdateLineUser = async (user: LineUser) => {
-        if (!editTable.trim()) {
-            alert('請輸入桌次')
-            return
-        }
-
         try {
             const response = await fetch('/api/admin/guests', {
                 method: 'PUT',
@@ -102,13 +103,20 @@ export default function GuestManagementPage() {
                 body: JSON.stringify({
                     type: 'user',
                     id: user.line_id,
-                    table_number: editTable.trim()
+                    table_number: editTable.trim() || null,
+                    display_name: editDisplayName.trim() || user.display_name,
+                    is_active: editIsActive
                 })
             })
 
             if (response.ok) {
                 setUsers(users.map(u =>
-                    u.line_id === user.line_id ? { ...u, table_number: editTable.trim() } : u
+                    u.line_id === user.line_id ? {
+                        ...u,
+                        table_number: editTable.trim() || null,
+                        display_name: editDisplayName.trim() || u.display_name,
+                        is_active: editIsActive
+                    } : u
                 ))
                 setEditingId(null)
             } else {
@@ -117,6 +125,26 @@ export default function GuestManagementPage() {
         } catch (error) {
             console.error('Error updating user:', error)
             alert('更新發生錯誤')
+        }
+    }
+
+    // 刪除 LINE 用戶
+    const handleDeleteLineUser = async (user: LineUser) => {
+        if (!confirm(`確定要刪除用戶「${user.display_name}」嗎？此操作無法復原。`)) return
+
+        try {
+            const response = await fetch(`/api/admin/guests?id=${user.line_id}&type=user`, {
+                method: 'DELETE'
+            })
+
+            if (response.ok) {
+                setUsers(users.filter(u => u.line_id !== user.line_id))
+            } else {
+                alert('刪除失敗')
+            }
+        } catch (error) {
+            console.error('Error deleting user:', error)
+            alert('刪除發生錯誤')
         }
     }
 
@@ -327,7 +355,7 @@ export default function GuestManagementPage() {
     )
 
     return (
-        <AdminLayout title="賓客桌次管理">
+        <AdminLayout title="用戶管理">
             <div className="max-w-6xl mx-auto space-y-6">
 
                 {/* 頂部操作區 */}
@@ -407,22 +435,25 @@ export default function GuestManagementPage() {
                             <table className="w-full text-left">
                                 <thead className="bg-gray-50 text-gray-600 text-xs uppercase">
                                     <tr>
-                                        <th className="px-6 py-4 font-medium">LINE 用戶</th>
-                                        <th className="px-6 py-4 font-medium">桌次</th>
-                                        <th className="px-6 py-4 font-medium text-right">操作</th>
+                                        <th className="px-4 py-4 font-medium">用戶</th>
+                                        <th className="px-4 py-4 font-medium">桌次</th>
+                                        <th className="px-4 py-4 font-medium text-center">積分</th>
+                                        <th className="px-4 py-4 font-medium text-center">狀態</th>
+                                        <th className="px-4 py-4 font-medium">加入時間</th>
+                                        <th className="px-4 py-4 font-medium text-right">操作</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100">
                                     {filteredUsers.length === 0 ? (
                                         <tr>
-                                            <td colSpan={3} className="px-6 py-8 text-center text-gray-500">
+                                            <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
                                                 找不到符合的資料
                                             </td>
                                         </tr>
                                     ) : (
                                         filteredUsers.map((user) => (
-                                            <tr key={user.line_id} className="hover:bg-gray-50">
-                                                <td className="px-6 py-4">
+                                            <tr key={user.line_id} className={`hover:bg-gray-50 ${!user.is_active ? 'opacity-50' : ''}`}>
+                                                <td className="px-4 py-3">
                                                     <div className="flex items-center gap-3">
                                                         {user.avatar_url ? (
                                                             <img src={user.avatar_url} alt={user.display_name} className="w-8 h-8 rounded-full" />
@@ -431,26 +462,60 @@ export default function GuestManagementPage() {
                                                                 <User className="w-4 h-4" />
                                                             </div>
                                                         )}
-                                                        <span className="font-medium text-gray-900">{user.display_name}</span>
+                                                        <div>
+                                                            {editingId === user.line_id ? (
+                                                                <input
+                                                                    type="text"
+                                                                    value={editDisplayName}
+                                                                    onChange={(e) => setEditDisplayName(e.target.value)}
+                                                                    className="w-28 px-2 py-1 border border-purple-300 rounded text-sm"
+                                                                    placeholder="顯示名稱"
+                                                                />
+                                                            ) : (
+                                                                <span className="font-medium text-gray-900">{user.display_name}</span>
+                                                            )}
+                                                            <div className="text-xs text-gray-400 truncate max-w-[120px]" title={user.line_id}>
+                                                                {user.line_id.substring(0, 12)}...
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </td>
-                                                <td className="px-6 py-4">
+                                                <td className="px-4 py-3">
                                                     {editingId === user.line_id ? (
                                                         <input
                                                             type="text"
                                                             value={editTable}
                                                             onChange={(e) => setEditTable(e.target.value)}
-                                                            className="w-24 px-2 py-1 border border-purple-300 rounded focus:ring-2 focus:ring-purple-200"
-                                                            placeholder="輸入桌次"
-                                                            autoFocus
+                                                            className="w-20 px-2 py-1 border border-purple-300 rounded text-sm"
+                                                            placeholder="桌次"
                                                         />
                                                     ) : (
                                                         <span className={`px-2 py-1 rounded text-sm ${user.table_number ? 'bg-purple-50 text-purple-700 font-medium' : 'text-gray-400 italic'}`}>
-                                                            {user.table_number || '尚未設定'}
+                                                            {user.table_number || '未設定'}
                                                         </span>
                                                     )}
                                                 </td>
-                                                <td className="px-6 py-4 text-right">
+                                                <td className="px-4 py-3 text-center">
+                                                    <span className="font-bold text-amber-600">{user.total_score || 0}</span>
+                                                </td>
+                                                <td className="px-4 py-3 text-center">
+                                                    {editingId === user.line_id ? (
+                                                        <button
+                                                            onClick={() => setEditIsActive(!editIsActive)}
+                                                            className={`px-2 py-1 rounded text-xs font-medium ${editIsActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}
+                                                        >
+                                                            {editIsActive ? '啟用' : '停用'}
+                                                        </button>
+                                                    ) : (
+                                                        <span className={`px-2 py-1 rounded text-xs font-medium ${user.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                                            {user.is_active ? '啟用' : '停用'}
+                                                        </span>
+                                                    )}
+                                                </td>
+                                                <td className="px-4 py-3 text-sm text-gray-500">
+                                                    {user.join_time ? new Date(user.join_time).toLocaleDateString('zh-TW') : '-'}
+                                                </td>
+                                                <td className="px-4 py-3 text-right">
                                                     {editingId === user.line_id ? (
                                                         <div className="flex justify-end gap-2">
                                                             <button
@@ -467,15 +532,25 @@ export default function GuestManagementPage() {
                                                             </button>
                                                         </div>
                                                     ) : (
-                                                        <button
-                                                            onClick={() => {
-                                                                setEditingId(user.line_id)
-                                                                setEditTable(user.table_number || '')
-                                                            }}
-                                                            className="text-gray-400 hover:text-purple-600 transition-colors"
-                                                        >
-                                                            <Edit2 className="w-4 h-4" />
-                                                        </button>
+                                                        <div className="flex justify-end gap-3">
+                                                            <button
+                                                                onClick={() => {
+                                                                    setEditingId(user.line_id)
+                                                                    setEditTable(user.table_number || '')
+                                                                    setEditDisplayName(user.display_name)
+                                                                    setEditIsActive(user.is_active)
+                                                                }}
+                                                                className="text-gray-400 hover:text-purple-600 transition-colors"
+                                                            >
+                                                                <Edit2 className="w-4 h-4" />
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleDeleteLineUser(user)}
+                                                                className="text-gray-400 hover:text-red-600 transition-colors"
+                                                            >
+                                                                <Trash2 className="w-4 h-4" />
+                                                            </button>
+                                                        </div>
                                                     )}
                                                 </td>
                                             </tr>
