@@ -827,21 +827,6 @@ export default function RichMenuManagementPage() {
             </table>
           </div>
 
-          {/* 進階設定 */}
-          <div className="mt-6 pt-4 border-t border-gray-200">
-            <h3 className="text-sm font-medium text-gray-700 mb-3">⚙️ 進階設定</h3>
-            <div className="flex items-center gap-4">
-              <label className="text-sm text-gray-600">預設開啟分頁：</label>
-              <select
-                value={settings?.defaultTab || 'venue_info'}
-                onChange={(e) => setSettings(prev => prev ? { ...prev, defaultTab: e.target.value as any } : null)}
-                className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="venue_info">會場資訊</option>
-                <option value="activity">現場活動</option>
-              </select>
-            </div>
-          </div>
         </div>
 
 
