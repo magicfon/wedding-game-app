@@ -58,6 +58,29 @@ export async function GET(request: NextRequest) {
     const totalMenus = registry.length
     const assignedMenus = registry.filter(r => r.menu_type !== null).length
 
+    // 從 LINE API 獲取實際的 Alias 對應資訊
+    let lineAliases: Record<string, { richMenuId: string; richMenuName?: string }> = {}
+    const lineClient = getLineClient()
+    if (lineClient) {
+      try {
+        const aliasListResponse = await lineClient.getRichMenuAliasList()
+        const aliases = aliasListResponse.aliases || []
+
+        for (const alias of aliases) {
+          // 嘗試從 registry 找到 Rich Menu 名稱
+          const registryEntry = registry.find(r => r.richmenu_id === alias.richMenuId)
+          lineAliases[alias.richMenuAliasId] = {
+            richMenuId: alias.richMenuId,
+            richMenuName: registryEntry?.name || undefined
+          }
+        }
+        console.log('📋 Fetched LINE aliases:', lineAliases)
+      } catch (aliasError) {
+        console.error('Error fetching LINE aliases:', aliasError)
+        // 繼續執行，即使無法獲取 alias 資訊
+      }
+    }
+
     return NextResponse.json({
       defaultTab: settings.default_tab,
       venueTabEnabled: settings.venue_tab_enabled,
@@ -65,6 +88,7 @@ export async function GET(request: NextRequest) {
       richMenuIds,
       totalMenus,
       assignedMenus,
+      lineAliases, // 新增：LINE Server 上實際的 Alias 對應
       updatedAt: settings.updated_at
     })
 

@@ -15,6 +15,7 @@ interface RichMenuSettings {
     activity?: string
     unavailable?: string
   }
+  lineAliases?: Record<string, { richMenuId: string; richMenuName?: string }>
   updatedAt: string
 }
 
@@ -752,6 +753,7 @@ export default function RichMenuManagementPage() {
                 <tr className="border-b border-gray-200">
                   <th className="text-left py-3 px-4 font-medium text-gray-600">Alias 名稱</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-600">目前指向</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-600">LINE Server Rich Menu ID</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-600">說明</th>
                 </tr>
               </thead>
@@ -764,6 +766,22 @@ export default function RichMenuManagementPage() {
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
                       🏢 會場資訊
                     </span>
+                  </td>
+                  <td className="py-3 px-4">
+                    {settings?.lineAliases?.['richmenu-alias-venue-info'] ? (
+                      <div className="flex flex-col gap-1">
+                        <code className="text-xs text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded">
+                          {settings.lineAliases['richmenu-alias-venue-info'].richMenuId.substring(0, 20)}...
+                        </code>
+                        {settings.lineAliases['richmenu-alias-venue-info'].richMenuName && (
+                          <span className="text-xs text-gray-500">
+                            ({settings.lineAliases['richmenu-alias-venue-info'].richMenuName})
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-xs text-orange-600">⚠️ 未設定</span>
+                    )}
                   </td>
                   <td className="py-3 px-4 text-gray-500">固定指向會場資訊 Rich Menu</td>
                 </tr>
@@ -780,6 +798,22 @@ export default function RichMenuManagementPage() {
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-orange-100 text-orange-800 rounded-full text-xs font-medium">
                         🔒 尚未開放
                       </span>
+                    )}
+                  </td>
+                  <td className="py-3 px-4">
+                    {settings?.lineAliases?.['richmenu-alias-activity'] ? (
+                      <div className="flex flex-col gap-1">
+                        <code className="text-xs text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded">
+                          {settings.lineAliases['richmenu-alias-activity'].richMenuId.substring(0, 20)}...
+                        </code>
+                        {settings.lineAliases['richmenu-alias-activity'].richMenuName && (
+                          <span className="text-xs text-gray-500">
+                            ({settings.lineAliases['richmenu-alias-activity'].richMenuName})
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-xs text-orange-600">⚠️ 未設定</span>
                     )}
                   </td>
                   <td className="py-3 px-4 text-gray-500">
