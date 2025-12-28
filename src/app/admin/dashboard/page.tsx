@@ -234,6 +234,13 @@ export default function AdminDashboard() {
       color: 'bg-red-500'
     },
     {
+      title: '桌次管理',
+      description: '管理賓客桌次和名單',
+      icon: Users,
+      href: '/admin/guests',
+      color: 'bg-purple-600'
+    },
+    {
       title: 'Rich Menu 管理',
       description: '管理 LINE Rich Menu 分頁和圖片',
       icon: Settings,

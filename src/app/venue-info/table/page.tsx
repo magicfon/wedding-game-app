@@ -1,181 +1,190 @@
 'use client'
 
-import { useState } from 'react'
-import { Users, Search } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Users, Search, Loader2 } from 'lucide-react'
+import { useLiff } from '@/hooks/useLiff'
 
 interface Guest {
-  line_id: string
-  display_name: string
-  table_number: string
+    guest_name: string
+    table_number: string
+    notes?: string
 }
 
 export default function TablePage() {
-  const [myTable, setMyTable] = useState<string | null>(null)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [guests, setGuests] = useState<Guest[]>([])
-  const [loading, setLoading] = useState(true)
+    const { profile, isReady } = useLiff()
+    const [myTable, setMyTable] = useState<string | null>(null)
+    const [myName, setMyName] = useState<string | null>(null)
+    const [searchQuery, setSearchQuery] = useState('')
+    const [searchResults, setSearchResults] = useState<Guest[]>([])
+    const [loadingMyTable, setLoadingMyTable] = useState(true)
+    const [searching, setSearching] = useState(false)
 
-  // TODO: 從資料庫載入用戶的桌次和其他賓客資訊
-  // 這裡先使用模擬資料
-  useState(() => {
-    // 模擬載入用戶桌次
-    setMyTable('A-1')
+    // 1. 載入用戶自己的桌次
+    useEffect(() => {
+        async function fetchMyTable() {
+            if (!isReady || !profile?.userId) {
+                setLoadingMyTable(false)
+                return
+            }
 
-    // 模擬載入其他賓客資訊
-    const mockGuests: Guest[] = [
-      { line_id: '1', display_name: '張三', table_number: 'A-1' },
-      { line_id: '2', display_name: '李四', table_number: 'A-1' },
-      { line_id: '3', display_name: '王五', table_number: 'A-2' },
-      { line_id: '4', display_name: '趙六', table_number: 'B-1' },
-      { line_id: '5', display_name: '錢七', table_number: 'B-1' },
-    ]
-    setGuests(mockGuests)
-    setLoading(false)
-  })
+            try {
+                const response = await fetch(`/api/guests/my-table?lineId=${profile.userId}`)
+                const data = await response.json()
 
-  // 過濾賓客
-  const filteredGuests = guests.filter(guest =>
-    guest.display_name.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+                if (data.table_number) {
+                    setMyTable(data.table_number)
+                    setMyName(data.display_name)
+                }
+            } catch (error) {
+                console.error('Error fetching my table:', error)
+            } finally {
+                setLoadingMyTable(false)
+            }
+        }
 
-  // 按桌次分組
-  const groupedGuests = filteredGuests.reduce((acc, guest) => {
-    const table = guest.table_number
-    if (!acc[table]) {
-      acc[table] = []
-    }
-    acc[table].push(guest)
-    return acc
-  }, {} as Record<string, Guest[]>)
+        if (isReady) {
+            fetchMyTable()
+        }
+    }, [isReady, profile])
 
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">
-      {/* 頂部導航 */}
-      <div className="bg-white shadow-sm sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-4 py-3">
-          <h1 className="text-xl font-bold text-gray-900">桌次</h1>
-        </div>
-      </div>
+    // 2. 搜尋手動名單
+    useEffect(() => {
+        const delayDebounceFn = setTimeout(async () => {
+            if (!searchQuery.trim()) {
+                setSearchResults([])
+                return
+            }
 
-      {/* 主要內容 */}
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        {/* 我的桌次 */}
-        <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl shadow-lg p-6 mb-6 text-white">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-white/20 rounded-xl">
-              <Users className="w-8 h-8" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold">您的桌次</h2>
-              <p className="text-3xl font-bold mt-1">
-                {myTable || '尚未安排'}
-              </p>
-            </div>
-          </div>
-        </div>
+            setSearching(true)
+            try {
+                const response = await fetch(`/api/guests/search?name=${encodeURIComponent(searchQuery)}`)
+                const data = await response.json()
+                setSearchResults(data.guests || [])
+            } catch (error) {
+                console.error('Error searching guests:', error)
+            } finally {
+                setSearching(false)
+            }
+        }, 500)
 
-        {/* 搜尋其他賓客 */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            尋找其他賓客
-          </h3>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="輸入姓名搜尋..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-            />
-          </div>
-        </div>
+        return () => clearTimeout(delayDebounceFn)
+    }, [searchQuery])
 
-        {/* 搜尋結果 */}
-        {loading ? (
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">載入中...</p>
-          </div>
-        ) : searchQuery && filteredGuests.length === 0 ? (
-          <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
-            <p className="text-gray-600">找不到符合的賓客</p>
-          </div>
-        ) : searchQuery ? (
-          <div className="space-y-4">
-            {filteredGuests.map((guest) => (
-              <div
-                key={guest.line_id}
-                className="bg-white rounded-xl shadow-md p-4 flex items-center justify-between"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                    <span className="text-purple-600 font-semibold">
-                      {guest.display_name[0]}
-                    </span>
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-900">
-                      {guest.display_name}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      桌次：{guest.table_number}
-                    </p>
-                  </div>
+    return (
+        <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">
+            {/* 頂部導航 */}
+            <div className="bg-white shadow-sm sticky top-0 z-10">
+                <div className="max-w-4xl mx-auto px-4 py-3">
+                    <h1 className="text-xl font-bold text-gray-900">桌次查詢</h1>
                 </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          /* 桌次列表 */
-          <div className="space-y-4">
-            {Object.entries(groupedGuests).map(([tableNumber, tableGuests]) => (
-              <div
-                key={tableNumber}
-                className="bg-white rounded-2xl shadow-lg overflow-hidden"
-              >
-                <div className="bg-purple-600 px-6 py-3">
-                  <h3 className="text-lg font-bold text-white">
-                    桌次 {tableNumber}
-                  </h3>
-                  <p className="text-purple-200 text-sm">
-                    {tableGuests.length} 位賓客
-                  </p>
-                </div>
-                <div className="p-4 space-y-3">
-                  {tableGuests.map((guest) => (
-                    <div
-                      key={guest.line_id}
-                      className="flex items-center gap-3"
-                    >
-                      <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                        <span className="text-purple-600 font-semibold text-sm">
-                          {guest.display_name[0]}
-                        </span>
-                      </div>
-                      <span className="text-gray-900">
-                        {guest.display_name}
-                      </span>
+            </div>
+
+            {/* 主要內容 */}
+            <div className="max-w-4xl mx-auto px-4 py-8">
+
+                {/* 如果正在載入 LINE 資料 */}
+                {loadingMyTable && (
+                    <div className="flex justify-center py-8">
+                        <Loader2 className="w-8 h-8 text-purple-600 animate-spin" />
                     </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+                )}
 
-        {/* 提示訊息 */}
-        <div className="mt-8 bg-yellow-50 rounded-2xl p-6">
-          <h3 className="font-semibold text-yellow-800 mb-2">
-            💡 提示
-          </h3>
-          <ul className="text-sm text-yellow-700 space-y-2">
-            <li>• 請依照桌次入座</li>
-            <li>• 如有特殊飲食需求，請告知服務人員</li>
-            <li>• 桌次安排可能因實際情況調整</li>
-          </ul>
+                {/* 用戶自己的桌次 (如果有找到) */}
+                {!loadingMyTable && myTable && (
+                    <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl shadow-lg p-6 mb-8 text-white relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl"></div>
+                        <div className="absolute bottom-0 left-0 w-24 h-24 bg-black/10 rounded-full -ml-12 -mb-12 blur-xl"></div>
+
+                        <div className="relative z-10 flex items-center gap-4">
+                            <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+                                <Users className="w-8 h-8" />
+                            </div>
+                            <div>
+                                <h2 className="text-xl font-medium text-purple-100 mb-1">
+                                    {myName ? `Hi, ${myName}` : '您的座位'}
+                                </h2>
+                                <div className="flex items-baseline gap-2">
+                                    <span className="text-lg text-purple-200">桌次</span>
+                                    <span className="text-4xl font-bold shadow-sm">{myTable}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* 搜尋區域 (總是顯示) */}
+                <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                        查詢其他賓客桌次
+                    </h3>
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                        <input
+                            type="text"
+                            placeholder="輸入姓名搜尋 (例如: 志明)"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900 bg-gray-50 focus:bg-white transition-colors"
+                        />
+                    </div>
+                </div>
+
+                {/* 搜尋結果 */}
+                {searching ? (
+                    <div className="text-center py-8">
+                        <Loader2 className="w-8 h-8 text-purple-600 animate-spin mx-auto" />
+                        <p className="mt-2 text-gray-500 text-sm">搜尋中...</p>
+                    </div>
+                ) : searchQuery && searchResults.length === 0 ? (
+                    <div className="bg-white rounded-2xl shadow p-8 text-center border border-gray-100">
+                        <p className="text-gray-500">找不到符合「{searchQuery}」的賓客</p>
+                    </div>
+                ) : searchResults.length > 0 ? (
+                    <div className="space-y-3">
+                        <div className="flex justify-between items-center px-2">
+                            <h4 className="text-sm font-medium text-gray-500">搜尋結果 ({searchResults.length})</h4>
+                        </div>
+                        {searchResults.map((guest, index) => (
+                            <div
+                                key={index}
+                                className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex items-center justify-between"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 font-bold">
+                                        {guest.guest_name[0]}
+                                    </div>
+                                    <div>
+                                        <p className="font-bold text-gray-900 text-lg">
+                                            {guest.guest_name}
+                                        </p>
+                                        {guest.notes && (
+                                            <p className="text-xs text-gray-500 mt-0.5">{guest.notes}</p>
+                                        )}
+                                    </div>
+                                </div>
+                                <div className="text-right">
+                                    <span className="block text-xs text-gray-400 mb-0.5">桌次</span>
+                                    <span className="block text-xl font-bold text-purple-600 bg-purple-50 px-3 py-1 rounded-lg">
+                                        {guest.table_number}
+                                    </span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : null}
+
+                {/* 提示訊息 */}
+                <div className="mt-8 bg-amber-50 rounded-2xl p-6 border border-amber-100">
+                    <h3 className="font-semibold text-amber-800 mb-3 flex items-center gap-2">
+                        💡 貼心提醒
+                    </h3>
+                    <ul className="text-sm text-amber-700 space-y-2 list-disc list-inside">
+                        <li>請依照現場工作人員引導或桌次指示入座。</li>
+                        <li>若查無您的桌次，請直接洽詢現場接待人員。</li>
+                        <li>桌次安排可能因臨時狀況微調。</li>
+                    </ul>
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
-  )
+    )
 }
