@@ -99,16 +99,31 @@ export async function POST(request: NextRequest) {
 
     const supabase = createSupabaseAdmin()
 
+    // 先獲取現有設定的 ID
+    const { data: existingSettings, error: fetchError } = await supabase
+      .from('line_richmenu_settings')
+      .select('id')
+      .single()
+
+    if (fetchError || !existingSettings) {
+      console.error('Error fetching existing settings:', fetchError)
+      return NextResponse.json(
+        { error: 'Failed to fetch existing settings' },
+        { status: 500 }
+      )
+    }
+
     // 構建更新物件
     const updateData: Record<string, any> = {}
     if (defaultTab !== undefined) updateData.default_tab = defaultTab
     if (venueTabEnabled !== undefined) updateData.venue_tab_enabled = venueTabEnabled
     if (activityTabEnabled !== undefined) updateData.activity_tab_enabled = activityTabEnabled
 
-    // 更新設定
+    // 更新設定（使用 ID 作為條件）
     const { data: settings, error: updateError } = await supabase
       .from('line_richmenu_settings')
       .update(updateData)
+      .eq('id', existingSettings.id)
       .select()
       .single()
 
@@ -119,6 +134,7 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       )
     }
+
 
     // 如果 activityTabEnabled 設定有改變，更新 richmenu-alias-activity 的指向
     let aliasUpdated = false
