@@ -246,24 +246,56 @@ export async function POST(request: NextRequest) {
             console.log('✅ Database registry updated with new rich menu ID')
         }
 
-        // 6. 處理 Rich Menu Alias - 基於 menu_type 自動更新對應的 alias
+        // 6. 處理 Rich Menu Alias - 更新所有指向舊 Rich Menu ID 的 alias
         let aliasUpdated = false
+        const updatedAliases: string[] = []
 
-        // 如果有 menu_type，自動更新對應的 alias
-        if (menuType === 'venue_info' || menuType === 'activity') {
+        // 從 LINE API 查找所有指向舊 Rich Menu ID 的 alias
+        try {
+            const aliasList = await apiClient.getRichMenuAliasList()
+            const aliasesPointingToOld = aliasList.aliases.filter(a => a.richMenuId === richMenuId)
+
+            console.log(`🔍 Found ${aliasesPointingToOld.length} aliases pointing to old Rich Menu ID`)
+
+            for (const alias of aliasesPointingToOld) {
+                try {
+                    console.log(`🔗 Updating alias ${alias.richMenuAliasId} to new Rich Menu ID...`)
+
+                    // 刪除舊的 alias
+                    await apiClient.deleteRichMenuAlias(alias.richMenuAliasId)
+                    console.log(`🗑️ Deleted alias: ${alias.richMenuAliasId}`)
+
+                    // 創建新的 alias 指向新的 Rich Menu ID
+                    await apiClient.createRichMenuAlias({
+                        richMenuAliasId: alias.richMenuAliasId,
+                        richMenuId: newRichMenuId
+                    })
+                    console.log(`✅ Updated alias: ${alias.richMenuAliasId} -> ${newRichMenuId}`)
+                    updatedAliases.push(alias.richMenuAliasId)
+                    aliasUpdated = true
+                } catch (aliasError: any) {
+                    console.error(`❌ Error updating alias ${alias.richMenuAliasId}:`, aliasError)
+                }
+            }
+        } catch (listError) {
+            console.error('❌ Error fetching alias list:', listError)
+        }
+
+        // 如果有 menu_type 但沒有對應的 alias，也建立它
+        if ((menuType === 'venue_info' || menuType === 'activity') && !aliasUpdated) {
             const aliasId = menuType === 'venue_info'
                 ? 'richmenu-alias-venue-info'
                 : 'richmenu-alias-activity'
 
             try {
-                console.log(`🔗 Auto-updating alias ${aliasId} for menu_type: ${menuType}...`)
+                console.log(`🔗 Creating alias ${aliasId} for menu_type: ${menuType}...`)
 
-                // 先嘗試刪除舊的 alias
+                // 先嘗試刪除舊的 alias（如果存在）
                 try {
                     await apiClient.deleteRichMenuAlias(aliasId)
                     console.log(`🗑️ Deleted existing alias: ${aliasId}`)
                 } catch (deleteErr: any) {
-                    console.log(`⚠️ No existing alias to delete: ${aliasId}`)
+                    // 忽略不存在的錯誤
                 }
 
                 // 創建新的 alias 指向新的 Rich Menu ID
@@ -271,10 +303,11 @@ export async function POST(request: NextRequest) {
                     richMenuAliasId: aliasId,
                     richMenuId: newRichMenuId
                 })
-                console.log(`✅ Updated alias: ${aliasId} -> ${newRichMenuId}`)
+                console.log(`✅ Created alias: ${aliasId} -> ${newRichMenuId}`)
+                updatedAliases.push(aliasId)
                 aliasUpdated = true
             } catch (aliasError: any) {
-                console.error(`❌ Error updating alias ${aliasId}:`, aliasError)
+                console.error(`❌ Error creating alias ${aliasId}:`, aliasError)
             }
         }
 
