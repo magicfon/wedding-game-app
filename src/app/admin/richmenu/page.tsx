@@ -289,6 +289,7 @@ export default function RichMenuManagementPage() {
       }
 
       showMessage('success', '設定已儲存')
+      await fetchSettings() // 刷新 Alias 對照表
     } catch (error) {
       console.error('Error saving settings:', error)
       showMessage('error', '儲存失敗')
