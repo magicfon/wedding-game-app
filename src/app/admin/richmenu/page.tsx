@@ -36,7 +36,6 @@ interface EditingRichMenu {
   chatBarText: string
   selected: boolean
   areas: RichMenuArea[]
-  richMenuAliasId?: string
 }
 
 const RichMenuThumbnail = ({ richMenuId, name, hasImage }: { richMenuId: string, name: string, hasImage: boolean }) => {
@@ -355,8 +354,7 @@ export default function RichMenuManagementPage() {
           name: data.richMenu.name,
           chatBarText: data.richMenu.chatBarText,
           selected: data.richMenu.selected,
-          areas: data.richMenu.areas || [],
-          richMenuAliasId: data.richMenu.richMenuAliasId || ''
+          areas: data.richMenu.areas || []
         })
       }
     } catch (error) {
@@ -378,7 +376,6 @@ export default function RichMenuManagementPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           richMenuId: editingMenu.richMenuId,
-          richMenuAliasId: editingMenu.richMenuAliasId || null,
           config: {
             name: editingMenu.name,
             chatBarText: editingMenu.chatBarText,
@@ -640,73 +637,144 @@ export default function RichMenuManagementPage() {
           </div>
         )}
 
-        {/* 基本設定 */}
+        {/* 活動狀態控制 */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">基本設定</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <span>🎯</span> 活動狀態控制
+          </h2>
 
+          {/* 目前狀態顯示 */}
+          <div className={`p-4 rounded-lg border-2 mb-4 ${settings?.activityTabEnabled
+              ? 'bg-green-50 border-green-200'
+              : 'bg-orange-50 border-orange-200'
+            }`}>
+            <div className="flex items-center gap-3">
+              <span className="text-3xl">
+                {settings?.activityTabEnabled ? '🎊' : '🔒'}
+              </span>
+              <div>
+                <h3 className={`font-semibold text-lg ${settings?.activityTabEnabled ? 'text-green-800' : 'text-orange-800'
+                  }`}>
+                  {settings?.activityTabEnabled ? '活動進行中' : '活動尚未開始'}
+                </h3>
+                <p className={`text-sm ${settings?.activityTabEnabled ? 'text-green-600' : 'text-orange-600'
+                  }`}>
+                  {settings?.activityTabEnabled
+                    ? '用戶點擊「現場活動」分頁時，可以使用照片上傳、照片牆、快問快答'
+                    : '用戶點擊「現場活動」分頁時，會看到「尚未開放」畫面'}
+                </p>
+              </div>
+            </div>
+          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* 預設分頁 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                預設開啟分頁
-              </label>
+          {/* 切換按鈕 */}
+          <div className="flex gap-4">
+            {settings?.activityTabEnabled ? (
+              <button
+                onClick={() => {
+                  setSettings(prev => prev ? { ...prev, activityTabEnabled: false } : null)
+                }}
+                className="flex items-center gap-2 px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+              >
+                <span>🔒</span>
+                結束活動
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  setSettings(prev => prev ? { ...prev, activityTabEnabled: true } : null)
+                }}
+                className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              >
+                <span>🎉</span>
+                開始活動！
+              </button>
+            )}
+
+            <button
+              onClick={handleSaveSettings}
+              disabled={saving}
+              className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Save className="w-4 h-4" />
+              {saving ? '儲存中...' : '儲存變更'}
+            </button>
+          </div>
+
+          <p className="text-xs text-gray-500 mt-3">
+            💡 點擊「開始活動」或「結束活動」後，需點擊「儲存變更」才會生效
+          </p>
+        </div>
+
+        {/* Alias 對照表 */}
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <span>📋</span> Alias 對照表（分頁切換設定）
+          </h2>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-200">
+                  <th className="text-left py-3 px-4 font-medium text-gray-600">Alias 名稱</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-600">目前指向</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-600">說明</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b border-gray-100">
+                  <td className="py-3 px-4">
+                    <code className="bg-gray-100 px-2 py-1 rounded text-xs">richmenu-alias-venue-info</code>
+                  </td>
+                  <td className="py-3 px-4">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
+                      🏢 會場資訊
+                    </span>
+                  </td>
+                  <td className="py-3 px-4 text-gray-500">固定指向會場資訊 Rich Menu</td>
+                </tr>
+                <tr className="border-b border-gray-100">
+                  <td className="py-3 px-4">
+                    <code className="bg-gray-100 px-2 py-1 rounded text-xs">richmenu-alias-activity</code>
+                  </td>
+                  <td className="py-3 px-4">
+                    {settings?.activityTabEnabled ? (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
+                        🎊 現場活動
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-orange-100 text-orange-800 rounded-full text-xs font-medium">
+                        🔒 尚未開放
+                      </span>
+                    )}
+                  </td>
+                  <td className="py-3 px-4 text-gray-500">
+                    {settings?.activityTabEnabled
+                      ? '活動進行中，指向現場活動 Rich Menu'
+                      : '活動未開始，指向尚未開放 Rich Menu'}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          {/* 進階設定 */}
+          <div className="mt-6 pt-4 border-t border-gray-200">
+            <h3 className="text-sm font-medium text-gray-700 mb-3">⚙️ 進階設定</h3>
+            <div className="flex items-center gap-4">
+              <label className="text-sm text-gray-600">預設開啟分頁：</label>
               <select
                 value={settings?.defaultTab || 'venue_info'}
                 onChange={(e) => setSettings(prev => prev ? { ...prev, defaultTab: e.target.value as any } : null)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="venue_info">會場資訊</option>
                 <option value="activity">現場活動</option>
               </select>
             </div>
-
-            {/* 會場資訊分頁啟用 */}
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-              <div>
-                <h3 className="font-medium">會場資訊分頁</h3>
-                <p className="text-sm text-gray-600">交通資訊、菜單、桌次</p>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={settings?.venueTabEnabled || false}
-                  onChange={(e) => setSettings(prev => prev ? { ...prev, venueTabEnabled: e.target.checked } : null)}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-              </label>
-            </div>
-
-            {/* 現場活動分頁啟用 */}
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-              <div>
-                <h3 className="font-medium">現場活動分頁</h3>
-                <p className="text-sm text-gray-600">照片上傳、照片牆、快問快答</p>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={settings?.activityTabEnabled || false}
-                  onChange={(e) => setSettings(prev => prev ? { ...prev, activityTabEnabled: e.target.checked } : null)}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-              </label>
-            </div>
-          </div>
-
-          <div className="mt-6 flex justify-end">
-            <button
-              onClick={handleSaveSettings}
-              disabled={saving}
-              className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Save className="w-4 h-4" />
-              {saving ? '儲存中...' : '儲存設定'}
-            </button>
           </div>
         </div>
+
 
         {/* Rich Menu 管理 */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
@@ -954,22 +1022,6 @@ export default function RichMenuManagementPage() {
                 </label>
               </div>
 
-              {/* Rich Menu Alias */}
-              <div>
-                <label className="block text-sm font-medium text-gray-900 mb-1">
-                  Rich Menu Alias ID (用於切換選單)
-                </label>
-                <input
-                  type="text"
-                  value={editingMenu.richMenuAliasId || ''}
-                  onChange={(e) => setEditingMenu({ ...editingMenu, richMenuAliasId: e.target.value })}
-                  placeholder="richmenu-alias-xxx"
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  設定此選單的別名，其他選單可透過此 ID 切換到這個選單
-                </p>
-              </div>
 
               {/* 視覺化按鈕區域編輯器 */}
               <div>
