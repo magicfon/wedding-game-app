@@ -66,6 +66,39 @@ export async function POST(request: NextRequest) {
             )
         }
 
+        // 驗證 action 設定 - 確保 richmenuswitch 有 data 欄位
+        if (areas && Array.isArray(areas)) {
+            for (let i = 0; i < areas.length; i++) {
+                const area = areas[i]
+                if (area.action?.type === 'richmenuswitch') {
+                    if (!area.action.richMenuAliasId) {
+                        return NextResponse.json(
+                            { error: `區域 ${i + 1}: richmenuswitch 類型需要提供 richMenuAliasId` },
+                            { status: 400 }
+                        )
+                    }
+                    if (!area.action.data) {
+                        return NextResponse.json(
+                            { error: `區域 ${i + 1}: richmenuswitch 類型需要提供 data 欄位` },
+                            { status: 400 }
+                        )
+                    }
+                }
+                if (area.action?.type === 'uri' && !area.action.uri) {
+                    return NextResponse.json(
+                        { error: `區域 ${i + 1}: uri 類型需要提供 uri 網址` },
+                        { status: 400 }
+                    )
+                }
+                if (area.action?.type === 'postback' && !area.action.data) {
+                    return NextResponse.json(
+                        { error: `區域 ${i + 1}: postback 類型需要提供 data 欄位` },
+                        { status: 400 }
+                    )
+                }
+            }
+        }
+
         const supabase = createSupabaseAdmin()
         const blobClient = getLineBlobClient()
         const apiClient = getLineApiClient()
