@@ -762,7 +762,7 @@ export default function RichMenuManagementPage() {
               <tbody>
                 <tr className="border-b border-gray-100">
                   <td className="py-3 px-4">
-                    <code className="bg-gray-100 px-2 py-1 rounded text-xs">richmenu-alias-venue-info</code>
+                    <code className="bg-gray-100 px-2 py-1 rounded text-xs text-gray-700">richmenu-alias-venue-info</code>
                   </td>
                   <td className="py-3 px-4">
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
@@ -772,11 +772,11 @@ export default function RichMenuManagementPage() {
                   <td className="py-3 px-4">
                     {settings?.lineAliases?.['richmenu-alias-venue-info'] ? (
                       <div className="flex flex-col gap-1">
-                        <code className="text-xs text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded">
+                        <code className="text-xs text-gray-700 bg-gray-100 px-1.5 py-0.5 rounded">
                           {settings.lineAliases['richmenu-alias-venue-info'].richMenuId.substring(0, 20)}...
                         </code>
                         {settings.lineAliases['richmenu-alias-venue-info'].richMenuName && (
-                          <span className="text-xs text-gray-500">
+                          <span className="text-xs text-gray-700">
                             ({settings.lineAliases['richmenu-alias-venue-info'].richMenuName})
                           </span>
                         )}
@@ -785,11 +785,11 @@ export default function RichMenuManagementPage() {
                       <span className="text-xs text-orange-600">⚠️ 未設定</span>
                     )}
                   </td>
-                  <td className="py-3 px-4 text-gray-500">固定指向會場資訊 Rich Menu</td>
+                  <td className="py-3 px-4 text-gray-700">固定指向會場資訊 Rich Menu</td>
                 </tr>
                 <tr className="border-b border-gray-100">
                   <td className="py-3 px-4">
-                    <code className="bg-gray-100 px-2 py-1 rounded text-xs">richmenu-alias-activity</code>
+                    <code className="bg-gray-100 px-2 py-1 rounded text-xs text-gray-700">richmenu-alias-activity</code>
                   </td>
                   <td className="py-3 px-4">
                     {settings?.activityTabEnabled ? (
@@ -805,11 +805,11 @@ export default function RichMenuManagementPage() {
                   <td className="py-3 px-4">
                     {settings?.lineAliases?.['richmenu-alias-activity'] ? (
                       <div className="flex flex-col gap-1">
-                        <code className="text-xs text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded">
+                        <code className="text-xs text-gray-700 bg-gray-100 px-1.5 py-0.5 rounded">
                           {settings.lineAliases['richmenu-alias-activity'].richMenuId.substring(0, 20)}...
                         </code>
                         {settings.lineAliases['richmenu-alias-activity'].richMenuName && (
-                          <span className="text-xs text-gray-500">
+                          <span className="text-xs text-gray-700">
                             ({settings.lineAliases['richmenu-alias-activity'].richMenuName})
                           </span>
                         )}
@@ -818,7 +818,7 @@ export default function RichMenuManagementPage() {
                       <span className="text-xs text-orange-600">⚠️ 未設定</span>
                     )}
                   </td>
-                  <td className="py-3 px-4 text-gray-500">
+                  <td className="py-3 px-4 text-gray-700">
                     {settings?.activityTabEnabled
                       ? '活動進行中，指向現場活動 Rich Menu'
                       : '活動未開始，指向尚未開放 Rich Menu'}
@@ -917,7 +917,7 @@ export default function RichMenuManagementPage() {
 
                       {/* 功能類型指定 */}
                       <div className="mt-3 flex items-center gap-2">
-                        <span className="text-xs text-gray-500">功能類型:</span>
+                        <span className="text-xs text-gray-700">功能類型:</span>
                         <select
                           value={menu.menuType || ''}
                           onChange={(e) => handleAssignMenuType(menu.richMenuId, e.target.value)}
