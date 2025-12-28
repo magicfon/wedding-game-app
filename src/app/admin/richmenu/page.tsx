@@ -428,6 +428,7 @@ export default function RichMenuManagementPage() {
       showMessage('success', 'Rich Menu 更新成功')
       setEditingMenu(null)
       await fetchRichMenuList()
+      await fetchSettings() // 刷新 Alias 對照表
     } catch (error) {
       console.error('Error saving rich menu:', error)
       showMessage('error', `儲存失敗: ${error instanceof Error ? error.message : '未知錯誤'}`)
