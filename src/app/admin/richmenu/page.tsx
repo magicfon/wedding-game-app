@@ -835,7 +835,7 @@ export default function RichMenuManagementPage() {
         <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
           <div className="flex justify-between items-center mb-4">
             <div>
-              <h2 className="text-xl font-semibold">Rich Menu 管理</h2>
+              <h2 className="text-xl font-semibold text-gray-900">Rich Menu 管理</h2>
               <p className="text-sm text-gray-600 mt-1">
                 當前總數: <span className="font-semibold text-blue-600">{richMenuList?.length || 0}</span> 個
               </p>
@@ -1052,7 +1052,7 @@ export default function RichMenuManagementPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold">編輯 Rich Menu</h2>
+              <h2 className="text-lg font-semibold text-gray-900">編輯 Rich Menu</h2>
               <button
                 onClick={() => setEditingMenu(null)}
                 className="text-gray-500 hover:text-gray-700"
