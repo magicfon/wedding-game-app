@@ -14,6 +14,7 @@ interface GameState {
   updated_at: string
   question_display_duration?: number
   display_phase?: 'question' | 'options' | 'rankings'
+  completed_questions?: number
 }
 
 export function useRealtimeGameState() {
