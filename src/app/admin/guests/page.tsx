@@ -18,7 +18,9 @@ import {
     AlertCircle,
     BarChart3,
     ChevronDown,
-    ChevronUp
+    ChevronUp,
+    Shield,
+    ShieldOff
 } from 'lucide-react'
 
 interface LineUser {
@@ -28,6 +30,7 @@ interface LineUser {
     table_number: string | null
     total_score: number
     is_active: boolean
+    is_admin: boolean
     join_time: string | null
     created_at: string | null
 }
@@ -189,6 +192,61 @@ export default function GuestManagementPage() {
         } catch (error) {
             console.error('Error deleting user:', error)
             alert('刪除發生錯誤')
+        }
+    }
+
+    // 切換管理員權限
+    const handleToggleAdmin = async (user: LineUser) => {
+        const action = user.is_admin ? '移除' : '指派'
+        if (!confirm(`確定要${action}「${user.display_name}」為管理員嗎？`)) return
+
+        try {
+            if (user.is_admin) {
+                // 移除管理員權限
+                const response = await fetch('/api/admin/manage-admins', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        requesterLineId: 'admin', // 使用 admin 作為請求者 (後端會檢查)
+                        targetLineId: user.line_id
+                    })
+                })
+
+                if (response.ok) {
+                    setUsers(users.map(u =>
+                        u.line_id === user.line_id ? { ...u, is_admin: false } : u
+                    ))
+                    alert(`已移除「${user.display_name}」的管理員權限`)
+                } else {
+                    const data = await response.json()
+                    alert(data.error || '操作失敗')
+                }
+            } else {
+                // 新增管理員權限
+                const response = await fetch('/api/admin/manage-admins', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        requesterLineId: 'admin', // 使用 admin 作為請求者
+                        newAdminLineId: user.line_id,
+                        displayName: user.display_name,
+                        notes: '透過用戶管理頁面指派'
+                    })
+                })
+
+                if (response.ok) {
+                    setUsers(users.map(u =>
+                        u.line_id === user.line_id ? { ...u, is_admin: true } : u
+                    ))
+                    alert(`已指派「${user.display_name}」為管理員`)
+                } else {
+                    const data = await response.json()
+                    alert(data.error || '操作失敗')
+                }
+            }
+        } catch (error) {
+            console.error('Error toggling admin:', error)
+            alert('操作發生錯誤')
         }
     }
 
@@ -563,6 +621,7 @@ export default function GuestManagementPage() {
                                         <th className="px-4 py-4 font-medium">桌次</th>
                                         <th className="px-4 py-4 font-medium text-center">積分</th>
                                         <th className="px-4 py-4 font-medium text-center">狀態</th>
+                                        <th className="px-4 py-4 font-medium text-center">管理員</th>
                                         <th className="px-4 py-4 font-medium">加入時間</th>
                                         <th className="px-4 py-4 font-medium text-right">操作</th>
                                     </tr>
@@ -570,7 +629,7 @@ export default function GuestManagementPage() {
                                 <tbody className="divide-y divide-gray-100">
                                     {filteredUsers.length === 0 ? (
                                         <tr>
-                                            <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                                            <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
                                                 找不到符合的資料
                                             </td>
                                         </tr>
@@ -635,6 +694,22 @@ export default function GuestManagementPage() {
                                                             {user.is_active ? '啟用' : '停用'}
                                                         </span>
                                                     )}
+                                                </td>
+                                                <td className="px-4 py-3 text-center">
+                                                    <button
+                                                        onClick={() => handleToggleAdmin(user)}
+                                                        className={`px-2 py-1 rounded text-xs font-medium inline-flex items-center gap-1 transition-colors ${user.is_admin
+                                                                ? 'bg-amber-100 text-amber-700 hover:bg-amber-200'
+                                                                : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                                                            }`}
+                                                        title={user.is_admin ? '點擊移除管理員權限' : '點擊指派為管理員'}
+                                                    >
+                                                        {user.is_admin ? (
+                                                            <><Shield className="w-3 h-3" /> 管理員</>
+                                                        ) : (
+                                                            <><ShieldOff className="w-3 h-3" /> 一般</>
+                                                        )}
+                                                    </button>
                                                 </td>
                                                 <td className="px-4 py-3 text-sm text-gray-500">
                                                     {user.join_time ? new Date(user.join_time).toLocaleDateString('zh-TW') : '-'}

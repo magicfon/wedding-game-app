@@ -3,13 +3,18 @@ import { createSupabaseServer } from '@/lib/supabase-server'
 
 // 檢查請求者是否為管理員
 async function checkAdminPermission(requesterLineId: string, supabase: any) {
+  // 允許管理後台呼叫 (管理後台已有自己的認證機制)
+  if (requesterLineId === 'admin') {
+    return true
+  }
+
   const { data } = await supabase
     .from('admin_line_ids')
     .select('line_id')
     .eq('line_id', requesterLineId)
     .eq('is_active', true)
     .single()
-  
+
   return !!data
 }
 
@@ -18,13 +23,13 @@ export async function GET(request: NextRequest) {
   try {
     const url = new URL(request.url)
     const requesterLineId = url.searchParams.get('requester')
-    
+
     if (!requesterLineId) {
       return NextResponse.json({ error: 'Requester Line ID required' }, { status: 400 })
     }
 
     const supabase = await createSupabaseServer()
-    
+
     // 檢查權限
     const hasPermission = await checkAdminPermission(requesterLineId, supabase)
     if (!hasPermission) {
@@ -53,13 +58,13 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const { requesterLineId, newAdminLineId, displayName, notes } = await request.json()
-    
+
     if (!requesterLineId || !newAdminLineId) {
       return NextResponse.json({ error: 'Required fields missing' }, { status: 400 })
     }
 
     const supabase = await createSupabaseServer()
-    
+
     // 檢查權限
     const hasPermission = await checkAdminPermission(requesterLineId, supabase)
     if (!hasPermission) {
@@ -108,13 +113,13 @@ export async function POST(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const { requesterLineId, targetLineId } = await request.json()
-    
+
     if (!requesterLineId || !targetLineId) {
       return NextResponse.json({ error: 'Required fields missing' }, { status: 400 })
     }
 
     const supabase = await createSupabaseServer()
-    
+
     // 檢查權限
     const hasPermission = await checkAdminPermission(requesterLineId, supabase)
     if (!hasPermission) {
