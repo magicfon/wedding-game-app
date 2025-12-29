@@ -15,6 +15,7 @@ interface GameState {
   question_display_duration?: number
   display_phase?: 'question' | 'options' | 'rankings'
   completed_questions?: number
+  has_next_question?: boolean
 }
 
 export function useRealtimeGameState() {
@@ -29,17 +30,22 @@ export function useRealtimeGameState() {
     try {
       setError(null)
 
-      // 獲取遊戲狀態
-      const { data: gameData, error: gameError } = await supabase
-        .from('game_state')
-        .select('*')
-        .single()
+      // 從 API 獲取遊戲狀態（包含 has_next_question 計算）
+      const response = await fetch('/api/game/control')
+      const data = await response.json()
 
-      if (gameError) throw gameError
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || '獲取遊戲狀態失敗')
+      }
+
+      const gameData = data.gameState
       setGameState(gameData)
 
-      // 如果有當前題目，獲取題目詳情
-      if (gameData?.current_question_id) {
+      // 設定當前題目（API 回傳中已包含題目資訊）
+      if (gameData?.questions) {
+        setCurrentQuestion(gameData.questions)
+      } else if (gameData?.current_question_id) {
+        // 如果 API 沒有返回 questions, 手動查詢
         const { data: questionData, error: questionError } = await supabase
           .from('questions')
           .select('*')

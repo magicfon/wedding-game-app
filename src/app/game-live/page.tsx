@@ -483,19 +483,19 @@ export default function GameLivePage() {
       {/* 優先顯示排行榜 - 不論遊戲處於什麼階段 */}
       {/* 優先顯示排行榜 - 不論遊戲處於什麼階段 */}
       {gameState?.display_phase === 'rankings' ? (
-        <div className={`h-screen flex flex-col ${(gameState?.completed_questions || 0) >= (gameState?.total_questions || 0) && (gameState?.total_questions || 0) > 0
+        <div className={`h-screen flex flex-col ${gameState?.has_next_question === false && gameState?.is_game_active
           ? 'bg-gradient-to-b from-purple-900 via-red-900 to-black'
           : ''
           }`}>
           <div className="flex-1 p-8">
             <div className="text-center mb-8">
               <h2 className="text-4xl md:text-6xl font-bold text-white mb-4">
-                {(gameState?.completed_questions || 0) >= (gameState?.total_questions || 0) && (gameState?.total_questions || 0) > 0
+                {gameState?.has_next_question === false && gameState?.is_game_active
                   ? '🎉 最終排行榜 🎉'
                   : '🏆 目前排行榜'}
               </h2>
               <div className="text-xl text-white opacity-80">
-                {(gameState?.completed_questions || 0) >= (gameState?.total_questions || 0) && (gameState?.total_questions || 0) > 0
+                {gameState?.has_next_question === false && gameState?.is_game_active
                   ? '恭喜得獎的賓客!'
                   : '前 10 名玩家'}
               </div>
