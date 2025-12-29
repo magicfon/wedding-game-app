@@ -489,11 +489,13 @@ export async function GET() {
       return NextResponse.json({ error: '無法獲取遊戲狀態' }, { status: 500 });
     }
 
-    // 獲取總題目數
+    // 獲取總題目數（根據當前題庫組篩選）
+    const activeSet = gameState?.active_question_set || 'formal';
     const { count: totalQuestions } = await supabase
       .from('questions')
       .select('*', { count: 'exact', head: true })
-      .eq('is_active', true);
+      .eq('is_active', true)
+      .eq('category', activeSet);
 
     // 計算剩餘時間
     let timeRemaining = 0;
