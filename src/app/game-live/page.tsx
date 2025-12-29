@@ -551,7 +551,7 @@ export default function GameLivePage() {
             <div className="flex-1 flex flex-col p-8 overflow-hidden">
               {/* 題目標題（縮小版） */}
               <div className="text-center mb-8 flex-shrink-0">
-                <h2 className="text-2xl md:text-4xl font-bold text-white mb-4">
+                <h2 className="text-4xl md:text-6xl font-bold text-white mb-4">
                   {currentQuestion.question_text}
                 </h2>
 
