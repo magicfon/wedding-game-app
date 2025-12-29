@@ -541,7 +541,7 @@ export default function AdminDashboard() {
                       <span>暫停遊戲</span>
                     </button>
                   )}
-                  {/* 排行榜/下一題按鈕 - 根據時間和顯示階段切換 */}
+                  {/* 排行榜/下一題/遊戲結束按鈕 - 根據時間、顯示階段和題目進度切換 */}
                   {timeRemaining <= 0 && gameState?.display_phase !== 'rankings' ? (
                     // 倒數結束且尚未顯示排行榜：顯示「排行榜」按鈕
                     <button
@@ -552,8 +552,18 @@ export default function AdminDashboard() {
                       <Trophy className="w-4 h-4" />
                       <span>排行榜</span>
                     </button>
+                  ) : gameState?.display_phase === 'rankings' && (gameState?.completed_questions || 0) + 1 >= (gameState?.total_questions || 0) ? (
+                    // 已在排行榜階段且是最後一題：顯示「遊戲結束」按鈕
+                    <button
+                      onClick={() => controlGame('end_game')}
+                      disabled={gameLoading}
+                      className="flex items-center space-x-2 bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg transition-colors"
+                    >
+                      <Square className="w-4 h-4" />
+                      <span>遊戲結束</span>
+                    </button>
                   ) : (
-                    // 已在排行榜階段或倒數進行中：顯示「下一題」按鈕
+                    // 已在排行榜階段或倒數進行中，且還有下一題：顯示「下一題」按鈕
                     <button
                       onClick={() => controlGame('next_question')}
                       disabled={gameLoading}
