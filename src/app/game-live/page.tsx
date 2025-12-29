@@ -704,12 +704,12 @@ export default function GameLivePage() {
 
                           <div className="relative z-10 flex items-center w-full px-4 py-2 h-full">
                             {/* 選項標號 */}
-                            <div className="text-4xl md:text-5xl font-black text-white mr-4 w-14 text-center flex-shrink-0">
+                            <div className="text-2xl md:text-3xl font-black text-white mr-4 w-12 text-center flex-shrink-0">
                               {option.key}
                             </div>
 
                             {/* 選項文字 */}
-                            <div className="text-2xl md:text-3xl font-bold text-white flex-1 mr-4 line-clamp-2 leading-tight">
+                            <div className="text-3xl md:text-4xl font-bold text-white flex-1 mr-4 line-clamp-2 leading-tight">
                               {option.text}
                             </div>
 
@@ -790,10 +790,10 @@ export default function GameLivePage() {
                         <div className="relative z-10 flex flex-col h-full p-6">
                           {/* 選項標題區域 */}
                           <div className="text-center flex-shrink-0">
-                            <div className="text-6xl md:text-8xl font-black text-white mb-4">
+                            <div className="text-4xl md:text-6xl font-black text-white mb-4">
                               {option.key}
                             </div>
-                            <div className="text-3xl md:text-5xl font-bold text-white leading-tight mb-6">
+                            <div className="text-4xl md:text-6xl font-bold text-white leading-tight mb-6">
                               {option.text}
                             </div>
                           </div>
