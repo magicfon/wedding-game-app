@@ -588,18 +588,26 @@ export default function AdminDashboard() {
                 </button>
               )}
 
-              {/* 排行榜按鈕 - 隨時可以叫出排行榜（遊戲進行中或結束後都可以） */}
-              <button
-                onClick={() => controlGame('show_rankings')}
-                disabled={gameLoading || gameState?.display_phase === 'rankings'}
-                className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${gameState?.display_phase === 'rankings'
-                    ? 'bg-orange-300 text-white cursor-not-allowed'
-                    : 'bg-orange-500 hover:bg-orange-600 text-white'
-                  }`}
-              >
-                <Trophy className="w-4 h-4" />
-                <span>{gameState?.display_phase === 'rankings' ? '排行榜顯示中' : '排行榜'}</span>
-              </button>
+              {/* 排行榜按鈕 - 可以顯示/隱藏排行榜 */}
+              {gameState?.display_phase === 'rankings' ? (
+                <button
+                  onClick={() => controlGame('hide_rankings')}
+                  disabled={gameLoading}
+                  className="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors bg-blue-500 hover:bg-blue-600 text-white"
+                >
+                  <Play className="w-4 h-4" />
+                  <span>返回遊戲</span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => controlGame('show_rankings')}
+                  disabled={gameLoading}
+                  className="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors bg-orange-500 hover:bg-orange-600 text-white"
+                >
+                  <Trophy className="w-4 h-4" />
+                  <span>排行榜</span>
+                </button>
+              )}
 
               <button
                 onClick={() => controlGame('reset_game')}

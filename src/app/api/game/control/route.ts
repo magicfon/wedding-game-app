@@ -233,6 +233,19 @@ export async function POST(request: Request) {
         actionDetails = { display_phase: 'rankings' };
         break;
 
+      case 'hide_rankings':
+        // 隱藏排行榜 - 將 display_phase 重置為 'question'
+        result = await supabase
+          .from('game_state')
+          .update({
+            display_phase: 'question',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', 1);
+
+        actionDetails = { display_phase: 'question' };
+        break;
+
       case 'jump_to_question':
         // 跳到指定題目
         if (!questionId) {
