@@ -178,6 +178,13 @@ export default function AdminDashboard() {
       color: 'bg-pink-500'
     },
     {
+      title: '用戶管理',
+      description: '管理賓客桌次和名單',
+      icon: Users,
+      href: '/admin/guests',
+      color: 'bg-purple-600'
+    },
+    {
       title: '分數管理',
       description: '查看和管理用戶分數',
       icon: Trophy,
@@ -220,32 +227,18 @@ export default function AdminDashboard() {
       color: 'bg-teal-500'
     },
     {
-      title: '媒體清理',
-      description: '清理無效的媒體文件',
-      icon: HardDrive,
-      href: '/admin/media-cleanup',
-      color: 'bg-gray-500'
-    },
-    {
-      title: '系統設定',
-      description: '系統配置和管理員設置',
-      icon: Settings,
-      href: '/admin/settings',
-      color: 'bg-red-500'
-    },
-    {
-      title: '桌次管理',
-      description: '管理賓客桌次和名單',
-      icon: Users,
-      href: '/admin/guests',
-      color: 'bg-purple-600'
-    },
-    {
       title: 'Rich Menu 管理',
       description: '管理 LINE Rich Menu 分頁和圖片',
       icon: Settings,
       href: '/admin/richmenu',
       color: 'bg-cyan-500'
+    },
+    {
+      title: '系統設定',
+      description: '系統配置和管理員設置',
+      icon: Settings,
+      href: '/admin/system-settings',
+      color: 'bg-red-500'
     }
   ]
 
