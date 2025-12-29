@@ -578,14 +578,29 @@ export default function AdminDashboard() {
 
               {/* 通用控制按鈕 */}
               {isGameActive && (
-                <button
-                  onClick={() => controlGame('end_game')}
-                  disabled={gameLoading}
-                  className="flex items-center space-x-2 bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg transition-colors"
-                >
-                  <Square className="w-4 h-4" />
-                  <span>結束遊戲</span>
-                </button>
+                <>
+                  {/* 排行榜按鈕 - 隨時可以叫出排行榜 */}
+                  <button
+                    onClick={() => controlGame('show_rankings')}
+                    disabled={gameLoading || gameState?.display_phase === 'rankings'}
+                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${gameState?.display_phase === 'rankings'
+                        ? 'bg-orange-300 text-white cursor-not-allowed'
+                        : 'bg-orange-500 hover:bg-orange-600 text-white'
+                      }`}
+                  >
+                    <Trophy className="w-4 h-4" />
+                    <span>{gameState?.display_phase === 'rankings' ? '排行榜顯示中' : '排行榜'}</span>
+                  </button>
+
+                  <button
+                    onClick={() => controlGame('end_game')}
+                    disabled={gameLoading}
+                    className="flex items-center space-x-2 bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg transition-colors"
+                  >
+                    <Square className="w-4 h-4" />
+                    <span>結束遊戲</span>
+                  </button>
+                </>
               )}
 
               <button
