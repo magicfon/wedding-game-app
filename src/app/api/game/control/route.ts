@@ -271,6 +271,7 @@ export async function POST(request: Request) {
             is_game_active: false,
             is_paused: false,
             current_question_id: null,
+            display_phase: 'question',
             updated_at: new Date().toISOString()
           })
           .eq('id', 1);
@@ -360,6 +361,10 @@ export async function POST(request: Request) {
         // 重置已完成題目數為 0
         if (gameStateForReset && 'completed_questions' in gameStateForReset) {
           resetUpdateData.completed_questions = 0;
+        }
+        // 重置顯示階段
+        if (gameStateForReset && 'display_phase' in gameStateForReset) {
+          resetUpdateData.display_phase = 'question';
         }
 
         result = await supabase
