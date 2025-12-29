@@ -3,15 +3,14 @@
 import { useState, useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { createSupabaseBrowser } from '@/lib/supabase'
-import { 
-  Menu, 
-  X, 
-  Home, 
-  Play, 
-  HelpCircle, 
-  Camera, 
-  Heart, 
-  Trophy, 
+import {
+  Menu,
+  X,
+  Home,
+  HelpCircle,
+  Camera,
+  Heart,
+  Trophy,
   Settings,
   LogOut
 } from 'lucide-react'
@@ -55,7 +54,6 @@ export default function Layout({ children, title, showNavigation = true }: Layou
 
   const menuItems = [
     { name: '首頁', href: '/', icon: Home },
-    { name: '遊戲實況', href: '/game-live', icon: Play },
     { name: '快問快答', href: '/quiz', icon: HelpCircle },
     { name: '照片上傳', href: '/photo-upload', icon: Camera },
     { name: '照片牆', href: '/photo-wall', icon: Heart },
@@ -84,9 +82,9 @@ export default function Layout({ children, title, showNavigation = true }: Layou
                 >
                   <Menu className="w-6 h-6 text-gray-700" />
                 </button>
-                
+
                 {/* Logo */}
-                <div 
+                <div
                   className="flex items-center space-x-3 cursor-pointer"
                   onClick={() => router.push('/')}
                 >
@@ -119,11 +117,11 @@ export default function Layout({ children, title, showNavigation = true }: Layou
 
       {/* Side Menu Overlay - 在所有螢幕尺寸都可用 */}
       {isMenuOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 z-50"
           onClick={() => setIsMenuOpen(false)}
         >
-          <div 
+          <div
             className="fixed left-0 top-0 h-full w-80 bg-white shadow-xl transform transition-transform"
             onClick={e => e.stopPropagation()}
           >
@@ -152,11 +150,10 @@ export default function Layout({ children, title, showNavigation = true }: Layou
                     router.push(item.href)
                     setIsMenuOpen(false)
                   }}
-                  className={`w-full flex items-center space-x-3 p-3 rounded-lg transition-colors text-left ${
-                    pathname === item.href
+                  className={`w-full flex items-center space-x-3 p-3 rounded-lg transition-colors text-left ${pathname === item.href
                       ? 'bg-pink-100 text-pink-700'
                       : 'hover:bg-gray-100 text-gray-700'
-                  }`}
+                    }`}
                 >
                   <item.icon className="w-5 h-5" />
                   <span>{item.name}</span>

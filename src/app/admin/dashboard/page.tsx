@@ -24,7 +24,8 @@ import {
   RotateCcw,
   PlayCircle,
   Gift,
-  HardDrive
+  HardDrive,
+  Monitor
 } from 'lucide-react'
 
 interface AdminInfo {
@@ -390,6 +391,23 @@ export default function AdminDashboard() {
                   : '遊戲未開始'
                 }
               </div>
+
+              {/* 開啟遊戲實況按鈕 */}
+              <button
+                onClick={() => {
+                  const width = window.screen.width;
+                  const height = window.screen.height;
+                  window.open(
+                    '/game-live',
+                    'game-live-window',
+                    `width=${width},height=${height},top=0,left=0,fullscreen=yes,menubar=no,toolbar=no,location=no,status=no`
+                  );
+                }}
+                className="flex items-center space-x-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-lg transition-colors shadow-sm"
+              >
+                <Monitor className="w-4 h-4" />
+                <span>開啟遊戲實況</span>
+              </button>
             </div>
 
             {/* 當前題目資訊 */}

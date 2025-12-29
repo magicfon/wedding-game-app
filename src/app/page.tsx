@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createSupabaseBrowser } from '@/lib/supabase'
 import { useLiff } from '@/hooks/useLiff'
-import { Heart, Users, Trophy, Camera, HelpCircle, Play, Shield } from 'lucide-react'
+import { Heart, Users, Trophy, Camera, HelpCircle, Shield } from 'lucide-react'
 
 import { useOnlinePresence } from '@/hooks/useOnlinePresence'
 
@@ -45,13 +45,6 @@ export default function Home() {
   }, [isReady, isLoggedIn, profile, supabase.auth])
 
   const menuItems = [
-    {
-      title: '🎮 遊戲實況',
-      description: '觀看正在進行的遊戲',
-      href: '/game-live',
-      icon: Play,
-      color: 'bg-blue-500'
-    },
     {
       title: '❓ 快問快答',
       description: '參與答題競賽',
