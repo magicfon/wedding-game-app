@@ -486,12 +486,55 @@ export async function GET() {
       timeRemaining = Math.max(0, (gameState.questions.time_limit || 30) - elapsed);
     }
 
+    // 檢查是否還有下一題
+    let hasNextQuestion = false;
+    if (gameState?.current_question_id) {
+      // 獲取當前題目的資訊
+      const { data: currentQuestionData } = await supabase
+        .from('questions')
+        .select('id, display_order')
+        .eq('id', gameState.current_question_id)
+        .single();
+
+      if (currentQuestionData) {
+        const activeSet = gameState.active_question_set || 'formal';
+
+        // 檢查是否有 display_order 相同但 id 更大的題目
+        const { data: nextSameOrder } = await supabase
+          .from('questions')
+          .select('id')
+          .eq('is_active', true)
+          .eq('category', activeSet)
+          .eq('display_order', currentQuestionData.display_order)
+          .gt('id', currentQuestionData.id)
+          .limit(1)
+          .single();
+
+        if (nextSameOrder) {
+          hasNextQuestion = true;
+        } else {
+          // 檢查是否有 display_order 更大的題目
+          const { data: nextHigherOrder } = await supabase
+            .from('questions')
+            .select('id')
+            .eq('is_active', true)
+            .eq('category', activeSet)
+            .gt('display_order', currentQuestionData.display_order)
+            .limit(1)
+            .single();
+
+          hasNextQuestion = !!nextHigherOrder;
+        }
+      }
+    }
+
     return NextResponse.json({
       success: true,
       gameState: {
         ...gameState,
         total_questions: totalQuestions || 0,
-        time_remaining: timeRemaining
+        time_remaining: timeRemaining,
+        has_next_question: hasNextQuestion
       }
     });
 

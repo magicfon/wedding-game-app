@@ -552,8 +552,8 @@ export default function AdminDashboard() {
                       <Trophy className="w-4 h-4" />
                       <span>排行榜</span>
                     </button>
-                  ) : gameState?.display_phase === 'rankings' && (gameState?.completed_questions || 0) + 1 >= (gameState?.total_questions || 0) ? (
-                    // 已在排行榜階段且是最後一題：顯示「遊戲結束」按鈕
+                  ) : gameState?.display_phase === 'rankings' && gameState?.has_next_question === false ? (
+                    // 已在排行榜階段且沒有下一題：顯示「遊戲結束」按鈕
                     <button
                       onClick={() => controlGame('end_game')}
                       disabled={gameLoading}

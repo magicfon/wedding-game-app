@@ -33,6 +33,7 @@ export interface GameState {
   question_display_duration?: number;
   active_question_set?: 'formal' | 'test' | 'backup';
   display_phase?: 'question' | 'options' | 'rankings';
+  has_next_question?: boolean;
 }
 
 export interface UseGameStateReturn {
