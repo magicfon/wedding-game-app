@@ -131,19 +131,18 @@ export default function GameLivePage() {
     }
   }, [])
 
-  // 從 gameState 同步 displayPhase（由管理控制台控制）
+  // 監聽 display_phase 變化，如果是 rankings 則重新獲取數據
   useEffect(() => {
-    if (gameState?.display_phase && gameState.display_phase !== displayPhase) {
-      // 只有當 gameState 有 display_phase 且與本地不同時才同步
+    if (gameState?.display_phase) {
       setDisplayPhase(gameState.display_phase)
-      console.log('同步 displayPhase 從 gameState:', gameState.display_phase)
 
-      // 如果切換到排行榜，獲取排行榜數據
       if (gameState.display_phase === 'rankings') {
+        console.log('切換到排行榜階段')
+        console.log('completed:', gameState.completed_questions, 'total:', gameState.total_questions)
         fetchScoreRankings()
       }
     }
-  }, [gameState?.display_phase])
+  }, [gameState?.display_phase, gameState?.completed_questions, gameState?.total_questions])
 
   // 監聽時間結束，獲取最終答題數據（不自動跳轉到排行榜）
   useEffect(() => {
