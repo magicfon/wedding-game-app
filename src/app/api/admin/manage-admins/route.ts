@@ -71,37 +71,71 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
 
-    // 添加新管理員
-    const { data: newAdmin, error } = await supabase
+    // 檢查是否已存在該管理員記錄（包含已停用的）
+    const { data: existingAdmin } = await supabase
       .from('admin_line_ids')
-      .insert({
-        line_id: newAdminLineId,
-        display_name: displayName,
-        notes: notes,
-        created_by: requesterLineId
-      })
-      .select()
+      .select('*')
+      .eq('line_id', newAdminLineId)
       .single()
 
-    if (error) {
-      if (error.code === '23505') { // 唯一約束違反
-        return NextResponse.json({ error: 'Admin already exists' }, { status: 409 })
+    let resultAdmin
+    if (existingAdmin) {
+      // 如果已存在，重新啟用並更新資料
+      const { data: updatedAdmin, error: updateError } = await supabase
+        .from('admin_line_ids')
+        .update({
+          is_active: true,
+          display_name: displayName || existingAdmin.display_name,
+          notes: notes || existingAdmin.notes
+        })
+        .eq('line_id', newAdminLineId)
+        .select()
+        .single()
+
+      if (updateError) {
+        return NextResponse.json({ error: updateError.message }, { status: 500 })
       }
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      resultAdmin = updatedAdmin
+    } else {
+      // 新增管理員
+      const { data: newAdmin, error } = await supabase
+        .from('admin_line_ids')
+        .insert({
+          line_id: newAdminLineId,
+          display_name: displayName,
+          notes: notes,
+          created_by: requesterLineId
+        })
+        .select()
+        .single()
+
+      if (error) {
+        if (error.code === '23505') { // 唯一約束違反
+          return NextResponse.json({ error: 'Admin already exists' }, { status: 409 })
+        }
+        return NextResponse.json({ error: error.message }, { status: 500 })
+      }
+      resultAdmin = newAdmin
     }
+
+    // 更新 users 表格的 is_admin 狀態
+    await supabase
+      .from('users')
+      .update({ is_admin: true })
+      .eq('line_id', newAdminLineId)
 
     // 記錄操作
     await supabase
       .from('admin_actions')
       .insert({
         admin_line_id: requesterLineId,
-        action: 'add_admin',
+        action: existingAdmin ? 'reactivate_admin' : 'add_admin',
         target_type: 'admin',
         target_id: newAdminLineId,
         details: { displayName, notes }
       })
 
-    return NextResponse.json({ message: 'Admin added successfully', admin: newAdmin })
+    return NextResponse.json({ message: 'Admin added successfully', admin: resultAdmin })
 
   } catch (error) {
     console.error('Add admin error:', error)
