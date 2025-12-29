@@ -32,7 +32,7 @@ interface MenuItem {
 
 export default function AdminLayout({ children, title }: AdminLayoutProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [adminLevel, setAdminLevel] = useState<'system' | 'event'>('event')
+  const [adminLevel, setAdminLevel] = useState<'system' | 'event'>('system')
   const router = useRouter()
   const pathname = usePathname()
 
@@ -42,7 +42,10 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
       const adminInfo = localStorage.getItem('admin_info')
       if (adminInfo) {
         const parsed = JSON.parse(adminInfo)
-        if (parsed.adminLevel === 'system') {
+        // 如果明確設定為 event，則使用 event；否則預設為 system（向下相容）
+        if (parsed.adminLevel === 'event') {
+          setAdminLevel('event')
+        } else {
           setAdminLevel('system')
         }
       }
