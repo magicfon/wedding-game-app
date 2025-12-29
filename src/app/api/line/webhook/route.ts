@@ -194,16 +194,7 @@ export async function POST(request: NextRequest) {
             if (client) {
               await client.replyMessage(event.replyToken, {
                 type: 'text',
-                text: `🎉 歡迎加入婚禮互動遊戲！
-
-感謝您的參與！這裡有豐富的互動功能等著您：
-
-🎮 遊戲實況 - 即時觀看遊戲進行
-❓ 快問快答 - 測試您的反應速度
-📸 照片分享 - 記錄美好時刻
-🏆 積分競賽 - 爭取最高榮譽
-
-請輸入「選單」查看所有功能，或點擊「🚀 開始遊戲」立即參與！`
+                text: '🎉 感謝您參與我們的婚禮!'
               })
             }
             break
