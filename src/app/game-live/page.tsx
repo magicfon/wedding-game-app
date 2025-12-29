@@ -481,7 +481,72 @@ export default function GameLivePage() {
         </div>
       )}
 
-      {gameState?.is_game_active && (gameState?.is_waiting_for_players !== undefined ? gameState.is_waiting_for_players : !gameState?.current_question_id) ? (
+      {/* 優先顯示排行榜 - 不論遊戲處於什麼階段 */}
+      {gameState?.display_phase === 'rankings' ? (
+        <div className="h-screen flex flex-col">
+          <div className="flex-1 p-8">
+            <div className="text-center mb-8">
+              <h2 className="text-4xl md:text-6xl font-bold text-white mb-4">
+                🏆 目前排行榜
+              </h2>
+              <div className="text-xl text-white opacity-80">
+                前 10 名玩家
+              </div>
+            </div>
+
+            {/* 分數排行榜 */}
+            <div className="max-w-4xl mx-auto space-y-4">
+              {scoreRankings.map((player, index) => (
+                <div
+                  key={player.line_id}
+                  className={`flex items-center space-x-6 bg-white bg-opacity-10 backdrop-blur-md rounded-2xl p-6 ${index < 3 ? 'ring-2 ring-yellow-400 ring-opacity-60' : ''
+                    }`}
+                >
+                  {/* 排名 */}
+                  <div className={`w-16 h-16 rounded-full flex items-center justify-center font-bold text-2xl ${index === 0 ? 'bg-yellow-500 text-black' :
+                    index === 1 ? 'bg-gray-400 text-black' :
+                      index === 2 ? 'bg-orange-600 text-black' :
+                        'bg-white bg-opacity-20 text-black'
+                    }`}>
+                    {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : index + 1}
+                  </div>
+
+                  {/* 玩家頭像 */}
+                  {player.avatar_url ? (
+                    <img
+                      src={player.avatar_url}
+                      alt={player.display_name}
+                      className="w-16 h-16 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 bg-white bg-opacity-30 rounded-full flex items-center justify-center text-black font-bold text-xl">
+                      {player.display_name?.charAt(0) || '?'}
+                    </div>
+                  )}
+
+                  {/* 玩家資訊 */}
+                  <div className="flex-1">
+                    <div className="text-2xl font-bold text-black">
+                      {player.display_name}
+                    </div>
+                  </div>
+
+                  {/* 分數 */}
+                  <div className="text-3xl font-bold text-black">
+                    {player.quiz_score} 分
+                  </div>
+                </div>
+              ))}
+
+              {scoreRankings.length === 0 && (
+                <div className="text-center text-black text-xl opacity-60 py-8">
+                  暫無排行榜資料
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : gameState?.is_game_active && (gameState?.is_waiting_for_players !== undefined ? gameState.is_waiting_for_players : !gameState?.current_question_id) ? (
         <WaitingStage gameState={gameState} />
       ) : currentQuestion && gameState?.is_game_active && !gameState?.is_paused ? (
         <div className="h-screen flex flex-col">
