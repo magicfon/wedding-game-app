@@ -4,7 +4,7 @@ import { createSupabaseServer } from '@/lib/supabase-server'
 export async function POST(request: NextRequest) {
   try {
     const { lineId } = await request.json()
-    
+
     if (!lineId) {
       return NextResponse.json(
         { error: 'Line ID is required', isAdmin: false },
@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     // 檢查是否為管理員
     const { data: adminCheck, error: adminError } = await supabase
       .from('admin_line_ids')
-      .select('line_id, display_name, is_active')
+      .select('line_id, display_name, is_active, admin_level')
       .eq('line_id', lineId)
       .eq('is_active', true)
       .single()
@@ -39,7 +39,8 @@ export async function POST(request: NextRequest) {
       isAdmin,
       adminInfo: isAdmin ? {
         lineId: adminCheck.line_id,
-        displayName: adminCheck.display_name
+        displayName: adminCheck.display_name,
+        adminLevel: adminCheck.admin_level || 'event' // 預設為活動管理員
       } : null
     })
 

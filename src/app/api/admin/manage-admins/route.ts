@@ -57,11 +57,14 @@ export async function GET(request: NextRequest) {
 // 添加新管理員
 export async function POST(request: NextRequest) {
   try {
-    const { requesterLineId, newAdminLineId, displayName, notes } = await request.json()
+    const { requesterLineId, newAdminLineId, displayName, notes, adminLevel } = await request.json()
 
     if (!requesterLineId || !newAdminLineId) {
       return NextResponse.json({ error: 'Required fields missing' }, { status: 400 })
     }
+
+    // 驗證 adminLevel 值
+    const validAdminLevel = adminLevel === 'system' ? 'system' : 'event'
 
     const supabase = await createSupabaseServer()
 
@@ -86,7 +89,8 @@ export async function POST(request: NextRequest) {
         .update({
           is_active: true,
           display_name: displayName || existingAdmin.display_name,
-          notes: notes || existingAdmin.notes
+          notes: notes || existingAdmin.notes,
+          admin_level: validAdminLevel
         })
         .eq('line_id', newAdminLineId)
         .select()
@@ -104,6 +108,7 @@ export async function POST(request: NextRequest) {
           line_id: newAdminLineId,
           display_name: displayName,
           notes: notes,
+          admin_level: validAdminLevel,
           created_by: requesterLineId
         })
         .select()

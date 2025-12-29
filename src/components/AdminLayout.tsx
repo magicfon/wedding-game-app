@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import {
   Shield,
@@ -23,15 +23,40 @@ interface AdminLayoutProps {
   title?: string
 }
 
+// 選單項目定義，systemOnly 為 true 表示只有系統管理員可見
+interface MenuItem {
+  name: string
+  href: string
+  icon: React.ComponentType<{ className?: string }>
+  systemOnly?: boolean
+}
+
 export default function AdminLayout({ children, title }: AdminLayoutProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [adminLevel, setAdminLevel] = useState<'system' | 'event'>('event')
   const router = useRouter()
   const pathname = usePathname()
 
-  const adminMenuItems = [
+  // 從 localStorage 讀取管理員等級
+  useEffect(() => {
+    try {
+      const adminInfo = localStorage.getItem('admin_info')
+      if (adminInfo) {
+        const parsed = JSON.parse(adminInfo)
+        if (parsed.adminLevel === 'system') {
+          setAdminLevel('system')
+        }
+      }
+    } catch (e) {
+      console.error('Error reading admin info:', e)
+    }
+  }, [])
+
+  const allMenuItems: MenuItem[] = [
     { name: '控制台', href: '/admin/dashboard', icon: BarChart3 },
-    { name: '題目管理', href: '/admin/questions', icon: HelpCircle },
-    { name: '照片管理', href: '/admin/photos', icon: Camera },
+    { name: '題目管理', href: '/admin/questions', icon: HelpCircle, systemOnly: true },
+    { name: '照片管理', href: '/admin/photos', icon: Camera, systemOnly: true },
+    { name: '用戶管理', href: '/admin/guests', icon: Users, systemOnly: true },
     { name: '分數管理', href: '/admin/scores', icon: Trophy },
     { name: '積分歷史', href: '/admin/score-history', icon: Trophy },
     { name: '照片摸彩', href: '/admin/lottery', icon: Gift },
@@ -39,9 +64,14 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
     { name: '批量設定', href: '/admin/batch-settings', icon: Settings },
     { name: '計分規則', href: '/admin/scoring-rules', icon: Settings },
     { name: '媒體清理', href: '/admin/media-cleanup', icon: HardDrive },
-    { name: 'Rich Menu 管理', href: '/admin/richmenu', icon: ImageIcon },
-    { name: '系統設定', href: '/admin/system-settings', icon: Settings },
+    { name: 'Rich Menu 管理', href: '/admin/richmenu', icon: ImageIcon, systemOnly: true },
+    { name: '系統設定', href: '/admin/system-settings', icon: Settings, systemOnly: true },
   ]
+
+  // 根據管理員等級過濾選單項目
+  const adminMenuItems = adminLevel === 'system'
+    ? allMenuItems
+    : allMenuItems.filter(item => !item.systemOnly)
 
   return (
     <div className="flex min-h-screen bg-gray-100">

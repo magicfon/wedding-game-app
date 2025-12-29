@@ -31,6 +31,7 @@ interface LineUser {
     total_score: number
     is_active: boolean
     is_admin: boolean
+    admin_level?: 'system' | 'event' | null
     join_time: string | null
     created_at: string | null
 }
@@ -76,6 +77,11 @@ export default function GuestManagementPage() {
     const [csvData, setCsvData] = useState<{ name: string, table_number: string, adults: number, children: number, total_guests: number, notes: string }[]>([])
     const [csvError, setCsvError] = useState('')
     const [importing, setImporting] = useState(false)
+
+    // 管理員指派狀態
+    const [showAdminModal, setShowAdminModal] = useState(false)
+    const [selectedUserForAdmin, setSelectedUserForAdmin] = useState<LineUser | null>(null)
+    const [selectedAdminLevel, setSelectedAdminLevel] = useState<'system' | 'event'>('event')
 
     // 統計顯示狀態
     const [showStats, setShowStats] = useState(false)
@@ -197,55 +203,72 @@ export default function GuestManagementPage() {
 
     // 切換管理員權限
     const handleToggleAdmin = async (user: LineUser) => {
-        const action = user.is_admin ? '移除' : '指派'
-        if (!confirm(`確定要${action}「${user.display_name}」為管理員嗎？`)) return
+        if (user.is_admin) {
+            // 移除管理員權限
+            if (!confirm(`確定要移除「${user.display_name}」的管理員權限嗎？`)) return
 
-        try {
-            if (user.is_admin) {
-                // 移除管理員權限
+            try {
                 const response = await fetch('/api/admin/manage-admins', {
                     method: 'DELETE',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        requesterLineId: 'admin', // 使用 admin 作為請求者 (後端會檢查)
+                        requesterLineId: 'admin',
                         targetLineId: user.line_id
                     })
                 })
 
                 if (response.ok) {
                     setUsers(users.map(u =>
-                        u.line_id === user.line_id ? { ...u, is_admin: false } : u
+                        u.line_id === user.line_id ? { ...u, is_admin: false, admin_level: null } : u
                     ))
                     alert(`已移除「${user.display_name}」的管理員權限`)
                 } else {
                     const data = await response.json()
                     alert(data.error || '操作失敗')
                 }
-            } else {
-                // 新增管理員權限
-                const response = await fetch('/api/admin/manage-admins', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        requesterLineId: 'admin', // 使用 admin 作為請求者
-                        newAdminLineId: user.line_id,
-                        displayName: user.display_name,
-                        notes: '透過用戶管理頁面指派'
-                    })
-                })
+            } catch (error) {
+                console.error('Error removing admin:', error)
+                alert('操作發生錯誤')
+            }
+        } else {
+            // 顯示指派管理員彈窗
+            setSelectedUserForAdmin(user)
+            setSelectedAdminLevel('event')
+            setShowAdminModal(true)
+        }
+    }
 
-                if (response.ok) {
-                    setUsers(users.map(u =>
-                        u.line_id === user.line_id ? { ...u, is_admin: true } : u
-                    ))
-                    alert(`已指派「${user.display_name}」為管理員`)
-                } else {
-                    const data = await response.json()
-                    alert(data.error || '操作失敗')
-                }
+    // 確認指派管理員
+    const handleConfirmAssignAdmin = async () => {
+        if (!selectedUserForAdmin) return
+
+        try {
+            const response = await fetch('/api/admin/manage-admins', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    requesterLineId: 'admin',
+                    newAdminLineId: selectedUserForAdmin.line_id,
+                    displayName: selectedUserForAdmin.display_name,
+                    notes: '透過用戶管理頁面指派',
+                    adminLevel: selectedAdminLevel
+                })
+            })
+
+            if (response.ok) {
+                setUsers(users.map(u =>
+                    u.line_id === selectedUserForAdmin.line_id ? { ...u, is_admin: true, admin_level: selectedAdminLevel } : u
+                ))
+                const levelName = selectedAdminLevel === 'system' ? '系統管理員' : '活動管理員'
+                alert(`已指派「${selectedUserForAdmin.display_name}」為${levelName}`)
+                setShowAdminModal(false)
+                setSelectedUserForAdmin(null)
+            } else {
+                const data = await response.json()
+                alert(data.error || '操作失敗')
             }
         } catch (error) {
-            console.error('Error toggling admin:', error)
+            console.error('Error assigning admin:', error)
             alert('操作發生錯誤')
         }
     }
@@ -699,13 +722,18 @@ export default function GuestManagementPage() {
                                                     <button
                                                         onClick={() => handleToggleAdmin(user)}
                                                         className={`px-2 py-1 rounded text-xs font-medium inline-flex items-center gap-1 transition-colors ${user.is_admin
-                                                                ? 'bg-amber-100 text-amber-700 hover:bg-amber-200'
+                                                                ? user.admin_level === 'system'
+                                                                    ? 'bg-amber-100 text-amber-700 hover:bg-amber-200'
+                                                                    : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
                                                                 : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
                                                             }`}
                                                         title={user.is_admin ? '點擊移除管理員權限' : '點擊指派為管理員'}
                                                     >
                                                         {user.is_admin ? (
-                                                            <><Shield className="w-3 h-3" /> 管理員</>
+                                                            <>
+                                                                <Shield className="w-3 h-3" />
+                                                                {user.admin_level === 'system' ? '系統' : '活動'}
+                                                            </>
                                                         ) : (
                                                             <><ShieldOff className="w-3 h-3" /> 一般</>
                                                         )}
@@ -1117,6 +1145,100 @@ export default function GuestManagementPage() {
                     </div>
                 )
             }
+
+            {/* 管理員等級選擇彈窗 */}
+            {showAdminModal && selectedUserForAdmin && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
+                        {/* 標題 */}
+                        <div className="bg-gradient-to-r from-amber-500 to-orange-500 px-6 py-4">
+                            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                                <Shield className="w-6 h-6" />
+                                指派管理員
+                            </h2>
+                            <p className="text-amber-100 text-sm mt-1">
+                                為「{selectedUserForAdmin.display_name}」選擇管理員等級
+                            </p>
+                        </div>
+
+                        <div className="p-6 space-y-4">
+                            {/* 等級選項 */}
+                            <div className="space-y-3">
+                                <label
+                                    className={`flex items-start gap-4 p-4 border-2 rounded-xl cursor-pointer transition-all ${selectedAdminLevel === 'event'
+                                        ? 'border-blue-500 bg-blue-50'
+                                        : 'border-gray-200 hover:border-gray-300'
+                                        }`}
+                                    onClick={() => setSelectedAdminLevel('event')}
+                                >
+                                    <input
+                                        type="radio"
+                                        name="adminLevel"
+                                        value="event"
+                                        checked={selectedAdminLevel === 'event'}
+                                        onChange={() => setSelectedAdminLevel('event')}
+                                        className="mt-1"
+                                    />
+                                    <div>
+                                        <div className="font-semibold text-gray-900">活動管理員</div>
+                                        <div className="text-sm text-gray-500 mt-1">
+                                            可管理分數、摸彩、投票等活動相關功能
+                                        </div>
+                                        <div className="text-xs text-red-500 mt-2">
+                                            ⚠️ 無法存取：題目管理、照片管理、用戶管理、Rich Menu、系統設定
+                                        </div>
+                                    </div>
+                                </label>
+
+                                <label
+                                    className={`flex items-start gap-4 p-4 border-2 rounded-xl cursor-pointer transition-all ${selectedAdminLevel === 'system'
+                                        ? 'border-amber-500 bg-amber-50'
+                                        : 'border-gray-200 hover:border-gray-300'
+                                        }`}
+                                    onClick={() => setSelectedAdminLevel('system')}
+                                >
+                                    <input
+                                        type="radio"
+                                        name="adminLevel"
+                                        value="system"
+                                        checked={selectedAdminLevel === 'system'}
+                                        onChange={() => setSelectedAdminLevel('system')}
+                                        className="mt-1"
+                                    />
+                                    <div>
+                                        <div className="font-semibold text-gray-900 flex items-center gap-2">
+                                            系統管理員
+                                            <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">完整權限</span>
+                                        </div>
+                                        <div className="text-sm text-gray-500 mt-1">
+                                            擁有所有管理功能的完整存取權限
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+
+                            {/* 按鈕 */}
+                            <div className="flex gap-3 pt-2">
+                                <button
+                                    onClick={() => {
+                                        setShowAdminModal(false)
+                                        setSelectedUserForAdmin(null)
+                                    }}
+                                    className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
+                                >
+                                    取消
+                                </button>
+                                <button
+                                    onClick={handleConfirmAssignAdmin}
+                                    className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-colors font-medium"
+                                >
+                                    確認指派
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </AdminLayout >
     )
 }

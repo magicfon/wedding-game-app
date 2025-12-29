@@ -16,6 +16,21 @@ export async function GET() {
 
         if (usersError) throw usersError
 
+        // 獲取管理員資料以取得 admin_level
+        const { data: adminData } = await supabase
+            .from('admin_line_ids')
+            .select('line_id, admin_level, is_active')
+            .eq('is_active', true)
+
+        // 將 admin_level 合併到用戶資料中
+        const adminMap = new Map(
+            (adminData || []).map(admin => [admin.line_id, admin.admin_level])
+        )
+        const usersWithAdminLevel = (users || []).map(user => ({
+            ...user,
+            admin_level: user.is_admin ? (adminMap.get(user.line_id) || 'event') : null
+        }))
+
         // 獲取手動名單
         const { data: guests, error: guestsError } = await supabase
             .from('guest_list')
@@ -25,7 +40,7 @@ export async function GET() {
         if (guestsError) throw guestsError
 
         return NextResponse.json({
-            users: users || [],
+            users: usersWithAdminLevel,
             guests: guests || []
         })
     } catch (error) {
