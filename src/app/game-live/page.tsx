@@ -131,21 +131,28 @@ export default function GameLivePage() {
     }
   }, [])
 
-  // 監聽時間結束，獲取最終答題數據並準備顯示排行榜
+  // 從 gameState 同步 displayPhase（由管理控制台控制）
+  useEffect(() => {
+    if (gameState?.display_phase && gameState.display_phase !== displayPhase) {
+      // 只有當 gameState 有 display_phase 且與本地不同時才同步
+      setDisplayPhase(gameState.display_phase)
+      console.log('同步 displayPhase 從 gameState:', gameState.display_phase)
+
+      // 如果切換到排行榜，獲取排行榜數據
+      if (gameState.display_phase === 'rankings') {
+        fetchScoreRankings()
+      }
+    }
+  }, [gameState?.display_phase])
+
+  // 監聽時間結束，獲取最終答題數據（不自動跳轉到排行榜）
   useEffect(() => {
     if (displayPhase === 'options' && timeLeft <= 0 && currentQuestion) {
       // 時間結束，重新獲取最新的答題數據以顯示最終結果
       fetchAnswerDistribution()
       fetchCurrentQuestionAnswerCount()
       console.log('倒數結束：重新獲取答題數據以顯示最終分佈')
-
-      // 5秒後顯示分數排行榜
-      const rankingTimer = setTimeout(() => {
-        setDisplayPhase('rankings')
-        fetchScoreRankings()
-      }, 5000)
-
-      return () => clearTimeout(rankingTimer)
+      // 不再自動跳轉到排行榜，由管理控制台的「排行榜」按鈕手動控制
     }
   }, [displayPhase, timeLeft, currentQuestion])
 

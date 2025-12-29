@@ -194,19 +194,21 @@ export async function POST(request: Request) {
               is_game_active: false,
               is_paused: false,
               current_question_id: null,
+              display_phase: 'question',
               updated_at: new Date().toISOString()
             })
             .eq('id', 1);
 
           actionDetails = { game_ended: true };
         } else {
-          // 設定下一題
+          // 設定下一題，同時重置 display_phase 為 'question'
           result = await supabase
             .from('game_state')
             .update({
               current_question_id: nextQuestion.id,
               question_start_time: new Date().toISOString(),
               completed_questions: (currentState.completed_questions || 0) + 1,
+              display_phase: 'question',
               updated_at: new Date().toISOString()
             })
             .eq('id', 1);
@@ -216,6 +218,19 @@ export async function POST(request: Request) {
             next_question_id: nextQuestion.id
           };
         }
+        break;
+
+      case 'show_rankings':
+        // 顯示排行榜 - 設定 display_phase 為 'rankings'
+        result = await supabase
+          .from('game_state')
+          .update({
+            display_phase: 'rankings',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', 1);
+
+        actionDetails = { display_phase: 'rankings' };
         break;
 
       case 'jump_to_question':

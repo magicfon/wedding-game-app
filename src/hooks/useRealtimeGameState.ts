@@ -13,6 +13,7 @@ interface GameState {
   created_at: string
   updated_at: string
   question_display_duration?: number
+  display_phase?: 'question' | 'options' | 'rankings'
 }
 
 export function useRealtimeGameState() {

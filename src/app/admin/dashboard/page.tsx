@@ -541,15 +541,28 @@ export default function AdminDashboard() {
                       <span>暫停遊戲</span>
                     </button>
                   )}
-
-                  <button
-                    onClick={() => controlGame('next_question')}
-                    disabled={gameLoading}
-                    className="flex items-center space-x-2 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg transition-colors"
-                  >
-                    <SkipForward className="w-4 h-4" />
-                    <span>下一題</span>
-                  </button>
+                  {/* 排行榜/下一題按鈕 - 根據時間和顯示階段切換 */}
+                  {timeRemaining <= 0 && gameState?.display_phase !== 'rankings' ? (
+                    // 倒數結束且尚未顯示排行榜：顯示「排行榜」按鈕
+                    <button
+                      onClick={() => controlGame('show_rankings')}
+                      disabled={gameLoading}
+                      className="flex items-center space-x-2 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg transition-colors"
+                    >
+                      <Trophy className="w-4 h-4" />
+                      <span>排行榜</span>
+                    </button>
+                  ) : (
+                    // 已在排行榜階段或倒數進行中：顯示「下一題」按鈕
+                    <button
+                      onClick={() => controlGame('next_question')}
+                      disabled={gameLoading}
+                      className="flex items-center space-x-2 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg transition-colors"
+                    >
+                      <SkipForward className="w-4 h-4" />
+                      <span>下一題</span>
+                    </button>
+                  )}
                 </>
               )}
 
