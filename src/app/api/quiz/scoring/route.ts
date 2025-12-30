@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServer } from '@/lib/supabase-server'
 
-// 計分規則配置
+// 計分規則配置 - 隨機計分系統
 const SCORING_RULES = {
-  // 基礎分數由題目設定決定
-  SPEED_BONUS_MULTIPLIER: 0.5, // 速度加成倍數（基於剩餘時間比例）
-  TOP_ANSWER_BONUS: [50, 30, 20], // 前三名答對者額外加分
-  WRONG_ANSWER_PENALTY: 0, // 答錯不扣分
-  TIMEOUT_PENALTY_DEFAULT: 0, // 未答題默認扣分 (改為0)
-  PARTICIPATION_SCORE: 10, // 答錯參加獎
+  BASE_SCORE: 50,           // 基礎分數
+  RANDOM_BONUS_MIN: 1,      // 隨機加成最小值
+  RANDOM_BONUS_MAX: 50,     // 隨機加成最大值
+  PARTICIPATION_SCORE: 50,  // 答錯參與獎（鼓勵大家都答題）
+  TIMEOUT_SCORE: 0,         // 超時分數
 }
 
 interface AnswerSubmission {
@@ -106,10 +105,7 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ 答題記錄已插入:', answerRecord)
 
-    // 如果答對了，檢查是否需要給前三名額外加分
-    if (!is_timeout && selected_answer === question.correct_answer) {
-      await updateTopAnswerBonuses(question_id, supabase)
-    }
+    // 隨機計分系統 - 不再需要前三名額外加分
 
     // 檢查用戶總分是否已更新（觸發器應該會自動更新）
     const { data: updatedUser, error: userError } = await supabase
@@ -140,7 +136,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// 計算分數邏輯
+// 計算分數邏輯 - 隨機計分系統
 async function calculateScore({
   question,
   selected_answer,
@@ -154,86 +150,49 @@ async function calculateScore({
 }): Promise<ScoreCalculationResult> {
   const result: ScoreCalculationResult = {
     base_score: 0,
-    speed_bonus: 0,
-    rank_bonus: 0,
+    speed_bonus: 0,  // 保留欄位以維持相容性，但不再使用
+    rank_bonus: 0,   // 保留欄位以維持相容性，但不再使用
     penalty: 0,
     final_score: 0
   }
 
-  // 處理超時情況
+  // 處理超時情況 - 0 分
   if (is_timeout) {
-    const timeoutPenalty = question.timeout_penalty_enabled
-      ? question.timeout_penalty_score
-      : SCORING_RULES.TIMEOUT_PENALTY_DEFAULT
-
-    result.penalty = 0
-    result.final_score = 0
+    result.final_score = SCORING_RULES.TIMEOUT_SCORE
+    console.log('⏰ 超時，得分:', result.final_score)
     return result
   }
 
-  // 處理答錯情況（不扣分）
+  // 處理答錯情況 - 參與獎 50 分（鼓勵大家都答題）
   if (selected_answer !== question.correct_answer) {
+    result.base_score = SCORING_RULES.PARTICIPATION_SCORE
     result.final_score = SCORING_RULES.PARTICIPATION_SCORE
+    console.log('❌ 答錯，參與獎:', result.final_score)
     return result
   }
 
-  // 處理答對情況 - 優先使用管理界面設定的 points
-  result.base_score = question.points || question.base_score || 100
-  console.log('📊 基礎分數計算:', {
+  // 處理答對情況 - 基礎分 + 隨機加成
+  result.base_score = SCORING_RULES.BASE_SCORE
+
+  // 計算隨機加成 (1~50)
+  const randomBonus = Math.floor(
+    Math.random() * (SCORING_RULES.RANDOM_BONUS_MAX - SCORING_RULES.RANDOM_BONUS_MIN + 1)
+  ) + SCORING_RULES.RANDOM_BONUS_MIN
+
+  result.speed_bonus = randomBonus  // 使用 speed_bonus 欄位存儲隨機加成
+  result.final_score = result.base_score + randomBonus
+
+  console.log('🎲 答對，隨機計分:', {
     question_id: question.id,
-    管理界面設定_points: question.points,
-    資料庫預設_base_score: question.base_score,
-    最終使用_base_score: result.base_score
+    基礎分: result.base_score,
+    隨機加成: randomBonus,
+    最終得分: result.final_score
   })
-
-  // 計算速度加成（基於剩餘時間比例）
-  const totalTimeMs = question.time_limit * 1000
-  const remainingTimeMs = Math.max(0, totalTimeMs - answer_time)
-  const timeRatio = remainingTimeMs / totalTimeMs
-  result.speed_bonus = Math.floor(timeRatio * result.base_score * SCORING_RULES.SPEED_BONUS_MULTIPLIER)
-
-  // 基礎分數 + 速度加成
-  result.final_score = result.base_score + result.speed_bonus
 
   return result
 }
 
-// 更新前三名答對者的額外加分
-async function updateTopAnswerBonuses(question_id: number, supabase: any) {
-  try {
-    // 獲取這題所有答對的記錄，按答題時間排序
-    const { data: correctAnswers, error } = await supabase
-      .from('answer_records')
-      .select('*')
-      .eq('question_id', question_id)
-      .eq('is_correct', true)
-      .order('answer_time', { ascending: true })
-      .limit(3)
-
-    if (error || !correctAnswers || correctAnswers.length === 0) {
-      return
-    }
-
-    // 為前三名添加額外加分
-    const updates = correctAnswers.map((record: any, index: number) => {
-      const rankBonus = SCORING_RULES.TOP_ANSWER_BONUS[index] || 0
-      const newScore = record.earned_score + rankBonus
-
-      return supabase
-        .from('answer_records')
-        .update({
-          earned_score: newScore
-        })
-        .eq('id', record.id)
-    })
-
-    await Promise.all(updates)
-
-    console.log(`✅ 已為題目 ${question_id} 的前 ${correctAnswers.length} 名答對者添加排名加分`)
-  } catch (error) {
-    console.error('Error updating top answer bonuses:', error)
-  }
-}
+// 隨機計分系統 - 不再需要前三名額外加分功能
 
 // 獲取題目計分統計
 export async function GET(request: NextRequest) {
