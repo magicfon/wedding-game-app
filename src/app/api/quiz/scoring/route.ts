@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServer } from '@/lib/supabase-server'
 
-// 計分規則配置 - 隨機計分系統
-const SCORING_RULES = {
+// 計分規則配置 - 隨機計分系統（從資料庫讀取，這裡是預設值）
+const DEFAULT_SCORING_RULES = {
   BASE_SCORE: 50,           // 基礎分數
   RANDOM_BONUS_MIN: 1,      // 隨機加成最小值
   RANDOM_BONUS_MAX: 50,     // 隨機加成最大值
@@ -27,6 +27,34 @@ interface ScoreCalculationResult {
   rank_position?: number
 }
 
+// 從資料庫獲取計分規則
+async function getScoringRules(supabase: any) {
+  try {
+    const { data, error } = await supabase
+      .from('scoring_rules')
+      .select('*')
+      .order('id', { ascending: false })
+      .limit(1)
+      .single()
+
+    if (error || !data) {
+      console.log('使用預設計分規則')
+      return DEFAULT_SCORING_RULES
+    }
+
+    return {
+      BASE_SCORE: data.base_score,
+      RANDOM_BONUS_MIN: data.random_bonus_min,
+      RANDOM_BONUS_MAX: data.random_bonus_max,
+      PARTICIPATION_SCORE: data.participation_score,
+      TIMEOUT_SCORE: data.timeout_score
+    }
+  } catch (error) {
+    console.error('獲取計分規則失敗，使用預設值:', error)
+    return DEFAULT_SCORING_RULES
+  }
+}
+
 // 計算答題分數
 export async function POST(request: NextRequest) {
   try {
@@ -41,6 +69,9 @@ export async function POST(request: NextRequest) {
         error: '缺少必要參數：user_line_id, question_id'
       }, { status: 400 })
     }
+
+    // 獲取計分規則
+    const scoringRules = await getScoringRules(supabase)
 
     // 獲取題目資訊
     const { data: question, error: questionError } = await supabase
@@ -72,7 +103,8 @@ export async function POST(request: NextRequest) {
       question,
       selected_answer,
       answer_time,
-      is_timeout
+      is_timeout,
+      scoringRules
     })
 
     // 記錄答題
@@ -141,12 +173,14 @@ async function calculateScore({
   question,
   selected_answer,
   answer_time,
-  is_timeout
+  is_timeout,
+  scoringRules = DEFAULT_SCORING_RULES
 }: {
   question: any
   selected_answer: 'A' | 'B' | 'C' | 'D' | null
   answer_time: number
   is_timeout: boolean
+  scoringRules?: typeof DEFAULT_SCORING_RULES
 }): Promise<ScoreCalculationResult> {
   const result: ScoreCalculationResult = {
     base_score: 0,
@@ -158,26 +192,26 @@ async function calculateScore({
 
   // 處理超時情況 - 0 分
   if (is_timeout) {
-    result.final_score = SCORING_RULES.TIMEOUT_SCORE
+    result.final_score = scoringRules.TIMEOUT_SCORE
     console.log('⏰ 超時，得分:', result.final_score)
     return result
   }
 
-  // 處理答錯情況 - 參與獎 50 分（鼓勵大家都答題）
+  // 處理答錯情況 - 參與獎（鼓勵大家都答題）
   if (selected_answer !== question.correct_answer) {
-    result.base_score = SCORING_RULES.PARTICIPATION_SCORE
-    result.final_score = SCORING_RULES.PARTICIPATION_SCORE
+    result.base_score = scoringRules.PARTICIPATION_SCORE
+    result.final_score = scoringRules.PARTICIPATION_SCORE
     console.log('❌ 答錯，參與獎:', result.final_score)
     return result
   }
 
   // 處理答對情況 - 基礎分 + 隨機加成
-  result.base_score = SCORING_RULES.BASE_SCORE
+  result.base_score = scoringRules.BASE_SCORE
 
-  // 計算隨機加成 (1~50)
+  // 計算隨機加成
   const randomBonus = Math.floor(
-    Math.random() * (SCORING_RULES.RANDOM_BONUS_MAX - SCORING_RULES.RANDOM_BONUS_MIN + 1)
-  ) + SCORING_RULES.RANDOM_BONUS_MIN
+    Math.random() * (scoringRules.RANDOM_BONUS_MAX - scoringRules.RANDOM_BONUS_MIN + 1)
+  ) + scoringRules.RANDOM_BONUS_MIN
 
   result.speed_bonus = randomBonus  // 使用 speed_bonus 欄位存儲隨機加成
   result.final_score = result.base_score + randomBonus

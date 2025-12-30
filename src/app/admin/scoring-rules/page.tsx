@@ -8,99 +8,105 @@ import {
   Clock, 
   CheckCircle,
   XCircle,
+  Info,
+  Dice1,
+  Users,
   Save,
-  RefreshCw,
-  Info
+  RefreshCw
 } from 'lucide-react'
 
-interface ScoringRule {
-  id: number
-  question_text: string
-  base_score: number
-  penalty_enabled: boolean
-  penalty_score: number
-  timeout_penalty_enabled: boolean
-  timeout_penalty_score: number
-  time_limit: number
-  correct_answer: string
+// 計分規則配置 - 隨機計分系統
+interface ScoringRules {
+  id?: number
+  base_score: number           // 基礎分數
+  random_bonus_min: number      // 隨機加成最小值
+  random_bonus_max: number      // 隨機加成最大值
+  participation_score: number  // 答錯參與獎（鼓勵大家都答題）
+  timeout_score: number        // 超時分數
+  updated_at?: string
 }
 
-interface GlobalSettings {
-  default_base_score: number
-  default_penalty_score: number
-  default_timeout_penalty_score: number
-  default_time_limit: number
+const DEFAULT_SCORING_RULES: ScoringRules = {
+  base_score: 50,
+  random_bonus_min: 1,
+  random_bonus_max: 50,
+  participation_score: 50,
+  timeout_score: 0
 }
 
 export default function ScoringRulesPage() {
-  const [questions, setQuestions] = useState<ScoringRule[]>([])
+  const [rules, setRules] = useState<ScoringRules>(DEFAULT_SCORING_RULES)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{type: 'success' | 'error', text: string} | null>(null)
-  const [globalSettings, setGlobalSettings] = useState<GlobalSettings>({
-    default_base_score: 100,
-    default_penalty_score: 50,
-    default_timeout_penalty_score: 10,
-    default_time_limit: 30
-  })
 
   const supabase = createSupabaseBrowser()
 
   useEffect(() => {
-    fetchQuestions()
+    fetchScoringRules()
   }, [])
 
-  const fetchQuestions = async () => {
+  const fetchScoringRules = async () => {
     try {
       const { data, error } = await supabase
-        .from('questions')
+        .from('scoring_rules')
         .select('*')
-        .order('id', { ascending: true })
+        .order('id', { ascending: false })
+        .limit(1)
+        .single()
 
-      if (error) throw error
-      setQuestions(data as ScoringRule[])
+      if (error) {
+        // 如果表不存在或沒有數據，使用預設值
+        console.log('使用預設計分規則')
+        setRules(DEFAULT_SCORING_RULES)
+      } else if (data) {
+        setRules(data as ScoringRules)
+      }
     } catch (error) {
-      console.error('Error fetching questions:', error)
-      showMessage('error', '載入題目失敗')
+      console.error('Error fetching scoring rules:', error)
+      setRules(DEFAULT_SCORING_RULES)
     } finally {
       setLoading(false)
     }
   }
 
-  const updateQuestion = async (questionId: number, updates: Partial<ScoringRule>) => {
-    try {
-      const { error } = await supabase
-        .from('questions')
-        .update(updates)
-        .eq('id', questionId)
-
-      if (error) throw error
-      showMessage('success', '更新成功')
-      fetchQuestions()
-    } catch (error) {
-      console.error('Error updating question:', error)
-      showMessage('error', '更新失敗')
-    }
-  }
-
-  const applyToAll = async (field: keyof ScoringRule, value: any) => {
-    if (!confirm('確定要將此設定套用到所有題目嗎？此操作無法復原。')) {
-      return
-    }
-
+  const handleSave = async () => {
     setSaving(true)
     try {
-      const { error } = await supabase
-        .from('questions')
-        .update({ [field]: value })
-        .neq('id', 0) // Update all
+      if (rules.id) {
+        // 更新現有規則
+        const { error } = await supabase
+          .from('scoring_rules')
+          .update({
+            base_score: rules.base_score,
+            random_bonus_min: rules.random_bonus_min,
+            random_bonus_max: rules.random_bonus_max,
+            participation_score: rules.participation_score,
+            timeout_score: rules.timeout_score
+          })
+          .eq('id', rules.id)
 
-      if (error) throw error
-      showMessage('success', '已套用到所有題目')
-      fetchQuestions()
+        if (error) throw error
+      } else {
+        // 插入新規則
+        const { error } = await supabase
+          .from('scoring_rules')
+          .insert({
+            base_score: rules.base_score,
+            random_bonus_min: rules.random_bonus_min,
+            random_bonus_max: rules.random_bonus_max,
+            participation_score: rules.participation_score,
+            timeout_score: rules.timeout_score
+          })
+
+        if (error) throw error
+      }
+
+      showMessage('success', '計分規則已更新')
+      fetchScoringRules()
     } catch (error) {
-      console.error('Error applying to all:', error)
-      showMessage('error', '套用失敗')
+      console.error('Error saving scoring rules:', error)
+      showMessage('error', '儲存失敗：' + (error instanceof Error ? error.message : '未知錯誤'))
     } finally {
       setSaving(false)
     }
@@ -146,275 +152,222 @@ export default function ScoringRulesPage() {
           <div className="flex items-start space-x-3">
             <Info className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
             <div className="space-y-2">
-              <h3 className="font-semibold text-blue-900">計分規則說明</h3>
-              <ul className="text-sm text-blue-800 space-y-1">
-                <li>• <strong>基礎分數</strong>：答對題目可獲得的分數（預設 100 分）</li>
-                <li>• <strong>答錯扣分</strong>：答錯時扣除的分數（可選功能）</li>
-                <li>• <strong>超時扣分</strong>：超過時間限制未作答時扣除的分數（可選功能）</li>
-                <li>• <strong>時間限制</strong>：答題時間上限（秒，預設 30 秒）</li>
-              </ul>
+              <h3 className="font-semibold text-blue-900">隨機計分系統說明</h3>
+              <p className="text-sm text-blue-800">
+                本系統採用隨機計分機制，讓遊戲更具趣味性和公平性。
+                在此頁面修改設定後會立即儲存到資料庫，新的計分規則會在下一題開始時生效。
+              </p>
             </div>
           </div>
         </div>
 
-        {/* 全局設定 */}
-        <div className="bg-white rounded-lg shadow-lg p-6">
-          <h2 className="text-xl font-bold mb-6 flex items-center">
-            <Trophy className="w-6 h-6 mr-2 text-pink-500" />
-            全局設定（套用到所有題目）
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                基礎分數
-              </label>
-              <div className="flex space-x-2">
-                <input
-                  type="number"
-                  value={globalSettings.default_base_score}
-                  onChange={(e) => setGlobalSettings({...globalSettings, default_base_score: parseInt(e.target.value) || 0})}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 text-black"
-                />
-                <button
-                  onClick={() => applyToAll('base_score', globalSettings.default_base_score)}
-                  disabled={saving}
-                  className="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 disabled:bg-gray-300 transition-colors flex items-center"
-                >
-                  {saving ? (
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Save className="w-4 h-4" />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                答錯扣分數
-              </label>
-              <div className="flex space-x-2">
-                <input
-                  type="number"
-                  value={globalSettings.default_penalty_score}
-                  onChange={(e) => setGlobalSettings({...globalSettings, default_penalty_score: parseInt(e.target.value) || 0})}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 text-black"
-                />
-                <button
-                  onClick={() => applyToAll('penalty_score', globalSettings.default_penalty_score)}
-                  disabled={saving}
-                  className="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 disabled:bg-gray-300 transition-colors flex items-center"
-                >
-                  {saving ? (
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Save className="w-4 h-4" />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                超時扣分數
-              </label>
-              <div className="flex space-x-2">
-                <input
-                  type="number"
-                  value={globalSettings.default_timeout_penalty_score}
-                  onChange={(e) => setGlobalSettings({...globalSettings, default_timeout_penalty_score: parseInt(e.target.value) || 0})}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 text-black"
-                />
-                <button
-                  onClick={() => applyToAll('timeout_penalty_score', globalSettings.default_timeout_penalty_score)}
-                  disabled={saving}
-                  className="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 disabled:bg-gray-300 transition-colors flex items-center"
-                >
-                  {saving ? (
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Save className="w-4 h-4" />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                時間限制（秒）
-              </label>
-              <div className="flex space-x-2">
-                <input
-                  type="number"
-                  value={globalSettings.default_time_limit}
-                  onChange={(e) => setGlobalSettings({...globalSettings, default_time_limit: parseInt(e.target.value) || 0})}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 text-black"
-                />
-                <button
-                  onClick={() => applyToAll('time_limit', globalSettings.default_time_limit)}
-                  disabled={saving}
-                  className="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 disabled:bg-gray-300 transition-colors flex items-center"
-                >
-                  {saving ? (
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Save className="w-4 h-4" />
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* 題目列表 */}
+        {/* 計分規則設定 */}
         <div className="bg-white rounded-lg shadow-lg p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold flex items-center">
               <Trophy className="w-6 h-6 mr-2 text-pink-500" />
-              題目計分設定
+              計分規則設定
             </h2>
-            <span className="text-sm text-gray-500">
-              共 {questions.length} 題
-            </span>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center"
+            >
+              {saving ? (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  儲存中...
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4 mr-2" />
+                  儲存變更
+                </>
+              )}
+            </button>
           </div>
 
-          <div className="space-y-4">
-            {questions.map((question) => (
-              <div key={question.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                <div className="mb-4">
-                  <h3 className="font-medium text-gray-900">
-                    題目 {question.id}: {question.question_text}
-                  </h3>
+          <div className="space-y-6">
+            {/* 基礎分數 */}
+            <div className="border border-gray-200 rounded-lg p-4">
+              <div className="flex items-center space-x-3 mb-3">
+                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                  <Trophy className="w-5 h-5 text-green-600" />
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {/* 基礎分數 */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      基礎分數
-                    </label>
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="number"
-                        value={question.base_score}
-                        onChange={(e) => {
-                          const newQuestions = questions.map(q => 
-                            q.id === question.id ? {...q, base_score: parseInt(e.target.value) || 0} : q
-                          )
-                          setQuestions(newQuestions)
-                        }}
-                        onBlur={() => updateQuestion(question.id, { base_score: question.base_score })}
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 text-black"
-                      />
-                      <span className="text-sm text-gray-500">分</span>
-                    </div>
-                  </div>
-
-                  {/* 答錯扣分 */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      答錯扣分
-                    </label>
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        checked={question.penalty_enabled}
-                        onChange={(e) => {
-                          const newQuestions = questions.map(q => 
-                            q.id === question.id ? {...q, penalty_enabled: e.target.checked} : q
-                          )
-                          setQuestions(newQuestions)
-                          updateQuestion(question.id, { penalty_enabled: e.target.checked })
-                        }}
-                        className="w-4 h-4 text-pink-500 rounded focus:ring-pink-500"
-                      />
-                      <input
-                        type="number"
-                        value={question.penalty_score}
-                        onChange={(e) => {
-                          const newQuestions = questions.map(q => 
-                            q.id === question.id ? {...q, penalty_score: parseInt(e.target.value) || 0} : q
-                          )
-                          setQuestions(newQuestions)
-                        }}
-                        onBlur={() => updateQuestion(question.id, { penalty_score: question.penalty_score })}
-                        disabled={!question.penalty_enabled}
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 text-black disabled:bg-gray-100 disabled:cursor-not-allowed"
-                      />
-                      <span className="text-sm text-gray-500">分</span>
-                    </div>
-                  </div>
-
-                  {/* 超時扣分 */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      超時扣分
-                    </label>
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        checked={question.timeout_penalty_enabled}
-                        onChange={(e) => {
-                          const newQuestions = questions.map(q => 
-                            q.id === question.id ? {...q, timeout_penalty_enabled: e.target.checked} : q
-                          )
-                          setQuestions(newQuestions)
-                          updateQuestion(question.id, { timeout_penalty_enabled: e.target.checked })
-                        }}
-                        className="w-4 h-4 text-pink-500 rounded focus:ring-pink-500"
-                      />
-                      <input
-                        type="number"
-                        value={question.timeout_penalty_score}
-                        onChange={(e) => {
-                          const newQuestions = questions.map(q => 
-                            q.id === question.id ? {...q, timeout_penalty_score: parseInt(e.target.value) || 0} : q
-                          )
-                          setQuestions(newQuestions)
-                        }}
-                        onBlur={() => updateQuestion(question.id, { timeout_penalty_score: question.timeout_penalty_score })}
-                        disabled={!question.timeout_penalty_enabled}
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 text-black disabled:bg-gray-100 disabled:cursor-not-allowed"
-                      />
-                      <span className="text-sm text-gray-500">分</span>
-                    </div>
-                  </div>
-
-                  {/* 時間限制 */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      <Clock className="w-4 h-4 inline mr-1" />
-                      時間限制
-                    </label>
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="number"
-                        value={question.time_limit}
-                        onChange={(e) => {
-                          const newQuestions = questions.map(q => 
-                            q.id === question.id ? {...q, time_limit: parseInt(e.target.value) || 0} : q
-                          )
-                          setQuestions(newQuestions)
-                        }}
-                        onBlur={() => updateQuestion(question.id, { time_limit: question.time_limit })}
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 text-black"
-                      />
-                      <span className="text-sm text-gray-500">秒</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 正確答案提示 */}
-                <div className="mt-4 pt-4 border-t border-gray-100">
-                  <div className="flex items-center space-x-4 text-sm text-gray-500">
-                    <span>正確答案: <strong className="text-gray-700">{question.correct_answer}</strong></span>
-                  </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900">基礎分數</h3>
+                  <p className="text-sm text-gray-500">答對題目時的基礎得分</p>
                 </div>
               </div>
-            ))}
+              <div className="ml-13">
+                <div className="flex items-center space-x-4">
+                  <input
+                    type="number"
+                    value={rules.base_score}
+                    onChange={(e) => setRules({...rules, base_score: parseInt(e.target.value) || 0})}
+                    className="w-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 text-black"
+                  />
+                  <span className="text-2xl font-bold text-green-600">{rules.base_score} 分</span>
+                </div>
+              </div>
+            </div>
+
+            {/* 隨機加成 */}
+            <div className="border border-gray-200 rounded-lg p-4">
+              <div className="flex items-center space-x-3 mb-3">
+                <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                  <Dice1 className="w-5 h-5 text-purple-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900">隨機加成</h3>
+                  <p className="text-sm text-gray-500">答對時額外獲得的隨機分數</p>
+                </div>
+              </div>
+              <div className="ml-13 space-y-3">
+                <div className="flex items-center space-x-4">
+                  <span className="text-sm text-gray-600 w-20">最小值：</span>
+                  <input
+                    type="number"
+                    value={rules.random_bonus_min}
+                    onChange={(e) => setRules({...rules, random_bonus_min: parseInt(e.target.value) || 0})}
+                    className="w-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 text-black"
+                  />
+                  <span className="text-sm text-gray-500">分</span>
+                </div>
+                <div className="flex items-center space-x-4">
+                  <span className="text-sm text-gray-600 w-20">最大值：</span>
+                  <input
+                    type="number"
+                    value={rules.random_bonus_max}
+                    onChange={(e) => setRules({...rules, random_bonus_max: parseInt(e.target.value) || 0})}
+                    className="w-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 text-black"
+                  />
+                  <span className="text-sm text-gray-500">分</span>
+                </div>
+                <div className="bg-purple-50 p-3 rounded-lg">
+                  <p className="text-sm text-purple-800">
+                    答對時總分 = 基礎分數 ({rules.base_score}) + 隨機加成 ({rules.random_bonus_min}-{rules.random_bonus_max})
+                  </p>
+                  <p className="text-sm text-purple-800 mt-1">
+                    總分範圍：{rules.base_score + rules.random_bonus_min} - {rules.base_score + rules.random_bonus_max} 分
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* 參與獎 */}
+            <div className="border border-gray-200 rounded-lg p-4">
+              <div className="flex items-center space-x-3 mb-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                  <Users className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900">參與獎</h3>
+                  <p className="text-sm text-gray-500">答錯時仍可獲得的鼓勵分數</p>
+                </div>
+              </div>
+              <div className="ml-13">
+                <div className="flex items-center space-x-4">
+                  <input
+                    type="number"
+                    value={rules.participation_score}
+                    onChange={(e) => setRules({...rules, participation_score: parseInt(e.target.value) || 0})}
+                    className="w-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 text-black"
+                  />
+                  <span className="text-2xl font-bold text-blue-600">{rules.participation_score} 分</span>
+                </div>
+                <p className="text-sm text-gray-500 mt-2">
+                  鼓勵所有參與者都嘗試作答，答錯仍有分數可拿
+                </p>
+              </div>
+            </div>
+
+            {/* 超時分數 */}
+            <div className="border border-gray-200 rounded-lg p-4">
+              <div className="flex items-center space-x-3 mb-3">
+                <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                  <Clock className="w-5 h-5 text-red-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900">超時分數</h3>
+                  <p className="text-sm text-gray-500">超過時間限制未作答時的得分</p>
+                </div>
+              </div>
+              <div className="ml-13">
+                <div className="flex items-center space-x-4">
+                  <input
+                    type="number"
+                    value={rules.timeout_score}
+                    onChange={(e) => setRules({...rules, timeout_score: parseInt(e.target.value) || 0})}
+                    className="w-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 text-black"
+                  />
+                  <span className="text-2xl font-bold text-red-600">{rules.timeout_score} 分</span>
+                </div>
+                <p className="text-sm text-gray-500 mt-2">
+                  超時未作答不獲得分數
+                </p>
+              </div>
+            </div>
           </div>
         </div>
+
+        {/* 計分範例 */}
+        <div className="bg-white rounded-lg shadow-lg p-6">
+          <h2 className="text-xl font-bold mb-6 flex items-center">
+            <Trophy className="w-6 h-6 mr-2 text-pink-500" />
+            計分範例
+          </h2>
+
+          <div className="space-y-4">
+            <div className="flex items-start space-x-4 p-4 bg-green-50 rounded-lg">
+              <div className="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center flex-shrink-0">
+                <CheckCircle className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="font-semibold text-green-900">答對題目</h4>
+                <p className="text-sm text-green-800">
+                  獲得基礎分數 {rules.base_score} 分 + 隨機加成 {rules.random_bonus_min}-{rules.random_bonus_max} 分
+                </p>
+                <p className="text-sm text-green-800">
+                  總分範圍：{rules.base_score + rules.random_bonus_min} - {rules.base_score + rules.random_bonus_max} 分
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start space-x-4 p-4 bg-blue-50 rounded-lg">
+              <div className="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center flex-shrink-0">
+                <Users className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="font-semibold text-blue-900">答錯題目</h4>
+                <p className="text-sm text-blue-800">
+                  獲得參與獎 {rules.participation_score} 分
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start space-x-4 p-4 bg-red-50 rounded-lg">
+              <div className="w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center flex-shrink-0">
+                <Clock className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="font-semibold text-red-900">超時未作答</h4>
+                <p className="text-sm text-red-800">
+                  獲得 {rules.timeout_score} 分
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 更新時間 */}
+        {rules.updated_at && (
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+            <p className="text-sm text-gray-600">
+              上次更新時間：{new Date(rules.updated_at).toLocaleString('zh-TW')}
+            </p>
+          </div>
+        )}
       </div>
     </AdminLayout>
   )
