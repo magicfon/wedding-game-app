@@ -309,242 +309,244 @@ export default function WeddingPhotosPage() {
 
     return (
         <Layout title="婚紗照">
-            <div className="max-w-6xl mx-auto px-2 sm:px-4">
-                {/* 頂部提示 */}
-                <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 mb-4 sm:mb-6">
-                    <div className="text-center">
-                        {getRemainingVotes() === 0 ? (
-                            <p className="text-lg sm:text-xl font-medium text-pink-600">
-                                💕 感謝您的投票！
-                            </p>
-                        ) : (
-                            <p className="text-lg sm:text-xl font-medium text-gray-700">
-                                💕 請幫忙在您最喜歡的照片上點下愛心！感謝您！
-                            </p>
-                        )}
-                    </div>
-                </div>
-
-                {/* 照片牆 - CSS Grid with auto-flow dense */}
-                {photos.length === 0 ? (
-                    <div className="text-center py-16">
-                        <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md mx-auto">
-                            <Heart className="w-16 h-16 text-gray-400 mx-auto mb-6" />
-                            <h3 className="text-xl font-semibold text-gray-800 mb-2">還沒有照片</h3>
-                            <p className="text-gray-600">婚紗照即將上傳，敬請期待！</p>
+            <div className="min-h-screen -mx-4 -my-4 px-4 py-4 bg-gradient-to-b from-[#2D1B2E] via-[#3D2438] to-[#1A0F1B]">
+                <div className="max-w-6xl mx-auto px-2 sm:px-4">
+                    {/* 頂部提示 */}
+                    <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 mb-4 sm:mb-6">
+                        <div className="text-center">
+                            {getRemainingVotes() === 0 ? (
+                                <p className="text-lg sm:text-xl font-medium text-pink-600">
+                                    💕 感謝您的投票！
+                                </p>
+                            ) : (
+                                <p className="text-lg sm:text-xl font-medium text-gray-700">
+                                    💕 請幫忙在您最喜歡的照片上點下愛心！感謝您！
+                                </p>
+                            )}
                         </div>
                     </div>
-                ) : (
+
+                    {/* 照片牆 - CSS Grid with auto-flow dense */}
+                    {photos.length === 0 ? (
+                        <div className="text-center py-16">
+                            <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md mx-auto">
+                                <Heart className="w-16 h-16 text-gray-400 mx-auto mb-6" />
+                                <h3 className="text-xl font-semibold text-gray-800 mb-2">還沒有照片</h3>
+                                <p className="text-gray-600">婚紗照即將上傳，敬請期待！</p>
+                            </div>
+                        </div>
+                    ) : (
+                        <div
+                            className="grid gap-2"
+                            style={{
+                                gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
+                                gridAutoFlow: 'dense'
+                            }}
+                        >
+                            {photos.map((photo) => (
+                                <div
+                                    key={photo.id}
+                                    className={`cursor-pointer group transition-all duration-300 ${photo.isLandscape ? 'col-span-2' : ''
+                                        }`}
+                                    onClick={() => setSelectedPhoto(photo)}
+                                >
+                                    <div className="w-full bg-white rounded-lg sm:rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 hover:scale-[1.02] relative">
+                                        <img
+                                            src={photo.thumbnailUrl}
+                                            alt={photo.name}
+                                            className="w-full h-auto object-cover"
+                                            style={{
+                                                aspectRatio: photo.isLandscape ? '16/9' : '3/4'
+                                            }}
+                                            onLoad={(e) => {
+                                                if (!photo.loaded) {
+                                                    handleImageLoad(photo.id, e.currentTarget)
+                                                }
+                                            }}
+                                        />
+                                        {/* 票數顯示 */}
+                                        {votingEnabled && (
+                                            <div className="absolute bottom-2 left-2 bg-black/70 text-white px-2 py-1 rounded-full flex items-center space-x-1">
+                                                <Heart className={`w-3 h-3 ${userVotes[photo.id] > 0 ? 'fill-current text-red-500' : ''}`} />
+                                                <span className="text-xs font-semibold">{photo.vote_count}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                {/* 照片放大檢視 */}
+                {selectedPhoto && (
                     <div
-                        className="grid gap-2"
-                        style={{
-                            gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
-                            gridAutoFlow: 'dense'
-                        }}
+                        className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4 animate-fadeIn cursor-pointer"
+                        onClick={() => setSelectedPhoto(null)}
                     >
-                        {photos.map((photo) => (
-                            <div
-                                key={photo.id}
-                                className={`cursor-pointer group transition-all duration-300 ${photo.isLandscape ? 'col-span-2' : ''
-                                    }`}
-                                onClick={() => setSelectedPhoto(photo)}
+                        {/* 關閉按鈕 */}
+                        <button
+                            onClick={() => setSelectedPhoto(null)}
+                            className="absolute top-4 right-4 p-2 text-white hover:bg-white/10 rounded-full transition-colors z-10"
+                        >
+                            <X className="w-8 h-8" />
+                        </button>
+
+                        {/* 上一張按鈕 */}
+                        {getCurrentPhotoIndex() > 0 && (
+                            <button
+                                onClick={goToPreviousPhoto}
+                                className="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 p-3 sm:p-4 bg-white/30 hover:bg-white/50 rounded-full transition-all z-10 backdrop-blur-sm"
                             >
-                                <div className="w-full bg-white rounded-lg sm:rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 hover:scale-[1.02] relative">
-                                    <img
-                                        src={photo.thumbnailUrl}
-                                        alt={photo.name}
-                                        className="w-full h-auto object-cover"
-                                        style={{
-                                            aspectRatio: photo.isLandscape ? '16/9' : '3/4'
-                                        }}
-                                        onLoad={(e) => {
-                                            if (!photo.loaded) {
-                                                handleImageLoad(photo.id, e.currentTarget)
+                                <ChevronLeft className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
+                            </button>
+                        )}
+
+                        {/* 下一張按鈕 */}
+                        {getCurrentPhotoIndex() < photos.length - 1 && (
+                            <button
+                                onClick={goToNextPhoto}
+                                className="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 p-3 sm:p-4 bg-white/30 hover:bg-white/50 rounded-full transition-all z-10 backdrop-blur-sm"
+                            >
+                                <ChevronRight className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
+                            </button>
+                        )}
+
+                        {/* 照片計數 */}
+                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white px-4 py-2 rounded-full text-sm backdrop-blur-sm">
+                            {getCurrentPhotoIndex() + 1} / {photos.length}
+                        </div>
+
+                        <div className="relative" onClick={(e) => e.stopPropagation()}>
+                            <img
+                                src={selectedPhoto.url}
+                                alt={selectedPhoto.name}
+                                className="max-w-full max-h-[80vh] w-auto h-auto object-contain rounded-lg shadow-2xl"
+                            />
+
+                            {/* 投票區域 - 右上角 */}
+                            {votingEnabled && (
+                                <div className="absolute top-4 right-4 flex items-center space-x-3">
+                                    {/* 得票數顯示 */}
+                                    <div className="bg-pink-500/90 backdrop-blur-sm px-4 py-2 rounded-full flex items-center space-x-2 shadow-lg">
+                                        <Heart className="w-5 h-5 fill-current text-white" />
+                                        <span className="font-semibold text-white">{selectedPhoto.vote_count}</span>
+                                    </div>
+
+                                    {/* 投票按鈕 */}
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            const hasVoted = userVotes[selectedPhoto.id] > 0
+                                            const totalUsedVotes = Object.values(userVotes).reduce((sum, count) => sum + count, 0)
+
+                                            if (!hasVoted && totalUsedVotes >= availableVotes) {
+                                                setShowVoteLimitModal(true)
+                                                return
                                             }
+
+                                            handleVote(selectedPhoto.id)
                                         }}
-                                    />
-                                    {/* 票數顯示 */}
-                                    {votingEnabled && (
-                                        <div className="absolute bottom-2 left-2 bg-black/70 text-white px-2 py-1 rounded-full flex items-center space-x-1">
-                                            <Heart className={`w-3 h-3 ${userVotes[photo.id] > 0 ? 'fill-current text-red-500' : ''}`} />
-                                            <span className="text-xs font-semibold">{photo.vote_count}</span>
+                                        disabled={votingInProgress.has(selectedPhoto.id)}
+                                        className={`p-3 rounded-full shadow-2xl transition-all duration-200 backdrop-blur-sm ${votingInProgress.has(selectedPhoto.id)
+                                            ? 'bg-white/60 cursor-wait'
+                                            : (!userVotes[selectedPhoto.id] && getRemainingVotes() <= 0)
+                                                ? 'bg-white/80 cursor-not-allowed'
+                                                : 'bg-white/90 hover:bg-white hover:scale-110'
+                                            }`}
+                                    >
+                                        <Heart className={`w-8 h-8 transition-all ${votingInProgress.has(selectedPhoto.id)
+                                            ? 'text-gray-400 animate-pulse'
+                                            : userVotes[selectedPhoto.id] > 0
+                                                ? 'text-red-500 fill-current drop-shadow-lg'
+                                                : getRemainingVotes() <= 0
+                                                    ? 'text-gray-400'
+                                                    : 'text-gray-400 hover:text-pink-500'
+                                            }`} />
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {/* 投票額度用完提示 Modal */}
+                {showVoteLimitModal && (
+                    <div
+                        className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+                        onClick={() => setShowVoteLimitModal(false)}
+                    >
+                        <div
+                            className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden transform transition-all"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {/* 頭部 */}
+                            <div className="bg-gradient-to-r from-red-500 to-pink-500 px-6 py-8 text-center">
+                                <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <Trophy className="w-12 h-12 text-red-500" />
+                                </div>
+                                <h2 className="text-2xl font-bold text-white mb-2">投票額度已用完</h2>
+                                <p className="text-white/90 text-sm">You've used all your votes</p>
+                            </div>
+
+                            {/* 內容 */}
+                            <div className="px-8 py-6 space-y-6">
+                                {/* 統計卡片 */}
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="bg-gradient-to-br from-pink-50 to-red-50 rounded-2xl p-4 text-center border-2 border-pink-200">
+                                        <div className="text-3xl font-bold text-pink-600 mb-1">
+                                            {Object.values(userVotes).reduce((sum, count) => sum + count, 0)}
                                         </div>
-                                    )}
+                                        <div className="text-sm text-gray-600">已使用</div>
+                                    </div>
+                                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-4 text-center border-2 border-blue-200">
+                                        <div className="text-3xl font-bold text-blue-600 mb-1">
+                                            {availableVotes}
+                                        </div>
+                                        <div className="text-sm text-gray-600">總額度</div>
+                                    </div>
+                                </div>
+
+                                {/* 提示訊息 */}
+                                <div className="bg-yellow-50 border-2 border-yellow-200 rounded-2xl p-4">
+                                    <div className="flex items-start space-x-3">
+                                        <div className="w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                            <span className="text-white text-sm font-bold">!</span>
+                                        </div>
+                                        <div className="flex-1">
+                                            <p className="text-gray-700 leading-relaxed text-base">
+                                                如需投票給這張照片，請先<span className="font-bold text-pink-600">取消其他照片的投票</span>。
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* 操作說明 */}
+                                <div className="space-y-2 text-sm text-gray-600">
+                                    <p className="flex items-center space-x-2">
+                                        <span className="w-2 h-2 bg-pink-500 rounded-full"></span>
+                                        <span>點擊已投票照片的<span className="text-red-500 font-semibold">實心愛心 ❤</span> 可取消投票</span>
+                                    </p>
+                                    <p className="flex items-center space-x-2">
+                                        <span className="w-2 h-2 bg-pink-500 rounded-full"></span>
+                                        <span>取消後即可將票投給其他照片</span>
+                                    </p>
                                 </div>
                             </div>
-                        ))}
+
+                            {/* 關閉按鈕 */}
+                            <div className="px-8 pb-6">
+                                <button
+                                    onClick={() => setShowVoteLimitModal(false)}
+                                    className="w-full bg-gradient-to-r from-pink-500 to-red-500 text-white font-semibold py-3 rounded-xl hover:from-pink-600 hover:to-red-600 transition-all"
+                                >
+                                    我知道了
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 )}
             </div>
-
-            {/* 照片放大檢視 */}
-            {selectedPhoto && (
-                <div
-                    className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4 animate-fadeIn cursor-pointer"
-                    onClick={() => setSelectedPhoto(null)}
-                >
-                    {/* 關閉按鈕 */}
-                    <button
-                        onClick={() => setSelectedPhoto(null)}
-                        className="absolute top-4 right-4 p-2 text-white hover:bg-white/10 rounded-full transition-colors z-10"
-                    >
-                        <X className="w-8 h-8" />
-                    </button>
-
-                    {/* 上一張按鈕 */}
-                    {getCurrentPhotoIndex() > 0 && (
-                        <button
-                            onClick={goToPreviousPhoto}
-                            className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 p-2 sm:p-3 bg-white/20 hover:bg-white/40 rounded-full transition-all z-10 backdrop-blur-sm"
-                        >
-                            <ChevronLeft className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
-                        </button>
-                    )}
-
-                    {/* 下一張按鈕 */}
-                    {getCurrentPhotoIndex() < photos.length - 1 && (
-                        <button
-                            onClick={goToNextPhoto}
-                            className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 p-2 sm:p-3 bg-white/20 hover:bg-white/40 rounded-full transition-all z-10 backdrop-blur-sm"
-                        >
-                            <ChevronRight className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
-                        </button>
-                    )}
-
-                    {/* 照片計數 */}
-                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white px-4 py-2 rounded-full text-sm backdrop-blur-sm">
-                        {getCurrentPhotoIndex() + 1} / {photos.length}
-                    </div>
-
-                    <div className="relative" onClick={(e) => e.stopPropagation()}>
-                        <img
-                            src={selectedPhoto.url}
-                            alt={selectedPhoto.name}
-                            className="max-w-full max-h-[80vh] w-auto h-auto object-contain rounded-lg shadow-2xl"
-                        />
-
-                        {/* 投票區域 - 右上角 */}
-                        {votingEnabled && (
-                            <div className="absolute top-4 right-4 flex items-center space-x-3">
-                                {/* 得票數顯示 */}
-                                <div className="bg-pink-500/90 backdrop-blur-sm px-4 py-2 rounded-full flex items-center space-x-2 shadow-lg">
-                                    <Heart className="w-5 h-5 fill-current text-white" />
-                                    <span className="font-semibold text-white">{selectedPhoto.vote_count}</span>
-                                </div>
-
-                                {/* 投票按鈕 */}
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation()
-                                        const hasVoted = userVotes[selectedPhoto.id] > 0
-                                        const totalUsedVotes = Object.values(userVotes).reduce((sum, count) => sum + count, 0)
-
-                                        if (!hasVoted && totalUsedVotes >= availableVotes) {
-                                            setShowVoteLimitModal(true)
-                                            return
-                                        }
-
-                                        handleVote(selectedPhoto.id)
-                                    }}
-                                    disabled={votingInProgress.has(selectedPhoto.id)}
-                                    className={`p-3 rounded-full shadow-2xl transition-all duration-200 backdrop-blur-sm ${votingInProgress.has(selectedPhoto.id)
-                                        ? 'bg-white/60 cursor-wait'
-                                        : (!userVotes[selectedPhoto.id] && getRemainingVotes() <= 0)
-                                            ? 'bg-white/80 cursor-not-allowed'
-                                            : 'bg-white/90 hover:bg-white hover:scale-110'
-                                        }`}
-                                >
-                                    <Heart className={`w-8 h-8 transition-all ${votingInProgress.has(selectedPhoto.id)
-                                        ? 'text-gray-400 animate-pulse'
-                                        : userVotes[selectedPhoto.id] > 0
-                                            ? 'text-red-500 fill-current drop-shadow-lg'
-                                            : getRemainingVotes() <= 0
-                                                ? 'text-gray-400'
-                                                : 'text-gray-400 hover:text-pink-500'
-                                        }`} />
-                                </button>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
-
-            {/* 投票額度用完提示 Modal */}
-            {showVoteLimitModal && (
-                <div
-                    className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
-                    onClick={() => setShowVoteLimitModal(false)}
-                >
-                    <div
-                        className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden transform transition-all"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        {/* 頭部 */}
-                        <div className="bg-gradient-to-r from-red-500 to-pink-500 px-6 py-8 text-center">
-                            <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4">
-                                <Trophy className="w-12 h-12 text-red-500" />
-                            </div>
-                            <h2 className="text-2xl font-bold text-white mb-2">投票額度已用完</h2>
-                            <p className="text-white/90 text-sm">You've used all your votes</p>
-                        </div>
-
-                        {/* 內容 */}
-                        <div className="px-8 py-6 space-y-6">
-                            {/* 統計卡片 */}
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="bg-gradient-to-br from-pink-50 to-red-50 rounded-2xl p-4 text-center border-2 border-pink-200">
-                                    <div className="text-3xl font-bold text-pink-600 mb-1">
-                                        {Object.values(userVotes).reduce((sum, count) => sum + count, 0)}
-                                    </div>
-                                    <div className="text-sm text-gray-600">已使用</div>
-                                </div>
-                                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-4 text-center border-2 border-blue-200">
-                                    <div className="text-3xl font-bold text-blue-600 mb-1">
-                                        {availableVotes}
-                                    </div>
-                                    <div className="text-sm text-gray-600">總額度</div>
-                                </div>
-                            </div>
-
-                            {/* 提示訊息 */}
-                            <div className="bg-yellow-50 border-2 border-yellow-200 rounded-2xl p-4">
-                                <div className="flex items-start space-x-3">
-                                    <div className="w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                                        <span className="text-white text-sm font-bold">!</span>
-                                    </div>
-                                    <div className="flex-1">
-                                        <p className="text-gray-700 leading-relaxed text-base">
-                                            如需投票給這張照片，請先<span className="font-bold text-pink-600">取消其他照片的投票</span>。
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* 操作說明 */}
-                            <div className="space-y-2 text-sm text-gray-600">
-                                <p className="flex items-center space-x-2">
-                                    <span className="w-2 h-2 bg-pink-500 rounded-full"></span>
-                                    <span>點擊已投票照片的<span className="text-red-500 font-semibold">實心愛心 ❤</span> 可取消投票</span>
-                                </p>
-                                <p className="flex items-center space-x-2">
-                                    <span className="w-2 h-2 bg-pink-500 rounded-full"></span>
-                                    <span>取消後即可將票投給其他照片</span>
-                                </p>
-                            </div>
-                        </div>
-
-                        {/* 關閉按鈕 */}
-                        <div className="px-8 pb-6">
-                            <button
-                                onClick={() => setShowVoteLimitModal(false)}
-                                className="w-full bg-gradient-to-r from-pink-500 to-red-500 text-white font-semibold py-3 rounded-xl hover:from-pink-600 hover:to-red-600 transition-all"
-                            >
-                                我知道了
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </Layout>
     )
 }
