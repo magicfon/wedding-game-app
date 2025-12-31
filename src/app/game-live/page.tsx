@@ -119,12 +119,20 @@ export default function GameLivePage() {
     }
   }, [currentQuestion?.id, gameState?.is_game_active, gameState?.is_paused, gameState?.question_display_duration])
 
-  // 遊戲開始音效
+  // 遊戲開始音效（整個遊戲只播放一次）
+  const gameStartPlayedRef = useRef<boolean>(false)
+
   useEffect(() => {
-    if (gameState?.is_game_active && !gameState?.is_paused && displayPhase === 'question') {
+    // 只在遊戲首次啟動時播放，整個遊戲期間只播放一次
+    if (gameState?.is_game_active && !gameState?.is_paused && !gameStartPlayedRef.current) {
+      gameStartPlayedRef.current = true
       playSound('GAME_START')
     }
-  }, [gameState?.is_game_active, gameState?.is_paused, displayPhase, playSound])
+    // 當遊戲結束時（is_game_active 變為 false），重置標記以便下次遊戲可以再播放
+    if (!gameState?.is_game_active) {
+      gameStartPlayedRef.current = false
+    }
+  }, [gameState?.is_game_active, gameState?.is_paused, playSound])
 
   // 清理計時器
   useEffect(() => {
