@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Layout from '@/components/Layout'
-import { X, Heart, Image as ImageIcon, Trophy } from 'lucide-react'
+import { X, Heart, Image as ImageIcon, Trophy, ChevronLeft, ChevronRight } from 'lucide-react'
 import { createSupabaseBrowser } from '@/lib/supabase'
 import { useLiff } from '@/hooks/useLiff'
 
@@ -127,6 +127,30 @@ export default function WeddingPhotosPage() {
     const getRemainingVotes = () => {
         const used = Object.values(userVotes).reduce((sum, count) => sum + count, 0)
         return Math.max(0, availableVotes - used)
+    }
+
+    // 獲取當前照片索引
+    const getCurrentPhotoIndex = () => {
+        if (!selectedPhoto) return -1
+        return photos.findIndex(p => p.id === selectedPhoto.id)
+    }
+
+    // 上一張照片
+    const goToPreviousPhoto = (e: React.MouseEvent) => {
+        e.stopPropagation()
+        const currentIndex = getCurrentPhotoIndex()
+        if (currentIndex > 0) {
+            setSelectedPhoto(photos[currentIndex - 1])
+        }
+    }
+
+    // 下一張照片
+    const goToNextPhoto = (e: React.MouseEvent) => {
+        e.stopPropagation()
+        const currentIndex = getCurrentPhotoIndex()
+        if (currentIndex < photos.length - 1) {
+            setSelectedPhoto(photos[currentIndex + 1])
+        }
     }
 
     // 處理投票
@@ -359,6 +383,7 @@ export default function WeddingPhotosPage() {
                     className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4 animate-fadeIn cursor-pointer"
                     onClick={() => setSelectedPhoto(null)}
                 >
+                    {/* 關閉按鈕 */}
                     <button
                         onClick={() => setSelectedPhoto(null)}
                         className="absolute top-4 right-4 p-2 text-white hover:bg-white/10 rounded-full transition-colors z-10"
@@ -366,11 +391,36 @@ export default function WeddingPhotosPage() {
                         <X className="w-8 h-8" />
                     </button>
 
+                    {/* 上一張按鈕 */}
+                    {getCurrentPhotoIndex() > 0 && (
+                        <button
+                            onClick={goToPreviousPhoto}
+                            className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 p-2 sm:p-3 bg-white/20 hover:bg-white/40 rounded-full transition-all z-10 backdrop-blur-sm"
+                        >
+                            <ChevronLeft className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
+                        </button>
+                    )}
+
+                    {/* 下一張按鈕 */}
+                    {getCurrentPhotoIndex() < photos.length - 1 && (
+                        <button
+                            onClick={goToNextPhoto}
+                            className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 p-2 sm:p-3 bg-white/20 hover:bg-white/40 rounded-full transition-all z-10 backdrop-blur-sm"
+                        >
+                            <ChevronRight className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
+                        </button>
+                    )}
+
+                    {/* 照片計數 */}
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white px-4 py-2 rounded-full text-sm backdrop-blur-sm">
+                        {getCurrentPhotoIndex() + 1} / {photos.length}
+                    </div>
+
                     <div className="relative" onClick={(e) => e.stopPropagation()}>
                         <img
                             src={selectedPhoto.url}
                             alt={selectedPhoto.name}
-                            className="max-w-full max-h-[90vh] w-auto h-auto object-contain rounded-lg shadow-2xl"
+                            className="max-w-full max-h-[80vh] w-auto h-auto object-contain rounded-lg shadow-2xl"
                         />
 
                         {/* 投票區域 - 右上角 */}
