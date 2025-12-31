@@ -286,49 +286,17 @@ export default function WeddingPhotosPage() {
     return (
         <Layout title="婚紗照">
             <div className="max-w-6xl mx-auto px-2 sm:px-4">
-                {/* 頂部標題 */}
+                {/* 頂部提示 */}
                 <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 mb-4 sm:mb-6">
-                    <div className="flex flex-col sm:flex-row items-center justify-between space-y-3 sm:space-y-0">
-                        <div className="flex items-center space-x-3 sm:space-x-4">
-                            <h2 className="text-xl sm:text-2xl font-bold text-gray-800">💕 婚紗照</h2>
-                            <span className="bg-pink-100 text-pink-700 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium">
-                                {photos.length} 張照片
-                            </span>
-                        </div>
-
-                        {/* 投票狀態 */}
-                        {votingEnabled && (
-                            <div className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${getRemainingVotes() === 0
-                                ? 'bg-red-50 border-2 border-red-200'
-                                : getRemainingVotes() <= 2
-                                    ? 'bg-orange-50 border-2 border-orange-200'
-                                    : 'bg-blue-50 border-2 border-blue-200'
-                                }`}>
-                                <Trophy className={`w-5 h-5 ${getRemainingVotes() === 0
-                                    ? 'text-red-600'
-                                    : getRemainingVotes() <= 2
-                                        ? 'text-orange-600'
-                                        : 'text-blue-600'
-                                    }`} />
-                                <div className="flex flex-col">
-                                    <span className={`font-bold text-lg ${getRemainingVotes() === 0
-                                        ? 'text-red-700'
-                                        : getRemainingVotes() <= 2
-                                            ? 'text-orange-700'
-                                            : 'text-blue-700'
-                                        }`}>
-                                        {getRemainingVotes()} 票
-                                    </span>
-                                    <span className={`text-xs ${getRemainingVotes() === 0
-                                        ? 'text-red-600'
-                                        : getRemainingVotes() <= 2
-                                            ? 'text-orange-600'
-                                            : 'text-blue-600'
-                                        }`}>
-                                        {getRemainingVotes() === 0 ? '額度已用完' : `共 ${availableVotes} 票`}
-                                    </span>
-                                </div>
-                            </div>
+                    <div className="text-center">
+                        {getRemainingVotes() === 0 ? (
+                            <p className="text-lg sm:text-xl font-medium text-pink-600">
+                                💕 感謝您的投票！
+                            </p>
+                        ) : (
+                            <p className="text-lg sm:text-xl font-medium text-gray-700">
+                                💕 請幫忙在您最喜歡的照片上點下愛心！感謝您！
+                            </p>
                         )}
                     </div>
                 </div>
