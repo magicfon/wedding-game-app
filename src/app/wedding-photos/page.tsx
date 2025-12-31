@@ -313,14 +313,17 @@ export default function WeddingPhotosPage() {
                 <div className="max-w-6xl mx-auto px-2 sm:px-4">
                     {/* 頂部提示 */}
                     <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 mb-4 sm:mb-6">
-                        <div className="text-center">
+                        <div className="text-center space-y-2">
+                            <p className="text-lg sm:text-xl font-medium text-gray-700">
+                                💕 幸福多選一，你 Pick 哪一張？
+                            </p>
                             {getRemainingVotes() === 0 ? (
-                                <p className="text-lg sm:text-xl font-medium text-pink-600">
-                                    💕 感謝您的投票！
+                                <p className="text-sm font-semibold text-green-600">
+                                    ✓ 完成投票
                                 </p>
                             ) : (
-                                <p className="text-lg sm:text-xl font-medium text-gray-700">
-                                    💕 請幫忙在您最喜歡的照片上點下愛心！感謝您！
+                                <p className="text-sm font-semibold text-red-500">
+                                    ○ 尚未投票
                                 </p>
                             )}
                         </div>
