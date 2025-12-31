@@ -1147,20 +1147,7 @@ function WaitingStage({ gameState }: { gameState: any }) {
           </div>
         </div>
 
-        {/* 等待提示 */}
-        <div className="mt-6 bg-white bg-opacity-10 backdrop-blur-md rounded-3xl p-8">
-          <div className="flex items-center justify-center space-x-6">
-            <div className="animate-pulse">
-              <Users className="w-12 h-12 text-white" />
-            </div>
-            <p className="text-3xl text-white font-bold">
-              等待主持人開始出題...
-            </p>
-            <div className="animate-pulse">
-              <Clock className="w-12 h-12 text-white" />
-            </div>
-          </div>
-        </div>
+
       </div>
     </div>
   )
