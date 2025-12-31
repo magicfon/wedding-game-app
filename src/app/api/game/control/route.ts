@@ -478,7 +478,12 @@ export async function GET() {
           points,
           time_limit,
           speed_bonus_enabled,
-          max_bonus_points
+          max_bonus_points,
+          media_type,
+          media_url,
+          media_thumbnail_url,
+          media_alt_text,
+          media_duration
         )
       `)
       .eq('id', 1)
