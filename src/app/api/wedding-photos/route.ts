@@ -1,7 +1,14 @@
 import { NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 
 // Google Drive 資料夾 ID
 const FOLDER_ID = '1ONhhVIoewh3he9mT4ie0llGi_urQh5Kw'
+
+// 使用 service role key 繞過 RLS
+const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
 
 // 將 Google Drive 檔案 ID 轉換為大圖連結 (使用 thumbnail 格式，更可靠)
 function getDirectImageUrl(fileId: string): string {
@@ -51,12 +58,31 @@ export async function GET() {
             }
         }
 
+        // 獲取每張照片的投票數
+        let voteCounts: Record<string, number> = {}
+        try {
+            const { data: votes, error } = await supabaseAdmin
+                .from('wedding_photo_votes')
+                .select('photo_id')
+
+            if (!error && votes) {
+                // 計算每張照片的票數
+                votes.forEach(vote => {
+                    voteCounts[vote.photo_id] = (voteCounts[vote.photo_id] || 0) + 1
+                })
+            }
+        } catch (e) {
+            console.error('Error fetching vote counts:', e)
+            // 如果獲取投票數失敗，繼續使用 0
+        }
+
         // 建立照片列表
         const photos = fileIds.map((id, index) => ({
             id,
             name: `婚紗照 ${index + 1}`,
             url: getDirectImageUrl(id),
-            thumbnailUrl: getThumbnailUrl(id)
+            thumbnailUrl: getThumbnailUrl(id),
+            vote_count: voteCounts[id] || 0
         }))
 
         return NextResponse.json({
@@ -74,3 +100,4 @@ export async function GET() {
         }, { status: 500 })
     }
 }
+
