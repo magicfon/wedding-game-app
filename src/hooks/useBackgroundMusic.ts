@@ -31,22 +31,28 @@ export const useBackgroundMusic = ({ url, enabled, volume = 0.3 }: UseBackground
         // 更新音量
         audio.volume = volume
 
-        if (enabled) {
-            const playPromise = audio.play()
-
-            if (playPromise !== undefined) {
-                playPromise
-                    .then(() => {
-                        setIsPlaying(true)
-                    })
-                    .catch((error) => {
-                        console.log('Autoplay prevented:', error)
-                        setIsPlaying(false)
-                    })
-            }
-        } else {
+        // 優先處理暫停操作，確保關閉音效時立即停止
+        if (!enabled) {
+            console.log('🔇 背景音樂已暫停')
             audio.pause()
+            audio.currentTime = 0 // 重置到開始位置
             setIsPlaying(false)
+            return
+        }
+
+        // 啟用時嘗試播放
+        const playPromise = audio.play()
+
+        if (playPromise !== undefined) {
+            playPromise
+                .then(() => {
+                    console.log('🔊 背景音樂已播放')
+                    setIsPlaying(true)
+                })
+                .catch((error) => {
+                    console.log('Autoplay prevented:', error)
+                    setIsPlaying(false)
+                })
         }
     }, [enabled, volume])
 
