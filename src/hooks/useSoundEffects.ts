@@ -35,15 +35,16 @@ export const useSoundEffects = (): UseSoundEffectsReturn => {
     }
     return true
   })
-  
+
   const [isLoaded, setIsLoaded] = useState<boolean>(false)
   const audioCache = useRef<Map<string, HTMLAudioElement>>(new Map())
 
   // 切換音效開關
   const toggleSound = useCallback(() => {
     const newState = !isSoundEnabled
+    console.log('🔊 toggleSound 被調用, 新狀態:', newState ? '開啟' : '關閉')
     setIsSoundEnabled(newState)
-    
+
     // 保存到 localStorage
     if (typeof window !== 'undefined') {
       localStorage.setItem('sound-effects-enabled', newState.toString())
@@ -54,39 +55,39 @@ export const useSoundEffects = (): UseSoundEffectsReturn => {
   const preloadSounds = useCallback(async () => {
     try {
       console.log('🔊 開始預載音效...')
-      
+
       const loadPromises = Object.entries(SOUND_EFFECTS).map(async ([key, soundFile]) => {
         try {
           const audio = new Audio(`/sounds/${soundFile}`)
-          
+
           // 設定音效屬性
           audio.preload = 'auto'
           audio.volume = 0.7 // 設定適當的音量
-          
+
           // 等待音效載入
           await new Promise((resolve, reject) => {
             audio.addEventListener('canplaythrough', resolve, { once: true })
             audio.addEventListener('error', reject, { once: true })
-            
+
             // 設定載入超時
             setTimeout(() => reject(new Error(`音效載入超時: ${soundFile}`)), 5000)
           })
-          
+
           // 緩存音效
           audioCache.current.set(key, audio)
           console.log(`✅ 音效載入成功: ${soundFile}`)
-          
+
           return audio
         } catch (error) {
           console.error(`❌ 音效載入失敗: ${soundFile}`, error)
           return null
         }
       })
-      
+
       await Promise.all(loadPromises)
       setIsLoaded(true)
       console.log('🎉 所有音效預載完成')
-      
+
     } catch (error) {
       console.error('❌ 音效預載失敗:', error)
       setIsLoaded(false)
@@ -99,21 +100,21 @@ export const useSoundEffects = (): UseSoundEffectsReturn => {
       console.log(`🔇 音效已停用或未載入，跳過播放: ${soundId}`)
       return
     }
-    
+
     try {
       const audio = audioCache.current.get(soundId)
-      
+
       if (!audio) {
         console.error(`❌ 找不到音效: ${soundId}`)
         return
       }
-      
+
       // 重置音效到開始位置
       audio.currentTime = 0
-      
+
       // 播放音效
       const playPromise = audio.play()
-      
+
       if (playPromise !== undefined) {
         playPromise
           .then(() => {
@@ -121,7 +122,7 @@ export const useSoundEffects = (): UseSoundEffectsReturn => {
           })
           .catch(error => {
             console.error(`❌ 音效播放失敗: ${soundId}`, error)
-            
+
             // 如果是自動播放限制，嘗試創建用戶交互
             if (error.name === 'NotAllowedError') {
               console.log('🚫 瀏覽器阻止自動播放，需要用戶交互')

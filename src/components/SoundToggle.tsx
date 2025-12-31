@@ -6,14 +6,20 @@ interface SoundToggleProps {
   className?: string
 }
 
-export const SoundToggle: React.FC<SoundToggleProps> = ({ 
-  isEnabled, 
-  onToggle, 
-  className = '' 
+export const SoundToggle: React.FC<SoundToggleProps> = ({
+  isEnabled,
+  onToggle,
+  className = ''
 }) => {
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    console.log('🎵 SoundToggle 按鈕被點擊, 當前狀態:', isEnabled ? '開啟' : '關閉')
+    onToggle()
+  }
+
   return (
     <button
-      onClick={onToggle}
+      onClick={handleClick}
       className={`
         p-3 rounded-full bg-white bg-opacity-20 hover:bg-opacity-30 
         transition-all duration-200 backdrop-blur-sm border border-white border-opacity-30

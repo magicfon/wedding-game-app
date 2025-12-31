@@ -439,8 +439,8 @@ export default function GameLivePage() {
       setTimeLeft(newTimeLeft)
       setDisplayTimeLeft(newTimeLeft)
 
-      // 每5秒重新獲取數據
-      if (newTimeLeft % 5000 === 0) {
+      // 每5秒重新獲取數據（只在 timeLeft > 0 時執行，避免倒數結束後持續刷新）
+      if (newTimeLeft > 0 && newTimeLeft % 5000 === 0) {
         fetchAnswerDistribution()
         fetchTopPlayers(showingCorrectOnly)
         fetchCurrentQuestionAnswerCount()
