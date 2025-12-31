@@ -58,6 +58,7 @@ export default function Layout({ children, title, showNavigation = true }: Layou
     { name: '照片上傳', href: '/photo-upload', icon: Camera },
     { name: '照片牆', href: '/photo-wall', icon: Heart },
     { name: '快門傳情', href: '/photo-slideshow', icon: Heart },
+    { name: '婚紗照', href: '/wedding-photos', icon: Heart },
     { name: '排行榜', href: '/leaderboard', icon: Trophy },
     { name: '積分歷史', href: '/score-history', icon: Trophy },
   ]
@@ -151,8 +152,8 @@ export default function Layout({ children, title, showNavigation = true }: Layou
                     setIsMenuOpen(false)
                   }}
                   className={`w-full flex items-center space-x-3 p-3 rounded-lg transition-colors text-left ${pathname === item.href
-                      ? 'bg-pink-100 text-pink-700'
-                      : 'hover:bg-gray-100 text-gray-700'
+                    ? 'bg-pink-100 text-pink-700'
+                    : 'hover:bg-gray-100 text-gray-700'
                     }`}
                 >
                   <item.icon className="w-5 h-5" />
