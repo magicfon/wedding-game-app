@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import Layout from '@/components/Layout'
 import { X, Heart, Image as ImageIcon } from 'lucide-react'
 
@@ -11,11 +11,17 @@ interface WeddingPhoto {
     thumbnailUrl: string
 }
 
+interface PhotoWithDimensions extends WeddingPhoto {
+    isLandscape?: boolean
+    loaded?: boolean
+}
+
 export default function WeddingPhotosPage() {
-    const [photos, setPhotos] = useState<WeddingPhoto[]>([])
+    const [photos, setPhotos] = useState<PhotoWithDimensions[]>([])
     const [loading, setLoading] = useState(true)
-    const [selectedPhoto, setSelectedPhoto] = useState<WeddingPhoto | null>(null)
+    const [selectedPhoto, setSelectedPhoto] = useState<PhotoWithDimensions | null>(null)
     const [error, setError] = useState<string | null>(null)
+    const loadedCountRef = useRef(0)
 
     // 獲取婚紗照片
     const fetchPhotos = useCallback(async () => {
@@ -25,7 +31,7 @@ export default function WeddingPhotosPage() {
             const data = await response.json()
 
             if (data.success) {
-                setPhotos(data.photos)
+                setPhotos(data.photos.map((p: WeddingPhoto) => ({ ...p, loaded: false })))
             } else {
                 setError(data.error || '無法載入照片')
             }
@@ -40,6 +46,15 @@ export default function WeddingPhotosPage() {
     useEffect(() => {
         fetchPhotos()
     }, [fetchPhotos])
+
+    // 處理圖片載入完成，偵測是否為橫式照片
+    const handleImageLoad = useCallback((photoId: string, img: HTMLImageElement) => {
+        const isLandscape = img.naturalWidth > img.naturalHeight
+        setPhotos(prev => prev.map(p =>
+            p.id === photoId ? { ...p, isLandscape, loaded: true } : p
+        ))
+        loadedCountRef.current += 1
+    }, [])
 
     if (loading) {
         return (
@@ -73,20 +88,20 @@ export default function WeddingPhotosPage() {
 
     return (
         <Layout title="婚紗照">
-            <div className="max-w-6xl mx-auto">
+            <div className="max-w-6xl mx-auto px-2 sm:px-4">
                 {/* 頂部標題 */}
-                <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+                <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 mb-4 sm:mb-6">
                     <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4">
-                            <h2 className="text-2xl font-bold text-gray-800">💕 婚紗照</h2>
-                            <span className="bg-pink-100 text-pink-700 px-3 py-1 rounded-full text-sm font-medium">
+                        <div className="flex items-center space-x-3 sm:space-x-4">
+                            <h2 className="text-xl sm:text-2xl font-bold text-gray-800">💕 婚紗照</h2>
+                            <span className="bg-pink-100 text-pink-700 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium">
                                 {photos.length} 張照片
                             </span>
                         </div>
                     </div>
                 </div>
 
-                {/* 照片牆 */}
+                {/* 照片牆 - CSS Columns Masonry */}
                 {photos.length === 0 ? (
                     <div className="text-center py-16">
                         <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md mx-auto">
@@ -96,22 +111,31 @@ export default function WeddingPhotosPage() {
                         </div>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3">
+                    <div
+                        className="columns-2 sm:columns-3 md:columns-4 xl:columns-5 gap-2 sm:gap-3"
+                        style={{ columnFill: 'balance' }}
+                    >
                         {photos.map((photo) => (
                             <div
                                 key={photo.id}
-                                className="cursor-pointer group"
+                                className={`
+                                    break-inside-avoid mb-2 sm:mb-3 cursor-pointer group
+                                    ${photo.isLandscape ? 'sm:column-span-all md:column-span-all' : ''}
+                                `}
+                                style={photo.isLandscape ? {
+                                    breakInside: 'avoid',
+                                    columnSpan: 'all'
+                                } : { breakInside: 'avoid' }}
                                 onClick={() => setSelectedPhoto(photo)}
                             >
                                 <div className="bg-white rounded-lg sm:rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 hover:scale-[1.02]">
-                                    <div className="relative aspect-[3/4]">
-                                        <img
-                                            src={photo.thumbnailUrl}
-                                            alt={photo.name}
-                                            className="w-full h-full object-cover"
-                                            loading="lazy"
-                                        />
-                                    </div>
+                                    <img
+                                        src={photo.thumbnailUrl}
+                                        alt={photo.name}
+                                        className="w-full h-auto"
+                                        loading="lazy"
+                                        onLoad={(e) => handleImageLoad(photo.id, e.currentTarget)}
+                                    />
                                 </div>
                             </div>
                         ))}
