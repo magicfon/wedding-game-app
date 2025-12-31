@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Layout from '@/components/Layout'
 import { X, Heart, Image as ImageIcon } from 'lucide-react'
 
@@ -12,35 +12,15 @@ interface WeddingPhoto {
 }
 
 interface PhotoWithLayout extends WeddingPhoto {
-    width: number
-    height: number
     isLandscape: boolean
     loaded: boolean
-    // Masonry position
-    x?: number
-    y?: number
-    displayWidth?: number
-    displayHeight?: number
-}
-
-// 計算欄位數量
-const getColumnCount = (containerWidth: number): number => {
-    if (containerWidth < 480) return 2
-    if (containerWidth < 768) return 3
-    if (containerWidth < 1024) return 4
-    return 5
 }
 
 export default function WeddingPhotosPage() {
     const [photos, setPhotos] = useState<PhotoWithLayout[]>([])
-    const [layoutPhotos, setLayoutPhotos] = useState<PhotoWithLayout[]>([])
     const [loading, setLoading] = useState(true)
     const [selectedPhoto, setSelectedPhoto] = useState<PhotoWithLayout | null>(null)
     const [error, setError] = useState<string | null>(null)
-    const [containerWidth, setContainerWidth] = useState(0)
-    const [containerHeight, setContainerHeight] = useState(0)
-    const containerRef = useRef<HTMLDivElement>(null)
-    const loadedCountRef = useRef(0)
 
     // 獲取婚紗照片
     const fetchPhotos = useCallback(async () => {
@@ -52,8 +32,6 @@ export default function WeddingPhotosPage() {
             if (data.success) {
                 setPhotos(data.photos.map((p: WeddingPhoto) => ({
                     ...p,
-                    width: 0,
-                    height: 0,
                     isLandscape: false,
                     loaded: false
                 })))
@@ -72,107 +50,16 @@ export default function WeddingPhotosPage() {
         fetchPhotos()
     }, [fetchPhotos])
 
-    // 監聽容器寬度變化 - 使用 ResizeObserver 確保初始載入時能正確取得寬度
-    useEffect(() => {
-        const container = containerRef.current
-        if (!container) return
-
-        const updateWidth = () => {
-            const width = container.offsetWidth
-            if (width > 0) {
-                setContainerWidth(width)
-            }
-        }
-
-        // 使用 ResizeObserver 來監聽容器大小變化
-        const resizeObserver = new ResizeObserver(() => {
-            updateWidth()
-        })
-
-        resizeObserver.observe(container)
-
-        // 初始化時也嘗試更新寬度
-        updateWidth()
-
-        // 備用：延遲一下再次嘗試（處理某些瀏覽器的邊緣情況）
-        const timer = setTimeout(updateWidth, 100)
-
-        return () => {
-            resizeObserver.disconnect()
-            clearTimeout(timer)
-        }
-    }, [loading]) // 當 loading 狀態改變時重新執行
-
-    // 處理圖片載入，獲取真實尺寸
+    // 處理圖片載入，獲取真實尺寸判斷是否為橫式
     const handleImageLoad = useCallback((photoId: string, img: HTMLImageElement) => {
         const width = img.naturalWidth
         const height = img.naturalHeight
         const isLandscape = width > height
 
         setPhotos(prev => prev.map(p =>
-            p.id === photoId ? { ...p, width, height, isLandscape, loaded: true } : p
+            p.id === photoId ? { ...p, isLandscape, loaded: true } : p
         ))
-        loadedCountRef.current += 1
     }, [])
-
-    // Masonry 佈局計算
-    useEffect(() => {
-        if (containerWidth === 0) return
-
-        const loadedPhotos = photos.filter(p => p.loaded)
-        if (loadedPhotos.length === 0) return
-
-        const gap = 8 // 間距
-        const columnCount = getColumnCount(containerWidth)
-        const columnWidth = (containerWidth - gap * (columnCount - 1)) / columnCount
-
-        // 每欄的當前高度
-        const columnHeights: number[] = Array(columnCount).fill(0)
-
-        // 計算每張照片的位置
-        const positioned = loadedPhotos.map(photo => {
-            // 橫式照片佔 2 欄（但不能超過總欄數）
-            const colSpan = photo.isLandscape && columnCount >= 2 ? 2 : 1
-            const itemWidth = columnWidth * colSpan + gap * (colSpan - 1)
-            const aspectRatio = photo.height / photo.width
-            const itemHeight = itemWidth * aspectRatio
-
-            // 找到最矮的連續欄位來放置
-            let bestColumn = 0
-            let bestHeight = Infinity
-
-            for (let i = 0; i <= columnCount - colSpan; i++) {
-                // 對於跨欄項目，取最高的欄位高度
-                let maxHeight = 0
-                for (let j = 0; j < colSpan; j++) {
-                    maxHeight = Math.max(maxHeight, columnHeights[i + j])
-                }
-                if (maxHeight < bestHeight) {
-                    bestHeight = maxHeight
-                    bestColumn = i
-                }
-            }
-
-            const x = bestColumn * (columnWidth + gap)
-            const y = bestHeight
-
-            // 更新被佔用欄位的高度
-            for (let j = 0; j < colSpan; j++) {
-                columnHeights[bestColumn + j] = y + itemHeight + gap
-            }
-
-            return {
-                ...photo,
-                x,
-                y,
-                displayWidth: itemWidth,
-                displayHeight: itemHeight
-            }
-        })
-
-        setLayoutPhotos(positioned)
-        setContainerHeight(Math.max(...columnHeights))
-    }, [photos, containerWidth])
 
     if (loading) {
         return (
@@ -219,7 +106,7 @@ export default function WeddingPhotosPage() {
                     </div>
                 </div>
 
-                {/* 照片牆 - True Masonry Layout */}
+                {/* 照片牆 - CSS Grid with auto-flow dense */}
                 {photos.length === 0 ? (
                     <div className="text-center py-16">
                         <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md mx-auto">
@@ -230,40 +117,32 @@ export default function WeddingPhotosPage() {
                     </div>
                 ) : (
                     <div
-                        ref={containerRef}
-                        className="relative"
-                        style={{ height: containerHeight || 'auto', minHeight: 200 }}
+                        className="grid gap-2"
+                        style={{
+                            gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
+                            gridAutoFlow: 'dense'
+                        }}
                     >
-                        {/* 隱藏的預載入圖片，用於獲取尺寸 */}
-                        {photos.filter(p => !p.loaded).map(photo => (
-                            <img
-                                key={`preload-${photo.id}`}
-                                src={photo.thumbnailUrl}
-                                alt=""
-                                className="absolute opacity-0 pointer-events-none"
-                                style={{ width: 1, height: 1 }}
-                                onLoad={(e) => handleImageLoad(photo.id, e.currentTarget)}
-                            />
-                        ))}
-
-                        {/* 實際渲染的照片 */}
-                        {layoutPhotos.map((photo) => (
+                        {photos.map((photo) => (
                             <div
                                 key={photo.id}
-                                className="absolute cursor-pointer group transition-all duration-300"
-                                style={{
-                                    left: photo.x,
-                                    top: photo.y,
-                                    width: photo.displayWidth,
-                                    height: photo.displayHeight
-                                }}
+                                className={`cursor-pointer group transition-all duration-300 ${photo.isLandscape ? 'col-span-2' : ''
+                                    }`}
                                 onClick={() => setSelectedPhoto(photo)}
                             >
-                                <div className="w-full h-full bg-white rounded-lg sm:rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 hover:scale-[1.02]">
+                                <div className="w-full bg-white rounded-lg sm:rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 hover:scale-[1.02]">
                                     <img
                                         src={photo.thumbnailUrl}
                                         alt={photo.name}
-                                        className="w-full h-full object-cover"
+                                        className="w-full h-auto object-cover"
+                                        style={{
+                                            aspectRatio: photo.isLandscape ? '16/9' : '3/4'
+                                        }}
+                                        onLoad={(e) => {
+                                            if (!photo.loaded) {
+                                                handleImageLoad(photo.id, e.currentTarget)
+                                            }
+                                        }}
                                     />
                                 </div>
                             </div>
