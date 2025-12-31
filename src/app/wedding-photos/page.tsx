@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Layout from '@/components/Layout'
-import { X, Heart, Image as ImageIcon, Trophy, ChevronLeft, ChevronRight } from 'lucide-react'
+import { X, Heart, Image as ImageIcon, Trophy, ChevronLeft, ChevronRight, ArrowDownWideNarrow, ArrowUpDown } from 'lucide-react'
 import { createSupabaseBrowser } from '@/lib/supabase'
 import { useLiff } from '@/hooks/useLiff'
 
@@ -32,6 +32,7 @@ export default function WeddingPhotosPage() {
     const votingEnabled = true  // 婚紗照投票永遠啟用
     const [votingInProgress, setVotingInProgress] = useState<Set<string>>(new Set())
     const [showVoteLimitModal, setShowVoteLimitModal] = useState(false)
+    const [sortByVotes, setSortByVotes] = useState(false)  // 是否依得票數排序
 
     const supabase = createSupabaseBrowser()
     const { profile } = useLiff()
@@ -296,19 +297,39 @@ export default function WeddingPhotosPage() {
                 <div className="max-w-6xl mx-auto px-2 sm:px-4">
                     {/* 頂部提示 */}
                     <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 mb-4 sm:mb-6">
-                        <div className="text-center space-y-2">
-                            <p className="text-lg sm:text-xl font-medium text-gray-700">
-                                💕 幸福多選一，你 Pick 哪一張？
-                            </p>
-                            {getRemainingVotes() === 0 ? (
-                                <p className="text-sm font-semibold text-green-600">
-                                    ✓ 完成投票
+                        <div className="flex items-center justify-between">
+                            <div className="text-center flex-1 space-y-2">
+                                <p className="text-lg sm:text-xl font-medium text-gray-700">
+                                    💕 幸福多選一，你 Pick 哪一張？
                                 </p>
-                            ) : (
-                                <p className="text-sm font-semibold text-red-500">
-                                    ○ 尚未投票
-                                </p>
-                            )}
+                                {getRemainingVotes() === 0 ? (
+                                    <p className="text-sm font-semibold text-green-600">
+                                        ✓ 完成投票
+                                    </p>
+                                ) : (
+                                    <p className="text-sm font-semibold text-red-500">
+                                        ○ 尚未投票
+                                    </p>
+                                )}
+                            </div>
+                            {/* 排序按鈕 */}
+                            <button
+                                onClick={() => setSortByVotes(!sortByVotes)}
+                                className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-all duration-200 ml-4 ${sortByVotes
+                                        ? 'bg-pink-500 text-white shadow-md'
+                                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                    }`}
+                                title={sortByVotes ? '依得票數排序中' : '點擊依得票數排序'}
+                            >
+                                {sortByVotes ? (
+                                    <ArrowDownWideNarrow className="w-5 h-5" />
+                                ) : (
+                                    <ArrowUpDown className="w-5 h-5" />
+                                )}
+                                <span className="text-sm font-medium hidden sm:inline">
+                                    {sortByVotes ? '依票數' : '排序'}
+                                </span>
+                            </button>
                         </div>
                     </div>
 
@@ -329,7 +350,10 @@ export default function WeddingPhotosPage() {
                                 gridAutoFlow: 'dense'
                             }}
                         >
-                            {photos.map((photo) => (
+                            {(sortByVotes
+                                ? [...photos].sort((a, b) => b.vote_count - a.vote_count)
+                                : photos
+                            ).map((photo) => (
                                 <div
                                     key={photo.id}
                                     className={`cursor-pointer group transition-all duration-300 ${photo.isLandscape ? 'col-span-2' : ''
