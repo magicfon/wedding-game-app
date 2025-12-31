@@ -133,7 +133,20 @@ export default function WeddingPhotosPage() {
     // 處理投票
     const handleVote = async (photoId: string, e?: React.MouseEvent) => {
         if (e) e.stopPropagation()
-        if (!profile || !votingEnabled) return
+
+        console.log('🗳️ handleVote called:', { photoId, profile: !!profile, votingEnabled })
+
+        if (!profile) {
+            console.log('❌ 無法投票：用戶未登入')
+            alert('請先登入才能投票')
+            return
+        }
+
+        if (!votingEnabled) {
+            console.log('❌ 無法投票：投票功能已關閉')
+            alert('投票功能目前已關閉')
+            return
+        }
 
         // 防止重複點擊
         if (votingInProgress.has(photoId)) {
@@ -418,19 +431,19 @@ export default function WeddingPhotosPage() {
                                     }}
                                     disabled={votingInProgress.has(selectedPhoto.id)}
                                     className={`p-3 rounded-full shadow-2xl transition-all duration-200 backdrop-blur-sm ${votingInProgress.has(selectedPhoto.id)
-                                            ? 'bg-white/60 cursor-wait'
-                                            : (!userVotes[selectedPhoto.id] && getRemainingVotes() <= 0)
-                                                ? 'bg-white/80 cursor-not-allowed'
-                                                : 'bg-white/90 hover:bg-white hover:scale-110'
+                                        ? 'bg-white/60 cursor-wait'
+                                        : (!userVotes[selectedPhoto.id] && getRemainingVotes() <= 0)
+                                            ? 'bg-white/80 cursor-not-allowed'
+                                            : 'bg-white/90 hover:bg-white hover:scale-110'
                                         }`}
                                 >
                                     <Heart className={`w-8 h-8 transition-all ${votingInProgress.has(selectedPhoto.id)
-                                            ? 'text-gray-400 animate-pulse'
-                                            : userVotes[selectedPhoto.id] > 0
-                                                ? 'text-red-500 fill-current drop-shadow-lg'
-                                                : getRemainingVotes() <= 0
-                                                    ? 'text-gray-400'
-                                                    : 'text-gray-400 hover:text-pink-500'
+                                        ? 'text-gray-400 animate-pulse'
+                                        : userVotes[selectedPhoto.id] > 0
+                                            ? 'text-red-500 fill-current drop-shadow-lg'
+                                            : getRemainingVotes() <= 0
+                                                ? 'text-gray-400'
+                                                : 'text-gray-400 hover:text-pink-500'
                                         }`} />
                                 </button>
                             </div>
