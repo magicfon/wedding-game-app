@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { createSupabaseBrowser } from '@/lib/supabase'
 import { useRealtimeGameState } from '@/hooks/useRealtimeGameState'
 import { useSoundEffects } from '@/hooks/useSoundEffects'
@@ -42,6 +42,10 @@ export default function GameLivePage() {
   // 顯示階段控制
   const [displayPhase, setDisplayPhase] = useState<'question' | 'options' | 'rankings'>('question')
   const [phaseTimer, setPhaseTimer] = useState<NodeJS.Timeout | null>(null)
+
+  // 音效播放狀態追蹤（防止重複播放）
+  const correctAnswerPlayedRef = useRef<number | null>(null)
+  const leaderboardPlayedRef = useRef<number | null>(null)
 
   // 從 localStorage 初始化狀態，以防組件重新載入
   const [showingCorrectOnly, setShowingCorrectOnly] = useState<boolean>(() => {
@@ -162,22 +166,30 @@ export default function GameLivePage() {
     }
   }, [displayPhase, timeLeft, currentQuestion, playSound])
 
-  // 正確答案音效
+  // 正確答案音效（使用 ref 防止重複播放）
   useEffect(() => {
     if (displayPhase === 'options' && timeLeft <= 0 && currentQuestion) {
-      // 延遲一點時間播放正確答案音效，讓時間結束音效先播放
-      setTimeout(() => {
-        playSound('CORRECT_ANSWER')
-      }, 500)
+      // 檢查是否已經為這道題播放過正確答案音效
+      if (correctAnswerPlayedRef.current !== currentQuestion.id) {
+        correctAnswerPlayedRef.current = currentQuestion.id
+        // 延遲一點時間播放正確答案音效，讓時間結束音效先播放
+        setTimeout(() => {
+          playSound('CORRECT_ANSWER')
+        }, 500)
+      }
     }
   }, [displayPhase, timeLeft, currentQuestion, playSound])
 
-  // 排行榜音效
+  // 排行榜音效（使用 ref 防止重複播放）
   useEffect(() => {
-    if (displayPhase === 'rankings') {
-      playSound('LEADERBOARD')
+    if (displayPhase === 'rankings' && currentQuestion) {
+      // 檢查是否已經為這道題播放過排行榜音效
+      if (leaderboardPlayedRef.current !== currentQuestion.id) {
+        leaderboardPlayedRef.current = currentQuestion.id
+        playSound('LEADERBOARD')
+      }
     }
-  }, [displayPhase, playSound])
+  }, [displayPhase, currentQuestion, playSound])
 
   // 獲取當前題目答題人數
   const fetchCurrentQuestionAnswerCount = useCallback(async () => {
