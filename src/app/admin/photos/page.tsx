@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLiff } from '@/hooks/useLiff'
 import AdminLayout from '@/components/AdminLayout'
-import { Eye, EyeOff, Download, Trash2, Image as ImageIcon, Clock, User, Heart, Filter, CheckCircle, XCircle, Loader2, Users, HardDrive, CheckSquare, Square, Video, Play } from 'lucide-react'
+import { Eye, EyeOff, Download, Trash2, Image as ImageIcon, Clock, User, Heart, Filter, CheckCircle, XCircle, Loader2, Users, HardDrive, CheckSquare, Square, Video, Play, ArrowDownWideNarrow, ArrowUpDown } from 'lucide-react'
 import ResponsiveImage from '@/components/ResponsiveImage'
 
 interface PhotoWithUser {
@@ -53,6 +53,7 @@ export default function PhotosManagePage() {
   const [selectedPhotos, setSelectedPhotos] = useState<Set<number>>(new Set())
   const [isBatchMode, setIsBatchMode] = useState(false)
   const [batchDeleting, setBatchDeleting] = useState(false)
+  const [sortByVotes, setSortByVotes] = useState(false)  // 是否依得票數排序
 
   const { isLoggedIn, profile, isAdmin: liffIsAdmin, loading: liffLoading, adminLoading } = useLiff()
 
@@ -444,6 +445,22 @@ export default function PhotosManagePage() {
               </div>
 
               <div className="flex items-center space-x-2">
+                {/* 票數排序按鈕 */}
+                <button
+                  onClick={() => setSortByVotes(!sortByVotes)}
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${sortByVotes
+                      ? 'bg-pink-500 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  title={sortByVotes ? '依得票數排序中' : '點擊依得票數排序'}
+                >
+                  {sortByVotes ? (
+                    <ArrowDownWideNarrow className="w-4 h-4" />
+                  ) : (
+                    <ArrowUpDown className="w-4 h-4" />
+                  )}
+                  <span>{sortByVotes ? '依票數' : '排序'}</span>
+                </button>
                 <button
                   onClick={() => {
                     setIsBatchMode(!isBatchMode)
@@ -517,7 +534,10 @@ export default function PhotosManagePage() {
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {filteredPhotos.map((photo) => (
+              {(sortByVotes
+                ? [...filteredPhotos].sort((a, b) => b.vote_count - a.vote_count)
+                : filteredPhotos
+              ).map((photo) => (
                 <div
                   key={photo.id}
                   className={`group relative bg-white rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 ${isBatchMode ? 'cursor-pointer' : ''
