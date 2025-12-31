@@ -49,6 +49,16 @@ export const useSoundEffects = (): UseSoundEffectsReturn => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('sound-effects-enabled', newState.toString())
     }
+
+    // 當關閉音效時，停止所有正在播放的音效
+    if (!newState) {
+      console.log('🔇 停止所有正在播放的音效')
+      audioCache.current.forEach((audio, key) => {
+        audio.pause()
+        audio.currentTime = 0
+        console.log(`🔇 已停止音效: ${key}`)
+      })
+    }
   }, [isSoundEnabled])
 
   // 預載所有音效

@@ -25,8 +25,12 @@ export const useBackgroundMusic = ({ url, enabled, volume = 0.3 }: UseBackground
     }, [url])
 
     useEffect(() => {
+        console.log('🎵 useBackgroundMusic useEffect 觸發, enabled:', enabled)
         const audio = audioRef.current
-        if (!audio) return
+        if (!audio) {
+            console.log('🎵 audioRef.current 為 null')
+            return
+        }
 
         // 更新音量
         audio.volume = volume
