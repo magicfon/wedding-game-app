@@ -28,7 +28,7 @@ export default function WeddingPhotosPage() {
 
     // 投票相關狀態
     const [userVotes, setUserVotes] = useState<Record<string, number>>({})
-    const [availableVotes, setAvailableVotes] = useState(3)
+    const availableVotes = 1  // 婚紗照固定每人 1 票
     const [votingEnabled, setVotingEnabled] = useState(false)
     const [votingInProgress, setVotingInProgress] = useState<Set<string>>(new Set())
     const [showVoteLimitModal, setShowVoteLimitModal] = useState(false)
@@ -41,13 +41,12 @@ export default function WeddingPhotosPage() {
         try {
             const { data, error } = await supabase
                 .from('game_state')
-                .select('voting_enabled, votes_per_user')
+                .select('voting_enabled')
                 .single()
 
             if (error) throw error
 
             setVotingEnabled(data.voting_enabled)
-            setAvailableVotes(data.votes_per_user)
         } catch (error) {
             console.error('Error fetching voting settings:', error)
         }

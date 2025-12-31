@@ -69,7 +69,7 @@ export async function POST(request: Request) {
 
             if (countError) throw countError
 
-            if ((existingVotes || 0) >= gameState.votes_per_user) {
+            if ((existingVotes || 0) >= 1) {  // 婚紗照固定每人 1 票
                 return NextResponse.json({
                     success: false,
                     error: '投票額度已用完'
