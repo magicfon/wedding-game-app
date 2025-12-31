@@ -72,18 +72,36 @@ export default function WeddingPhotosPage() {
         fetchPhotos()
     }, [fetchPhotos])
 
-    // 監聽容器寬度變化
+    // 監聽容器寬度變化 - 使用 ResizeObserver 確保初始載入時能正確取得寬度
     useEffect(() => {
+        const container = containerRef.current
+        if (!container) return
+
         const updateWidth = () => {
-            if (containerRef.current) {
-                setContainerWidth(containerRef.current.offsetWidth)
+            const width = container.offsetWidth
+            if (width > 0) {
+                setContainerWidth(width)
             }
         }
 
+        // 使用 ResizeObserver 來監聽容器大小變化
+        const resizeObserver = new ResizeObserver(() => {
+            updateWidth()
+        })
+
+        resizeObserver.observe(container)
+
+        // 初始化時也嘗試更新寬度
         updateWidth()
-        window.addEventListener('resize', updateWidth)
-        return () => window.removeEventListener('resize', updateWidth)
-    }, [])
+
+        // 備用：延遲一下再次嘗試（處理某些瀏覽器的邊緣情況）
+        const timer = setTimeout(updateWidth, 100)
+
+        return () => {
+            resizeObserver.disconnect()
+            clearTimeout(timer)
+        }
+    }, [loading]) // 當 loading 狀態改變時重新執行
 
     // 處理圖片載入，獲取真實尺寸
     const handleImageLoad = useCallback((photoId: string, img: HTMLImageElement) => {
