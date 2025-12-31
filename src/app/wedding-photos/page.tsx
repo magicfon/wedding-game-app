@@ -11,16 +11,35 @@ interface WeddingPhoto {
     thumbnailUrl: string
 }
 
-interface PhotoWithDimensions extends WeddingPhoto {
-    isLandscape?: boolean
-    loaded?: boolean
+interface PhotoWithLayout extends WeddingPhoto {
+    width: number
+    height: number
+    isLandscape: boolean
+    loaded: boolean
+    // Masonry position
+    x?: number
+    y?: number
+    displayWidth?: number
+    displayHeight?: number
+}
+
+// 計算欄位數量
+const getColumnCount = (containerWidth: number): number => {
+    if (containerWidth < 480) return 2
+    if (containerWidth < 768) return 3
+    if (containerWidth < 1024) return 4
+    return 5
 }
 
 export default function WeddingPhotosPage() {
-    const [photos, setPhotos] = useState<PhotoWithDimensions[]>([])
+    const [photos, setPhotos] = useState<PhotoWithLayout[]>([])
+    const [layoutPhotos, setLayoutPhotos] = useState<PhotoWithLayout[]>([])
     const [loading, setLoading] = useState(true)
-    const [selectedPhoto, setSelectedPhoto] = useState<PhotoWithDimensions | null>(null)
+    const [selectedPhoto, setSelectedPhoto] = useState<PhotoWithLayout | null>(null)
     const [error, setError] = useState<string | null>(null)
+    const [containerWidth, setContainerWidth] = useState(0)
+    const [containerHeight, setContainerHeight] = useState(0)
+    const containerRef = useRef<HTMLDivElement>(null)
     const loadedCountRef = useRef(0)
 
     // 獲取婚紗照片
@@ -31,7 +50,13 @@ export default function WeddingPhotosPage() {
             const data = await response.json()
 
             if (data.success) {
-                setPhotos(data.photos.map((p: WeddingPhoto) => ({ ...p, loaded: false })))
+                setPhotos(data.photos.map((p: WeddingPhoto) => ({
+                    ...p,
+                    width: 0,
+                    height: 0,
+                    isLandscape: false,
+                    loaded: false
+                })))
             } else {
                 setError(data.error || '無法載入照片')
             }
@@ -47,14 +72,89 @@ export default function WeddingPhotosPage() {
         fetchPhotos()
     }, [fetchPhotos])
 
-    // 處理圖片載入完成，偵測是否為橫式照片
+    // 監聽容器寬度變化
+    useEffect(() => {
+        const updateWidth = () => {
+            if (containerRef.current) {
+                setContainerWidth(containerRef.current.offsetWidth)
+            }
+        }
+
+        updateWidth()
+        window.addEventListener('resize', updateWidth)
+        return () => window.removeEventListener('resize', updateWidth)
+    }, [])
+
+    // 處理圖片載入，獲取真實尺寸
     const handleImageLoad = useCallback((photoId: string, img: HTMLImageElement) => {
-        const isLandscape = img.naturalWidth > img.naturalHeight
+        const width = img.naturalWidth
+        const height = img.naturalHeight
+        const isLandscape = width > height
+
         setPhotos(prev => prev.map(p =>
-            p.id === photoId ? { ...p, isLandscape, loaded: true } : p
+            p.id === photoId ? { ...p, width, height, isLandscape, loaded: true } : p
         ))
         loadedCountRef.current += 1
     }, [])
+
+    // Masonry 佈局計算
+    useEffect(() => {
+        if (containerWidth === 0) return
+
+        const loadedPhotos = photos.filter(p => p.loaded)
+        if (loadedPhotos.length === 0) return
+
+        const gap = 8 // 間距
+        const columnCount = getColumnCount(containerWidth)
+        const columnWidth = (containerWidth - gap * (columnCount - 1)) / columnCount
+
+        // 每欄的當前高度
+        const columnHeights: number[] = Array(columnCount).fill(0)
+
+        // 計算每張照片的位置
+        const positioned = loadedPhotos.map(photo => {
+            // 橫式照片佔 2 欄（但不能超過總欄數）
+            const colSpan = photo.isLandscape && columnCount >= 2 ? 2 : 1
+            const itemWidth = columnWidth * colSpan + gap * (colSpan - 1)
+            const aspectRatio = photo.height / photo.width
+            const itemHeight = itemWidth * aspectRatio
+
+            // 找到最矮的連續欄位來放置
+            let bestColumn = 0
+            let bestHeight = Infinity
+
+            for (let i = 0; i <= columnCount - colSpan; i++) {
+                // 對於跨欄項目，取最高的欄位高度
+                let maxHeight = 0
+                for (let j = 0; j < colSpan; j++) {
+                    maxHeight = Math.max(maxHeight, columnHeights[i + j])
+                }
+                if (maxHeight < bestHeight) {
+                    bestHeight = maxHeight
+                    bestColumn = i
+                }
+            }
+
+            const x = bestColumn * (columnWidth + gap)
+            const y = bestHeight
+
+            // 更新被佔用欄位的高度
+            for (let j = 0; j < colSpan; j++) {
+                columnHeights[bestColumn + j] = y + itemHeight + gap
+            }
+
+            return {
+                ...photo,
+                x,
+                y,
+                displayWidth: itemWidth,
+                displayHeight: itemHeight
+            }
+        })
+
+        setLayoutPhotos(positioned)
+        setContainerHeight(Math.max(...columnHeights))
+    }, [photos, containerWidth])
 
     if (loading) {
         return (
@@ -101,7 +201,7 @@ export default function WeddingPhotosPage() {
                     </div>
                 </div>
 
-                {/* 照片牆 - CSS Columns Masonry */}
+                {/* 照片牆 - True Masonry Layout */}
                 {photos.length === 0 ? (
                     <div className="text-center py-16">
                         <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md mx-auto">
@@ -112,29 +212,40 @@ export default function WeddingPhotosPage() {
                     </div>
                 ) : (
                     <div
-                        className="columns-2 sm:columns-3 md:columns-4 xl:columns-5 gap-2 sm:gap-3"
-                        style={{ columnFill: 'balance' }}
+                        ref={containerRef}
+                        className="relative"
+                        style={{ height: containerHeight || 'auto', minHeight: 200 }}
                     >
-                        {photos.map((photo) => (
+                        {/* 隱藏的預載入圖片，用於獲取尺寸 */}
+                        {photos.filter(p => !p.loaded).map(photo => (
+                            <img
+                                key={`preload-${photo.id}`}
+                                src={photo.thumbnailUrl}
+                                alt=""
+                                className="absolute opacity-0 pointer-events-none"
+                                style={{ width: 1, height: 1 }}
+                                onLoad={(e) => handleImageLoad(photo.id, e.currentTarget)}
+                            />
+                        ))}
+
+                        {/* 實際渲染的照片 */}
+                        {layoutPhotos.map((photo) => (
                             <div
                                 key={photo.id}
-                                className={`
-                                    break-inside-avoid mb-2 sm:mb-3 cursor-pointer group
-                                    ${photo.isLandscape ? 'sm:column-span-all md:column-span-all' : ''}
-                                `}
-                                style={photo.isLandscape ? {
-                                    breakInside: 'avoid',
-                                    columnSpan: 'all'
-                                } : { breakInside: 'avoid' }}
+                                className="absolute cursor-pointer group transition-all duration-300"
+                                style={{
+                                    left: photo.x,
+                                    top: photo.y,
+                                    width: photo.displayWidth,
+                                    height: photo.displayHeight
+                                }}
                                 onClick={() => setSelectedPhoto(photo)}
                             >
-                                <div className="bg-white rounded-lg sm:rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 hover:scale-[1.02]">
+                                <div className="w-full h-full bg-white rounded-lg sm:rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 hover:scale-[1.02]">
                                     <img
                                         src={photo.thumbnailUrl}
                                         alt={photo.name}
-                                        className="w-full h-auto"
-                                        loading="lazy"
-                                        onLoad={(e) => handleImageLoad(photo.id, e.currentTarget)}
+                                        className="w-full h-full object-cover"
                                     />
                                 </div>
                             </div>
@@ -143,7 +254,7 @@ export default function WeddingPhotosPage() {
                 )}
             </div>
 
-            {/* 照片放大檢視 - 點擊任意處關閉 */}
+            {/* 照片放大檢視 */}
             {selectedPhoto && (
                 <div
                     className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4 animate-fadeIn cursor-pointer"
