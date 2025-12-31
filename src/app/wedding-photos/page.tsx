@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import Layout from '@/components/Layout'
 import { X, Heart, Image as ImageIcon } from 'lucide-react'
-import { useResponsiveColumns } from '@/hooks/useResponsiveColumns'
 
 interface WeddingPhoto {
     id: string
@@ -17,8 +16,6 @@ export default function WeddingPhotosPage() {
     const [loading, setLoading] = useState(true)
     const [selectedPhoto, setSelectedPhoto] = useState<WeddingPhoto | null>(null)
     const [error, setError] = useState<string | null>(null)
-
-    const { columnCount } = useResponsiveColumns()
 
     // 獲取婚紗照片
     const fetchPhotos = useCallback(async () => {
@@ -43,17 +40,6 @@ export default function WeddingPhotosPage() {
     useEffect(() => {
         fetchPhotos()
     }, [fetchPhotos])
-
-    // 分配照片到各列（瀑布流佈局）
-    const distributePhotosToColumns = (photos: WeddingPhoto[], columnCount: number): WeddingPhoto[][] => {
-        const columns: WeddingPhoto[][] = Array.from({ length: columnCount }, () => [])
-        photos.forEach((photo, index) => {
-            columns[index % columnCount].push(photo)
-        })
-        return columns
-    }
-
-    const columns = distributePhotosToColumns(photos, columnCount)
 
     if (loading) {
         return (
@@ -110,30 +96,23 @@ export default function WeddingPhotosPage() {
                         </div>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
-                        {columns.map((column, columnIndex) => (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3">
+                        {photos.map((photo) => (
                             <div
-                                key={`column-${columnIndex}`}
-                                className="flex flex-col space-y-3 sm:space-y-4"
+                                key={photo.id}
+                                className="cursor-pointer group"
+                                onClick={() => setSelectedPhoto(photo)}
                             >
-                                {column.map((photo) => (
-                                    <div
-                                        key={photo.id}
-                                        className="cursor-pointer group"
-                                        onClick={() => setSelectedPhoto(photo)}
-                                    >
-                                        <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
-                                            <div className="relative">
-                                                <img
-                                                    src={photo.thumbnailUrl}
-                                                    alt={photo.name}
-                                                    className="w-full h-auto"
-                                                    loading="lazy"
-                                                />
-                                            </div>
-                                        </div>
+                                <div className="bg-white rounded-lg sm:rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 hover:scale-[1.02]">
+                                    <div className="relative aspect-[3/4]">
+                                        <img
+                                            src={photo.thumbnailUrl}
+                                            alt={photo.name}
+                                            className="w-full h-full object-cover"
+                                            loading="lazy"
+                                        />
                                     </div>
-                                ))}
+                                </div>
                             </div>
                         ))}
                     </div>
