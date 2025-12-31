@@ -29,28 +29,12 @@ export default function WeddingPhotosPage() {
     // 投票相關狀態
     const [userVotes, setUserVotes] = useState<Record<string, number>>({})
     const availableVotes = 1  // 婚紗照固定每人 1 票
-    const [votingEnabled, setVotingEnabled] = useState(false)
+    const votingEnabled = true  // 婚紗照投票永遠啟用
     const [votingInProgress, setVotingInProgress] = useState<Set<string>>(new Set())
     const [showVoteLimitModal, setShowVoteLimitModal] = useState(false)
 
     const supabase = createSupabaseBrowser()
     const { profile } = useLiff()
-
-    // 獲取投票設定
-    const fetchVotingSettings = useCallback(async () => {
-        try {
-            const { data, error } = await supabase
-                .from('game_state')
-                .select('voting_enabled')
-                .single()
-
-            if (error) throw error
-
-            setVotingEnabled(data.voting_enabled)
-        } catch (error) {
-            console.error('Error fetching voting settings:', error)
-        }
-    }, [supabase])
 
     // 獲取用戶投票記錄 (針對婚紗照)
     const fetchUserVotes = useCallback(async () => {
@@ -103,8 +87,7 @@ export default function WeddingPhotosPage() {
 
     useEffect(() => {
         fetchPhotos()
-        fetchVotingSettings()
-    }, [fetchPhotos, fetchVotingSettings])
+    }, [fetchPhotos])
 
     useEffect(() => {
         if (profile) {
