@@ -637,7 +637,7 @@ export default function GuestManagementPage() {
                     ) : activeTab === 'line' ? (
                         // LINE 用戶列表
                         <div className="overflow-x-auto">
-                            <table className="w-full text-left">
+                            <table className="w-full text-left min-w-[800px]">
                                 <thead className="bg-gray-50 text-gray-600 text-xs uppercase">
                                     <tr>
                                         <th className="px-4 py-4 font-medium">用戶</th>
@@ -722,10 +722,10 @@ export default function GuestManagementPage() {
                                                     <button
                                                         onClick={() => handleToggleAdmin(user)}
                                                         className={`px-2 py-1 rounded text-xs font-medium inline-flex items-center gap-1 transition-colors ${user.is_admin
-                                                                ? user.admin_level === 'system'
-                                                                    ? 'bg-amber-100 text-amber-700 hover:bg-amber-200'
-                                                                    : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-                                                                : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                                                            ? user.admin_level === 'system'
+                                                                ? 'bg-amber-100 text-amber-700 hover:bg-amber-200'
+                                                                : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                                                            : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
                                                             }`}
                                                         title={user.is_admin ? '點擊移除管理員權限' : '點擊指派為管理員'}
                                                     >
@@ -789,7 +789,7 @@ export default function GuestManagementPage() {
                     ) : (
                         // 手動名單列表
                         <div className="overflow-x-auto">
-                            <table className="w-full text-left">
+                            <table className="w-full text-left min-w-[700px]">
                                 <thead className="bg-gray-50 text-gray-600 text-xs uppercase">
                                     <tr>
                                         <th className="px-4 py-4 font-medium">賓客姓名</th>
