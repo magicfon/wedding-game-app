@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { createSupabaseBrowser, Question } from '@/lib/supabase'
 
 interface GameState {
@@ -16,6 +16,7 @@ interface GameState {
   display_phase?: 'question' | 'options' | 'rankings'
   completed_questions?: number
   has_next_question?: boolean
+  active_question_set?: string
 }
 
 export function useRealtimeGameState() {
@@ -24,13 +25,46 @@ export function useRealtimeGameState() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  // 追蹤上一次的 question_id，避免重複獲取
+  const lastQuestionIdRef = useRef<number | null>(null)
+  // 追蹤是否已初始化
+  const initializedRef = useRef(false)
+
   const supabase = createSupabaseBrowser()
 
+  // 輕量級：只獲取題目資料
+  const fetchQuestionOnly = useCallback(async (questionId: number | null) => {
+    if (!questionId) {
+      setCurrentQuestion(null)
+      lastQuestionIdRef.current = null
+      return
+    }
+
+    // 如果題目 ID 相同，跳過獲取
+    if (lastQuestionIdRef.current === questionId) {
+      return
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('questions')
+        .select('*')
+        .eq('id', questionId)
+        .single()
+
+      if (error) throw error
+      setCurrentQuestion(data)
+      lastQuestionIdRef.current = questionId
+    } catch (err) {
+      console.error('Error fetching question:', err)
+    }
+  }, [supabase])
+
+  // 完整獲取：初始化時使用
   const fetchGameState = useCallback(async () => {
     try {
       setError(null)
 
-      // 從 API 獲取遊戲狀態（包含 has_next_question 計算）
       const response = await fetch('/api/game/control')
       const data = await response.json()
 
@@ -44,18 +78,12 @@ export function useRealtimeGameState() {
       // 設定當前題目（API 回傳中已包含題目資訊）
       if (gameData?.questions) {
         setCurrentQuestion(gameData.questions)
+        lastQuestionIdRef.current = gameData.current_question_id
       } else if (gameData?.current_question_id) {
-        // 如果 API 沒有返回 questions, 手動查詢
-        const { data: questionData, error: questionError } = await supabase
-          .from('questions')
-          .select('*')
-          .eq('id', gameData.current_question_id)
-          .single()
-
-        if (questionError) throw questionError
-        setCurrentQuestion(questionData)
+        await fetchQuestionOnly(gameData.current_question_id)
       } else {
         setCurrentQuestion(null)
+        lastQuestionIdRef.current = null
       }
     } catch (error: any) {
       console.error('Error fetching game state:', error)
@@ -63,12 +91,61 @@ export function useRealtimeGameState() {
     } finally {
       setLoading(false)
     }
-  }, [supabase])
+  }, [supabase, fetchQuestionOnly])
+
+  // 處理 realtime 更新：直接使用 payload，避免 API 調用
+  const handleGameStateChange = useCallback((payload: any) => {
+    console.log('Game state changed (realtime):', payload.eventType)
+
+    const newData = payload.new as GameState
+    if (!newData) {
+      // DELETE 事件，重新獲取
+      fetchGameState()
+      return
+    }
+
+    setGameState(prev => {
+      const prevQuestionId = prev?.current_question_id
+      const newQuestionId = newData.current_question_id
+
+      // 如果題目 ID 變更，獲取新題目
+      if (newQuestionId !== prevQuestionId) {
+        fetchQuestionOnly(newQuestionId)
+      }
+
+      // 合併更新：保留 API 計算的欄位（如 has_next_question, total_questions）
+      // 只在關鍵欄位變更時才需要完整重新獲取
+      const needsFullRefetch =
+        newData.is_game_active !== prev?.is_game_active ||
+        newData.current_question_id !== prev?.current_question_id
+
+      if (needsFullRefetch) {
+        // 延遲獲取 has_next_question 等計算欄位
+        setTimeout(() => {
+          fetch('/api/game/control')
+            .then(res => res.json())
+            .then(data => {
+              if (data.success && data.gameState) {
+                setGameState(current => {
+                  if (!current) return current
+                  return {
+                    ...current,
+                    has_next_question: data.gameState.has_next_question,
+                    total_questions: data.gameState.total_questions
+                  }
+                })
+              }
+            })
+            .catch(console.error)
+        }, 100)
+      }
+
+      return { ...prev, ...newData }
+    })
+  }, [fetchGameState, fetchQuestionOnly])
 
   // 計算剩餘時間（精確到毫秒）
   const calculateTimeLeft = useCallback((): number => {
-    // 如果在等待階段或沒有當前題目，返回 0
-    // 兼容舊表格結構：如果沒有 is_waiting_for_players 欄位，檢查 current_question_id 是否為 null
     const isWaitingForPlayers = gameState?.is_waiting_for_players !== undefined
       ? gameState.is_waiting_for_players
       : !gameState?.current_question_id;
@@ -83,12 +160,15 @@ export function useRealtimeGameState() {
     const totalTimeMs = currentQuestion.time_limit * 1000
     const remainingMs = Math.max(0, totalTimeMs - elapsedMs)
 
-    // 返回毫秒數，讓調用者決定如何顯示
     return remainingMs
   }, [gameState, currentQuestion])
 
   useEffect(() => {
-    fetchGameState()
+    // 只在首次載入時獲取完整狀態
+    if (!initializedRef.current) {
+      initializedRef.current = true
+      fetchGameState()
+    }
 
     // 訂閱遊戲狀態變化
     const channel = supabase
@@ -97,24 +177,24 @@ export function useRealtimeGameState() {
         event: '*',
         schema: 'public',
         table: 'game_state'
-      }, (payload) => {
-        console.log('Game state changed:', payload)
-        fetchGameState()
-      })
+      }, handleGameStateChange)
       .on('postgres_changes', {
-        event: '*',
+        event: 'UPDATE',
         schema: 'public',
         table: 'questions'
       }, (payload) => {
-        console.log('Questions changed:', payload)
-        fetchGameState()
+        // 只有當更新的是當前題目時才更新
+        if (payload.new && (payload.new as any).id === lastQuestionIdRef.current) {
+          console.log('Current question updated')
+          setCurrentQuestion(payload.new as Question)
+        }
       })
       .subscribe()
 
     return () => {
       channel.unsubscribe()
     }
-  }, [fetchGameState, supabase])
+  }, [supabase, fetchGameState, handleGameStateChange])
 
   return {
     gameState,

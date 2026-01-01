@@ -402,12 +402,56 @@ export default function GameLivePage() {
     }
   }, [timeLeft, showingCorrectOnly, topPlayers.length, removeWrongPlayers])
 
-  // 處理新答案
-  const handleNewAnswer = useCallback(() => {
-    fetchAnswerDistribution()
-    fetchTopPlayers(showingCorrectOnly)
-    fetchCurrentQuestionAnswerCount()
-  }, [fetchAnswerDistribution, fetchTopPlayers, showingCorrectOnly, fetchCurrentQuestionAnswerCount])
+  // 處理新答案 - 使用 realtime payload 直接更新，避免重新查詢
+  const handleNewAnswerFromPayload = useCallback((payload: any) => {
+    const newRecord = payload.new
+    if (!newRecord) return
+
+    const answer = newRecord.selected_answer
+    const userLineId = newRecord.user_line_id
+
+    // 直接增加答題計數
+    setCurrentQuestionAnswerCount(prev => prev + 1)
+
+    // 更新答題分佈（增量更新）
+    setAnswerDistribution(prev => prev.map(d =>
+      d.answer === answer
+        ? { ...d, count: d.count + 1 }
+        : d
+    ))
+
+      // 非同步獲取用戶資料來更新頭像顯示（不阻塞 UI 更新）
+      ; (async () => {
+        try {
+          const { data: userData } = await supabase
+            .from('users')
+            .select('display_name, avatar_url')
+            .eq('line_id', userLineId)
+            .single()
+
+          if (userData) {
+            setAnswerDistribution(prev => prev.map(d =>
+              d.answer === answer
+                ? {
+                  ...d,
+                  users: [...d.users, {
+                    display_name: userData.display_name || '未知用戶',
+                    avatar_url: userData.avatar_url
+                  }]
+                }
+                : d
+            ))
+          }
+        } catch (err) {
+          console.error('Error fetching user data:', err)
+        }
+      })()
+
+    // 僅在需要時更新 top players（延遲執行，優先處理計數更新）
+    setTimeout(() => {
+      fetchTopPlayers(showingCorrectOnly)
+    }, 100)
+  }, [supabase, showingCorrectOnly, fetchTopPlayers])
 
   // 訂閱答題記錄變化
   useEffect(() => {
@@ -416,7 +460,7 @@ export default function GameLivePage() {
         .channel(`answer-records-${currentQuestion.id}`)
         .on('postgres_changes',
           { event: 'INSERT', schema: 'public', table: 'answer_records', filter: `question_id=eq.${currentQuestion.id}` },
-          handleNewAnswer
+          handleNewAnswerFromPayload
         )
         .subscribe()
 
@@ -426,7 +470,7 @@ export default function GameLivePage() {
     } else {
       console.log('No current question, not subscribing to answer records')
     }
-  }, [currentQuestion, fetchAnswerDistribution, fetchTopPlayers, supabase, handleNewAnswer])
+  }, [currentQuestion, supabase, handleNewAnswerFromPayload])
 
   // 監聽投票事件並播放投票音效
   useEffect(() => {
@@ -443,29 +487,18 @@ export default function GameLivePage() {
   }, [isSoundEnabled, playSound])
 
   // 伺服器同步計時器（每秒同步一次實際時間）
+  // 移除了每5秒的輪詢，改為依賴 Realtime 事件進行即時更新
   useEffect(() => {
     if (!gameState?.is_game_active || gameState?.is_paused) return
 
     const syncTimer = setInterval(() => {
-      const newTimeLeft = calculateTimeLeft() // 從伺服器獲取精確時間
+      const newTimeLeft = calculateTimeLeft()
       setTimeLeft(newTimeLeft)
       setDisplayTimeLeft(newTimeLeft)
-
-      // 每5秒重新獲取數據（只在 timeLeft > 0 時執行，避免倒數結束後持續刷新）
-      if (newTimeLeft > 0 && newTimeLeft % 5000 === 0) {
-        fetchAnswerDistribution()
-        fetchTopPlayers(showingCorrectOnly)
-        fetchCurrentQuestionAnswerCount()
-
-        // 延遲獲取分數排行榜
-        setTimeout(() => {
-          fetchScoreRankings()
-        }, 5000) // 5秒延遲
-      }
     }, 1000) // 每秒同步一次
 
     return () => clearInterval(syncTimer)
-  }, [gameState, calculateTimeLeft, fetchAnswerDistribution, fetchTopPlayers, fetchScoreRankings, timeLeft])
+  }, [gameState, calculateTimeLeft])
 
   // 本機顯示計時器（100ms更新顯示，模擬毫秒變化）
   useEffect(() => {
