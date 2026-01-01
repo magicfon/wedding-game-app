@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { createSupabaseBrowser } from '@/lib/supabase'
 import { useRealtimeGameState } from '@/hooks/useRealtimeGameState'
 import { useSoundEffects } from '@/hooks/useSoundEffects'
+import { useBackgroundMusic } from '@/hooks/useBackgroundMusic'
 import { SoundToggle } from '@/components/SoundToggle'
 import { subscribeToVoteEvents } from '@/lib/vote-events'
 import Layout from '@/components/Layout'
@@ -64,6 +65,30 @@ export default function GameLivePage() {
   // 使用音效系統
   const { isSoundEnabled, toggleSound, playSound, preloadSounds, isLoaded } = useSoundEffects()
 
+  // 背景音樂（遊戲進行時播放）
+  const { tryPlay: tryPlayBgm } = useBackgroundMusic({
+    url: '/sounds/game-start.mp3',
+    enabled: isSoundEnabled && gameState?.is_game_active && !gameState?.is_paused,
+    volume: 0.3
+  })
+
+  // 處理用戶交互以啟用背景音樂
+  useEffect(() => {
+    const handleInteraction = () => {
+      tryPlayBgm()
+      window.removeEventListener('click', handleInteraction)
+      window.removeEventListener('keydown', handleInteraction)
+    }
+
+    window.addEventListener('click', handleInteraction)
+    window.addEventListener('keydown', handleInteraction)
+
+    return () => {
+      window.removeEventListener('click', handleInteraction)
+      window.removeEventListener('keydown', handleInteraction)
+    }
+  }, [tryPlayBgm])
+
   // 同步 showingCorrectOnly 狀態到 localStorage
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -119,20 +144,7 @@ export default function GameLivePage() {
     }
   }, [currentQuestion?.id, gameState?.is_game_active, gameState?.is_paused, gameState?.question_display_duration])
 
-  // 遊戲開始音效（整個遊戲只播放一次）
-  const gameStartPlayedRef = useRef<boolean>(false)
-
-  useEffect(() => {
-    // 只在遊戲首次啟動時播放，整個遊戲期間只播放一次
-    if (gameState?.is_game_active && !gameState?.is_paused && !gameStartPlayedRef.current) {
-      gameStartPlayedRef.current = true
-      playSound('GAME_START')
-    }
-    // 當遊戲結束時（is_game_active 變為 false），重置標記以便下次遊戲可以再播放
-    if (!gameState?.is_game_active) {
-      gameStartPlayedRef.current = false
-    }
-  }, [gameState?.is_game_active, gameState?.is_paused, playSound])
+  // 背景音樂現在由 useBackgroundMusic hook 管理，不再需要這段邏輯
 
   // 清理計時器
   useEffect(() => {
