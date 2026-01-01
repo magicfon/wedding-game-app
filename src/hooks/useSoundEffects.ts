@@ -39,7 +39,7 @@ export const useSoundEffects = (): UseSoundEffectsReturn => {
   const [isLoaded, setIsLoaded] = useState<boolean>(false)
   const audioCache = useRef<Map<string, HTMLAudioElement>>(new Map())
 
-  // 切換音效開關
+  // 切換背景音樂開關（不影響遊戲音效）
   const toggleSound = useCallback(() => {
     const newState = !isSoundEnabled
     console.log('🔊 toggleSound 被調用, 新狀態:', newState ? '開啟' : '關閉')
@@ -49,16 +49,7 @@ export const useSoundEffects = (): UseSoundEffectsReturn => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('sound-effects-enabled', newState.toString())
     }
-
-    // 當關閉音效時，停止所有正在播放的音效
-    if (!newState) {
-      console.log('🔇 停止所有正在播放的音效')
-      audioCache.current.forEach((audio, key) => {
-        audio.pause()
-        audio.currentTime = 0
-        console.log(`🔇 已停止音效: ${key}`)
-      })
-    }
+    // 注意：此開關只控制背景音樂，遊戲音效不受影響
   }, [isSoundEnabled])
 
   // 預載所有音效
@@ -104,10 +95,10 @@ export const useSoundEffects = (): UseSoundEffectsReturn => {
     }
   }, [])
 
-  // 播放音效
+  // 播放遊戲音效（不受背景音樂開關影響，始終可以播放）
   const playSound = useCallback((soundId: SoundEffectType) => {
-    if (!isSoundEnabled || !isLoaded) {
-      console.log(`🔇 音效已停用或未載入，跳過播放: ${soundId}`)
+    if (!isLoaded) {
+      console.log(`🔇 音效未載入，跳過播放: ${soundId}`)
       return
     }
 
@@ -142,7 +133,7 @@ export const useSoundEffects = (): UseSoundEffectsReturn => {
     } catch (error) {
       console.error(`❌ 播放音效時發生錯誤: ${soundId}`, error)
     }
-  }, [isSoundEnabled, isLoaded])
+  }, [isLoaded])
 
   // 組件掛載時預載音效
   useEffect(() => {
