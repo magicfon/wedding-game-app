@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createSupabaseBrowser } from '@/lib/supabase'
 import { useLiff } from '@/hooks/useLiff'
-import { Heart, Users, Trophy, Camera, HelpCircle, Shield, Image } from 'lucide-react'
+import { Heart, Users, Camera, HelpCircle, Shield, Image } from 'lucide-react'
 
 import { useOnlinePresence } from '@/hooks/useOnlinePresence'
 
@@ -73,13 +73,6 @@ export default function Home() {
       href: '/wedding-photos',
       icon: Image,
       color: 'bg-rose-500'
-    },
-    {
-      title: '🏆 排行榜',
-      description: '查看積分排名',
-      href: '/leaderboard',
-      icon: Trophy,
-      color: 'bg-yellow-500'
     }
   ]
 
