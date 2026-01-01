@@ -66,13 +66,7 @@ export default function Home() {
       icon: Heart,
       color: 'bg-pink-500'
     },
-    {
-      title: '❤️ 快門傳情',
-      description: '輪播觀看照片',
-      href: '/photo-slideshow',
-      icon: Heart,
-      color: 'bg-red-500'
-    },
+
     {
       title: '💕 婚紗照',
       description: '欣賞婚紗照片',

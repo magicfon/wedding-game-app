@@ -57,7 +57,6 @@ export default function Layout({ children, title, showNavigation = true }: Layou
     { name: '快問快答', href: '/quiz', icon: HelpCircle },
     { name: '照片上傳', href: '/photo-upload', icon: Camera },
     { name: '照片牆', href: '/photo-wall', icon: Heart },
-    { name: '快門傳情', href: '/photo-slideshow', icon: Heart },
     { name: '婚紗照', href: '/wedding-photos', icon: Heart },
     { name: '排行榜', href: '/leaderboard', icon: Trophy },
     { name: '積分歷史', href: '/score-history', icon: Trophy },

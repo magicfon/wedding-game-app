@@ -408,6 +408,23 @@ export default function AdminDashboard() {
                 <Monitor className="w-4 h-4" />
                 <span>開啟遊戲實況</span>
               </button>
+
+              {/* 照片輪播按鈕 */}
+              <button
+                onClick={() => {
+                  const width = window.screen.width;
+                  const height = window.screen.height;
+                  window.open(
+                    '/photo-slideshow',
+                    'photo-slideshow-window',
+                    `width=${width},height=${height},top=0,left=0,fullscreen=yes,menubar=no,toolbar=no,location=no,status=no`
+                  );
+                }}
+                className="flex items-center space-x-2 px-4 py-2 bg-pink-500 hover:bg-pink-600 text-white text-sm rounded-lg transition-colors shadow-sm"
+              >
+                <Camera className="w-4 h-4" />
+                <span>照片輪播</span>
+              </button>
             </div>
 
             {/* 當前題目資訊 */}
