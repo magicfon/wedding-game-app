@@ -12,11 +12,11 @@ export async function GET(request: NextRequest) {
       // 獲取用戶分數排行榜
       const { data, error } = await supabase
         .from('users')
-        .select('line_id, display_name, avatar_url, quiz_score, join_time')
-        .order('quiz_score', { ascending: false })
+        .select('line_id, display_name, avatar_url, total_score, join_time')
+        .order('total_score', { ascending: false })
 
       if (error) throw error
-      return NextResponse.json({ users: data })
+      return NextResponse.json({ success: true, users: data })
     }
 
     if (type === 'adjustments') {
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
     // 檢查用戶是否存在
     const { data: user, error: userError } = await supabase
       .from('users')
-      .select('line_id, display_name, quiz_score')
+      .select('line_id, display_name, total_score')
       .eq('line_id', user_line_id)
       .single()
 
@@ -83,10 +83,10 @@ export async function POST(request: NextRequest) {
     }
 
     // 檢查調整後分數是否會變成負數
-    const newScore = user.quiz_score + adjustment_score
+    const newScore = user.total_score + adjustment_score
     if (newScore < 0) {
       return NextResponse.json({
-        error: `調整後分數不能為負數。目前分數: ${user.quiz_score}，調整分數: ${adjustment_score}`
+        error: `調整後分數不能為負數。目前分數: ${user.total_score}，調整分數: ${adjustment_score}`
       }, { status: 400 })
     }
 
@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
     // 獲取更新後的用戶分數
     const { data: updatedUser, error: updatedUserError } = await supabase
       .from('users')
-      .select('line_id, display_name, quiz_score')
+      .select('line_id, display_name, total_score')
       .eq('line_id', user_line_id)
       .single()
 
@@ -119,8 +119,8 @@ export async function POST(request: NextRequest) {
       adjustment,
       user: {
         ...user,
-        old_score: user.quiz_score,
-        new_score: updatedUser.quiz_score
+        old_score: user.total_score,
+        new_score: updatedUser.total_score
       }
     })
   } catch (error) {
@@ -170,7 +170,7 @@ export async function PATCH(request: NextRequest) {
         // 檢查用戶是否存在
         const { data: user, error: userError } = await supabase
           .from('users')
-          .select('line_id, display_name, quiz_score')
+          .select('line_id, display_name, total_score')
           .eq('line_id', adj.user_line_id)
           .single()
 
@@ -180,7 +180,7 @@ export async function PATCH(request: NextRequest) {
         }
 
         // 檢查調整後分數
-        const newScore = user.quiz_score + adj.adjustment_score
+        const newScore = user.total_score + adj.adjustment_score
         if (newScore < 0) {
           errors.push(`用戶 ${user.display_name} 調整後分數會變成負數`)
           continue
@@ -204,8 +204,8 @@ export async function PATCH(request: NextRequest) {
           user_line_id: adj.user_line_id,
           display_name: user.display_name,
           adjustment_score: adj.adjustment_score,
-          old_score: user.quiz_score,
-          new_score: user.quiz_score + adj.adjustment_score
+          old_score: user.total_score,
+          new_score: user.total_score + adj.adjustment_score
         })
       } catch (error) {
         errors.push(`處理用戶 ${adj.user_line_id} 時發生錯誤: ${error instanceof Error ? error.message : '未知錯誤'}`)

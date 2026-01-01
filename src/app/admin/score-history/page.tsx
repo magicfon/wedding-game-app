@@ -9,7 +9,6 @@ import { Trophy, Clock, TrendingUp, TrendingDown, Search, Users, Award } from 'l
 interface User {
   line_id: string
   display_name: string
-  quiz_score: number
   total_score: number
   avatar_url?: string
 }
@@ -49,7 +48,7 @@ export default function AdminScoreHistoryPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [loading, setLoading] = useState(true)
   const [historyLoading, setHistoryLoading] = useState(false)
-  
+
   const { isLoggedIn, isAdmin, loading: liffLoading, adminLoading } = useLiff()
   const router = useRouter()
 
@@ -67,7 +66,7 @@ export default function AdminScoreHistoryPage() {
       setLoading(true)
       const response = await fetch('/api/admin/scores')
       const data = await response.json()
-      
+
       if (data.success) {
         setUsers(data.users || [])
       }
@@ -84,7 +83,7 @@ export default function AdminScoreHistoryPage() {
       setHistoryLoading(true)
       const response = await fetch(`/api/user/score-history?user_line_id=${userId}&limit=100`)
       const data: ScoreHistoryResponse = await response.json()
-      
+
       if (data.success) {
         setHistory(data.history)
       } else {
@@ -147,9 +146,9 @@ export default function AdminScoreHistoryPage() {
   return (
     <AdminLayout title="積分歷史查看">
       <div className="max-w-7xl mx-auto">
-        
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
+
           {/* 用戶列表 */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-lg shadow-md">
@@ -158,7 +157,7 @@ export default function AdminScoreHistoryPage() {
                   <Users className="w-5 h-5 text-gray-600" />
                   <h3 className="text-lg font-semibold">選擇用戶</h3>
                 </div>
-                
+
                 {/* 搜尋框 */}
                 <div className="relative">
                   <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -171,7 +170,7 @@ export default function AdminScoreHistoryPage() {
                   />
                 </div>
               </div>
-              
+
               {/* 用戶列表 */}
               <div className="max-h-96 overflow-y-auto">
                 {filteredUsers.length === 0 ? (
@@ -183,15 +182,14 @@ export default function AdminScoreHistoryPage() {
                     <div
                       key={user.line_id}
                       onClick={() => handleUserSelect(user)}
-                      className={`p-4 border-b cursor-pointer hover:bg-gray-50 transition-colors ${
-                        selectedUser?.line_id === user.line_id ? 'bg-blue-50 border-blue-200' : ''
-                      }`}
+                      className={`p-4 border-b cursor-pointer hover:bg-gray-50 transition-colors ${selectedUser?.line_id === user.line_id ? 'bg-blue-50 border-blue-200' : ''
+                        }`}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
                           {user.avatar_url ? (
-                            <img 
-                              src={user.avatar_url} 
+                            <img
+                              src={user.avatar_url}
                               alt={user.display_name}
                               className="w-8 h-8 rounded-full"
                             />
@@ -238,8 +236,8 @@ export default function AdminScoreHistoryPage() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
                       {selectedUser.avatar_url ? (
-                        <img 
-                          src={selectedUser.avatar_url} 
+                        <img
+                          src={selectedUser.avatar_url}
                           alt={selectedUser.display_name}
                           className="w-12 h-12 rounded-full border-2 border-white"
                         />
@@ -289,9 +287,8 @@ export default function AdminScoreHistoryPage() {
                               <h4 className="text-sm font-medium text-gray-900">
                                 {record.description}
                               </h4>
-                              <div className={`flex items-center space-x-1 text-sm font-medium ${
-                                record.score_change > 0 ? 'text-green-600' : 'text-red-600'
-                              }`}>
+                              <div className={`flex items-center space-x-1 text-sm font-medium ${record.score_change > 0 ? 'text-green-600' : 'text-red-600'
+                                }`}>
                                 {record.score_change > 0 ? (
                                   <TrendingUp className="w-4 h-4" />
                                 ) : (
@@ -306,7 +303,7 @@ export default function AdminScoreHistoryPage() {
                             <div className="flex items-center justify-between text-xs text-gray-500">
                               <div className="flex items-center space-x-4">
                                 <span>{formatDate(record.created_at)}</span>
-                                
+
                                 {/* 詳細資訊 */}
                                 {record.type === 'answer' && record.details && (
                                   <>
@@ -314,13 +311,12 @@ export default function AdminScoreHistoryPage() {
                                     {record.details.answer_time && (
                                       <span>用時: {formatAnswerTime(record.details.answer_time)}</span>
                                     )}
-                                    <span className={`px-2 py-1 rounded-full text-xs ${
-                                      record.details.is_correct ? 'bg-green-100 text-green-800' :
-                                      record.details.is_timeout ? 'bg-red-100 text-red-800' :
-                                      'bg-gray-100 text-gray-800'
-                                    }`}>
-                                      {record.details.is_correct ? '答對' : 
-                                       record.details.is_timeout ? '超時' : '答錯'}
+                                    <span className={`px-2 py-1 rounded-full text-xs ${record.details.is_correct ? 'bg-green-100 text-green-800' :
+                                        record.details.is_timeout ? 'bg-red-100 text-red-800' :
+                                          'bg-gray-100 text-gray-800'
+                                      }`}>
+                                      {record.details.is_correct ? '答對' :
+                                        record.details.is_timeout ? '超時' : '答錯'}
                                     </span>
                                   </>
                                 )}
@@ -329,7 +325,7 @@ export default function AdminScoreHistoryPage() {
                                   <span>原因: {record.details.reason}</span>
                                 )}
                               </div>
-                              
+
                               <span>總分: {record.score_after}</span>
                             </div>
                           </div>
