@@ -636,6 +636,7 @@ ${diagnosis.recommendations?.join('\n') || '無建議'}
                   if (question) handleEdit(question)
                 }}
                 onToggleActive={handleToggleActive}
+                onDelete={handleDelete}
                 loading={loading}
               />
             </div>

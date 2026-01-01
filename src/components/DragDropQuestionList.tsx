@@ -1,13 +1,14 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { 
-  GripVertical, 
-  FileText, 
-  Image as ImageIcon, 
+import {
+  GripVertical,
+  FileText,
+  Image as ImageIcon,
   Video,
   Eye,
-  EyeOff
+  EyeOff,
+  Trash2
 } from 'lucide-react'
 
 interface SimplifiedQuestion {
@@ -24,6 +25,7 @@ interface DragDropQuestionListProps {
   onReorder: (questionIds: number[]) => Promise<void>
   onEdit: (questionId: number) => void  // 只傳遞 ID，讓父組件處理編輯邏輯
   onToggleActive: (questionId: number, isActive: boolean) => void
+  onDelete?: (questionId: number) => void  // 刪除回調
   loading?: boolean
 }
 
@@ -32,6 +34,7 @@ export default function DragDropQuestionList({
   onReorder,
   onEdit,
   onToggleActive,
+  onDelete,
   loading = false
 }: DragDropQuestionListProps) {
   const [draggedItem, setDraggedItem] = useState<number | null>(null)
@@ -54,7 +57,7 @@ export default function DragDropQuestionList({
     setDraggedItem(questionId)
     e.dataTransfer.effectAllowed = 'move'
     e.dataTransfer.setData('text/html', questionId.toString())
-    
+
     // 設置拖拽圖像透明度
     if (e.currentTarget instanceof HTMLElement) {
       e.currentTarget.style.opacity = '0.5'
@@ -65,7 +68,7 @@ export default function DragDropQuestionList({
     setDraggedItem(null)
     setDragOverItem(null)
     dragCounter.current = 0
-    
+
     // 恢復透明度
     if (e.currentTarget instanceof HTMLElement) {
       e.currentTarget.style.opacity = '1'
@@ -103,24 +106,24 @@ export default function DragDropQuestionList({
 
     try {
       setIsReordering(true)
-      
+
       // 創建新的順序陣列
       const newQuestions = [...questions]
       const draggedIndex = newQuestions.findIndex(q => q.id === draggedItem)
       const targetIndex = newQuestions.findIndex(q => q.id === targetQuestionId)
-      
+
       if (draggedIndex === -1 || targetIndex === -1) return
-      
+
       // 移動項目
       const [draggedQuestion] = newQuestions.splice(draggedIndex, 1)
       newQuestions.splice(targetIndex, 0, draggedQuestion)
-      
+
       // 提取新的 ID 順序
       const newOrder = newQuestions.map(q => q.id)
-      
+
       // 調用重新排序函數
       await onReorder(newOrder)
-      
+
     } catch (error) {
       console.error('重新排序失敗:', error)
     } finally {
@@ -162,20 +165,18 @@ export default function DragDropQuestionList({
           onDragEnter={(e) => handleDragEnter(e, question.id)}
           onDragLeave={handleDragLeave}
           onDrop={(e) => handleDrop(e, question.id)}
-          className={`bg-white rounded-lg border-2 p-4 transition-all duration-200 cursor-move ${
-            draggedItem === question.id
-              ? 'border-blue-400 shadow-lg scale-105'
-              : dragOverItem === question.id
-                ? 'border-green-400 bg-green-50'
-                : 'border-gray-200 hover:border-gray-300'
-          } ${isReordering ? 'pointer-events-none opacity-60' : ''}`}
+          className={`bg-white rounded-lg border-2 p-4 transition-all duration-200 cursor-move ${draggedItem === question.id
+            ? 'border-blue-400 shadow-lg scale-105'
+            : dragOverItem === question.id
+              ? 'border-green-400 bg-green-50'
+              : 'border-gray-200 hover:border-gray-300'
+            } ${isReordering ? 'pointer-events-none opacity-60' : ''}`}
         >
           <div className="flex items-center space-x-3">
             {/* 拖拽手柄 */}
             <div className="flex items-center space-x-2 flex-shrink-0">
-              <GripVertical className={`w-5 h-5 ${
-                isReordering ? 'text-gray-300' : 'text-gray-400 hover:text-gray-600'
-              }`} />
+              <GripVertical className={`w-5 h-5 ${isReordering ? 'text-gray-300' : 'text-gray-400 hover:text-gray-600'
+                }`} />
               <div className="bg-gray-100 text-gray-600 text-sm font-medium px-2 py-1 rounded min-w-[2rem] text-center">
                 {index + 1}
               </div>
@@ -219,7 +220,7 @@ export default function DragDropQuestionList({
                     className="w-12 h-12 object-cover rounded border"
                     onMouseEnter={(e) => {
                       const video = e.target as HTMLVideoElement
-                      video.play().catch(() => {})
+                      video.play().catch(() => { })
                     }}
                     onMouseLeave={(e) => {
                       const video = e.target as HTMLVideoElement
@@ -238,11 +239,10 @@ export default function DragDropQuestionList({
               {/* 啟用狀態 */}
               <button
                 onClick={() => onToggleActive(question.id, !question.is_active)}
-                className={`p-1 rounded transition-colors ${
-                  question.is_active
-                    ? 'text-green-600 hover:bg-green-100'
-                    : 'text-gray-400 hover:bg-gray-100'
-                }`}
+                className={`p-1 rounded transition-colors ${question.is_active
+                  ? 'text-green-600 hover:bg-green-100'
+                  : 'text-gray-400 hover:bg-gray-100'
+                  }`}
                 title={question.is_active ? '點擊停用' : '點擊啟用'}
               >
                 {question.is_active ? (
@@ -259,6 +259,17 @@ export default function DragDropQuestionList({
               >
                 編輯
               </button>
+
+              {/* 刪除按鈕 */}
+              {onDelete && (
+                <button
+                  onClick={() => onDelete(question.id)}
+                  className="p-1 text-red-500 hover:bg-red-100 rounded transition-colors"
+                  title="刪除題目"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              )}
             </div>
           </div>
 
