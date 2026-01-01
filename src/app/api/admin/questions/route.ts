@@ -194,7 +194,7 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// DELETE - 刪除問題（軟刪除，設為 inactive）
+// DELETE - 刪除問題（永久刪除）
 export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
@@ -207,28 +207,25 @@ export async function DELETE(request: NextRequest) {
 
     const supabase = createSupabaseAdmin()
 
-    const { data: question, error } = await supabase
+    // 先獲取題目資訊（用於日誌記錄）
+    const { data: questionData } = await supabase
       .from('questions')
-      .update({ is_active: false })
+      .select('question_text')
       .eq('id', id)
-      .select()
       .single()
+
+    // 永久刪除題目
+    const { error } = await supabase
+      .from('questions')
+      .delete()
+      .eq('id', id)
 
     if (error) {
       console.error('Error deleting question:', error)
       return NextResponse.json({ error: 'Failed to delete question' }, { status: 500 })
     }
 
-    // 記錄管理員操作（暫時註解，等 admin_actions 表格創建後再啟用）
-    // await supabase
-    //   .from('admin_actions')
-    //   .insert({
-    //     admin_line_id: deleted_by || 'unknown',
-    //     action_type: 'delete_question',
-    //     target_type: 'question',
-    //     target_id: id,
-    //     details: { question_text: question.question_text }
-    //   })
+    console.log(`🗑️ Question ${id} permanently deleted by ${deleted_by || 'unknown'}`)
 
     return NextResponse.json({ success: true, message: 'Question deleted successfully' })
 

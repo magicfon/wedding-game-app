@@ -205,7 +205,7 @@ export default function QuestionsManagePage() {
 
   // 刪除問題
   const handleDelete = async (questionId: number) => {
-    if (!confirm('確定要刪除這個問題嗎？')) return
+    if (!confirm('⚠️ 確定要永久刪除這個問題嗎？此操作無法復原！')) return
 
     try {
       const response = await fetch(`/api/admin/questions?id=${questionId}&deleted_by=${profile?.userId}`, {
