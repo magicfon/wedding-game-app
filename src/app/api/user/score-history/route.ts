@@ -11,8 +11,8 @@ export async function GET(request: NextRequest) {
     const offset = parseInt(searchParams.get('offset') || '0')
 
     if (!user_line_id) {
-      return NextResponse.json({ 
-        error: '缺少用戶ID參數' 
+      return NextResponse.json({
+        error: '缺少用戶ID參數'
       }, { status: 400 })
     }
 
@@ -65,10 +65,10 @@ export async function GET(request: NextRequest) {
     if (answerRecords) {
       answerRecords.forEach((record: any) => {
         const questionData = record.questions
-        const questionText = questionData && typeof questionData === 'object' && 'question_text' in questionData 
-          ? questionData.question_text 
+        const questionText = questionData && typeof questionData === 'object' && 'question_text' in questionData
+          ? questionData.question_text
           : '未知題目'
-        
+
         allRecords.push({
           id: `answer_${record.id}`,
           type: 'answer',
@@ -114,10 +114,10 @@ export async function GET(request: NextRequest) {
     // 計算累積分數（從最舊的記錄開始）
     const recordsWithCumulative = []
 
-    // 先獲取用戶當前總分
+    // 獲取用戶資訊
     const { data: user, error: userError } = await supabase
       .from('users')
-      .select('total_score, display_name')
+      .select('display_name')
       .eq('line_id', user_line_id)
       .single()
 
@@ -125,7 +125,32 @@ export async function GET(request: NextRequest) {
       console.error('獲取用戶資訊失敗:', userError)
     }
 
-    const currentTotalScore = user?.total_score || 0
+    // 直接從 answer_records 計算當前總分（確保與排行榜一致）
+    const { data: allAnswerRecords, error: allAnswerError } = await supabase
+      .from('answer_records')
+      .select('earned_score')
+      .eq('user_line_id', user_line_id)
+
+    if (allAnswerError) {
+      console.error('計算答題總分失敗:', allAnswerError)
+    }
+
+    const answerTotalScore = allAnswerRecords?.reduce((sum, record) => sum + (record.earned_score || 0), 0) || 0
+
+    // 也加入分數調整的總和
+    const { data: allAdjustments, error: allAdjError } = await supabase
+      .from('score_adjustments')
+      .select('adjustment_score')
+      .eq('user_line_id', user_line_id)
+
+    if (allAdjError) {
+      console.error('計算調整總分失敗:', allAdjError)
+    }
+
+    const adjustmentTotalScore = allAdjustments?.reduce((sum, record) => sum + (record.adjustment_score || 0), 0) || 0
+
+    // 當前總分 = 答題得分 + 調整分數
+    const currentTotalScore = answerTotalScore + adjustmentTotalScore
 
     // 從最新記錄開始，逆向計算每個時間點的分數
     let tempScore = currentTotalScore
@@ -157,7 +182,7 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('獲取積分歷史失敗:', error)
-    return NextResponse.json({ 
+    return NextResponse.json({
       error: '獲取積分歷史失敗',
       details: error instanceof Error ? error.message : '未知錯誤'
     }, { status: 500 })

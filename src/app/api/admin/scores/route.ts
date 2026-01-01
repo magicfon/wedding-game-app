@@ -9,14 +9,48 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get('type') || 'users'
 
     if (type === 'users') {
-      // 獲取用戶分數排行榜
-      const { data, error } = await supabase
+      // 獲取用戶基本資訊
+      const { data: users, error: usersError } = await supabase
         .from('users')
-        .select('line_id, display_name, avatar_url, total_score, join_time')
-        .order('total_score', { ascending: false })
+        .select('line_id, display_name, avatar_url, join_time')
+        .order('join_time', { ascending: true })
 
-      if (error) throw error
-      return NextResponse.json({ success: true, users: data })
+      if (usersError) throw usersError
+
+      // 獲取所有答題記錄
+      const { data: allAnswerRecords, error: answersError } = await supabase
+        .from('answer_records')
+        .select('user_line_id, earned_score')
+
+      if (answersError) throw answersError
+
+      // 獲取所有分數調整記錄
+      const { data: allAdjustments, error: adjustmentsError } = await supabase
+        .from('score_adjustments')
+        .select('user_line_id, adjustment_score')
+
+      if (adjustmentsError) {
+        console.error('獲取分數調整記錄失敗:', adjustmentsError)
+      }
+
+      // 計算每位用戶的總分
+      const usersWithScores = users?.map(user => {
+        const userAnswers = allAnswerRecords?.filter(r => r.user_line_id === user.line_id) || []
+        const answerTotal = userAnswers.reduce((sum, r) => sum + (r.earned_score || 0), 0)
+
+        const userAdjustments = allAdjustments?.filter(r => r.user_line_id === user.line_id) || []
+        const adjustmentTotal = userAdjustments.reduce((sum, r) => sum + (r.adjustment_score || 0), 0)
+
+        return {
+          ...user,
+          total_score: answerTotal + adjustmentTotal
+        }
+      }) || []
+
+      // 按總分降序排序
+      usersWithScores.sort((a, b) => b.total_score - a.total_score)
+
+      return NextResponse.json({ success: true, users: usersWithScores })
     }
 
     if (type === 'adjustments') {
