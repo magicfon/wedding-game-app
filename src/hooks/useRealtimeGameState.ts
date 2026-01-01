@@ -13,6 +13,7 @@ interface GameState {
   created_at: string
   updated_at: string
   question_display_duration?: number
+  question_time_limit?: number
   display_phase?: 'question' | 'options' | 'rankings'
   completed_questions?: number
   has_next_question?: boolean
@@ -144,20 +145,22 @@ export function useRealtimeGameState() {
     })
   }, [fetchGameState, fetchQuestionOnly])
 
-  // 計算剩餘時間（精確到毫秒）
+  // 計算剩餘時間（精確到毫秒）- 優先使用全局設定的 question_time_limit
   const calculateTimeLeft = useCallback((): number => {
     const isWaitingForPlayers = gameState?.is_waiting_for_players !== undefined
       ? gameState.is_waiting_for_players
       : !gameState?.current_question_id;
 
-    if (isWaitingForPlayers || !gameState?.question_start_time || !currentQuestion || gameState.is_paused) {
+    if (isWaitingForPlayers || !gameState?.question_start_time || gameState.is_paused) {
       return 0
     }
 
+    // 優先使用全局的 question_time_limit，否則使用個別題目的 time_limit
+    const effectiveTimeLimit = gameState.question_time_limit || currentQuestion?.time_limit || 30
     const startTime = new Date(gameState.question_start_time).getTime()
     const now = Date.now()
     const elapsedMs = now - startTime
-    const totalTimeMs = currentQuestion.time_limit * 1000
+    const totalTimeMs = effectiveTimeLimit * 1000
     const remainingMs = Math.max(0, totalTimeMs - elapsedMs)
 
     return remainingMs

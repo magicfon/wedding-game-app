@@ -31,6 +31,7 @@ export interface GameState {
   created_at: string;
   updated_at: string;
   question_display_duration?: number;
+  question_time_limit?: number;
   active_question_set?: 'formal' | 'test' | 'backup';
   display_phase?: 'question' | 'options' | 'rankings';
   has_next_question?: boolean;
@@ -42,7 +43,7 @@ export interface UseGameStateReturn {
   error: string | null;
   refreshGameState: () => Promise<void>;
   controlGame: (action: string, questionId?: number) => Promise<boolean>;
-  updateSettings: (settings: { question_display_duration?: number; active_question_set?: 'formal' | 'test' | 'backup' }) => Promise<boolean>;
+  updateSettings: (settings: { question_display_duration?: number; question_time_limit?: number; active_question_set?: 'formal' | 'test' | 'backup' }) => Promise<boolean>;
   timeRemaining: number;
   isGameActive: boolean;
   isPaused: boolean;
@@ -117,7 +118,7 @@ export function useGameState(adminLineId?: string) {
   }, [adminLineId, refreshGameState]);
 
   // 更新遊戲設定
-  const updateSettings = useCallback(async (settings: { question_display_duration?: number; active_question_set?: 'formal' | 'test' | 'backup' }) => {
+  const updateSettings = useCallback(async (settings: { question_display_duration?: number; question_time_limit?: number; active_question_set?: 'formal' | 'test' | 'backup' }) => {
     if (!adminLineId) {
       setError('需要管理員權限');
       return false;
@@ -154,19 +155,20 @@ export function useGameState(adminLineId?: string) {
 
   // 倒數計時器
   useEffect(() => {
-    if (!gameState?.is_game_active || gameState?.is_paused || !gameState?.questions) {
+    if (!gameState?.is_game_active || gameState?.is_paused) {
       setTimeRemaining(0);
       return;
     }
 
-    // 計算初始剩餘時間
+    // 計算初始剩餘時間 - 優先使用全局的 question_time_limit
     const calculateTimeRemaining = () => {
-      if (!gameState.question_start_time || !gameState.questions) return 0;
+      if (!gameState.question_start_time) return 0;
 
+      const effectiveTimeLimit = gameState.question_time_limit || gameState.questions?.time_limit || 30;
       const startTime = new Date(gameState.question_start_time).getTime();
       const currentTime = new Date().getTime();
       const elapsed = Math.floor((currentTime - startTime) / 1000);
-      return Math.max(0, (gameState.questions.time_limit || 30) - elapsed);
+      return Math.max(0, effectiveTimeLimit - elapsed);
     };
 
     // 設定初始時間
@@ -192,7 +194,7 @@ export function useGameState(adminLineId?: string) {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [gameState?.is_game_active, gameState?.is_paused, gameState?.questions, gameState?.question_start_time]);
+  }, [gameState?.is_game_active, gameState?.is_paused, gameState?.questions, gameState?.question_start_time, gameState?.question_time_limit]);
 
   // 設置 Supabase 即時監聽
   useEffect(() => {

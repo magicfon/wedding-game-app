@@ -12,13 +12,13 @@ export default function QuizPage() {
   const [selectedAnswer, setSelectedAnswer] = useState<'A' | 'B' | 'C' | 'D' | null>(null)
   const [timeLeft, setTimeLeft] = useState<number>(0)
   const [hasAnswered, setHasAnswered] = useState(false)
-  
+
   const router = useRouter()
   const supabase = createSupabaseBrowser()
-  
+
   // 使用 LIFF 登入系統
   const { isReady, isLoggedIn, profile, login, loading: liffLoading } = useLiff()
-  
+
   // 使用統一的即時遊戲狀態
   const { gameState, currentQuestion, loading: gameLoading, calculateTimeLeft } = useRealtimeGameState()
 
@@ -81,10 +81,13 @@ export default function QuizPage() {
 
 
   const handleTimeUp = useCallback(async () => {
-    if (!profile || !currentQuestion || hasAnswered) return
+    if (!profile || !currentQuestion || hasAnswered || !gameState) return
 
     setHasAnswered(true)
-    
+
+    // 優先使用全局的 question_time_limit
+    const effectiveTimeLimit = gameState.question_time_limit || currentQuestion.time_limit || 30
+
     try {
       // 使用新的計分 API 處理超時
       const response = await fetch('/api/quiz/scoring', {
@@ -96,13 +99,13 @@ export default function QuizPage() {
           user_line_id: profile.userId,
           question_id: currentQuestion.id,
           selected_answer: null,
-          answer_time: currentQuestion.time_limit * 1000,
+          answer_time: effectiveTimeLimit * 1000,
           is_timeout: true
         })
       })
 
       const result = await response.json()
-      
+
       if (!response.ok) {
         throw new Error(result.error || '提交超時記錄失敗')
       }
@@ -111,7 +114,7 @@ export default function QuizPage() {
     } catch (error) {
       console.error('Error recording timeout:', error)
     }
-  }, [profile, currentQuestion, hasAnswered])
+  }, [profile, currentQuestion, hasAnswered, gameState])
 
   // 倒數計時器
   useEffect(() => {
@@ -122,7 +125,7 @@ export default function QuizPage() {
     const timer = setInterval(() => {
       const newTimeLeft = calculateTimeLeft() // 現在返回毫秒數
       setTimeLeft(newTimeLeft)
-      
+
       // 時間到且尚未答題，自動提交空答案
       if (newTimeLeft <= 0 && !hasAnswered) {
         handleTimeUp()
@@ -133,14 +136,16 @@ export default function QuizPage() {
   }, [gameState, calculateTimeLeft, hasAnswered, handleTimeUp])
 
   const handleAnswerSubmit = async (answer: 'A' | 'B' | 'C' | 'D') => {
-    if (!profile || !currentQuestion || hasAnswered) return
+    if (!profile || !currentQuestion || hasAnswered || !gameState) return
 
     setSelectedAnswer(answer)
     setHasAnswered(true)
 
+    // 優先使用全局的 question_time_limit
+    const effectiveTimeLimit = gameState.question_time_limit || currentQuestion.time_limit || 30
     // 計算答題時間（從題目開始到現在的時間，精確到毫秒）
     const remainingTimeMs = calculateTimeLeft() // 剩餘毫秒數
-    const totalTimeMs = currentQuestion.time_limit * 1000 // 總時間毫秒數
+    const totalTimeMs = effectiveTimeLimit * 1000 // 總時間毫秒數
     const answerTime = Math.max(0, totalTimeMs - remainingTimeMs) // 已用時間毫秒數
 
     try {
@@ -160,13 +165,13 @@ export default function QuizPage() {
       })
 
       const result = await response.json()
-      
+
       if (!response.ok) {
         throw new Error(result.error || '提交答案失敗')
       }
 
       console.log('✅ 答題提交成功:', result.message)
-      
+
       // 可以在這裡顯示得分詳情（如果需要的話）
       if (result.score_details) {
         const { base_score, speed_bonus, rank_bonus, final_score } = result.score_details
@@ -282,19 +287,18 @@ export default function QuizPage() {
               key={option.key}
               onClick={() => handleAnswerSubmit(option.key)}
               disabled={hasAnswered}
-              className={`rounded-3xl text-white font-bold transition-all duration-200 shadow-2xl ${
-                selectedAnswer === option.key
+              className={`rounded-3xl text-white font-bold transition-all duration-200 shadow-2xl ${selectedAnswer === option.key
                   ? `${option.selectedColor} ring-8 ring-white scale-95`
                   : hasAnswered
                     ? 'bg-gray-400 opacity-70'
                     : `${option.color} cursor-pointer transform hover:scale-105 active:scale-95`
-              }`}
+                }`}
             >
               <div className="text-9xl font-black">{option.key}</div>
             </button>
           ))}
         </div>
-        
+
         {/* 下方預留空間 5% */}
         <div style={{ height: '5%' }}></div>
       </div>

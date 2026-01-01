@@ -61,24 +61,29 @@ export default function AdminDashboard() {
   } = useGameState(profile?.userId)
 
   const [displayDuration, setDisplayDuration] = useState<number>(3)
+  const [questionTimeLimit, setQuestionTimeLimit] = useState<number>(30)
   const [activeQuestionSet, setActiveQuestionSet] = useState<'formal' | 'test' | 'backup'>('formal')
   const [savingSettings, setSavingSettings] = useState(false)
 
-  // 當 gameState 載入時，更新 displayDuration 和 activeQuestionSet
+  // 當 gameState 載入時，更新設定
   useEffect(() => {
     if (gameState?.question_display_duration) {
       setDisplayDuration(gameState.question_display_duration)
     }
+    if (gameState?.question_time_limit) {
+      setQuestionTimeLimit(gameState.question_time_limit)
+    }
     if (gameState?.active_question_set) {
       setActiveQuestionSet(gameState.active_question_set)
     }
-  }, [gameState?.question_display_duration, gameState?.active_question_set])
+  }, [gameState?.question_display_duration, gameState?.question_time_limit, gameState?.active_question_set])
 
   const handleUpdateSettings = async () => {
     setSavingSettings(true)
     try {
       const success = await updateSettings({
         question_display_duration: displayDuration,
+        question_time_limit: questionTimeLimit,
         active_question_set: activeQuestionSet
       })
       if (success) {
@@ -467,7 +472,7 @@ export default function AdminDashboard() {
             {/* 設定區域 */}
             <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
               <h3 className="text-sm font-medium text-gray-700 mb-3">遊戲參數設定</h3>
-              <div className="flex items-end space-x-4">
+              <div className="flex flex-wrap items-end gap-4">
                 <div>
                   <label className="block text-xs text-gray-500 mb-1">題目顯示時間 (秒)</label>
                   <div className="flex items-center">
@@ -480,6 +485,21 @@ export default function AdminDashboard() {
                       className="w-20 px-3 py-2 border border-gray-300 rounded-md text-sm text-black focus:ring-blue-500 focus:border-blue-500"
                     />
                     <span className="ml-2 text-xs text-gray-500">秒後顯示選項</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">答題時間 (秒)</label>
+                  <div className="flex items-center">
+                    <input
+                      type="number"
+                      min="5"
+                      max="300"
+                      value={questionTimeLimit}
+                      onChange={(e) => setQuestionTimeLimit(parseInt(e.target.value) || 30)}
+                      className="w-20 px-3 py-2 border border-gray-300 rounded-md text-sm text-black focus:ring-blue-500 focus:border-blue-500"
+                    />
+                    <span className="ml-2 text-xs text-gray-500">秒作答時間</span>
                   </div>
                 </div>
 
@@ -505,7 +525,7 @@ export default function AdminDashboard() {
                 </button>
               </div>
               <p className="mt-2 text-xs text-gray-500">
-                設定題目顯示多久後才會出現選項。切換題庫後，下一題將從新題庫中選取。
+                設定會立即生效。「題目顯示時間」是題目顯示多久後才出現選項；「答題時間」是每題的總作答時限。
               </p>
             </div>
 

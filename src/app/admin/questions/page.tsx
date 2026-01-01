@@ -986,6 +986,7 @@ ${diagnosis.recommendations?.join('\n') || '無建議'}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         答題時間 (秒)
+                        <span className="ml-2 text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded">已停用</span>
                       </label>
                       <input
                         type="number"
@@ -993,8 +994,10 @@ ${diagnosis.recommendations?.join('\n') || '無建議'}
                         min="5"
                         value={formData.time_limit}
                         onChange={(e) => setFormData({ ...formData, time_limit: parseInt(e.target.value) || 0 })}
-                        className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 opacity-60"
+                        disabled
                       />
+                      <p className="text-xs text-gray-400 mt-1">請在控制台設定全局答題時間</p>
                     </div>
 
                     <div>

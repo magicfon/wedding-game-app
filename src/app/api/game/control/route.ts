@@ -409,6 +409,9 @@ export async function POST(request: Request) {
         if (typeof settings.question_display_duration === 'number') {
           settingsUpdateData.question_display_duration = settings.question_display_duration;
         }
+        if (typeof settings.question_time_limit === 'number') {
+          settingsUpdateData.question_time_limit = settings.question_time_limit;
+        }
         if (settings.active_question_set) {
           settingsUpdateData.active_question_set = settings.active_question_set;
         }
@@ -502,13 +505,14 @@ export async function GET() {
       .eq('is_active', true)
       .eq('category', activeSet);
 
-    // 計算剩餘時間
+    // 計算剩餘時間 - 優先使用全局設定的 question_time_limit
     let timeRemaining = 0;
-    if (gameState?.question_start_time && gameState?.questions?.time_limit && !gameState?.is_paused) {
+    const effectiveTimeLimit = gameState?.question_time_limit || gameState?.questions?.time_limit || 30;
+    if (gameState?.question_start_time && !gameState?.is_paused) {
       const startTime = new Date(gameState.question_start_time).getTime();
       const currentTime = new Date().getTime();
       const elapsed = Math.floor((currentTime - startTime) / 1000);
-      timeRemaining = Math.max(0, (gameState.questions.time_limit || 30) - elapsed);
+      timeRemaining = Math.max(0, effectiveTimeLimit - elapsed);
     }
 
     // 檢查是否還有下一題
