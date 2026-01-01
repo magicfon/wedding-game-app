@@ -11,7 +11,7 @@ export default function AdminMenuTestPage() {
   const adminMenuItems = [
     { name: '控制台', href: '/admin/dashboard', icon: 'BarChart3' },
     { name: '題目管理', href: '/admin/questions', icon: 'HelpCircle' },
-    { name: '批量設定', href: '/admin/batch-settings', icon: 'Settings' },
+
     { name: '分數管理', href: '/admin/scores', icon: 'Trophy' },
     { name: '積分歷史', href: '/admin/score-history', icon: 'Trophy' },
     { name: '計分規則', href: '/admin/scoring-rules', icon: 'Settings' },

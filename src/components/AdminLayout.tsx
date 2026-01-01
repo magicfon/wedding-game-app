@@ -63,7 +63,7 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
     { name: '積分歷史', href: '/admin/score-history', icon: Trophy },
     { name: '照片摸彩', href: '/admin/lottery', icon: Gift },
     { name: '投票設定', href: '/admin/voting-settings', icon: Trophy },
-    { name: '批量設定', href: '/admin/batch-settings', icon: Settings },
+
     { name: '計分規則', href: '/admin/scoring-rules', icon: Settings },
     { name: 'Rich Menu 管理', href: '/admin/richmenu', icon: ImageIcon, systemOnly: true },
     { name: '系統設定', href: '/admin/system-settings', icon: Settings, systemOnly: true },

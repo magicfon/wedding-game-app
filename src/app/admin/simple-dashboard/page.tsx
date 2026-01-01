@@ -121,13 +121,7 @@ export default function SimpleDashboard() {
       href: '/admin/voting-settings',
       color: 'bg-indigo-500'
     },
-    {
-      title: '批量設定',
-      description: '批量管理遊戲設定',
-      icon: Settings,
-      href: '/admin/batch-settings',
-      color: 'bg-blue-500'
-    },
+
     {
       title: '計分規則',
       description: '設定遊戲計分規則',
