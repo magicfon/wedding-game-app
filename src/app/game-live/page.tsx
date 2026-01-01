@@ -781,7 +781,7 @@ export default function GameLivePage() {
                             {/* 答題統計 (倒數結束後顯示) */}
                             {timeLeft <= 0 && (
                               <div className="flex-shrink-0 bg-white bg-opacity-20 rounded-full px-2 py-1">
-                                <span className="text-white font-bold text-xs md:text-sm">
+                                <span className="text-black font-bold text-xs md:text-sm">
                                   {distribution?.count || 0}人 ({percentage}%)
                                 </span>
                               </div>
