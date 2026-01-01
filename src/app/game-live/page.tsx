@@ -68,7 +68,7 @@ export default function GameLivePage() {
   // 背景音樂（遊戲進行時播放）
   const { tryPlay: tryPlayBgm } = useBackgroundMusic({
     url: '/sounds/game-start.mp3',
-    enabled: isSoundEnabled && gameState?.is_game_active && !gameState?.is_paused,
+    enabled: isSoundEnabled && Boolean(gameState?.is_game_active) && !gameState?.is_paused,
     volume: 0.3
   })
 
