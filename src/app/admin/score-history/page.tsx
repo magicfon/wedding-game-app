@@ -86,6 +86,11 @@ export default function AdminScoreHistoryPage() {
 
       if (data.success) {
         setHistory(data.history)
+        // 更新 selectedUser 的總分為 API 回傳的最新值
+        setSelectedUser(prev => prev ? {
+          ...prev,
+          total_score: data.user.current_total_score
+        } : null)
       } else {
         setHistory([])
       }
@@ -312,8 +317,8 @@ export default function AdminScoreHistoryPage() {
                                       <span>用時: {formatAnswerTime(record.details.answer_time)}</span>
                                     )}
                                     <span className={`px-2 py-1 rounded-full text-xs ${record.details.is_correct ? 'bg-green-100 text-green-800' :
-                                        record.details.is_timeout ? 'bg-red-100 text-red-800' :
-                                          'bg-gray-100 text-gray-800'
+                                      record.details.is_timeout ? 'bg-red-100 text-red-800' :
+                                        'bg-gray-100 text-gray-800'
                                       }`}>
                                       {record.details.is_correct ? '答對' :
                                         record.details.is_timeout ? '超時' : '答錯'}
