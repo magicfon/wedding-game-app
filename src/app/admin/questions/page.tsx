@@ -969,6 +969,7 @@ ${diagnosis.recommendations?.join('\n') || '無建議'}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         分數權重
+                        <span className="ml-2 text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded">已停用</span>
                       </label>
                       <input
                         type="number"
@@ -976,8 +977,10 @@ ${diagnosis.recommendations?.join('\n') || '無建議'}
                         min="1"
                         value={formData.points}
                         onChange={(e) => setFormData({ ...formData, points: parseInt(e.target.value) || 0 })}
-                        className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 opacity-60"
+                        disabled
                       />
+                      <p className="text-xs text-gray-400 mt-1">目前使用全域計分規則</p>
                     </div>
 
                     <div>
@@ -1011,8 +1014,11 @@ ${diagnosis.recommendations?.join('\n') || '無建議'}
                   </div>
 
                   <div className="border-t border-gray-200 pt-4 space-y-4">
+                    <p className="text-xs text-gray-400 bg-gray-100 px-3 py-2 rounded-lg">
+                      ⚠️ 以下計分設定已停用，目前使用全域計分規則（答對：50分+隨機1-50分，答錯：參與獎50分）
+                    </p>
                     {/* 答錯扣分 */}
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between opacity-50">
                       <div className="flex items-center space-x-2">
                         <input
                           type="checkbox"
@@ -1020,9 +1026,10 @@ ${diagnosis.recommendations?.join('\n') || '無建議'}
                           checked={formData.penalty_enabled}
                           onChange={(e) => setFormData({ ...formData, penalty_enabled: e.target.checked })}
                           className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          disabled
                         />
-                        <label htmlFor="penalty_enabled" className="text-sm font-medium text-gray-700">
-                          啟用答錯扣分
+                        <label htmlFor="penalty_enabled" className="text-sm font-medium text-gray-500">
+                          啟用答錯扣分 <span className="text-xs text-gray-400">(已停用)</span>
                         </label>
                       </div>
                       {formData.penalty_enabled && (
@@ -1033,12 +1040,13 @@ ${diagnosis.recommendations?.join('\n') || '無建議'}
                           onChange={(e) => setFormData({ ...formData, penalty_score: parseInt(e.target.value) || 0 })}
                           className="w-24 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
                           placeholder="扣分分數"
+                          disabled
                         />
                       )}
                     </div>
 
                     {/* 超時扣分 */}
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between opacity-50">
                       <div className="flex items-center space-x-2">
                         <input
                           type="checkbox"
@@ -1046,9 +1054,10 @@ ${diagnosis.recommendations?.join('\n') || '無建議'}
                           checked={formData.timeout_penalty_enabled}
                           onChange={(e) => setFormData({ ...formData, timeout_penalty_enabled: e.target.checked })}
                           className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          disabled
                         />
-                        <label htmlFor="timeout_penalty_enabled" className="text-sm font-medium text-gray-700">
-                          啟用超時扣分
+                        <label htmlFor="timeout_penalty_enabled" className="text-sm font-medium text-gray-500">
+                          啟用超時扣分 <span className="text-xs text-gray-400">(已停用)</span>
                         </label>
                       </div>
                       {formData.timeout_penalty_enabled && (
@@ -1059,12 +1068,13 @@ ${diagnosis.recommendations?.join('\n') || '無建議'}
                           onChange={(e) => setFormData({ ...formData, timeout_penalty_score: parseInt(e.target.value) || 0 })}
                           className="w-24 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
                           placeholder="扣分分數"
+                          disabled
                         />
                       )}
                     </div>
 
                     {/* 速度加成 */}
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between opacity-50">
                       <div className="flex items-center space-x-2">
                         <input
                           type="checkbox"
@@ -1072,9 +1082,10 @@ ${diagnosis.recommendations?.join('\n') || '無建議'}
                           checked={formData.speed_bonus_enabled}
                           onChange={(e) => setFormData({ ...formData, speed_bonus_enabled: e.target.checked })}
                           className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          disabled
                         />
-                        <label htmlFor="speed_bonus_enabled" className="text-sm font-medium text-gray-700">
-                          啟用速度加成
+                        <label htmlFor="speed_bonus_enabled" className="text-sm font-medium text-gray-500">
+                          啟用速度加成 <span className="text-xs text-gray-400">(已停用)</span>
                         </label>
                       </div>
                       {formData.speed_bonus_enabled && (
@@ -1085,6 +1096,7 @@ ${diagnosis.recommendations?.join('\n') || '無建議'}
                           onChange={(e) => setFormData({ ...formData, max_bonus_points: parseInt(e.target.value) || 0 })}
                           className="w-24 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
                           placeholder="最大加分"
+                          disabled
                         />
                       )}
                     </div>
