@@ -1,22 +1,20 @@
 'use client'
 
 import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import { Car, Train, MapPin, ExternalLink, Loader2 } from 'lucide-react'
 import Image from 'next/image'
 import { useLiff } from '@/hooks/useLiff'
 
 export default function TransportPage() {
-  const router = useRouter()
-  const { isReady, isLoggedIn, loading: liffLoading } = useLiff()
+  const { isReady, isLoggedIn, login, loading: liffLoading } = useLiff()
 
-  // 檢查登入狀態
+  // 檢查登入狀態，未登入則觸發登入流程
   useEffect(() => {
     if (isReady && !liffLoading && !isLoggedIn) {
-      alert('請先登入才能查看交通資訊')
-      router.push('/')
+      // LIFF login 會自動導回當前頁面
+      login()
     }
-  }, [isReady, isLoggedIn, liffLoading, router])
+  }, [isReady, isLoggedIn, liffLoading, login])
 
   // 載入中
   if (!isReady || liffLoading) {
