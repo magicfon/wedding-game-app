@@ -505,9 +505,14 @@ export async function GET() {
       .eq('is_active', true)
       .eq('category', activeSet);
 
-    // 計算剩餘時間 - 優先使用全局設定的 question_time_limit
+    // 計算剩餘時間
+    // 總答題時間 = 題目顯示時間（每題個別設定）+ 全域答題時間
     let timeRemaining = 0;
-    const effectiveTimeLimit = gameState?.question_time_limit || gameState?.questions?.time_limit || 30;
+    // 題目顯示時間（每題個別設定），預設 5 秒
+    const displayTime = gameState?.questions?.time_limit || 5;
+    // 全域答題時間，預設 15 秒
+    const answerTimeSetting = gameState?.question_time_limit || 15;
+    const effectiveTimeLimit = displayTime + answerTimeSetting;
     if (gameState?.question_start_time && !gameState?.is_paused) {
       const startTime = new Date(gameState.question_start_time).getTime();
       const currentTime = new Date().getTime();

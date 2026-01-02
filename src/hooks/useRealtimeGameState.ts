@@ -145,7 +145,8 @@ export function useRealtimeGameState() {
     })
   }, [fetchGameState, fetchQuestionOnly])
 
-  // 計算剩餘時間（精確到毫秒）- 優先使用全局設定的 question_time_limit
+  // 計算剩餘時間（精確到毫秒）
+  // 總答題時間 = 每題個別的顯示時間 + 全域答題時間
   const calculateTimeLeft = useCallback((): number => {
     const isWaitingForPlayers = gameState?.is_waiting_for_players !== undefined
       ? gameState.is_waiting_for_players
@@ -155,8 +156,13 @@ export function useRealtimeGameState() {
       return 0
     }
 
-    // 優先使用全局的 question_time_limit，否則使用個別題目的 time_limit
-    const effectiveTimeLimit = gameState.question_time_limit || currentQuestion?.time_limit || 30
+    // 題目顯示時間（每題個別設定），預設 5 秒
+    const displayTime = currentQuestion?.time_limit || 5
+    // 全域答題時間，預設 15 秒
+    const answerTime = gameState.question_time_limit || 15
+    // 總答題時間 = 顯示時間 + 答題時間
+    const effectiveTimeLimit = displayTime + answerTime
+
     const startTime = new Date(gameState.question_start_time).getTime()
     const now = Date.now()
     const elapsedMs = now - startTime

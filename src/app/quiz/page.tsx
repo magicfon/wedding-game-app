@@ -85,8 +85,10 @@ export default function QuizPage() {
 
     setHasAnswered(true)
 
-    // 優先使用全局的 question_time_limit
-    const effectiveTimeLimit = gameState.question_time_limit || currentQuestion.time_limit || 30
+    // 總答題時間 = 題目顯示時間 + 全域答題時間
+    const displayTime = currentQuestion.time_limit || 5
+    const answerTime = gameState.question_time_limit || 15
+    const effectiveTimeLimit = displayTime + answerTime
 
     try {
       // 使用新的計分 API 處理超時
@@ -141,8 +143,10 @@ export default function QuizPage() {
     setSelectedAnswer(answer)
     setHasAnswered(true)
 
-    // 優先使用全局的 question_time_limit
-    const effectiveTimeLimit = gameState.question_time_limit || currentQuestion.time_limit || 30
+    // 總答題時間 = 題目顯示時間 + 全域答題時間
+    const displayTime = currentQuestion.time_limit || 5
+    const answerTimeSetting = gameState.question_time_limit || 15
+    const effectiveTimeLimit = displayTime + answerTimeSetting
     // 計算答題時間（從題目開始到現在的時間，精確到毫秒）
     const remainingTimeMs = calculateTimeLeft() // 剩餘毫秒數
     const totalTimeMs = effectiveTimeLimit * 1000 // 總時間毫秒數
@@ -288,10 +292,10 @@ export default function QuizPage() {
               onClick={() => handleAnswerSubmit(option.key)}
               disabled={hasAnswered}
               className={`rounded-3xl text-white font-bold transition-all duration-200 shadow-2xl ${selectedAnswer === option.key
-                  ? `${option.selectedColor} ring-8 ring-white scale-95`
-                  : hasAnswered
-                    ? 'bg-gray-400 opacity-70'
-                    : `${option.color} cursor-pointer transform hover:scale-105 active:scale-95`
+                ? `${option.selectedColor} ring-8 ring-white scale-95`
+                : hasAnswered
+                  ? 'bg-gray-400 opacity-70'
+                  : `${option.color} cursor-pointer transform hover:scale-105 active:scale-95`
                 }`}
             >
               <div className="text-9xl font-black">{option.key}</div>

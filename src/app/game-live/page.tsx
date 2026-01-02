@@ -116,17 +116,15 @@ export default function GameLivePage() {
     setDisplayPhase('question')
 
     // 根據媒體類型設定切換時間
-    let switchDelay = 3000 // 預設3秒
+    // 使用每道題目的 time_limit 作為顯示時間，預設 5 秒
+    let switchDelay = (currentQuestion.time_limit || 5) * 1000
 
-    // 優先使用後台設定的顯示時間 (如果是圖片或純文字)
-    if (currentQuestion.media_type !== 'video' && gameState.question_display_duration) {
-      switchDelay = gameState.question_display_duration * 1000
-    } else if (currentQuestion.media_type === 'video' && currentQuestion.media_duration) {
-      // 如果有影片長度資訊，使用影片長度
+    // 如果是影片且有長度資訊，使用影片長度
+    if (currentQuestion.media_type === 'video' && currentQuestion.media_duration) {
       switchDelay = currentQuestion.media_duration * 1000
-    } else if (currentQuestion.media_type === 'video') {
-      // 沒有長度資訊的影片，預設5秒
-      switchDelay = 5000
+    } else if (currentQuestion.media_type === 'video' && !currentQuestion.media_duration) {
+      // 沒有長度資訊的影片，預設使用題目設定的時間
+      switchDelay = (currentQuestion.time_limit || 5) * 1000
     }
 
     // 設定切換到選項階段的計時器
@@ -142,7 +140,7 @@ export default function GameLivePage() {
         clearTimeout(timer)
       }
     }
-  }, [currentQuestion?.id, gameState?.is_game_active, gameState?.is_paused, gameState?.question_display_duration])
+  }, [currentQuestion?.id, currentQuestion?.time_limit, gameState?.is_game_active, gameState?.is_paused])
 
   // 背景音樂現在由 useBackgroundMusic hook 管理，不再需要這段邏輯
 

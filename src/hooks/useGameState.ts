@@ -160,11 +160,17 @@ export function useGameState(adminLineId?: string) {
       return;
     }
 
-    // 計算初始剩餘時間 - 優先使用全局的 question_time_limit
+    // 計算初始剩餘時間
+    // 總答題時間 = 題目顯示時間（每題個別設定）+ 全域答題時間
     const calculateTimeRemaining = () => {
       if (!gameState.question_start_time) return 0;
 
-      const effectiveTimeLimit = gameState.question_time_limit || gameState.questions?.time_limit || 30;
+      // 題目顯示時間（每題個別設定），預設 5 秒
+      const displayTime = gameState.questions?.time_limit || 5;
+      // 全域答題時間，預設 15 秒
+      const answerTimeSetting = gameState.question_time_limit || 15;
+      const effectiveTimeLimit = displayTime + answerTimeSetting;
+
       const startTime = new Date(gameState.question_start_time).getTime();
       const currentTime = new Date().getTime();
       const elapsed = Math.floor((currentTime - startTime) / 1000);
