@@ -47,6 +47,7 @@ export default function GameLivePage() {
   // 音效播放狀態追蹤（防止重複播放）
   const correctAnswerPlayedRef = useRef<number | null>(null)
   const leaderboardPlayedRef = useRef<number | null>(null)
+  const countdownPlayingRef = useRef<boolean>(false)
 
   // 從 localStorage 初始化狀態，以防組件重新載入
   const [showingCorrectOnly, setShowingCorrectOnly] = useState<boolean>(() => {
@@ -63,7 +64,7 @@ export default function GameLivePage() {
   const { gameState, currentQuestion, loading, calculateTimeLeft } = useRealtimeGameState()
 
   // 使用音效系統
-  const { isSoundEnabled, toggleSound, playSound, preloadSounds, isLoaded } = useSoundEffects()
+  const { isSoundEnabled, toggleSound, playSound, stopSound, preloadSounds, isLoaded } = useSoundEffects()
 
   // 背景音樂（遊戲進行時播放）
   const { tryPlay: tryPlayBgm } = useBackgroundMusic({
@@ -176,6 +177,29 @@ export default function GameLivePage() {
       // 不再自動跳轉到排行榜，由管理控制台的「排行榜」按鈕手動控制
     }
   }, [displayPhase, timeLeft, currentQuestion])
+
+  // 倒數五秒音效（剩餘5秒時開始播放，時間結束後停止）
+  useEffect(() => {
+    if (displayPhase === 'options' && currentQuestion) {
+      // 當剩餘時間 <= 5秒且 > 0秒時，開始播放倒數音效
+      if (timeLeft <= 5000 && timeLeft > 0 && !countdownPlayingRef.current) {
+        countdownPlayingRef.current = true
+        playSound('COUNTDOWN')
+        console.log('🔔 開始播放倒數音效')
+      }
+      // 當時間結束時，停止倒數音效
+      if (timeLeft <= 0 && countdownPlayingRef.current) {
+        countdownPlayingRef.current = false
+        stopSound('COUNTDOWN')
+        console.log('🔔 停止倒數音效')
+      }
+    }
+  }, [displayPhase, timeLeft, currentQuestion, playSound, stopSound])
+
+  // 當題目切換時，重置倒數音效狀態
+  useEffect(() => {
+    countdownPlayingRef.current = false
+  }, [currentQuestion?.id])
 
   // 時間結束音效
   useEffect(() => {

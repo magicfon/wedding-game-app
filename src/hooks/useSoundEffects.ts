@@ -22,6 +22,7 @@ interface UseSoundEffectsReturn {
   isSoundEnabled: boolean
   toggleSound: () => void
   playSound: (soundId: SoundEffectType) => void
+  stopSound: (soundId: SoundEffectType) => void
   preloadSounds: () => Promise<void>
   isLoaded: boolean
 }
@@ -135,6 +136,24 @@ export const useSoundEffects = (): UseSoundEffectsReturn => {
     }
   }, [isLoaded])
 
+  // 停止播放遊戲音效
+  const stopSound = useCallback((soundId: SoundEffectType) => {
+    try {
+      const audio = audioCache.current.get(soundId)
+
+      if (!audio) {
+        console.log(`🔇 找不到音效: ${soundId}`)
+        return
+      }
+
+      audio.pause()
+      audio.currentTime = 0
+      console.log(`⏹️ 停止音效: ${soundId}`)
+    } catch (error) {
+      console.error(`❌ 停止音效時發生錯誤: ${soundId}`, error)
+    }
+  }, [])
+
   // 組件掛載時預載音效
   useEffect(() => {
     preloadSounds()
@@ -144,6 +163,7 @@ export const useSoundEffects = (): UseSoundEffectsReturn => {
     isSoundEnabled,
     toggleSound,
     playSound,
+    stopSound,
     preloadSounds,
     isLoaded,
   }
