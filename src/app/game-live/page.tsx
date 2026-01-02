@@ -1172,22 +1172,22 @@ function WaitingStage({ gameState }: { gameState: any }) {
         </div>
 
         {/* 遊戲計分規則 */}
-        <div className="mt-8 bg-white bg-opacity-10 backdrop-blur-md rounded-3xl p-6">
-          <h3 className="text-2xl md:text-3xl font-bold text-white mb-4 flex items-center justify-center gap-3">
+        <div className="mt-10 bg-white bg-opacity-20 backdrop-blur-md rounded-3xl p-8">
+          <h3 className="text-3xl md:text-5xl font-bold text-black mb-6 flex items-center justify-center gap-4">
             <span>🎲</span> 遊戲計分規則
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-white">
-            <div className="bg-white bg-opacity-10 rounded-2xl p-4 text-center">
-              <div className="text-4xl mb-2">✅</div>
-              <div className="text-lg font-semibold mb-1">答對</div>
-              <div className="text-2xl font-bold text-green-300">51~100 分</div>
-              <div className="text-xs opacity-70 mt-1">基礎50分 + 隨機骰1~50分</div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-black">
+            <div className="bg-white bg-opacity-30 rounded-2xl p-6 text-center">
+              <div className="text-6xl mb-3">✅</div>
+              <div className="text-2xl font-semibold mb-2">答對</div>
+              <div className="text-4xl font-bold text-green-600">51~100 分</div>
+              <div className="text-sm opacity-80 mt-2">基礎50分 + 隨機骰1~50分</div>
             </div>
-            <div className="bg-white bg-opacity-10 rounded-2xl p-4 text-center">
-              <div className="text-4xl mb-2">🎯</div>
-              <div className="text-lg font-semibold mb-1">答錯參與獎</div>
-              <div className="text-2xl font-bold text-yellow-300">50 分</div>
-              <div className="text-xs opacity-70 mt-1">鼓勵大家踴躍答題！</div>
+            <div className="bg-white bg-opacity-30 rounded-2xl p-6 text-center">
+              <div className="text-6xl mb-3">🎯</div>
+              <div className="text-2xl font-semibold mb-2">答錯參與獎</div>
+              <div className="text-4xl font-bold text-yellow-600">50 分</div>
+              <div className="text-sm opacity-80 mt-2">鼓勵大家踴躍答題！</div>
             </div>
           </div>
         </div>
