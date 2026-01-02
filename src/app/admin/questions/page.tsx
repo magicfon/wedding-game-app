@@ -986,19 +986,18 @@ ${diagnosis.recommendations?.join('\n') || '無建議'}
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        答題時間 (秒)
-                        <span className="ml-2 text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded">已停用</span>
+                        題目顯示時間 (秒)
                       </label>
                       <input
                         type="number"
                         required
-                        min="5"
+                        min="1"
+                        max="60"
                         value={formData.time_limit}
-                        onChange={(e) => setFormData({ ...formData, time_limit: parseInt(e.target.value) || 0 })}
-                        className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 opacity-60"
-                        disabled
+                        onChange={(e) => setFormData({ ...formData, time_limit: parseInt(e.target.value) || 5 })}
+                        className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                       />
-                      <p className="text-xs text-gray-400 mt-1">請在控制台設定全局答題時間</p>
+                      <p className="text-xs text-gray-500 mt-1">題目出現後，顯示多久才開始倒數答題（預設 5 秒）</p>
                     </div>
 
                     <div>
