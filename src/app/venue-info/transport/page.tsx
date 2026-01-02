@@ -1,9 +1,37 @@
 'use client'
 
-import { Car, Train, MapPin, ExternalLink } from 'lucide-react'
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { Car, Train, MapPin, ExternalLink, Loader2 } from 'lucide-react'
 import Image from 'next/image'
+import { useLiff } from '@/hooks/useLiff'
 
 export default function TransportPage() {
+  const router = useRouter()
+  const { isReady, isLoggedIn, loading: liffLoading } = useLiff()
+
+  // 檢查登入狀態
+  useEffect(() => {
+    if (isReady && !liffLoading && !isLoggedIn) {
+      alert('請先登入才能查看交通資訊')
+      router.push('/')
+    }
+  }, [isReady, isLoggedIn, liffLoading, router])
+
+  // 載入中
+  if (!isReady || liffLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-amber-50 to-white flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-amber-600 animate-spin" />
+      </div>
+    )
+  }
+
+  // 未登入不顯示內容
+  if (!isLoggedIn) {
+    return null
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-amber-50 to-white">
       {/* 頂部導航 */}

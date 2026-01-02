@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Users, Search, Loader2 } from 'lucide-react'
 import { useLiff } from '@/hooks/useLiff'
 
@@ -11,7 +12,16 @@ interface Guest {
 }
 
 export default function TablePage() {
-    const { profile, isReady } = useLiff()
+    const router = useRouter()
+    const { profile, isReady, isLoggedIn, loading: liffLoading } = useLiff()
+
+    // 檢查登入狀態
+    useEffect(() => {
+        if (isReady && !liffLoading && !isLoggedIn) {
+            alert('請先登入才能查看桌次')
+            router.push('/')
+        }
+    }, [isReady, isLoggedIn, liffLoading, router])
     const [myTable, setMyTable] = useState<string | null>(null)
     const [myName, setMyName] = useState<string | null>(null)
     const [searchQuery, setSearchQuery] = useState('')
@@ -69,6 +79,20 @@ export default function TablePage() {
 
         return () => clearTimeout(delayDebounceFn)
     }, [searchQuery])
+
+    // 載入中
+    if (!isReady || liffLoading) {
+        return (
+            <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white flex items-center justify-center">
+                <Loader2 className="w-8 h-8 text-purple-600 animate-spin" />
+            </div>
+        )
+    }
+
+    // 未登入不顯示內容
+    if (!isLoggedIn) {
+        return null
+    }
 
     return (
         <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">
