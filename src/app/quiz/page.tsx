@@ -235,12 +235,13 @@ export default function QuizPage() {
           <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md mx-auto">
             <Trophy className="w-16 h-16 text-gray-400 mx-auto mb-6" />
             <h2 className="text-2xl font-bold text-gray-800 mb-4">遊戲暫未開始</h2>
-            <p className="text-gray-600 mb-6">請等待主持人開始遊戲</p>
+            <p className="text-gray-600 mb-4">請等待主持人開始遊戲</p>
+            <p className="text-sm text-gray-400 mb-4">如果畫面長時間未更新，請點擊下方按鈕</p>
             <button
-              onClick={() => router.push('/')}
-              className="bg-pink-500 hover:bg-pink-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
+              onClick={() => window.location.reload()}
+              className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
             >
-              返回首頁
+              重新整理
             </button>
           </div>
         </div>
