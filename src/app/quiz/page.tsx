@@ -269,7 +269,14 @@ export default function QuizPage() {
           <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md mx-auto">
             <Users className="w-16 h-16 text-blue-500 mx-auto mb-6" />
             <h2 className="text-2xl font-bold text-gray-800 mb-4">準備中</h2>
-            <p className="text-gray-600">正在載入題目...</p>
+            <p className="text-gray-600 mb-4">正在載入題目...</p>
+            <p className="text-sm text-gray-400 mb-4">如果畫面長時間未更新，請點擊下方按鈕</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg transition-colors duration-200"
+            >
+              重新同步
+            </button>
           </div>
         </div>
       </Layout>

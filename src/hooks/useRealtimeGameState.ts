@@ -172,12 +172,30 @@ export function useRealtimeGameState() {
     return remainingMs
   }, [gameState, currentQuestion])
 
+  // 備用輪詢機制的 ref，確保清理時可以正確停止
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null)
+
   useEffect(() => {
     // 只在首次載入時獲取完整狀態
     if (!initializedRef.current) {
       initializedRef.current = true
       fetchGameState()
     }
+
+    // 備用輪詢機制：每 5 秒同步一次，確保不會錯過狀態更新
+    // 這是為了防止 Realtime 訂閱失連導致用戶停留在等待畫面
+    const startPolling = () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current)
+      }
+      pollIntervalRef.current = setInterval(() => {
+        console.log('🔄 備用輪詢：同步遊戲狀態')
+        fetchGameState()
+      }, 5000)
+    }
+
+    // 開始輪詢（遊戲進行中時會持續）
+    startPolling()
 
     // 訂閱遊戲狀態變化
     const channel = supabase
@@ -198,9 +216,21 @@ export function useRealtimeGameState() {
           setCurrentQuestion(payload.new as Question)
         }
       })
-      .subscribe()
+      .subscribe((status) => {
+        // 監控 Realtime 連線狀態
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ Realtime 已連線')
+        } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+          console.warn('⚠️ Realtime 連線中斷，立即重新獲取狀態')
+          fetchGameState()
+        }
+      })
 
     return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current)
+        pollIntervalRef.current = null
+      }
       channel.unsubscribe()
     }
   }, [supabase, fetchGameState, handleGameStateChange])
