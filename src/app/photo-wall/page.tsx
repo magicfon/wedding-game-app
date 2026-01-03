@@ -677,12 +677,6 @@ export default function PhotoWallPage() {
                 {/* 投票區域 - 右上角 */}
                 {votingEnabled && (
                   <div className="absolute top-4 right-4 flex items-center space-x-3">
-                    {/* 得票數顯示 */}
-                    <div className="bg-pink-500/90 backdrop-blur-sm px-4 py-2 rounded-full flex items-center space-x-2 shadow-lg">
-                      <Heart className="w-5 h-5 fill-current text-white" />
-                      <span className="font-semibold text-white">{selectedPhoto.vote_count}</span>
-                    </div>
-
                     {/* 投票按鈕 */}
                     <button
                       onClick={(e) => {

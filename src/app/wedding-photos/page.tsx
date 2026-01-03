@@ -316,8 +316,8 @@ export default function WeddingPhotosPage() {
                             <button
                                 onClick={() => setSortByVotes(!sortByVotes)}
                                 className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-all duration-200 ml-4 ${sortByVotes
-                                        ? 'bg-pink-500 text-white shadow-md'
-                                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                    ? 'bg-pink-500 text-white shadow-md'
+                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                                     }`}
                                 title={sortByVotes ? '依得票數排序中' : '點擊依得票數排序'}
                             >
@@ -437,12 +437,6 @@ export default function WeddingPhotosPage() {
                             {/* 投票區域 - 右上角 */}
                             {votingEnabled && (
                                 <div className="absolute top-4 right-4 flex items-center space-x-3">
-                                    {/* 得票數顯示 */}
-                                    <div className="bg-pink-500/90 backdrop-blur-sm px-4 py-2 rounded-full flex items-center space-x-2 shadow-lg">
-                                        <Heart className="w-5 h-5 fill-current text-white" />
-                                        <span className="font-semibold text-white">{selectedPhoto.vote_count}</span>
-                                    </div>
-
                                     {/* 投票按鈕 */}
                                     <button
                                         onClick={(e) => {
