@@ -1006,7 +1006,7 @@ export default function LotteryLivePage() {
       </div>
 
       {/* 中獎照片放大動畫 - 從原位置放大到左側900x900位置 */}
-      {!isAnimating && zoomingWinner && winnerPhoto && winnerPhotoRect && (() => {
+      {!isAnimating && zoomingWinner && selectedWinnerPhoto && winnerPhotoRect && (() => {
         // 目標尺寸（左側大照片）
         const targetSize = 900
 
@@ -1063,8 +1063,8 @@ export default function LotteryLivePage() {
             <div className="relative w-full h-full">
               <div className="absolute -inset-6 bg-gradient-to-r from-yellow-400 via-orange-400 to-pink-400 rounded-3xl animate-pulse blur-2xl opacity-75"></div>
               <img
-                src={winnerPhoto.image_url}
-                alt={winnerPhoto.display_name}
+                src={selectedWinnerPhoto.image_url}
+                alt={selectedWinnerPhoto.display_name}
                 className="relative w-full h-full object-cover rounded-3xl border-8 border-white shadow-2xl"
                 onError={(e) => {
                   e.currentTarget.src = '/default-avatar.png'
@@ -1076,16 +1076,16 @@ export default function LotteryLivePage() {
       })()}
 
       {/* 中獎照片放大特寫 - 左右分欄布局 */}
-      {!isAnimating && showingWinner && !zoomingWinner && winnerPhoto && (
+      {!isAnimating && showingWinner && !zoomingWinner && selectedWinnerPhoto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 animate-in fade-in duration-500">
           <div className="flex items-center justify-center gap-12 px-8" style={{ width: `${DESIGN_WIDTH * scale}px`, height: `${DESIGN_HEIGHT * scale}px` }}>
             {/* 左側：中獎照片 */}
             <div className="relative flex-shrink-0 animate-in zoom-in duration-500" style={{ willChange: 'transform' }}>
               <div className="absolute -inset-6 bg-gradient-to-r from-yellow-400 via-orange-400 to-pink-400 rounded-3xl animate-pulse blur-2xl opacity-75"></div>
-              {winnerPhoto.media_type === 'video' ? (
+              {selectedWinnerPhoto.media_type === 'video' ? (
                 <video
-                  src={winnerPhoto.image_url}
-                  poster={winnerPhoto.thumbnail_large_url}
+                  src={selectedWinnerPhoto.image_url}
+                  poster={selectedWinnerPhoto.thumbnail_large_url}
                   autoPlay
                   controls
                   className="relative object-cover rounded-3xl border-8 border-white shadow-2xl bg-black"
@@ -1096,8 +1096,8 @@ export default function LotteryLivePage() {
                 />
               ) : (
                 <img
-                  src={winnerPhoto.image_url}
-                  alt={winnerPhoto.display_name}
+                  src={selectedWinnerPhoto.image_url}
+                  alt={selectedWinnerPhoto.display_name}
                   style={{
                     width: `${900 * scale}px`,
                     height: `${900 * scale}px`
@@ -1126,8 +1126,8 @@ export default function LotteryLivePage() {
               <div className="bg-white/95 rounded-3xl shadow-2xl animate-in slide-in-from-right duration-500 delay-150" style={{ padding: `${2.5 * scale}rem` }}>
                 <div className="flex items-center mb-8" style={{ gap: `${2 * scale}rem` }}>
                   <img
-                    src={winnerPhoto.avatar_url || '/default-avatar.png'}
-                    alt={winnerPhoto.display_name}
+                    src={selectedWinnerPhoto.avatar_url || '/default-avatar.png'}
+                    alt={selectedWinnerPhoto.display_name}
                     className="rounded-full border-8 border-green-400 shadow-lg flex-shrink-0"
                     style={{ width: `${8 * scale}rem`, height: `${8 * scale}rem` }}
                   />
@@ -1137,12 +1137,12 @@ export default function LotteryLivePage() {
                       className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-500 to-emerald-500 break-words leading-tight"
                       style={{ fontSize: `${3.75 * scale}rem` }} // 60px * scale
                     >
-                      {winnerPhoto.display_name}
+                      {selectedWinnerPhoto.display_name}
                     </h2>
                   </div>
                 </div>
 
-                {winnerPhoto.blessing_message && (
+                {selectedWinnerPhoto.blessing_message && (
                   <div className="flex items-start" style={{ gap: `${1 * scale}rem` }}>
                     <Heart className="text-red-500 mt-1 flex-shrink-0" style={{ width: `${2.5 * scale}rem`, height: `${2.5 * scale}rem` }} />
                     <div className="flex-1 min-w-0">
@@ -1153,7 +1153,7 @@ export default function LotteryLivePage() {
                           maxHeight: `${400 * scale}px`
                         }}
                       >
-                        「{winnerPhoto.blessing_message}」
+                        「{selectedWinnerPhoto.blessing_message}」
                       </p>
                     </div>
                   </div>
