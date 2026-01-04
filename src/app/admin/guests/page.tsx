@@ -989,7 +989,7 @@ export default function GuestManagementPage() {
                                                             className="w-14 px-2 py-1 border border-purple-300 rounded text-sm text-center"
                                                         />
                                                     ) : (
-                                                        <span className="text-gray-700">{guest.adults || 1}</span>
+                                                        <span className="text-gray-700">{guest.adults ?? 0}</span>
                                                     )}
                                                 </td>
                                                 <td className="px-4 py-3 text-center">
