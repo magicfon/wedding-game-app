@@ -6,6 +6,7 @@ import { Gift, Sparkles, Heart } from 'lucide-react'
 import { SoundToggle } from '@/components/SoundToggle'
 import { useSoundEffects } from '@/hooks/useSoundEffects'
 import { useBackgroundMusic } from '@/hooks/useBackgroundMusic'
+import { usePhotoPreloader } from '@/hooks/usePhotoPreloader'
 import {
   FastShuffleLottery,
   SlotMachineLottery,
@@ -259,6 +260,11 @@ export default function LotteryLivePage() {
   const [highlightedIndex, setHighlightedIndex] = useState(-1)
   const [animationMode, setAnimationMode] = useState<AnimationMode>('fast_shuffle')
   const [winnerIndex, setWinnerIndex] = useState(-1)
+  const [isPreloading, setIsPreloading] = useState(false)
+  const [selectedWinnerPhoto, setSelectedWinnerPhoto] = useState<Photo | null>(null) // 選中的中獎照片（確保一致性）
+
+  // 照片預載入
+  const { preloadState, preloadPhotos, reset: resetPreload } = usePhotoPreloader()
 
   // 音效控制
   const { isSoundEnabled, toggleSound } = useSoundEffects()
@@ -447,6 +453,9 @@ export default function LotteryLivePage() {
     setWinnerPhotoRect(null)
     setHighlightedIndex(-1) // 移除黃框
     setIsAnimating(false)
+    setWinnerIndex(-1)
+    setIsPreloading(false)
+    setSelectedWinnerPhoto(null)
 
     // 取消任何進行中的動畫
     if (animationFrameRef.current) {
@@ -460,23 +469,14 @@ export default function LotteryLivePage() {
   const handleNewDraw = async (newDraw: CurrentDraw) => {
     // 先重置所有狀態
     resetToInitialState()
+    resetPreload()
 
-    // 立即設置為動畫狀態，避免標題閃爍 ("恭喜中獎" -> "照片摸彩" -> "抽獎中")
-    // 這樣會直接從 "恭喜中獎" (如果有) -> "抽獎中"
-    setIsAnimating(true)
-
+    // 設為預載中狀態
+    setIsPreloading(true)
     setCurrentDraw(newDraw)
 
     console.log('🎰 收到新的抽獎記錄')
     console.log('當前照片數量:', photos.length)
-
-    // 如果照片還沒載入，先載入照片
-    if (photos.length === 0) {
-      console.log('⚠️ 照片尚未載入，現在載入...')
-      await fetchPhotos()
-      // 等待一下讓 state 更新
-      await new Promise(resolve => setTimeout(resolve, 200))
-    }
 
     // 重新獲取最新的照片列表
     const response = await fetch('/api/lottery/photos')
@@ -489,24 +489,41 @@ export default function LotteryLivePage() {
       // 找到中獎者的所有照片
       const winnerPhotos = currentPhotos.filter((p: Photo) => p.user_id === newDraw.winner_line_id)
 
+      let targetWinnerPhoto: Photo
+      let targetWinnerIndex: number
+
       if (winnerPhotos.length === 0) {
         console.error('❌ 找不到中獎照片！')
         console.error('中獎者 ID:', newDraw.winner_line_id)
-        // 即使找不到，也隨機顯示一張
+        // 即使找不到，也隨機選一張
         const randomIndex = Math.floor(Math.random() * currentPhotos.length)
-        startCarouselAnimationWithPhotos(currentPhotos, randomIndex)
-        return
+        targetWinnerPhoto = currentPhotos[randomIndex]
+        targetWinnerIndex = randomIndex
+      } else {
+        // 從中獎者的照片中隨機選一張
+        const randomWinnerPhoto = winnerPhotos[Math.floor(Math.random() * winnerPhotos.length)]
+        targetWinnerIndex = currentPhotos.findIndex((p: Photo) => p.id === randomWinnerPhoto.id)
+        targetWinnerPhoto = randomWinnerPhoto
+
+        console.log(`✅ 找到中獎者 ${winnerPhotos.length} 張照片，隨機選中 ID: ${targetWinnerPhoto.id}`)
+        console.log('✅ 最終目標索引:', targetWinnerIndex)
       }
 
-      // 從中獎者的照片中隨機選一張
-      const randomWinnerPhoto = winnerPhotos[Math.floor(Math.random() * winnerPhotos.length)]
-      const winnerIndex = currentPhotos.findIndex((p: Photo) => p.id === randomWinnerPhoto.id)
+      // 儲存選中的中獎照片（確保後續 LINE 通知使用相同照片）
+      setSelectedWinnerPhoto(targetWinnerPhoto)
 
-      console.log(`✅ 找到中獎者 ${winnerPhotos.length} 張照片，隨機選中 ID: ${randomWinnerPhoto.id}`)
-      console.log('✅ 最終目標索引:', winnerIndex)
-      startCarouselAnimationWithPhotos(currentPhotos, winnerIndex)
+      // 預載所有照片
+      console.log('🖼️ 開始預載照片...')
+      await preloadPhotos(currentPhotos, { useThumbnail: true })
+      console.log('✅ 照片預載完成')
+
+      // 預載完成後開始動畫
+      setIsPreloading(false)
+      setIsAnimating(true)
+      startCarouselAnimationWithPhotos(currentPhotos, targetWinnerIndex)
     } else {
       console.error('❌ 無法載入照片進行抽獎')
+      setIsPreloading(false)
     }
   }
 
@@ -676,10 +693,13 @@ export default function LotteryLivePage() {
 
   // 新動畫模式完成時的回調
   const handleAnimationComplete = useCallback((completedWinnerPhoto: Photo) => {
-    console.log('🎉 新動畫模式完成，中獎者:', completedWinnerPhoto.display_name)
+    // 使用 selectedWinnerPhoto 確保一致性，如果沒有則用回傳的 photo
+    const finalWinnerPhoto = selectedWinnerPhoto || completedWinnerPhoto
+    console.log('🎉 新動畫模式完成，中獎者:', finalWinnerPhoto.display_name)
+    console.log('📸 使用照片 ID:', finalWinnerPhoto.id, '確保與 LINE 通知一致')
     setIsAnimating(false)
-    startCelebration(completedWinnerPhoto)
-  }, [])
+    startCelebration(finalWinnerPhoto)
+  }, [selectedWinnerPhoto])
 
   const startCelebration = (winnerPhoto?: Photo) => {
     console.log('🎊 開始慶祝動畫')
@@ -846,12 +866,31 @@ export default function LotteryLivePage() {
 
         {/* 標題 */}
         <div className="text-center mb-8 z-10">
-          <h1 className={`text-6xl font-bold text-white mb-4 ${isAnimating ? 'animate-pulse' : ''}`}>
-            {isAnimating ? '🎰 抽獎中 🎰' : (currentDraw ? '🎉 恭喜中獎 🎉' : '📸 照片摸彩 📸')}
+          <h1 className={`text-6xl font-bold text-white mb-4 ${isAnimating || isPreloading ? 'animate-pulse' : ''}`}>
+            {isPreloading
+              ? '🔄 準備中...'
+              : isAnimating
+                ? '🎰 抽獎中 🎰'
+                : (currentDraw ? '🎉 恭喜中獎 🎉' : '📸 照片摸彩 📸')}
           </h1>
           <p className="text-2xl text-white opacity-90">
             參與照片數：{photos.length} 張
           </p>
+
+          {/* 預載入進度條 */}
+          {isPreloading && (
+            <div className="mt-6 max-w-md mx-auto">
+              <div className="bg-white/20 rounded-full h-4 overflow-hidden">
+                <div
+                  className="bg-gradient-to-r from-yellow-400 to-pink-500 h-full transition-all duration-200 ease-out"
+                  style={{ width: `${preloadState.progress}%` }}
+                />
+              </div>
+              <p className="text-white/80 mt-2 text-lg">
+                載入照片中... {preloadState.loaded}/{preloadState.total} ({preloadState.progress}%)
+              </p>
+            </div>
+          )}
         </div>
 
         {/* 動畫模式顯示區域 */}
