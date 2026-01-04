@@ -693,10 +693,12 @@ export default function GuestManagementPage() {
                                                     >
                                                         {t.children > 0 && t.children}
                                                     </div>
-                                                </div>
-                                                {/* 素食人數 */}
-                                                <div className={`w-8 text-center text-xs font-medium ${t.vegetarian > 0 ? 'bg-emerald-100 text-emerald-700 py-0.5 px-1 rounded' : 'text-gray-400'}`}>
-                                                    {t.vegetarian > 0 ? `🌱${t.vegetarian}` : '-'}
+                                                    <div
+                                                        className="h-full bg-emerald-500 flex items-center justify-center text-xs text-white font-medium"
+                                                        style={{ width: `${(t.vegetarian / maxTableTotal) * 100}%`, minWidth: t.vegetarian > 0 ? '20px' : '0' }}
+                                                    >
+                                                        {t.vegetarian > 0 && t.vegetarian}
+                                                    </div>
                                                 </div>
                                                 {/* 逐桌上限設定 */}
                                                 <div className="flex items-center gap-1">
@@ -759,7 +761,7 @@ export default function GuestManagementPage() {
                                         <span className="text-xs text-gray-600">小孩</span>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-xs">🌱</span>
+                                        <div className="w-3 h-3 bg-emerald-500 rounded-full"></div>
                                         <span className="text-xs text-gray-600">素食</span>
                                     </div>
                                     <div className="flex items-center gap-2">
