@@ -50,9 +50,32 @@ export function usePhotoPreloader() {
         }
 
         abortRef.current = false
-        const total = photos.length
-        let loaded = 0
         const failed: string[] = []
+
+        // 收集所有需要預載的 URL（每張照片的所有可用縮圖）
+        // 不同動畫模式使用不同的縮圖尺寸：
+        // - FastShuffleLottery: thumbnail_large_url
+        // - SlotMachineLottery/WaterfallLottery/TournamentLottery: thumbnail_medium_url
+        // - SpiralLottery: thumbnail_small_url
+        const urlsToPreload: string[] = []
+
+        photos.forEach(photo => {
+            if (useThumbnail) {
+                // 預載所有可用的縮圖尺寸以支援所有動畫模式
+                if (photo.thumbnail_small_url) urlsToPreload.push(photo.thumbnail_small_url)
+                if (photo.thumbnail_medium_url) urlsToPreload.push(photo.thumbnail_medium_url)
+                if (photo.thumbnail_large_url) urlsToPreload.push(photo.thumbnail_large_url)
+                // 如果沒有任何縮圖，使用原圖
+                if (!photo.thumbnail_small_url && !photo.thumbnail_medium_url && !photo.thumbnail_large_url) {
+                    urlsToPreload.push(photo.image_url)
+                }
+            } else {
+                urlsToPreload.push(photo.image_url)
+            }
+        })
+
+        const total = urlsToPreload.length
+        let loaded = 0
 
         setPreloadState({
             loaded: 0,
@@ -62,28 +85,23 @@ export function usePhotoPreloader() {
             failed: []
         })
 
-        console.log(`🖼️ 開始預載 ${total} 張照片...`)
+        console.log(`🖼️ 開始預載 ${total} 個圖片 URL（${photos.length} 張照片，多種尺寸）...`)
 
         // 使用 Promise.allSettled 並行載入，但限制並發數
-        const concurrency = 5
-        const batches: Photo[][] = []
+        const concurrency = 8 // 提高並發數因為現在有更多 URL
+        const batches: string[][] = []
 
-        for (let i = 0; i < photos.length; i += concurrency) {
-            batches.push(photos.slice(i, i + concurrency))
+        for (let i = 0; i < urlsToPreload.length; i += concurrency) {
+            batches.push(urlsToPreload.slice(i, i + concurrency))
         }
 
         for (const batch of batches) {
             if (abortRef.current) break
 
             await Promise.allSettled(
-                batch.map(photo => {
+                batch.map(url => {
                     return new Promise<void>((resolve) => {
                         const img = new Image()
-
-                        // 選擇要預載的 URL（優先使用動畫組件實際使用的 thumbnail_large_url）
-                        const url = useThumbnail
-                            ? (photo.thumbnail_large_url || photo.thumbnail_medium_url || photo.thumbnail_small_url || photo.image_url)
-                            : photo.image_url
 
                         img.onload = () => {
                             loaded++
