@@ -2,6 +2,7 @@
 
 import { memo, useEffect, useState, useRef, useMemo } from 'react'
 import { LotteryModeProps, Photo } from './types'
+import { getPhotoUrl } from '@/lib/photo-utils'
 
 const PHOTO_SIZE = 80
 const ORBIT_COUNT = 4 // 軌道數量
@@ -150,10 +151,10 @@ export const SpiralLottery = memo(({
                         <div
                             key={orbitPhoto.photo.id}
                             className={`absolute transition-all duration-500 ${showWinner && orbitPhoto.isWinner
-                                    ? 'scale-0 opacity-0'
-                                    : showWinner
-                                        ? 'opacity-30 scale-75'
-                                        : ''
+                                ? 'scale-0 opacity-0'
+                                : showWinner
+                                    ? 'opacity-30 scale-75'
+                                    : ''
                                 }`}
                             style={{
                                 left: `calc(50% + ${x}px - ${PHOTO_SIZE / 2}px)`,
@@ -165,11 +166,11 @@ export const SpiralLottery = memo(({
                             }}
                         >
                             <img
-                                src={orbitPhoto.photo.thumbnail_small_url || orbitPhoto.photo.image_url}
+                                src={getPhotoUrl(orbitPhoto.photo, 'small')}
                                 alt={orbitPhoto.photo.display_name}
                                 className={`w-full h-full object-cover rounded-full ${orbitPhoto.isWinner && isSlowing
-                                        ? 'border-4 border-yellow-400 shadow-lg shadow-yellow-400/50'
-                                        : 'border-2 border-white/70'
+                                    ? 'border-4 border-yellow-400 shadow-lg shadow-yellow-400/50'
+                                    : 'border-2 border-white/70'
                                     }`}
                             />
                         </div>

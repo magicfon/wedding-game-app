@@ -2,6 +2,7 @@
 
 import { memo, useEffect, useState, useRef, useMemo, useCallback } from 'react'
 import { LotteryModeProps, Photo } from './types'
+import { getPhotoUrl } from '@/lib/photo-utils'
 
 const INITIAL_COUNT = 16 // 初始候選數量
 const PHOTO_SIZE = 180
@@ -159,8 +160,8 @@ export const TournamentLottery = memo(({
                         <div
                             key={candidate.photo.id}
                             className={`relative transition-all duration-700 ${candidate.eliminated
-                                    ? 'opacity-0 scale-50 rotate-12'
-                                    : 'opacity-100 scale-100'
+                                ? 'opacity-0 scale-50 rotate-12'
+                                : 'opacity-100 scale-100'
                                 }`}
                             style={{
                                 width: `${PHOTO_SIZE}px`,
@@ -168,7 +169,7 @@ export const TournamentLottery = memo(({
                             }}
                         >
                             <img
-                                src={candidate.photo.thumbnail_medium_url || candidate.photo.image_url}
+                                src={getPhotoUrl(candidate.photo, 'medium')}
                                 alt={candidate.photo.display_name}
                                 className="w-full h-full object-cover rounded-xl border-4 border-white shadow-lg"
                             />

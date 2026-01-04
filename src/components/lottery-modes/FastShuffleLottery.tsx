@@ -2,6 +2,7 @@
 
 import { memo, useEffect, useState, useRef } from 'react'
 import { LotteryModeProps, Photo } from './types'
+import { getPhotoUrl } from '@/lib/photo-utils'
 
 // 設計尺寸
 const DESIGN_WIDTH = 1920
@@ -22,7 +23,7 @@ const ShufflePhoto = memo(({ photo, size }: ShufflePhotoProps) => {
             }}
         >
             <img
-                src={photo.thumbnail_large_url || photo.image_url}
+                src={getPhotoUrl(photo, 'large')}
                 alt={photo.display_name}
                 className="w-full h-full object-cover"
                 loading="eager"

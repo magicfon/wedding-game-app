@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback, useRef } from 'react'
+import { getPhotoUrl } from '@/lib/photo-utils'
 
 interface Photo {
     id: number
@@ -61,14 +62,11 @@ export function usePhotoPreloader() {
 
         photos.forEach(photo => {
             if (useThumbnail) {
-                // 預載所有可用的縮圖尺寸以支援所有動畫模式
-                if (photo.thumbnail_small_url) urlsToPreload.push(photo.thumbnail_small_url)
-                if (photo.thumbnail_medium_url) urlsToPreload.push(photo.thumbnail_medium_url)
-                if (photo.thumbnail_large_url) urlsToPreload.push(photo.thumbnail_large_url)
-                // 如果沒有任何縮圖，使用原圖
-                if (!photo.thumbnail_small_url && !photo.thumbnail_medium_url && !photo.thumbnail_large_url) {
-                    urlsToPreload.push(photo.image_url)
-                }
+                // 預載所有尺寸以支援所有動畫模式
+                // getPhotoUrl 會自動處理 Vercel 優化 URL，提取原始 Supabase URL
+                urlsToPreload.push(getPhotoUrl(photo, 'small'))
+                urlsToPreload.push(getPhotoUrl(photo, 'medium'))
+                urlsToPreload.push(getPhotoUrl(photo, 'large'))
             } else {
                 urlsToPreload.push(photo.image_url)
             }

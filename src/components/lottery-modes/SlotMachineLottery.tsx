@@ -2,6 +2,7 @@
 
 import { memo, useEffect, useState, useRef, useMemo } from 'react'
 import { LotteryModeProps, Photo } from './types'
+import { getPhotoUrl } from '@/lib/photo-utils'
 
 // 設計尺寸
 const DESIGN_WIDTH = 1920
@@ -110,7 +111,7 @@ const SlotColumn = memo(({ photos, targetIndex, delay, isCenter, onStop }: SlotC
                         }}
                     >
                         <img
-                            src={photo.thumbnail_medium_url || photo.image_url}
+                            src={getPhotoUrl(photo, 'medium')}
                             alt={photo.display_name}
                             className="w-full h-full object-cover rounded-xl"
                             loading="eager"

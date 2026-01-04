@@ -2,6 +2,7 @@
 
 import { memo, useEffect, useState, useRef, useMemo } from 'react'
 import { LotteryModeProps, Photo } from './types'
+import { getPhotoUrl } from '@/lib/photo-utils'
 
 const TRACK_COUNT = 6
 const PHOTO_SIZE = 120
@@ -138,8 +139,8 @@ export const WaterfallLottery = memo(({
                         <div
                             key={falling.id}
                             className={`absolute transition-all ${shouldCatch
-                                    ? 'duration-700 ease-out scale-150 z-50'
-                                    : 'duration-100 ease-linear'
+                                ? 'duration-700 ease-out scale-150 z-50'
+                                : 'duration-100 ease-linear'
                                 }`}
                             style={{
                                 left: shouldCatch
@@ -154,7 +155,7 @@ export const WaterfallLottery = memo(({
                             }}
                         >
                             <img
-                                src={falling.photo.thumbnail_medium_url || falling.photo.image_url}
+                                src={getPhotoUrl(falling.photo, 'medium')}
                                 alt={falling.photo.display_name}
                                 className={`w-full h-full object-cover rounded-xl ${shouldCatch ? 'border-4 border-yellow-400 shadow-2xl' : 'border-2 border-white/50'
                                     }`}
