@@ -62,15 +62,22 @@ export async function POST(request: Request) {
         if (body.guests && Array.isArray(body.guests)) {
             const validGuests = body.guests
                 .filter((g: any) => g.name && g.table_number)
-                .map((g: any) => ({
-                    guest_name: g.name.trim(),
-                    table_number: g.table_number.trim(),
-                    adults: parseInt(g.adults) || 1,
-                    children: parseInt(g.children) || 0,
-                    vegetarian: parseInt(g.vegetarian) || 0,
-                    total_guests: parseInt(g.total_guests) || (parseInt(g.adults) || 1) + (parseInt(g.children) || 0),
-                    notes: g.notes?.trim() || null
-                }))
+                .map((g: any) => {
+                    const adultsNum = parseInt(g.adults) || 0
+                    const childrenNum = parseInt(g.children) || 0
+                    const vegetarianNum = parseInt(g.vegetarian) || 0
+                    // 大人可為0，但大人+素食大人不得為0，若都為0則預設大人=1
+                    const finalAdults = (adultsNum + vegetarianNum === 0) ? 1 : adultsNum
+                    return {
+                        guest_name: g.name.trim(),
+                        table_number: g.table_number.trim(),
+                        adults: finalAdults,
+                        children: childrenNum,
+                        vegetarian: vegetarianNum,
+                        total_guests: finalAdults + childrenNum + vegetarianNum,
+                        notes: g.notes?.trim() || null
+                    }
+                })
 
             if (validGuests.length === 0) {
                 return NextResponse.json(
@@ -103,19 +110,21 @@ export async function POST(request: Request) {
             )
         }
 
-        const adultsNum = parseInt(adults) || 1
+        const adultsNum = parseInt(adults) || 0
         const childrenNum = parseInt(children) || 0
         const vegetarianNum = parseInt(vegetarian) || 0
+        // 大人可為0，但大人+素食大人不得為0
+        const finalAdults = (adultsNum + vegetarianNum === 0) ? 1 : adultsNum
 
         const { data, error } = await supabase
             .from('guest_list')
             .insert({
                 guest_name: name,
                 table_number,
-                adults: adultsNum,
+                adults: finalAdults,
                 children: childrenNum,
                 vegetarian: vegetarianNum,
-                total_guests: parseInt(total_guests) || (adultsNum + childrenNum),
+                total_guests: finalAdults + childrenNum + vegetarianNum,
                 notes
             })
             .select()

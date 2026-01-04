@@ -115,10 +115,11 @@ export default function GuestManagementPage() {
             if (!stats[table]) {
                 stats[table] = { adults: 0, children: 0, vegetarian: 0, total: 0, count: 0 }
             }
-            stats[table].adults += guest.adults || 1
+            stats[table].adults += guest.adults || 0
             stats[table].children += guest.children || 0
             stats[table].vegetarian += guest.vegetarian || 0
-            stats[table].total += guest.total_guests || ((guest.adults || 1) + (guest.children || 0))
+            // total = 大人 + 小孩 + 素食大人
+            stats[table].total += (guest.adults || 0) + (guest.children || 0) + (guest.vegetarian || 0)
             stats[table].count += 1
         })
 
@@ -301,6 +302,11 @@ export default function GuestManagementPage() {
             alert('姓名和桌次為必填')
             return
         }
+        // 大人 + 素食大人 不得為 0
+        if (editAdults + editVegetarian === 0) {
+            alert('大人和素食大人不得同時為 0')
+            return
+        }
 
         try {
             const response = await fetch('/api/admin/guests', {
@@ -314,7 +320,7 @@ export default function GuestManagementPage() {
                     adults: editAdults,
                     children: editChildren,
                     vegetarian: editVegetarian,
-                    total_guests: editAdults + editChildren,
+                    total_guests: editAdults + editChildren + editVegetarian,
                     notes: editNotes.trim()
                 })
             })
@@ -328,7 +334,7 @@ export default function GuestManagementPage() {
                         adults: editAdults,
                         children: editChildren,
                         vegetarian: editVegetarian,
-                        total_guests: editAdults + editChildren,
+                        total_guests: editAdults + editChildren + editVegetarian,
                         notes: editNotes.trim()
                     } : g
                 ))
@@ -348,6 +354,11 @@ export default function GuestManagementPage() {
             alert('姓名和桌次為必填')
             return
         }
+        // 大人 + 素食大人 不得為 0
+        if (newGuestAdults + newGuestVegetarian === 0) {
+            alert('大人和素食大人不得同時為 0')
+            return
+        }
 
         try {
             const response = await fetch('/api/admin/guests', {
@@ -359,7 +370,7 @@ export default function GuestManagementPage() {
                     adults: newGuestAdults,
                     children: newGuestChildren,
                     vegetarian: newGuestVegetarian,
-                    total_guests: newGuestAdults + newGuestChildren,
+                    total_guests: newGuestAdults + newGuestChildren + newGuestVegetarian,
                     notes: newGuestNotes.trim()
                 })
             })
@@ -645,7 +656,7 @@ export default function GuestManagementPage() {
                                     </div>
                                     <div className="bg-emerald-50 rounded-lg p-3 text-center">
                                         <div className="text-2xl font-bold text-emerald-700">{totalStats.vegetarian}</div>
-                                        <div className="text-xs text-emerald-600">素食</div>
+                                        <div className="text-xs text-emerald-600">素食大人</div>
                                     </div>
                                     <div className="bg-green-50 rounded-lg p-3 text-center">
                                         <div className="text-2xl font-bold text-green-700">{totalStats.total}</div>
@@ -762,7 +773,7 @@ export default function GuestManagementPage() {
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <div className="w-3 h-3 bg-emerald-500 rounded-full"></div>
-                                        <span className="text-xs text-gray-600">素食</span>
+                                        <span className="text-xs text-gray-600">素食大人</span>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <div className="w-3 h-3 bg-amber-500 rounded-full"></div>
@@ -946,7 +957,7 @@ export default function GuestManagementPage() {
                                         <th className="px-4 py-4 font-medium">桌次</th>
                                         <th className="px-4 py-4 font-medium text-center">大人</th>
                                         <th className="px-4 py-4 font-medium text-center">小孩</th>
-                                        <th className="px-4 py-4 font-medium text-center">素食</th>
+                                        <th className="px-4 py-4 font-medium text-center">素食大人</th>
                                         <th className="px-4 py-4 font-medium text-center">總人數</th>
                                         <th className="px-4 py-4 font-medium">備註</th>
                                         <th className="px-4 py-4 font-medium text-right">操作</th>
@@ -1155,7 +1166,7 @@ export default function GuestManagementPage() {
                                     </div>
                                     <div className="flex-1">
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            素食人數
+                                            素食大人
                                         </label>
                                         <input
                                             type="number"
@@ -1231,7 +1242,7 @@ export default function GuestManagementPage() {
                                             <li><strong>桌次</strong> (必填)：table 或 桌次</li>
                                             <li><strong>大人</strong> (選填)：adult 或 大人</li>
                                             <li><strong>小孩</strong> (選填)：child 或 小孩</li>
-                                            <li><strong>素食</strong> (選填)：vegetarian 或 素食</li>
+                                            <li><strong>素食大人</strong> (選填)：vegetarian 或 素食</li>
                                             <li><strong>總人數</strong> (選填)：total 或 人數</li>
                                             <li><strong>備註</strong> (選填)：notes 或 備註</li>
                                         </ul>
@@ -1271,7 +1282,7 @@ export default function GuestManagementPage() {
                                                     <th className="px-2 py-2 text-left font-medium text-gray-600">桌次</th>
                                                     <th className="px-2 py-2 text-center font-medium text-gray-600">大人</th>
                                                     <th className="px-2 py-2 text-center font-medium text-gray-600">小孩</th>
-                                                    <th className="px-2 py-2 text-center font-medium text-gray-600">素食</th>
+                                                    <th className="px-2 py-2 text-center font-medium text-gray-600">素食大人</th>
                                                     <th className="px-2 py-2 text-center font-medium text-gray-600">總人數</th>
                                                     <th className="px-2 py-2 text-left font-medium text-gray-600">備註</th>
                                                 </tr>
