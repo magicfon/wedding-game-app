@@ -804,33 +804,20 @@ export default function LotteryLivePage() {
         } else {
           console.error('❌ 無法發送通知: currentDrawRef.current.id 為空')
         }
-
       }, 800)
     }, 1500)
   }
 
   // 找出中獎照片
-  // 優先使用視覺上選中的照片 (highlightedIndex) 或明確指定的選中照片 (selectedWinnerPhoto)
+  // 優先使用視覺上選中的照片 (highlightedIndex)，確保動畫和結果一致
   const getWinnerPhoto = () => {
-    // 1. 如果有明確指定的選中照片 (來自 handleNewDraw 或動畫結果)，優先使用
-    if (selectedWinnerPhoto) {
-      return selectedWinnerPhoto
-    }
-
-    // 2. 如果有高亮索引，且在有效範圍內，返回該照片
+    // 1. 如果有高亮索引，且在有效範圍內，直接返回該照片
     if (highlightedIndex !== -1 && photos[highlightedIndex]) {
       return photos[highlightedIndex]
     }
 
+    // 2. 降級策略：根據 ID 查找
     if (!currentDraw || photos.length === 0) return null
-
-    // 3. 嘗試使用紀錄中的照片 ID
-    if (currentDraw.winner_photo_id) {
-      const recordedPhoto = photos.find(p => p.id === currentDraw.winner_photo_id)
-      if (recordedPhoto) return recordedPhoto
-    }
-
-    // 4. 降級策略：根據 User ID 查找 (只會找到該用戶的第一張照片)
     return photos.find(photo => photo.user_id === currentDraw.winner_line_id) || null
   }
 
@@ -900,8 +887,8 @@ export default function LotteryLivePage() {
       <div
         className="bg-gradient-to-br from-purple-600 via-pink-500 to-orange-500 flex flex-col items-center justify-center overflow-hidden relative"
         style={{
-          width: `${DESIGN_WIDTH} px`,
-          height: `${DESIGN_HEIGHT} px`,
+          width: `${DESIGN_WIDTH}px`,
+          height: `${DESIGN_HEIGHT}px`,
           transform: `scale(${scale})`,
           transformOrigin: 'center center'
         }}
@@ -919,7 +906,7 @@ export default function LotteryLivePage() {
 
         {/* 標題 */}
         <div className="text-center mb-8 z-10">
-          <h1 className={`text - 6xl font - bold text - white mb - 4 ${isAnimating || isPreloading ? 'animate-pulse' : ''} `}>
+          <h1 className={`text-6xl font-bold text-white mb-4 ${isAnimating || isPreloading ? 'animate-pulse' : ''}`}>
             {isPreloading
               ? '🔄 準備中...'
               : isAnimating
@@ -936,7 +923,7 @@ export default function LotteryLivePage() {
               <div className="bg-white/20 rounded-full h-4 overflow-hidden">
                 <div
                   className="bg-gradient-to-r from-yellow-400 to-pink-500 h-full transition-all duration-200 ease-out"
-                  style={{ width: `${preloadState.progress}% ` }}
+                  style={{ width: `${preloadState.progress}%` }}
                 />
               </div>
               <p className="text-white/80 mt-2 text-lg">
@@ -947,7 +934,7 @@ export default function LotteryLivePage() {
         </div>
 
         {/* 動畫模式顯示區域 */}
-        <div className={`relative z - 10 w - full h - full flex - 1 transition - opacity duration - 1000 ${showingWinner || zoomingWinner ? 'opacity-0' : 'opacity-100'} `}>
+        <div className={`relative z-10 w-full h-full flex-1 transition-opacity duration-1000 ${showingWinner || zoomingWinner ? 'opacity-0' : 'opacity-100'}`}>
           {/* 新動畫模式 */}
           {isAnimating && winnerIndex >= 0 && selectedWinnerPhoto && (
             <>
@@ -1062,12 +1049,12 @@ export default function LotteryLivePage() {
           <div
             className="fixed z-50 pointer-events-none"
             style={{
-              left: `${winnerPhotoRect.left} px`,
-              top: `${winnerPhotoRect.top} px`,
-              width: `${winnerPhotoRect.width} px`,
-              height: `${winnerPhotoRect.height} px`,
-              '--translate-x': `${translateX} px`,
-              '--translate-y': `${translateY} px`,
+              left: `${winnerPhotoRect.left}px`,
+              top: `${winnerPhotoRect.top}px`,
+              width: `${winnerPhotoRect.width}px`,
+              height: `${winnerPhotoRect.height}px`,
+              '--translate-x': `${translateX}px`,
+              '--translate-y': `${translateY}px`,
               '--scale-factor': scaleFactor,
               animation: 'zoomToCenter 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards',
               willChange: 'transform' // 效能優化
@@ -1091,7 +1078,7 @@ export default function LotteryLivePage() {
       {/* 中獎照片放大特寫 - 左右分欄布局 */}
       {!isAnimating && showingWinner && !zoomingWinner && winnerPhoto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 animate-in fade-in duration-500">
-          <div className="flex items-center justify-center gap-12 px-8" style={{ width: `${DESIGN_WIDTH * scale} px`, height: `${DESIGN_HEIGHT * scale} px` }}>
+          <div className="flex items-center justify-center gap-12 px-8" style={{ width: `${DESIGN_WIDTH * scale}px`, height: `${DESIGN_HEIGHT * scale}px` }}>
             {/* 左側：中獎照片 */}
             <div className="relative flex-shrink-0 animate-in zoom-in duration-500" style={{ willChange: 'transform' }}>
               <div className="absolute -inset-6 bg-gradient-to-r from-yellow-400 via-orange-400 to-pink-400 rounded-3xl animate-pulse blur-2xl opacity-75"></div>
@@ -1103,8 +1090,8 @@ export default function LotteryLivePage() {
                   controls
                   className="relative object-cover rounded-3xl border-8 border-white shadow-2xl bg-black"
                   style={{
-                    width: `${900 * scale} px`,
-                    height: `${900 * scale} px`
+                    width: `${900 * scale}px`,
+                    height: `${900 * scale}px`
                   }}
                 />
               ) : (
@@ -1112,8 +1099,8 @@ export default function LotteryLivePage() {
                   src={winnerPhoto.image_url}
                   alt={winnerPhoto.display_name}
                   style={{
-                    width: `${900 * scale} px`,
-                    height: `${900 * scale} px`
+                    width: `${900 * scale}px`,
+                    height: `${900 * scale}px`
                   }}
                   className="relative object-cover rounded-3xl border-8 border-white shadow-2xl"
                   onError={(e) => {
@@ -1124,31 +1111,31 @@ export default function LotteryLivePage() {
             </div>
 
             {/* 右側：恭喜文字 + 資訊卡片 */}
-            <div className="flex flex-col justify-center gap-8 flex-1" style={{ maxWidth: `${880 * scale} px`, willChange: 'transform' }}>
+            <div className="flex flex-col justify-center gap-8 flex-1" style={{ maxWidth: `${880 * scale}px`, willChange: 'transform' }}>
               {/* 恭喜文字 */}
               <div className="text-center animate-in slide-in-from-right duration-500">
                 <h1
                   className="font-bold text-white drop-shadow-2xl animate-pulse leading-tight mb-4"
-                  style={{ fontSize: `${6 * scale} rem` }} // 96px * scale
+                  style={{ fontSize: `${6 * scale}rem` }} // 96px * scale
                 >
                   🎉 恭喜中獎 🎉
                 </h1>
               </div>
 
               {/* 中獎者資訊卡片 */}
-              <div className="bg-white/95 rounded-3xl shadow-2xl animate-in slide-in-from-right duration-500 delay-150" style={{ padding: `${2.5 * scale} rem` }}>
-                <div className="flex items-center mb-8" style={{ gap: `${2 * scale} rem` }}>
+              <div className="bg-white/95 rounded-3xl shadow-2xl animate-in slide-in-from-right duration-500 delay-150" style={{ padding: `${2.5 * scale}rem` }}>
+                <div className="flex items-center mb-8" style={{ gap: `${2 * scale}rem` }}>
                   <img
                     src={winnerPhoto.avatar_url || '/default-avatar.png'}
                     alt={winnerPhoto.display_name}
                     className="rounded-full border-8 border-green-400 shadow-lg flex-shrink-0"
-                    style={{ width: `${8 * scale} rem`, height: `${8 * scale} rem` }}
+                    style={{ width: `${8 * scale}rem`, height: `${8 * scale}rem` }}
                   />
-                  <div className="flex items-center flex-1 min-w-0" style={{ gap: `${1 * scale} rem` }}>
-                    <Gift className="text-green-500 flex-shrink-0" style={{ width: `${3 * scale} rem`, height: `${3 * scale} rem` }} />
+                  <div className="flex items-center flex-1 min-w-0" style={{ gap: `${1 * scale}rem` }}>
+                    <Gift className="text-green-500 flex-shrink-0" style={{ width: `${3 * scale}rem`, height: `${3 * scale}rem` }} />
                     <h2
                       className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-500 to-emerald-500 break-words leading-tight"
-                      style={{ fontSize: `${3.75 * scale} rem` }} // 60px * scale
+                      style={{ fontSize: `${3.75 * scale}rem` }} // 60px * scale
                     >
                       {winnerPhoto.display_name}
                     </h2>
@@ -1156,14 +1143,14 @@ export default function LotteryLivePage() {
                 </div>
 
                 {winnerPhoto.blessing_message && (
-                  <div className="flex items-start" style={{ gap: `${1 * scale} rem` }}>
-                    <Heart className="text-red-500 mt-1 flex-shrink-0" style={{ width: `${2.5 * scale} rem`, height: `${2.5 * scale} rem` }} />
+                  <div className="flex items-start" style={{ gap: `${1 * scale}rem` }}>
+                    <Heart className="text-red-500 mt-1 flex-shrink-0" style={{ width: `${2.5 * scale}rem`, height: `${2.5 * scale}rem` }} />
                     <div className="flex-1 min-w-0">
                       <p
                         className="text-gray-700 italic leading-relaxed break-words whitespace-pre-wrap overflow-y-auto pr-3"
                         style={{
-                          fontSize: `${1.875 * scale} rem`, // 30px * scale
-                          maxHeight: `${400 * scale} px`
+                          fontSize: `${1.875 * scale}rem`, // 30px * scale
+                          maxHeight: `${400 * scale}px`
                         }}
                       >
                         「{winnerPhoto.blessing_message}」
