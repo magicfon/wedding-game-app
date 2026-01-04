@@ -54,6 +54,8 @@ export default function GuestManagementPage() {
     const [guests, setGuests] = useState<ManualGuest[]>([])
     const [loading, setLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState('')
+    const [tableFilter, setTableFilter] = useState('') // 桌次篩選
+    const [notesFilter, setNotesFilter] = useState('') // 備註篩選 ('', 'has', 'empty')
 
     // 編輯狀態
     const [editingId, setEditingId] = useState<string | number | null>(null)
@@ -517,11 +519,29 @@ export default function GuestManagementPage() {
         (user.table_number && user.table_number.toLowerCase().includes(searchQuery.toLowerCase()))
     )
 
-    const filteredGuests = guests.filter(guest =>
-        guest.guest_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        guest.table_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (guest.notes && guest.notes.toLowerCase().includes(searchQuery.toLowerCase()))
-    )
+    const filteredGuests = guests.filter(guest => {
+        // 名稱搜尋
+        const matchesSearch = !searchQuery ||
+            guest.guest_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            guest.table_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (guest.notes && guest.notes.toLowerCase().includes(searchQuery.toLowerCase()))
+
+        // 桌次篩選
+        const matchesTable = !tableFilter || guest.table_number === tableFilter
+
+        // 備註篩選
+        const matchesNotes = !notesFilter ||
+            (notesFilter === 'has' && guest.notes && guest.notes.trim() !== '') ||
+            (notesFilter === 'empty' && (!guest.notes || guest.notes.trim() === ''))
+
+        return matchesSearch && matchesTable && matchesNotes
+    })
+
+    // 取得所有不重複的桌次 (用於下拉選單)
+    const uniqueTables = useMemo(() => {
+        const tables = [...new Set(guests.map(g => g.table_number))]
+        return tables.sort((a, b) => a.localeCompare(b, 'zh-TW', { numeric: true }))
+    }, [guests])
 
     return (
         <AdminLayout title="用戶管理">
@@ -557,9 +577,9 @@ export default function GuestManagementPage() {
                         </button>
                     </div>
 
-                    <div className="flex gap-2 w-full md:w-auto">
+                    <div className="flex flex-wrap gap-2 w-full md:w-auto">
                         {/* 搜尋框 */}
-                        <div className="relative flex-1 md:w-64">
+                        <div className="relative flex-1 md:w-48">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                             <input
                                 type="text"
@@ -569,6 +589,33 @@ export default function GuestManagementPage() {
                                 className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
                             />
                         </div>
+
+                        {/* 桌次篩選 (只在手動名單顯示) */}
+                        {activeTab === 'manual' && (
+                            <select
+                                value={tableFilter}
+                                onChange={(e) => setTableFilter(e.target.value)}
+                                className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none bg-white"
+                            >
+                                <option value="">全部桌次</option>
+                                {uniqueTables.map(table => (
+                                    <option key={table} value={table}>{table} 桌</option>
+                                ))}
+                            </select>
+                        )}
+
+                        {/* 備註篩選 (只在手動名單顯示) */}
+                        {activeTab === 'manual' && (
+                            <select
+                                value={notesFilter}
+                                onChange={(e) => setNotesFilter(e.target.value)}
+                                className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none bg-white"
+                            >
+                                <option value="">全部備註</option>
+                                <option value="has">有備註</option>
+                                <option value="empty">無備註</option>
+                            </select>
+                        )}
 
                         {/* 新增按鈕 (只在手動名單顯示) */}
                         {activeTab === 'manual' && (
