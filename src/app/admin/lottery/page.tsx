@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import AdminLayout from '@/components/AdminLayout'
 import { useLiff } from '@/hooks/useLiff'
+import { extractOriginalUrl } from '@/lib/photo-utils'
 import {
   Gift,
   Users,
@@ -651,7 +652,7 @@ export default function LotteryManagePage() {
                       {/* 中獎照片 */}
                       {record.winner_photo_url && (
                         <img
-                          src={record.winner_photo_url}
+                          src={extractOriginalUrl(record.winner_photo_url) || record.winner_photo_url}
                           alt="中獎照片"
                           className="w-16 h-16 rounded-lg object-cover border-2 border-yellow-400"
                         />
