@@ -8,6 +8,7 @@ interface Guest {
     guest_name: string
     table_number: string
     notes?: string
+    total_guests?: number
 }
 
 export default function TablePage() {
@@ -156,8 +157,8 @@ export default function TablePage() {
                         <button
                             onClick={() => handleModeChange('name')}
                             className={`flex-1 py-2 px-4 text-center font-medium transition-colors ${searchMode === 'name'
-                                    ? 'text-purple-600 border-b-2 border-purple-600'
-                                    : 'text-gray-500 hover:text-gray-700'
+                                ? 'text-purple-600 border-b-2 border-purple-600'
+                                : 'text-gray-500 hover:text-gray-700'
                                 }`}
                         >
                             依姓名查詢
@@ -165,8 +166,8 @@ export default function TablePage() {
                         <button
                             onClick={() => handleModeChange('table')}
                             className={`flex-1 py-2 px-4 text-center font-medium transition-colors ${searchMode === 'table'
-                                    ? 'text-purple-600 border-b-2 border-purple-600'
-                                    : 'text-gray-500 hover:text-gray-700'
+                                ? 'text-purple-600 border-b-2 border-purple-600'
+                                : 'text-gray-500 hover:text-gray-700'
                                 }`}
                         >
                             依桌次查詢
@@ -210,8 +211,13 @@ export default function TablePage() {
                                         {guest.guest_name[0]}
                                     </div>
                                     <div>
-                                        <p className="font-bold text-gray-900 text-lg">
+                                        <p className="font-bold text-gray-900 text-lg flex items-center gap-2">
                                             {guest.guest_name}
+                                            {guest.total_guests && guest.total_guests > 1 && (
+                                                <span className="text-xs font-normal bg-purple-100 text-purple-600 px-2 py-0.5 rounded-full">
+                                                    {guest.total_guests}人
+                                                </span>
+                                            )}
                                         </p>
                                         {guest.notes && (
                                             <p className="text-xs text-gray-500 mt-0.5">{guest.notes}</p>

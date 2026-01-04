@@ -18,7 +18,7 @@ export async function GET(request: Request) {
         // 搜尋 guest_list
         let query = supabase
             .from('guest_list')
-            .select('guest_name, table_number, notes')
+            .select('guest_name, table_number, notes, total_guests')
 
         if (nameQuery) {
             query = query.ilike('guest_name', `%${nameQuery}%`)
