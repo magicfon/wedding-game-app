@@ -676,6 +676,10 @@ export default function GuestManagementPage() {
                                                         {t.children > 0 && t.children}
                                                     </div>
                                                 </div>
+                                                {/* 素食人數 */}
+                                                <div className={`w-10 text-center text-xs font-medium ${t.vegetarian > 0 ? 'bg-emerald-100 text-emerald-700 py-0.5 px-1 rounded' : 'text-gray-400'}`}>
+                                                    {t.vegetarian > 0 ? `🌱${t.vegetarian}` : '-'}
+                                                </div>
                                                 <div className={`w-12 text-right text-sm font-bold ${isOverBuffer ? 'text-red-700' : isOverLimit ? 'text-amber-700' : 'text-purple-700'}`}>
                                                     {t.total}
                                                 </div>
@@ -705,7 +709,7 @@ export default function GuestManagementPage() {
                                 )}
 
                                 {/* 圖例 */}
-                                <div className="flex items-center justify-center gap-6 mt-4 pt-3 border-t border-gray-100">
+                                <div className="flex flex-wrap items-center justify-center gap-4 mt-4 pt-3 border-t border-gray-100">
                                     <div className="flex items-center gap-2">
                                         <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
                                         <span className="text-xs text-gray-600">大人</span>
@@ -713,6 +717,10 @@ export default function GuestManagementPage() {
                                     <div className="flex items-center gap-2">
                                         <div className="w-3 h-3 bg-pink-400 rounded-full"></div>
                                         <span className="text-xs text-gray-600">小孩</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs">🌱</span>
+                                        <span className="text-xs text-gray-600">素食</span>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <div className="w-3 h-3 bg-amber-500 rounded-full"></div>
