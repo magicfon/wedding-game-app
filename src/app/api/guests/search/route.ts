@@ -6,20 +6,29 @@ export const dynamic = 'force-dynamic'
 export async function GET(request: Request) {
     try {
         const { searchParams } = new URL(request.url)
-        const query = searchParams.get('name')
+        const nameQuery = searchParams.get('name')
+        const tableQuery = searchParams.get('table')
 
-        if (!query) {
+        if (!nameQuery && !tableQuery) {
             return NextResponse.json({ guests: [] })
         }
 
         const supabase = createSupabaseAdmin()
 
         // 搜尋 guest_list
-        const { data: guests, error } = await supabase
+        let query = supabase
             .from('guest_list')
             .select('guest_name, table_number, notes')
-            .ilike('guest_name', `%${query}%`)
-            .limit(20)
+
+        if (nameQuery) {
+            query = query.ilike('guest_name', `%${nameQuery}%`)
+        }
+
+        if (tableQuery) {
+            query = query.eq('table_number', tableQuery)
+        }
+
+        const { data: guests, error } = await query.limit(50)
 
         if (error) {
             console.error('Error searching guest list:', error)

@@ -26,6 +26,7 @@ export default function TablePage() {
     const [searchResults, setSearchResults] = useState<Guest[]>([])
     const [loadingMyTable, setLoadingMyTable] = useState(true)
     const [searching, setSearching] = useState(false)
+    const [searchMode, setSearchMode] = useState<'name' | 'table'>('name')
 
     // 1. 載入用戶自己的桌次
     useEffect(() => {
@@ -55,6 +56,13 @@ export default function TablePage() {
         }
     }, [isReady, profile])
 
+    // 切換搜尋模式時清空查詢和結果
+    const handleModeChange = (mode: 'name' | 'table') => {
+        setSearchMode(mode)
+        setSearchQuery('')
+        setSearchResults([])
+    }
+
     // 2. 搜尋手動名單
     useEffect(() => {
         const delayDebounceFn = setTimeout(async () => {
@@ -65,7 +73,10 @@ export default function TablePage() {
 
             setSearching(true)
             try {
-                const response = await fetch(`/api/guests/search?name=${encodeURIComponent(searchQuery)}`)
+                const apiParam = searchMode === 'name'
+                    ? `name=${encodeURIComponent(searchQuery)}`
+                    : `table=${encodeURIComponent(searchQuery)}`
+                const response = await fetch(`/api/guests/search?${apiParam}`)
                 const data = await response.json()
                 setSearchResults(data.guests || [])
             } catch (error) {
@@ -76,7 +87,7 @@ export default function TablePage() {
         }, 500)
 
         return () => clearTimeout(delayDebounceFn)
-    }, [searchQuery])
+    }, [searchQuery, searchMode])
 
     // 載入中
     if (!isReady || liffLoading) {
@@ -139,11 +150,34 @@ export default function TablePage() {
                     <h3 className="text-lg font-semibold text-gray-900 mb-4">
                         查詢其他賓客桌次
                     </h3>
+
+                    {/* 搜尋模式切換 Tab */}
+                    <div className="flex mb-4 border-b border-gray-200">
+                        <button
+                            onClick={() => handleModeChange('name')}
+                            className={`flex-1 py-2 px-4 text-center font-medium transition-colors ${searchMode === 'name'
+                                    ? 'text-purple-600 border-b-2 border-purple-600'
+                                    : 'text-gray-500 hover:text-gray-700'
+                                }`}
+                        >
+                            依姓名查詢
+                        </button>
+                        <button
+                            onClick={() => handleModeChange('table')}
+                            className={`flex-1 py-2 px-4 text-center font-medium transition-colors ${searchMode === 'table'
+                                    ? 'text-purple-600 border-b-2 border-purple-600'
+                                    : 'text-gray-500 hover:text-gray-700'
+                                }`}
+                        >
+                            依桌次查詢
+                        </button>
+                    </div>
+
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                         <input
-                            type="text"
-                            placeholder="輸入姓名搜尋 (例如: 志明)"
+                            type={searchMode === 'table' ? 'number' : 'text'}
+                            placeholder={searchMode === 'name' ? '輸入姓名搜尋 (例如: 志明)' : '輸入桌次號碼 (例如: 5)'}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900 bg-gray-50 focus:bg-white transition-colors"
