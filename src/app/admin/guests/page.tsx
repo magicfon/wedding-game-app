@@ -526,22 +526,16 @@ export default function GuestManagementPage() {
             guest.table_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
             (guest.notes && guest.notes.toLowerCase().includes(searchQuery.toLowerCase()))
 
-        // 桌次篩選
-        const matchesTable = !tableFilter || guest.table_number === tableFilter
+        // 桌次篩選 (文字包含)
+        const matchesTable = !tableFilter ||
+            guest.table_number.toLowerCase().includes(tableFilter.toLowerCase())
 
-        // 備註篩選
+        // 備註篩選 (文字包含)
         const matchesNotes = !notesFilter ||
-            (notesFilter === 'has' && guest.notes && guest.notes.trim() !== '') ||
-            (notesFilter === 'empty' && (!guest.notes || guest.notes.trim() === ''))
+            (guest.notes && guest.notes.toLowerCase().includes(notesFilter.toLowerCase()))
 
         return matchesSearch && matchesTable && matchesNotes
     })
-
-    // 取得所有不重複的桌次 (用於下拉選單)
-    const uniqueTables = useMemo(() => {
-        const tables = [...new Set(guests.map(g => g.table_number))]
-        return tables.sort((a, b) => a.localeCompare(b, 'zh-TW', { numeric: true }))
-    }, [guests])
 
     return (
         <AdminLayout title="用戶管理">
@@ -589,33 +583,6 @@ export default function GuestManagementPage() {
                                 className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
                             />
                         </div>
-
-                        {/* 桌次篩選 (只在手動名單顯示) */}
-                        {activeTab === 'manual' && (
-                            <select
-                                value={tableFilter}
-                                onChange={(e) => setTableFilter(e.target.value)}
-                                className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none bg-white"
-                            >
-                                <option value="">全部桌次</option>
-                                {uniqueTables.map(table => (
-                                    <option key={table} value={table}>{table} 桌</option>
-                                ))}
-                            </select>
-                        )}
-
-                        {/* 備註篩選 (只在手動名單顯示) */}
-                        {activeTab === 'manual' && (
-                            <select
-                                value={notesFilter}
-                                onChange={(e) => setNotesFilter(e.target.value)}
-                                className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none bg-white"
-                            >
-                                <option value="">全部備註</option>
-                                <option value="has">有備註</option>
-                                <option value="empty">無備註</option>
-                            </select>
-                        )}
 
                         {/* 新增按鈕 (只在手動名單顯示) */}
                         {activeTab === 'manual' && (
@@ -981,12 +948,34 @@ export default function GuestManagementPage() {
                                 <thead className="bg-gray-50 text-gray-600 text-xs uppercase">
                                     <tr>
                                         <th className="px-4 py-4 font-medium">賓客姓名</th>
-                                        <th className="px-4 py-4 font-medium">桌次</th>
+                                        <th className="px-4 py-2 font-medium bg-gray-50 max-w-[100px]">
+                                            <div className="flex flex-col gap-1">
+                                                <span className="text-xs text-gray-500">桌次</span>
+                                                <input
+                                                    type="text"
+                                                    value={tableFilter}
+                                                    onChange={(e) => setTableFilter(e.target.value)}
+                                                    className="w-full px-2 py-1 border border-gray-200 rounded text-xs focus:ring-2 focus:ring-purple-500 outline-none"
+                                                    placeholder="篩選..."
+                                                />
+                                            </div>
+                                        </th>
                                         <th className="px-4 py-4 font-medium text-center">大人</th>
                                         <th className="px-4 py-4 font-medium text-center">小孩</th>
                                         <th className="px-4 py-4 font-medium text-center">素食大人</th>
                                         <th className="px-4 py-4 font-medium text-center">總人數</th>
-                                        <th className="px-4 py-4 font-medium">備註</th>
+                                        <th className="px-4 py-2 font-medium bg-gray-50 min-w-[150px]">
+                                            <div className="flex flex-col gap-1">
+                                                <span className="text-xs text-gray-500">備註</span>
+                                                <input
+                                                    type="text"
+                                                    value={notesFilter}
+                                                    onChange={(e) => setNotesFilter(e.target.value)}
+                                                    className="w-full px-2 py-1 border border-gray-200 rounded text-xs focus:ring-2 focus:ring-purple-500 outline-none"
+                                                    placeholder="篩選..."
+                                                />
+                                            </div>
+                                        </th>
                                         <th className="px-4 py-4 font-medium text-right">操作</th>
                                     </tr>
                                 </thead>
