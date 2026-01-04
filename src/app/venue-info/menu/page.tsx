@@ -72,17 +72,6 @@ export default function MenuPage() {
             </div>
           </div>
 
-          {/* 湯品 */}
-          <div className="bg-white rounded-2xl shadow-lg p-6">
-            <div className="flex items-center justify-center gap-3 mb-4">
-              <div className="p-2 bg-rose-100 rounded-lg">
-                <Utensils className="w-5 h-5 text-rose-600" />
-              </div>
-              <h3 className="text-lg font-bold text-amber-800">花好月常圓</h3>
-            </div>
-            <p className="text-center text-gray-600 text-sm">精選湯品</p>
-          </div>
-
           {/* 主菜 */}
           <div className="bg-white rounded-2xl shadow-lg p-6">
             <div className="flex items-center justify-center gap-3 mb-4">
@@ -92,6 +81,7 @@ export default function MenuPage() {
               <h3 className="text-lg font-bold text-amber-800">主菜</h3>
             </div>
             <ul className="space-y-3 text-gray-700 text-center">
+              <li className="py-1 border-b border-gray-100">花好月常圓</li>
               <li className="py-1 border-b border-gray-100">和風鮑魚沙拉杯（位上）</li>
               <li className="py-1 border-b border-gray-100">金華花膠鹿野雞</li>
               <li className="py-1 border-b border-gray-100">秘製豬肋排搭奶油鮮蔬</li>
