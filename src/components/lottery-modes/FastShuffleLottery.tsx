@@ -46,6 +46,59 @@ const ShufflePhoto = memo(({ photo, size }: ShufflePhotoProps) => {
 })
 ShufflePhoto.displayName = 'ShufflePhoto'
 
+// 中獎揭曉組件
+interface WinnerRevealProps {
+    photo: Photo
+    onComplete: () => void
+}
+
+const WinnerReveal = memo(({ photo, onComplete }: WinnerRevealProps) => {
+    useEffect(() => {
+        const timer = setTimeout(onComplete, 2000) // 2秒後轉場
+        return () => clearTimeout(timer)
+    }, [onComplete])
+
+    return (
+        <div className="absolute inset-0 flex flex-col items-center justify-center z-50 animate-in zoom-in duration-500">
+            {/* 標題 */}
+            <h2 className="text-5xl font-bold text-white mb-8 animate-pulse drop-shadow-lg">
+                🎊 中獎了！🎊
+            </h2>
+
+            {/* 中獎照片 */}
+            <div className="relative">
+                {/* 發光效果 */}
+                <div className="absolute -inset-8 bg-gradient-to-r from-yellow-400 via-orange-400 to-pink-400 rounded-3xl blur-2xl opacity-70 animate-pulse" />
+
+                {/* 照片 */}
+                <div className="relative rounded-3xl overflow-hidden border-8 border-yellow-400 shadow-2xl"
+                    style={{ width: '600px', height: '600px' }}
+                >
+                    <img
+                        src={photo.image_url}
+                        alt={photo.display_name}
+                        className="w-full h-full object-cover"
+                    />
+                    {/* 上傳者資訊 */}
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-8">
+                        <div className="flex items-center gap-4">
+                            <img
+                                src={photo.avatar_url || '/default-avatar.png'}
+                                alt={photo.display_name}
+                                className="w-16 h-16 rounded-full border-4 border-yellow-400"
+                            />
+                            <span className="text-white text-3xl font-bold">
+                                {photo.display_name}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+})
+WinnerReveal.displayName = 'WinnerReveal'
+
 export const FastShuffleLottery = memo(({
     photos,
     winnerPhoto,
@@ -56,6 +109,7 @@ export const FastShuffleLottery = memo(({
 }: LotteryModeProps) => {
     const [displayedPhoto, setDisplayedPhoto] = useState<Photo>(photos[0])
     const [isSlowingDown, setIsSlowingDown] = useState(false)
+    const [showWinnerReveal, setShowWinnerReveal] = useState(false)
     const animationRef = useRef<NodeJS.Timeout | null>(null)
     const stepRef = useRef(0)
 
@@ -64,6 +118,10 @@ export const FastShuffleLottery = memo(({
 
     useEffect(() => {
         if (!isAnimating || photos.length === 0) return
+
+        // 重置狀態
+        setShowWinnerReveal(false)
+        setIsSlowingDown(false)
 
         // 動畫參數
         const schedule: { photoIndex: number; delay: number }[] = []
@@ -105,11 +163,9 @@ export const FastShuffleLottery = memo(({
 
         const runStep = () => {
             if (stepRef.current >= schedule.length) {
-                // 動畫結束
+                // 動畫結束，顯示中獎揭曉
                 setDisplayedPhoto(winnerPhoto)
-                setTimeout(() => {
-                    onAnimationComplete(winnerPhoto)
-                }, 500)
+                setShowWinnerReveal(true)
                 return
             }
 
@@ -132,7 +188,17 @@ export const FastShuffleLottery = memo(({
                 clearTimeout(animationRef.current)
             }
         }
-    }, [isAnimating, photos, winnerPhoto, winnerIndex, onAnimationComplete])
+    }, [isAnimating, photos, winnerPhoto, winnerIndex])
+
+    // 中獎揭曉完成後的回調
+    const handleRevealComplete = () => {
+        onAnimationComplete(winnerPhoto)
+    }
+
+    // 顯示中獎揭曉
+    if (showWinnerReveal) {
+        return <WinnerReveal photo={winnerPhoto} onComplete={handleRevealComplete} />
+    }
 
     return (
         <div className="relative flex flex-col items-center justify-center h-full">

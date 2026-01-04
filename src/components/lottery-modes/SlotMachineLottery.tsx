@@ -10,6 +10,59 @@ const COLUMN_HEIGHT = 800
 const PHOTO_SIZE = 200
 const VISIBLE_ITEMS = 5 // 每列可見的照片數
 
+// 中獎揭曉組件
+interface WinnerRevealProps {
+    photo: Photo
+    onComplete: () => void
+}
+
+const WinnerReveal = memo(({ photo, onComplete }: WinnerRevealProps) => {
+    useEffect(() => {
+        const timer = setTimeout(onComplete, 2000) // 2秒後轉場
+        return () => clearTimeout(timer)
+    }, [onComplete])
+
+    return (
+        <div className="absolute inset-0 flex flex-col items-center justify-center z-50 animate-in zoom-in duration-500">
+            {/* 標題 */}
+            <h2 className="text-5xl font-bold text-white mb-8 animate-pulse drop-shadow-lg">
+                🎰 中獎了！🎰
+            </h2>
+
+            {/* 中獎照片 */}
+            <div className="relative">
+                {/* 發光效果 */}
+                <div className="absolute -inset-8 bg-gradient-to-r from-yellow-400 via-orange-400 to-pink-400 rounded-3xl blur-2xl opacity-70 animate-pulse" />
+
+                {/* 照片 */}
+                <div className="relative rounded-3xl overflow-hidden border-8 border-yellow-400 shadow-2xl"
+                    style={{ width: '600px', height: '600px' }}
+                >
+                    <img
+                        src={photo.image_url}
+                        alt={photo.display_name}
+                        className="w-full h-full object-cover"
+                    />
+                    {/* 上傳者資訊 */}
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-8">
+                        <div className="flex items-center gap-4">
+                            <img
+                                src={photo.avatar_url || '/default-avatar.png'}
+                                alt={photo.display_name}
+                                className="w-16 h-16 rounded-full border-4 border-yellow-400"
+                            />
+                            <span className="text-white text-3xl font-bold">
+                                {photo.display_name}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+})
+WinnerReveal.displayName = 'WinnerReveal'
+
 interface SlotColumnProps {
     photos: Photo[]
     targetIndex: number
@@ -147,6 +200,7 @@ export const SlotMachineLottery = memo(({
     scale
 }: LotteryModeProps) => {
     const [stoppedColumns, setStoppedColumns] = useState(0)
+    const [showWinnerReveal, setShowWinnerReveal] = useState(false)
 
     // 隨機選擇左右兩列的停止位置
     const leftIndex = useMemo(() => Math.floor(Math.random() * photos.length), [photos.length])
@@ -156,23 +210,33 @@ export const SlotMachineLottery = memo(({
         setStoppedColumns(prev => {
             const newCount = prev + 1
             if (newCount === 3) {
-                // 所有列都停止了
+                // 所有列都停止了，顯示中獎揭曉
                 setTimeout(() => {
-                    onAnimationComplete(winnerPhoto)
-                }, 800)
+                    setShowWinnerReveal(true)
+                }, 500)
             }
             return newCount
         })
     }
 
+    const handleRevealComplete = () => {
+        onAnimationComplete(winnerPhoto)
+    }
+
     useEffect(() => {
         if (isAnimating) {
             setStoppedColumns(0)
+            setShowWinnerReveal(false)
         }
     }, [isAnimating])
 
     if (photos.length === 0) {
         return <div className="text-white text-2xl">載入中...</div>
+    }
+
+    // 顯示中獎揭曉
+    if (showWinnerReveal) {
+        return <WinnerReveal photo={winnerPhoto} onComplete={handleRevealComplete} />
     }
 
     return (

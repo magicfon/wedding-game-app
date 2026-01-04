@@ -13,6 +13,59 @@ interface Candidate {
     position: number
 }
 
+// 中獎揭曉組件
+interface WinnerRevealProps {
+    photo: Photo
+    onComplete: () => void
+}
+
+const WinnerReveal = memo(({ photo, onComplete }: WinnerRevealProps) => {
+    useEffect(() => {
+        const timer = setTimeout(onComplete, 2000) // 2秒後轉場
+        return () => clearTimeout(timer)
+    }, [onComplete])
+
+    return (
+        <div className="absolute inset-0 flex flex-col items-center justify-center z-50 animate-in zoom-in duration-500">
+            {/* 標題 */}
+            <h2 className="text-5xl font-bold text-white mb-8 animate-pulse drop-shadow-lg">
+                🏆 冠軍誕生！🏆
+            </h2>
+
+            {/* 中獎照片 */}
+            <div className="relative">
+                {/* 發光效果 */}
+                <div className="absolute -inset-8 bg-gradient-to-r from-yellow-400 via-orange-400 to-pink-400 rounded-3xl blur-2xl opacity-70 animate-pulse" />
+
+                {/* 照片 */}
+                <div className="relative rounded-3xl overflow-hidden border-8 border-yellow-400 shadow-2xl"
+                    style={{ width: '600px', height: '600px' }}
+                >
+                    <img
+                        src={photo.image_url}
+                        alt={photo.display_name}
+                        className="w-full h-full object-cover"
+                    />
+                    {/* 上傳者資訊 */}
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-8">
+                        <div className="flex items-center gap-4">
+                            <img
+                                src={photo.avatar_url || '/default-avatar.png'}
+                                alt={photo.display_name}
+                                className="w-16 h-16 rounded-full border-4 border-yellow-400"
+                            />
+                            <span className="text-white text-3xl font-bold">
+                                {photo.display_name}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+})
+WinnerReveal.displayName = 'WinnerReveal'
+
 export const TournamentLottery = memo(({
     photos,
     winnerPhoto,
@@ -26,6 +79,7 @@ export const TournamentLottery = memo(({
     const [roundText, setRoundText] = useState('')
     const [showFinal, setShowFinal] = useState(false)
     const [finalRevealed, setFinalRevealed] = useState(false)
+    const [showWinnerReveal, setShowWinnerReveal] = useState(false)
     const timeoutRef = useRef<NodeJS.Timeout | null>(null)
 
     // 初始化候選者
@@ -65,8 +119,9 @@ export const TournamentLottery = memo(({
             timeoutRef.current = setTimeout(() => {
                 setFinalRevealed(true)
 
+                // 1秒後顯示中獎揭曉
                 setTimeout(() => {
-                    onAnimationComplete(winnerPhoto)
+                    setShowWinnerReveal(true)
                 }, 1000)
             }, 2000)
             return
@@ -100,7 +155,7 @@ export const TournamentLottery = memo(({
         timeoutRef.current = setTimeout(() => {
             setRound(roundNum + 1)
         }, 2000)
-    }, [winnerPhoto, onAnimationComplete])
+    }, [winnerPhoto])
 
     useEffect(() => {
         if (!isAnimating || photos.length === 0) return
@@ -112,6 +167,7 @@ export const TournamentLottery = memo(({
         setRoundText('準備開始...')
         setShowFinal(false)
         setFinalRevealed(false)
+        setShowWinnerReveal(false)
 
         // 延遲開始第一輪
         timeoutRef.current = setTimeout(() => {
@@ -131,6 +187,15 @@ export const TournamentLottery = memo(({
             executeRound(candidates, round)
         }
     }, [round, showFinal, candidates, executeRound])
+
+    const handleRevealComplete = () => {
+        onAnimationComplete(winnerPhoto)
+    }
+
+    // 顯示中獎揭曉
+    if (showWinnerReveal) {
+        return <WinnerReveal photo={winnerPhoto} onComplete={handleRevealComplete} />
+    }
 
     // 計算格子布局
     const remaining = candidates.filter(c => !c.eliminated)

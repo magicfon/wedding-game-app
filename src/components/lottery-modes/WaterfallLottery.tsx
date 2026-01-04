@@ -16,6 +16,59 @@ interface FallingPhoto {
     delay: number
 }
 
+// 中獎揭曉組件
+interface WinnerRevealProps {
+    photo: Photo
+    onComplete: () => void
+}
+
+const WinnerReveal = memo(({ photo, onComplete }: WinnerRevealProps) => {
+    useEffect(() => {
+        const timer = setTimeout(onComplete, 2000) // 2秒後轉場
+        return () => clearTimeout(timer)
+    }, [onComplete])
+
+    return (
+        <div className="absolute inset-0 flex flex-col items-center justify-center z-50 animate-in zoom-in duration-500">
+            {/* 標題 */}
+            <h2 className="text-5xl font-bold text-white mb-8 animate-pulse drop-shadow-lg">
+                🌊 中獎了！🌊
+            </h2>
+
+            {/* 中獎照片 */}
+            <div className="relative">
+                {/* 發光效果 */}
+                <div className="absolute -inset-8 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 rounded-3xl blur-2xl opacity-70 animate-pulse" />
+
+                {/* 照片 */}
+                <div className="relative rounded-3xl overflow-hidden border-8 border-yellow-400 shadow-2xl"
+                    style={{ width: '600px', height: '600px' }}
+                >
+                    <img
+                        src={photo.image_url}
+                        alt={photo.display_name}
+                        className="w-full h-full object-cover"
+                    />
+                    {/* 上傳者資訊 */}
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-8">
+                        <div className="flex items-center gap-4">
+                            <img
+                                src={photo.avatar_url || '/default-avatar.png'}
+                                alt={photo.display_name}
+                                className="w-16 h-16 rounded-full border-4 border-yellow-400"
+                            />
+                            <span className="text-white text-3xl font-bold">
+                                {photo.display_name}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+})
+WinnerReveal.displayName = 'WinnerReveal'
+
 export const WaterfallLottery = memo(({
     photos,
     winnerPhoto,
@@ -26,7 +79,7 @@ export const WaterfallLottery = memo(({
 }: LotteryModeProps) => {
     const [fallingPhotos, setFallingPhotos] = useState<FallingPhoto[]>([])
     const [catchingWinner, setCatchingWinner] = useState(false)
-    const [showWinner, setShowWinner] = useState(false)
+    const [showWinnerReveal, setShowWinnerReveal] = useState(false)
     const containerRef = useRef<HTMLDivElement>(null)
     const animationRef = useRef<NodeJS.Timeout | null>(null)
     const photoIdRef = useRef(0)
@@ -45,7 +98,7 @@ export const WaterfallLottery = memo(({
 
         setFallingPhotos([])
         setCatchingWinner(false)
-        setShowWinner(false)
+        setShowWinnerReveal(false)
 
         // 持續生成下落的照片
         const spawnPhoto = () => {
@@ -81,14 +134,10 @@ export const WaterfallLottery = memo(({
             }
             setFallingPhotos(prev => [...prev, winnerFalling])
 
-            // 1.5 秒後顯示中獎畫面
+            // 1.5 秒後顯示中獎揭曉
             setTimeout(() => {
-                setShowWinner(true)
+                setShowWinnerReveal(true)
                 setFallingPhotos([])
-
-                setTimeout(() => {
-                    onAnimationComplete(winnerPhoto)
-                }, 800)
             }, 1500)
         }, 8000)
 
@@ -99,7 +148,16 @@ export const WaterfallLottery = memo(({
                 clearTimeout(animationRef.current)
             }
         }
-    }, [isAnimating, photos, winnerPhoto, onAnimationComplete])
+    }, [isAnimating, photos, winnerPhoto])
+
+    const handleRevealComplete = () => {
+        onAnimationComplete(winnerPhoto)
+    }
+
+    // 顯示中獎揭曉
+    if (showWinnerReveal) {
+        return <WinnerReveal photo={winnerPhoto} onComplete={handleRevealComplete} />
+    }
 
     return (
         <div
@@ -163,35 +221,14 @@ export const WaterfallLottery = memo(({
                         </div>
                     )
                 })}
-
-                {/* 中獎者大圖 */}
-                {showWinner && (
-                    <div className="absolute inset-0 flex items-center justify-center animate-in zoom-in duration-500">
-                        <div className="relative">
-                            <div className="absolute -inset-8 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 rounded-3xl blur-2xl opacity-60 animate-pulse" />
-                            <img
-                                src={winnerPhoto.image_url}
-                                alt={winnerPhoto.display_name}
-                                className="relative w-96 h-96 object-cover rounded-3xl border-8 border-white shadow-2xl"
-                            />
-                            <div className="absolute -bottom-16 left-1/2 -translate-x-1/2 whitespace-nowrap">
-                                <p className="text-3xl font-bold text-white drop-shadow-lg">
-                                    🌊 {winnerPhoto.display_name} 🌊
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                )}
             </div>
 
             {/* 提示文字 */}
-            {!showWinner && (
-                <div className="absolute bottom-12 text-center">
-                    <p className="text-2xl text-white font-bold drop-shadow-lg">
-                        {catchingWinner ? '✨ 捕捉中...' : '🌊 雨落繽紛...'}
-                    </p>
-                </div>
-            )}
+            <div className="absolute bottom-12 text-center">
+                <p className="text-2xl text-white font-bold drop-shadow-lg">
+                    {catchingWinner ? '✨ 捕捉中...' : '🌊 雨落繽紛...'}
+                </p>
+            </div>
         </div>
     )
 })
