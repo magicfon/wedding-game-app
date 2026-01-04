@@ -4,17 +4,33 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import AdminLayout from '@/components/AdminLayout'
 import { useLiff } from '@/hooks/useLiff'
-import { 
-  Gift, 
-  Users, 
-  History, 
-  Play, 
-  RefreshCw, 
+import {
+  Gift,
+  Users,
+  History,
+  Play,
+  RefreshCw,
   Trash2,
   CheckCircle,
   XCircle,
-  ExternalLink
+  ExternalLink,
+  Shuffle,
+  Disc,
+  Droplets,
+  Trophy,
+  Target
 } from 'lucide-react'
+
+// 動畫模式類型和資訊
+type AnimationMode = 'fast_shuffle' | 'slot_machine' | 'waterfall' | 'tournament' | 'spiral'
+
+const ANIMATION_MODES: { mode: AnimationMode; name: string; icon: React.ReactNode; description: string }[] = [
+  { mode: 'fast_shuffle', name: '快速切換', icon: <Shuffle className="w-6 h-6" />, description: '單張照片快速隨機切換' },
+  { mode: 'slot_machine', name: '老虎機', icon: <Disc className="w-6 h-6" />, description: '經典三欄老虎機效果' },
+  { mode: 'waterfall', name: '瀑布流', icon: <Droplets className="w-6 h-6" />, description: '照片如雨滴般流動' },
+  { mode: 'tournament', name: '淘汰賽', icon: <Trophy className="w-6 h-6" />, description: '多輪淘汰賽制揭曉' },
+  { mode: 'spiral', name: '螺旋', icon: <Target className="w-6 h-6" />, description: '照片螺旋旋轉效果' },
+]
 
 interface EligibleUser {
   line_id: string
@@ -41,6 +57,7 @@ interface LotteryState {
   is_drawing: boolean
   current_draw_id: number | null
   max_photos_for_lottery: number
+  animation_mode?: AnimationMode
 }
 
 export default function LotteryManagePage() {
@@ -55,9 +72,11 @@ export default function LotteryManagePage() {
   const [loading, setLoading] = useState(true)
   const [drawing, setDrawing] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
-  const [message, setMessage] = useState<{type: 'success' | 'error', text: string} | null>(null)
+  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
   const [maxPhotosInput, setMaxPhotosInput] = useState<number>(5)
-  
+  const [animationMode, setAnimationMode] = useState<AnimationMode>('fast_shuffle')
+  const [updatingMode, setUpdatingMode] = useState(false)
+
   const { isLoggedIn, isAdmin, profile, loading: liffLoading, adminLoading } = useLiff()
   const router = useRouter()
 
@@ -89,7 +108,7 @@ export default function LotteryManagePage() {
     try {
       const response = await fetch('/api/lottery/check-eligibility')
       const data = await response.json()
-      
+
       if (data.success) {
         setEligibleUsers(data.eligible_users || [])
       } else {
@@ -105,10 +124,13 @@ export default function LotteryManagePage() {
     try {
       const response = await fetch('/api/lottery/control')
       const data = await response.json()
-      
+
       if (data.success) {
         setLotteryState(data.state)
         setMaxPhotosInput(data.state.max_photos_for_lottery || 5)
+        if (data.state.animation_mode) {
+          setAnimationMode(data.state.animation_mode)
+        }
       }
     } catch (error) {
       console.error('獲取抽獎狀態失敗:', error)
@@ -119,7 +141,7 @@ export default function LotteryManagePage() {
     try {
       const response = await fetch('/api/lottery/history?limit=20')
       const data = await response.json()
-      
+
       if (data.success) {
         setLotteryHistory(data.history || [])
       } else {
@@ -158,7 +180,7 @@ export default function LotteryManagePage() {
 
       if (data.success) {
         showMessage('success', data.message || '抽獎完成！')
-        
+
         // 重新載入資料
         await fetchData()
       } else {
@@ -259,6 +281,39 @@ export default function LotteryManagePage() {
     }
   }
 
+  const handleUpdateAnimationMode = async (mode: AnimationMode) => {
+    if (updatingMode) return
+    setUpdatingMode(true)
+
+    try {
+      const response = await fetch('/api/lottery/control', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          animation_mode: mode,
+          admin_id: profile?.userId
+        }),
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        setAnimationMode(mode)
+        setLotteryState(prev => ({ ...prev, animation_mode: mode }))
+        showMessage('success', data.message || '動畫模式已更新')
+      } else {
+        showMessage('error', data.error || '更新失敗')
+      }
+    } catch (error) {
+      console.error('更新動畫模式失敗:', error)
+      showMessage('error', '更新失敗')
+    } finally {
+      setUpdatingMode(false)
+    }
+  }
+
   const handleDeleteHistory = async (lotteryId: number) => {
     if (!confirm('確定要刪除這筆抽獎記錄嗎？')) return
 
@@ -347,9 +402,8 @@ export default function LotteryManagePage() {
       <div className="space-y-6">
         {/* 訊息提示 */}
         {message && (
-          <div className={`p-4 rounded-lg ${
-            message.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-          }`}>
+          <div className={`p-4 rounded-lg ${message.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+            }`}>
             <div className="flex items-center space-x-2">
               {message.type === 'success' ? (
                 <CheckCircle className="w-5 h-5" />
@@ -371,7 +425,7 @@ export default function LotteryManagePage() {
                 <p className="text-gray-600">符合資格：{eligibleUsers.length} 人</p>
               </div>
             </div>
-            
+
             <button
               onClick={() => window.open('/lottery-live', '_blank')}
               className="flex items-center space-x-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
@@ -394,11 +448,10 @@ export default function LotteryManagePage() {
 
             <button
               onClick={handleToggleLotteryMode}
-              className={`flex items-center justify-center space-x-2 px-6 py-4 rounded-lg transition-colors font-semibold ${
-                lotteryState.is_lottery_active
-                  ? 'bg-green-500 hover:bg-green-600 text-white'
-                  : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
-              }`}
+              className={`flex items-center justify-center space-x-2 px-6 py-4 rounded-lg transition-colors font-semibold ${lotteryState.is_lottery_active
+                ? 'bg-green-500 hover:bg-green-600 text-white'
+                : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+                }`}
             >
               <Gift className="w-5 h-5" />
               <span>{lotteryState.is_lottery_active ? '抽獎模式：開啟' : '抽獎模式：關閉'}</span>
@@ -471,6 +524,41 @@ export default function LotteryManagePage() {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* 動畫模式選擇 */}
+          <div className="mt-6 border-t pt-6">
+            <h3 className="text-lg font-semibold text-gray-800 mb-3">🎬 抽獎動畫模式</h3>
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+              {ANIMATION_MODES.map(({ mode, name, icon, description }) => (
+                <button
+                  key={mode}
+                  onClick={() => handleUpdateAnimationMode(mode)}
+                  disabled={updatingMode}
+                  className={`relative p-4 rounded-xl border-2 transition-all duration-200 text-left ${animationMode === mode
+                      ? 'border-purple-500 bg-purple-50 shadow-lg'
+                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                    } ${updatingMode ? 'opacity-50 cursor-wait' : ''}`}
+                >
+                  {/* 選中指示器 */}
+                  {animationMode === mode && (
+                    <div className="absolute -top-2 -right-2 w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center">
+                      <CheckCircle className="w-4 h-4 text-white" />
+                    </div>
+                  )}
+
+                  <div className={`mb-2 ${animationMode === mode ? 'text-purple-600' : 'text-gray-600'}`}>
+                    {icon}
+                  </div>
+                  <div className={`font-semibold ${animationMode === mode ? 'text-purple-700' : 'text-gray-800'}`}>
+                    {name}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1 line-clamp-2">
+                    {description}
+                  </div>
+                </button>
+              ))}
             </div>
           </div>
         </div>

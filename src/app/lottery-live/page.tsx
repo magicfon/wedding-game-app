@@ -1,16 +1,26 @@
 'use client'
 
-import { useState, useEffect, useRef, memo, useMemo } from 'react'
+import { useState, useEffect, useRef, memo, useMemo, useCallback } from 'react'
 import { createSupabaseBrowser } from '@/lib/supabase'
 import { Gift, Sparkles, Heart } from 'lucide-react'
 import { SoundToggle } from '@/components/SoundToggle'
 import { useSoundEffects } from '@/hooks/useSoundEffects'
 import { useBackgroundMusic } from '@/hooks/useBackgroundMusic'
+import {
+  FastShuffleLottery,
+  SlotMachineLottery,
+  WaterfallLottery,
+  TournamentLottery,
+  SpiralLottery,
+  AnimationMode,
+  ANIMATION_MODE_INFO
+} from '@/components/lottery-modes'
 
 interface LotteryState {
   is_lottery_active: boolean
   is_drawing: boolean
   current_draw_id: number | null
+  animation_mode?: AnimationMode
 }
 
 interface CurrentDraw {
@@ -247,6 +257,8 @@ export default function LotteryLivePage() {
   const [winnerPhotoRect, setWinnerPhotoRect] = useState<DOMRect | null>(null) // 中獎照片原始位置
   const [scale, setScale] = useState(1)
   const [highlightedIndex, setHighlightedIndex] = useState(-1)
+  const [animationMode, setAnimationMode] = useState<AnimationMode>('fast_shuffle')
+  const [winnerIndex, setWinnerIndex] = useState(-1)
 
   // 音效控制
   const { isSoundEnabled, toggleSound } = useSoundEffects()
@@ -373,6 +385,11 @@ export default function LotteryLivePage() {
         }
 
         setLotteryState(data.state)
+
+        // 更新動畫模式
+        if (data.state.animation_mode) {
+          setAnimationMode(data.state.animation_mode)
+        }
 
         // 注意：不在這裡調用 startCelebration()
         // 慶祝效果只應該在動畫結束時觸發（由 animateSelection 控制）
@@ -503,12 +520,23 @@ export default function LotteryLivePage() {
     setPhotos(photosToUse)
     setIsAnimating(true)
     setHighlightedIndex(-1)
+    setWinnerIndex(targetIndex) // 設置中獎者索引給新動畫模式使用
 
     console.log('🎰 開始抽獎動畫')
     console.log('使用照片數:', photosToUse.length)
     console.log('目標索引:', targetIndex)
+    console.log('動畫模式:', animationMode)
 
-    animateSelection(targetIndex, photosToUse)
+    // 如果使用舊式 grid 動畫模式 (keeping backward compatibility)
+    // 新模式會透過組件自己處理動畫
+    if (animationMode === 'fast_shuffle' || animationMode === 'slot_machine' ||
+      animationMode === 'waterfall' || animationMode === 'tournament' || animationMode === 'spiral') {
+      // 新模式：動畫由組件自己控制，這裡不需要調用 animateSelection
+      console.log('📱 使用新動畫模式，由組件控制動畫')
+    } else {
+      // 舊模式：使用原本的 grid 動畫
+      animateSelection(targetIndex, photosToUse)
+    }
   }
 
   const animateSelection = (targetIndex: number, photosToUse: Photo[]) => {
@@ -644,6 +672,13 @@ export default function LotteryLivePage() {
         cancelAnimationFrame(animationFrameRef.current)
       }
     }
+  }, [])
+
+  // 新動畫模式完成時的回調
+  const handleAnimationComplete = useCallback((completedWinnerPhoto: Photo) => {
+    console.log('🎉 新動畫模式完成，中獎者:', completedWinnerPhoto.display_name)
+    setIsAnimating(false)
+    startCelebration(completedWinnerPhoto)
   }, [])
 
   const startCelebration = (winnerPhoto?: Photo) => {
@@ -819,24 +854,74 @@ export default function LotteryLivePage() {
           </p>
         </div>
 
-        {/* 照片 Grid 顯示 */}
-        <div className={`relative z-10 px-10 transition-opacity duration-1000 ${showingWinner || zoomingWinner ? 'opacity-0' : 'opacity-100'}`}>
-          <div className="relative w-fit mx-auto">
-            {/* The Grid of Photos (Static) */}
-            <StaticPhotoGrid
-              photos={photos}
-              winnerIndex={isAnimating ? -1 : highlightedIndex}
-              gridLayout={gridLayout}
-            />
+        {/* 動畫模式顯示區域 */}
+        <div className={`relative z-10 w-full h-full flex-1 transition-opacity duration-1000 ${showingWinner || zoomingWinner ? 'opacity-0' : 'opacity-100'}`}>
+          {/* 新動畫模式 */}
+          {isAnimating && winnerIndex >= 0 && photos[winnerIndex] && (
+            <>
+              {animationMode === 'fast_shuffle' && (
+                <FastShuffleLottery
+                  photos={photos}
+                  winnerPhoto={photos[winnerIndex]}
+                  winnerIndex={winnerIndex}
+                  onAnimationComplete={handleAnimationComplete}
+                  isAnimating={isAnimating}
+                  scale={scale}
+                />
+              )}
+              {animationMode === 'slot_machine' && (
+                <SlotMachineLottery
+                  photos={photos}
+                  winnerPhoto={photos[winnerIndex]}
+                  winnerIndex={winnerIndex}
+                  onAnimationComplete={handleAnimationComplete}
+                  isAnimating={isAnimating}
+                  scale={scale}
+                />
+              )}
+              {animationMode === 'waterfall' && (
+                <WaterfallLottery
+                  photos={photos}
+                  winnerPhoto={photos[winnerIndex]}
+                  winnerIndex={winnerIndex}
+                  onAnimationComplete={handleAnimationComplete}
+                  isAnimating={isAnimating}
+                  scale={scale}
+                />
+              )}
+              {animationMode === 'tournament' && (
+                <TournamentLottery
+                  photos={photos}
+                  winnerPhoto={photos[winnerIndex]}
+                  winnerIndex={winnerIndex}
+                  onAnimationComplete={handleAnimationComplete}
+                  isAnimating={isAnimating}
+                  scale={scale}
+                />
+              )}
+              {animationMode === 'spiral' && (
+                <SpiralLottery
+                  photos={photos}
+                  winnerPhoto={photos[winnerIndex]}
+                  winnerIndex={winnerIndex}
+                  onAnimationComplete={handleAnimationComplete}
+                  isAnimating={isAnimating}
+                  scale={scale}
+                />
+              )}
+            </>
+          )}
 
-            {/* The Floating Highlight (Dynamic) */}
-            <FloatingHighlight
-              highlightedIndex={highlightedIndex}
-              gridLayout={gridLayout}
-              isAnimating={isAnimating}
-              winnerRef={winnerPhotoRef}
-            />
-          </div>
+          {/* 待機畫面：當不在動畫中且沒有中獎者時顯示 */}
+          {!isAnimating && !currentDraw && (
+            <div className="flex flex-col items-center justify-center h-full">
+              <Gift className="w-48 h-48 text-white/80 mb-8 animate-bounce" />
+              <p className="text-3xl text-white font-bold">等待抽獎開始...</p>
+              <p className="text-xl text-white/70 mt-4">
+                目前模式：{ANIMATION_MODE_INFO[animationMode]?.icon} {ANIMATION_MODE_INFO[animationMode]?.name}
+              </p>
+            </div>
+          )}
         </div>
 
       </div>
