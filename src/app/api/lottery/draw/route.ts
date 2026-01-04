@@ -144,7 +144,26 @@ export async function POST(request: NextRequest) {
     console.log('   有效機會:', winnerEffectiveCount)
     console.log('   中獎機率:', `${winProbability}%`)
 
-    // 5. 記錄抽獎結果
+    // 5. 從中獎者的照片中隨機選一張作為中獎照片
+    const { data: winnerPhotos, error: photosError } = await supabase
+      .from('photos')
+      .select('id, image_url, thumbnail_medium_url')
+      .eq('user_id', winner.line_id)
+      .eq('is_public', true)
+
+    let winnerPhotoId: number | null = null
+    let winnerPhotoUrl: string | null = null
+
+    if (!photosError && winnerPhotos && winnerPhotos.length > 0) {
+      const randomPhoto = winnerPhotos[Math.floor(Math.random() * winnerPhotos.length)]
+      winnerPhotoId = randomPhoto.id
+      winnerPhotoUrl = randomPhoto.thumbnail_medium_url || randomPhoto.image_url
+      console.log('📸 選中的中獎照片 ID:', winnerPhotoId, 'URL:', winnerPhotoUrl)
+    } else {
+      console.error('⚠️ 無法取得中獎者照片:', photosError)
+    }
+
+    // 6. 記錄抽獎結果（包含中獎照片）
     const { data: lotteryRecord, error: recordError } = await supabase
       .from('lottery_history')
       .insert({
@@ -152,6 +171,8 @@ export async function POST(request: NextRequest) {
         winner_display_name: winner.display_name,
         winner_avatar_url: winner.avatar_url,
         photo_count: winner.photo_count,
+        winner_photo_id: winnerPhotoId,
+        winner_photo_url: winnerPhotoUrl,
         admin_id: admin_id || 'system',
         admin_name: admin_name || '系統管理員',
         participants_count: eligibleUsers.length,

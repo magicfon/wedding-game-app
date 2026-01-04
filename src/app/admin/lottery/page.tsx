@@ -50,6 +50,8 @@ interface LotteryHistory {
   admin_name: string
   participants_count: number
   notes: string
+  winner_photo_id: number | null
+  winner_photo_url: string | null
 }
 
 interface LotteryState {
@@ -537,8 +539,8 @@ export default function LotteryManagePage() {
                   onClick={() => handleUpdateAnimationMode(mode)}
                   disabled={updatingMode}
                   className={`relative p-4 rounded-xl border-2 transition-all duration-200 text-left ${animationMode === mode
-                      ? 'border-purple-500 bg-purple-50 shadow-lg'
-                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                    ? 'border-purple-500 bg-purple-50 shadow-lg'
+                    : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                     } ${updatingMode ? 'opacity-50 cursor-wait' : ''}`}
                 >
                   {/* 選中指示器 */}
@@ -646,6 +648,14 @@ export default function LotteryManagePage() {
                         alt={record.winner_display_name}
                         className="w-12 h-12 rounded-full"
                       />
+                      {/* 中獎照片 */}
+                      {record.winner_photo_url && (
+                        <img
+                          src={record.winner_photo_url}
+                          alt="中獎照片"
+                          className="w-16 h-16 rounded-lg object-cover border-2 border-yellow-400"
+                        />
+                      )}
                       <div>
                         <div className="font-medium text-gray-900">
                           🎉 {record.winner_display_name}
@@ -674,4 +684,3 @@ export default function LotteryManagePage() {
     </AdminLayout>
   )
 }
-

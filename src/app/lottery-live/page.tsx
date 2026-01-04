@@ -32,6 +32,8 @@ interface CurrentDraw {
   photo_count: number
   draw_time: string
   participants_count: number
+  winner_photo_id: number | null
+  winner_photo_url: string | null
 }
 
 interface Photo {
@@ -419,19 +421,29 @@ export default function LotteryLivePage() {
   const fetchPhotos = async () => {
     try {
       console.log('📸 開始載入照片...')
+      setIsPreloading(true)
+      resetPreload()
+
       const response = await fetch('/api/lottery/photos')
       const data = await response.json()
 
       console.log('📸 API 回應:', data)
 
       if (data.success && data.photos) {
-        console.log(`✅ 成功載入 ${data.photos.length} 張照片`)
+        console.log(`✅ 成功載入 ${data.photos.length} 張照片元數據`)
         setPhotos(data.photos)
+
+        // 立即開始預載入照片（使用 thumbnail_small_url 優先，因為動畫組件使用它）
+        console.log('🖼️ 開始預載照片圖片...')
+        await preloadPhotos(data.photos, { useThumbnail: true })
+        console.log('✅ 照片預載完成')
       } else {
         console.error('❌ 照片載入失敗:', data)
       }
     } catch (error) {
       console.error('❌ 獲取照片失敗:', error)
+    } finally {
+      setIsPreloading(false)
     }
   }
 
@@ -467,63 +479,91 @@ export default function LotteryLivePage() {
   }
 
   const handleNewDraw = async (newDraw: CurrentDraw) => {
-    // 先重置所有狀態
-    resetToInitialState()
-    resetPreload()
+    // 先重置所有狀態（但不重置照片，因為已經預載過了）
+    setCurrentDraw(null)
+    setCelebrating(false)
+    setShowingWinner(false)
+    setZoomingWinner(false)
+    setWinnerPhotoRect(null)
+    setHighlightedIndex(-1)
+    setIsAnimating(false)
+    setWinnerIndex(-1)
+    setSelectedWinnerPhoto(null)
 
-    // 設為預載中狀態
-    setIsPreloading(true)
     setCurrentDraw(newDraw)
 
     console.log('🎰 收到新的抽獎記錄')
     console.log('當前照片數量:', photos.length)
 
-    // 重新獲取最新的照片列表
-    const response = await fetch('/api/lottery/photos')
-    const data = await response.json()
+    // 使用已載入的照片（頁面載入時已預載）
+    let currentPhotos = photos
 
-    if (data.success && data.photos && data.photos.length > 0) {
-      const currentPhotos = data.photos
+    // 如果照片還沒載入，重新獲取
+    if (currentPhotos.length === 0) {
+      console.log('⚠️ 照片尚未載入，現在載入...')
+      const response = await fetch('/api/lottery/photos')
+      const data = await response.json()
+      if (data.success && data.photos) {
+        currentPhotos = data.photos
+        setPhotos(data.photos)
+      }
+    }
+
+    if (currentPhotos.length > 0) {
       console.log(`📸 使用 ${currentPhotos.length} 張照片進行抽獎`)
-
-      // 找到中獎者的所有照片
-      const winnerPhotos = currentPhotos.filter((p: Photo) => p.user_id === newDraw.winner_line_id)
 
       let targetWinnerPhoto: Photo
       let targetWinnerIndex: number
 
-      if (winnerPhotos.length === 0) {
-        console.error('❌ 找不到中獎照片！')
-        console.error('中獎者 ID:', newDraw.winner_line_id)
-        // 即使找不到，也隨機選一張
-        const randomIndex = Math.floor(Math.random() * currentPhotos.length)
-        targetWinnerPhoto = currentPhotos[randomIndex]
-        targetWinnerIndex = randomIndex
+      // 優先使用抽獎記錄中指定的中獎照片 ID
+      if (newDraw.winner_photo_id) {
+        const foundIndex = currentPhotos.findIndex((p: Photo) => p.id === newDraw.winner_photo_id)
+        if (foundIndex !== -1) {
+          targetWinnerPhoto = currentPhotos[foundIndex]
+          targetWinnerIndex = foundIndex
+          console.log(`✅ 使用抽獎記錄中的中獎照片 ID: ${newDraw.winner_photo_id}`)
+        } else {
+          // 照片 ID 找不到，fallback 到隨機選擇
+          console.warn('⚠️ 抽獎記錄的照片 ID 在照片列表中找不到，fallback 到隨機選擇')
+          const winnerPhotos = currentPhotos.filter((p: Photo) => p.user_id === newDraw.winner_line_id)
+          if (winnerPhotos.length > 0) {
+            const randomWinnerPhoto = winnerPhotos[Math.floor(Math.random() * winnerPhotos.length)]
+            targetWinnerIndex = currentPhotos.findIndex((p: Photo) => p.id === randomWinnerPhoto.id)
+            targetWinnerPhoto = randomWinnerPhoto
+          } else {
+            const randomIndex = Math.floor(Math.random() * currentPhotos.length)
+            targetWinnerPhoto = currentPhotos[randomIndex]
+            targetWinnerIndex = randomIndex
+          }
+        }
       } else {
-        // 從中獎者的照片中隨機選一張
-        const randomWinnerPhoto = winnerPhotos[Math.floor(Math.random() * winnerPhotos.length)]
-        targetWinnerIndex = currentPhotos.findIndex((p: Photo) => p.id === randomWinnerPhoto.id)
-        targetWinnerPhoto = randomWinnerPhoto
+        // 舊記錄沒有 winner_photo_id，使用隨機選擇
+        console.log('⚠️ 抽獎記錄無 winner_photo_id，使用隨機選擇')
+        const winnerPhotos = currentPhotos.filter((p: Photo) => p.user_id === newDraw.winner_line_id)
 
-        console.log(`✅ 找到中獎者 ${winnerPhotos.length} 張照片，隨機選中 ID: ${targetWinnerPhoto.id}`)
-        console.log('✅ 最終目標索引:', targetWinnerIndex)
+        if (winnerPhotos.length === 0) {
+          console.error('❌ 找不到中獎照片！')
+          const randomIndex = Math.floor(Math.random() * currentPhotos.length)
+          targetWinnerPhoto = currentPhotos[randomIndex]
+          targetWinnerIndex = randomIndex
+        } else {
+          const randomWinnerPhoto = winnerPhotos[Math.floor(Math.random() * winnerPhotos.length)]
+          targetWinnerIndex = currentPhotos.findIndex((p: Photo) => p.id === randomWinnerPhoto.id)
+          targetWinnerPhoto = randomWinnerPhoto
+          console.log(`✅ 找到中獎者 ${winnerPhotos.length} 張照片，隨機選中 ID: ${targetWinnerPhoto.id}`)
+        }
       }
+
+      console.log('✅ 最終目標索引:', targetWinnerIndex)
 
       // 儲存選中的中獎照片（確保後續 LINE 通知使用相同照片）
       setSelectedWinnerPhoto(targetWinnerPhoto)
 
-      // 預載所有照片
-      console.log('🖼️ 開始預載照片...')
-      await preloadPhotos(currentPhotos, { useThumbnail: true })
-      console.log('✅ 照片預載完成')
-
-      // 預載完成後開始動畫
-      setIsPreloading(false)
+      // 直接開始動畫（照片已在頁面載入時預載完成）
       setIsAnimating(true)
       startCarouselAnimationWithPhotos(currentPhotos, targetWinnerIndex)
     } else {
       console.error('❌ 無法載入照片進行抽獎')
-      setIsPreloading(false)
     }
   }
 
