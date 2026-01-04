@@ -89,6 +89,10 @@ export default function GuestManagementPage() {
     // 統計顯示狀態
     const [showStats, setShowStats] = useState(false)
 
+    // 每桌上限設定
+    const [tableLimit, setTableLimit] = useState(10) // 每桌上限大人數
+    const [bufferLimit, setBufferLimit] = useState(2) // 可超過之緩衝人數
+
     // 計算各桌統計
     const tableStats = useMemo(() => {
         const stats: Record<string, { adults: number, children: number, vegetarian: number, total: number, count: number }> = {}
@@ -578,6 +582,40 @@ export default function GuestManagementPage() {
 
                         {showStats && (
                             <div className="p-4 border-t border-gray-100">
+                                {/* 每桌上限設定 */}
+                                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+                                    <div className="flex flex-wrap items-center gap-4">
+                                        <span className="text-sm font-medium text-amber-800">每桌上限設定：</span>
+                                        <div className="flex items-center gap-2">
+                                            <label className="text-sm text-amber-700">大人上限</label>
+                                            <input
+                                                type="number"
+                                                min="1"
+                                                max="20"
+                                                value={tableLimit}
+                                                onChange={(e) => setTableLimit(parseInt(e.target.value) || 10)}
+                                                className="w-16 px-2 py-1 border border-amber-300 rounded text-sm text-center focus:ring-2 focus:ring-amber-500 outline-none"
+                                            />
+                                            <span className="text-sm text-amber-700">人</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <label className="text-sm text-amber-700">緩衝人數</label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                max="10"
+                                                value={bufferLimit}
+                                                onChange={(e) => setBufferLimit(parseInt(e.target.value) || 0)}
+                                                className="w-16 px-2 py-1 border border-amber-300 rounded text-sm text-center focus:ring-2 focus:ring-amber-500 outline-none"
+                                            />
+                                            <span className="text-sm text-amber-700">人</span>
+                                        </div>
+                                        <div className="text-xs text-amber-600">
+                                            (超過 {tableLimit} 人會顯示黃色警告，超過 {tableLimit + bufferLimit} 人會顯示紅色警告)
+                                        </div>
+                                    </div>
+                                </div>
+
                                 {/* 總計卡片 */}
                                 <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
                                     <div className="bg-purple-50 rounded-lg p-3 text-center">
@@ -605,27 +643,66 @@ export default function GuestManagementPage() {
                                 {/* 各桌圖表 */}
                                 <div className="space-y-2">
                                     <h4 className="text-sm font-medium text-gray-700 mb-3">各桌人數分布</h4>
-                                    {tableStats.map((t) => (
-                                        <div key={t.table} className="flex items-center gap-3">
-                                            <div className="w-16 text-right font-medium text-gray-700 text-sm">{t.table}</div>
-                                            <div className="flex-1 h-6 bg-gray-100 rounded-full overflow-hidden flex">
-                                                <div
-                                                    className="h-full bg-blue-500 flex items-center justify-center text-xs text-white font-medium"
-                                                    style={{ width: `${(t.adults / maxTableTotal) * 100}%`, minWidth: t.adults > 0 ? '20px' : '0' }}
-                                                >
-                                                    {t.adults > 0 && t.adults}
+                                    {tableStats.map((t) => {
+                                        const isOverLimit = t.adults > tableLimit
+                                        const isOverBuffer = t.adults > tableLimit + bufferLimit
+                                        const statusColor = isOverBuffer ? 'text-red-600 bg-red-50' : isOverLimit ? 'text-amber-600 bg-amber-50' : 'text-gray-700'
+                                        const barBgColor = isOverBuffer ? 'bg-red-100' : isOverLimit ? 'bg-amber-100' : 'bg-gray-100'
+
+                                        return (
+                                            <div key={t.table} className={`flex items-center gap-3 p-1 rounded ${isOverLimit ? (isOverBuffer ? 'bg-red-50' : 'bg-amber-50') : ''}`}>
+                                                <div className={`w-16 text-right font-medium text-sm ${statusColor}`}>
+                                                    {t.table}
+                                                    {isOverBuffer && ' ⚠️'}
+                                                    {isOverLimit && !isOverBuffer && ' ❗'}
                                                 </div>
-                                                <div
-                                                    className="h-full bg-pink-400 flex items-center justify-center text-xs text-white font-medium"
-                                                    style={{ width: `${(t.children / maxTableTotal) * 100}%`, minWidth: t.children > 0 ? '20px' : '0' }}
-                                                >
-                                                    {t.children > 0 && t.children}
+                                                <div className={`flex-1 h-6 ${barBgColor} rounded-full overflow-hidden flex relative`}>
+                                                    {/* 上限線標記 */}
+                                                    <div
+                                                        className="absolute h-full border-r-2 border-dashed border-amber-500 z-10"
+                                                        style={{ left: `${(tableLimit / maxTableTotal) * 100}%` }}
+                                                        title={`上限: ${tableLimit} 人`}
+                                                    />
+                                                    <div
+                                                        className={`h-full ${isOverBuffer ? 'bg-red-500' : isOverLimit ? 'bg-amber-500' : 'bg-blue-500'} flex items-center justify-center text-xs text-white font-medium`}
+                                                        style={{ width: `${(t.adults / maxTableTotal) * 100}%`, minWidth: t.adults > 0 ? '20px' : '0' }}
+                                                    >
+                                                        {t.adults > 0 && t.adults}
+                                                    </div>
+                                                    <div
+                                                        className="h-full bg-pink-400 flex items-center justify-center text-xs text-white font-medium"
+                                                        style={{ width: `${(t.children / maxTableTotal) * 100}%`, minWidth: t.children > 0 ? '20px' : '0' }}
+                                                    >
+                                                        {t.children > 0 && t.children}
+                                                    </div>
+                                                </div>
+                                                <div className={`w-12 text-right text-sm font-bold ${isOverBuffer ? 'text-red-700' : isOverLimit ? 'text-amber-700' : 'text-purple-700'}`}>
+                                                    {t.total}
                                                 </div>
                                             </div>
-                                            <div className="w-12 text-right text-sm font-bold text-purple-700">{t.total}</div>
-                                        </div>
-                                    ))}
+                                        )
+                                    })}
                                 </div>
+
+                                {/* 超額統計 */}
+                                {tableStats.some(t => t.adults > tableLimit) && (
+                                    <div className="mt-4 pt-3 border-t border-gray-100">
+                                        <div className="flex flex-wrap gap-4 text-sm">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-amber-600">❗ 超過上限:</span>
+                                                <span className="font-medium text-amber-700">
+                                                    {tableStats.filter(t => t.adults > tableLimit && t.adults <= tableLimit + bufferLimit).length} 桌
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-red-600">⚠️ 超過緩衝:</span>
+                                                <span className="font-medium text-red-700">
+                                                    {tableStats.filter(t => t.adults > tableLimit + bufferLimit).length} 桌
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
 
                                 {/* 圖例 */}
                                 <div className="flex items-center justify-center gap-6 mt-4 pt-3 border-t border-gray-100">
@@ -636,6 +713,14 @@ export default function GuestManagementPage() {
                                     <div className="flex items-center gap-2">
                                         <div className="w-3 h-3 bg-pink-400 rounded-full"></div>
                                         <span className="text-xs text-gray-600">小孩</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-3 h-3 bg-amber-500 rounded-full"></div>
+                                        <span className="text-xs text-gray-600">超過上限</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                                        <span className="text-xs text-gray-600">超過緩衝</span>
                                     </div>
                                 </div>
                             </div>
