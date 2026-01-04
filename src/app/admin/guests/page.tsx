@@ -91,19 +91,24 @@ export default function GuestManagementPage() {
 
     // 逐桌上限設定 (Record<桌次, {limit, buffer}>)
     const [tableLimits, setTableLimits] = useState<Record<string, { limit: number, buffer: number }>>({})
-    const [defaultLimit, setDefaultLimit] = useState(10) // 預設大人上限
-    const [defaultBuffer, setDefaultBuffer] = useState(2) // 預設緩衝人數
 
-    // 取得某桌的上限設定
-    const getTableLimit = (table: string) => tableLimits[table]?.limit ?? defaultLimit
-    const getTableBuffer = (table: string) => tableLimits[table]?.buffer ?? defaultBuffer
+    // 取得某桌的上限設定 (第一桌12人，其他10人，緩衝皆為1)
+    const getTableLimit = (table: string) => {
+        if (tableLimits[table]?.limit !== undefined) return tableLimits[table].limit
+        // 第一桌上限 12，其他桌上限 10
+        return table === '1' || table.toLowerCase() === '主桌' ? 12 : 10
+    }
+    const getTableBuffer = (table: string) => {
+        if (tableLimits[table]?.buffer !== undefined) return tableLimits[table].buffer
+        return 1 // 緩衝皆為 1
+    }
 
     // 設定某桌的上限
     const setTableLimit = (table: string, limit: number) => {
-        setTableLimits(prev => ({ ...prev, [table]: { ...prev[table], limit, buffer: prev[table]?.buffer ?? defaultBuffer } }))
+        setTableLimits(prev => ({ ...prev, [table]: { ...prev[table], limit, buffer: prev[table]?.buffer ?? 1 } }))
     }
     const setTableBuffer = (table: string, buffer: number) => {
-        setTableLimits(prev => ({ ...prev, [table]: { limit: prev[table]?.limit ?? defaultLimit, buffer } }))
+        setTableLimits(prev => ({ ...prev, [table]: { limit: prev[table]?.limit ?? (table === '1' || table.toLowerCase() === '主桌' ? 12 : 10), buffer } }))
     }
 
     // 計算各桌統計
@@ -606,37 +611,12 @@ export default function GuestManagementPage() {
 
                         {showStats && (
                             <div className="p-4 border-t border-gray-100">
-                                {/* 預設上限設定 */}
-                                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
-                                    <div className="flex flex-wrap items-center gap-4">
-                                        <span className="text-sm font-medium text-amber-800">預設上限：</span>
-                                        <div className="flex items-center gap-2">
-                                            <label className="text-sm text-amber-700">大人上限</label>
-                                            <input
-                                                type="number"
-                                                min="1"
-                                                max="20"
-                                                value={defaultLimit}
-                                                onChange={(e) => setDefaultLimit(parseInt(e.target.value) || 10)}
-                                                className="w-16 px-2 py-1 border border-amber-300 rounded text-sm text-center focus:ring-2 focus:ring-amber-500 outline-none"
-                                            />
-                                            <span className="text-sm text-amber-700">人</span>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <label className="text-sm text-amber-700">緩衝人數</label>
-                                            <input
-                                                type="number"
-                                                min="0"
-                                                max="10"
-                                                value={defaultBuffer}
-                                                onChange={(e) => setDefaultBuffer(parseInt(e.target.value) || 0)}
-                                                className="w-16 px-2 py-1 border border-amber-300 rounded text-sm text-center focus:ring-2 focus:ring-amber-500 outline-none"
-                                            />
-                                            <span className="text-sm text-amber-700">人</span>
-                                        </div>
-                                        <div className="text-xs text-amber-600">
-                                            (此為預設值，可在下方逐桌調整)
-                                        </div>
+                                {/* 上限說明 */}
+                                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
+                                    <div className="text-sm text-amber-800">
+                                        <span className="font-medium">每桌上限規則：</span>
+                                        第一桌/主桌 上限 <strong>12</strong> 位大人，其他桌上限 <strong>10</strong> 位大人，緩衝皆為 <strong>1</strong> 位
+                                        <span className="text-xs text-amber-600 ml-2">(可在下方逐桌調整)</span>
                                     </div>
                                 </div>
 
@@ -718,7 +698,7 @@ export default function GuestManagementPage() {
                                                         min="1"
                                                         max="20"
                                                         value={limit}
-                                                        onChange={(e) => setTableLimit(t.table, parseInt(e.target.value) || defaultLimit)}
+                                                        onChange={(e) => setTableLimit(t.table, parseInt(e.target.value) || 10)}
                                                         className="w-10 px-1 py-0.5 border border-gray-300 rounded text-xs text-center focus:ring-1 focus:ring-amber-500 outline-none"
                                                         title="上限人數"
                                                     />
