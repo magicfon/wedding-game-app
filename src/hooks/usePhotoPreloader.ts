@@ -80,9 +80,9 @@ export function usePhotoPreloader() {
                     return new Promise<void>((resolve) => {
                         const img = new Image()
 
-                        // 選擇要預載的 URL（優先使用縮圖）
+                        // 選擇要預載的 URL（優先使用動畫組件實際使用的 thumbnail_large_url）
                         const url = useThumbnail
-                            ? (photo.thumbnail_medium_url || photo.thumbnail_large_url || photo.image_url)
+                            ? (photo.thumbnail_large_url || photo.thumbnail_medium_url || photo.thumbnail_small_url || photo.image_url)
                             : photo.image_url
 
                         img.onload = () => {

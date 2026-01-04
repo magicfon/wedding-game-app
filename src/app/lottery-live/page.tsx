@@ -936,12 +936,12 @@ export default function LotteryLivePage() {
         {/* 動畫模式顯示區域 */}
         <div className={`relative z-10 w-full h-full flex-1 transition-opacity duration-1000 ${showingWinner || zoomingWinner ? 'opacity-0' : 'opacity-100'}`}>
           {/* 新動畫模式 */}
-          {isAnimating && winnerIndex >= 0 && photos[winnerIndex] && (
+          {isAnimating && winnerIndex >= 0 && selectedWinnerPhoto && (
             <>
               {animationMode === 'fast_shuffle' && (
                 <FastShuffleLottery
                   photos={photos}
-                  winnerPhoto={photos[winnerIndex]}
+                  winnerPhoto={selectedWinnerPhoto}
                   winnerIndex={winnerIndex}
                   onAnimationComplete={handleAnimationComplete}
                   isAnimating={isAnimating}
@@ -951,7 +951,7 @@ export default function LotteryLivePage() {
               {animationMode === 'slot_machine' && (
                 <SlotMachineLottery
                   photos={photos}
-                  winnerPhoto={photos[winnerIndex]}
+                  winnerPhoto={selectedWinnerPhoto}
                   winnerIndex={winnerIndex}
                   onAnimationComplete={handleAnimationComplete}
                   isAnimating={isAnimating}
@@ -961,7 +961,7 @@ export default function LotteryLivePage() {
               {animationMode === 'waterfall' && (
                 <WaterfallLottery
                   photos={photos}
-                  winnerPhoto={photos[winnerIndex]}
+                  winnerPhoto={selectedWinnerPhoto}
                   winnerIndex={winnerIndex}
                   onAnimationComplete={handleAnimationComplete}
                   isAnimating={isAnimating}
@@ -971,7 +971,7 @@ export default function LotteryLivePage() {
               {animationMode === 'tournament' && (
                 <TournamentLottery
                   photos={photos}
-                  winnerPhoto={photos[winnerIndex]}
+                  winnerPhoto={selectedWinnerPhoto}
                   winnerIndex={winnerIndex}
                   onAnimationComplete={handleAnimationComplete}
                   isAnimating={isAnimating}
@@ -981,7 +981,7 @@ export default function LotteryLivePage() {
               {animationMode === 'spiral' && (
                 <SpiralLottery
                   photos={photos}
-                  winnerPhoto={photos[winnerIndex]}
+                  winnerPhoto={selectedWinnerPhoto}
                   winnerIndex={winnerIndex}
                   onAnimationComplete={handleAnimationComplete}
                   isAnimating={isAnimating}
