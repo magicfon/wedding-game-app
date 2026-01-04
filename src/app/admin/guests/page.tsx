@@ -89,9 +89,22 @@ export default function GuestManagementPage() {
     // 統計顯示狀態
     const [showStats, setShowStats] = useState(false)
 
-    // 每桌上限設定
-    const [tableLimit, setTableLimit] = useState(10) // 每桌上限大人數
-    const [bufferLimit, setBufferLimit] = useState(2) // 可超過之緩衝人數
+    // 逐桌上限設定 (Record<桌次, {limit, buffer}>)
+    const [tableLimits, setTableLimits] = useState<Record<string, { limit: number, buffer: number }>>({})
+    const [defaultLimit, setDefaultLimit] = useState(10) // 預設大人上限
+    const [defaultBuffer, setDefaultBuffer] = useState(2) // 預設緩衝人數
+
+    // 取得某桌的上限設定
+    const getTableLimit = (table: string) => tableLimits[table]?.limit ?? defaultLimit
+    const getTableBuffer = (table: string) => tableLimits[table]?.buffer ?? defaultBuffer
+
+    // 設定某桌的上限
+    const setTableLimit = (table: string, limit: number) => {
+        setTableLimits(prev => ({ ...prev, [table]: { ...prev[table], limit, buffer: prev[table]?.buffer ?? defaultBuffer } }))
+    }
+    const setTableBuffer = (table: string, buffer: number) => {
+        setTableLimits(prev => ({ ...prev, [table]: { limit: prev[table]?.limit ?? defaultLimit, buffer } }))
+    }
 
     // 計算各桌統計
     const tableStats = useMemo(() => {
@@ -582,18 +595,18 @@ export default function GuestManagementPage() {
 
                         {showStats && (
                             <div className="p-4 border-t border-gray-100">
-                                {/* 每桌上限設定 */}
+                                {/* 預設上限設定 */}
                                 <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
                                     <div className="flex flex-wrap items-center gap-4">
-                                        <span className="text-sm font-medium text-amber-800">每桌上限設定：</span>
+                                        <span className="text-sm font-medium text-amber-800">預設上限：</span>
                                         <div className="flex items-center gap-2">
                                             <label className="text-sm text-amber-700">大人上限</label>
                                             <input
                                                 type="number"
                                                 min="1"
                                                 max="20"
-                                                value={tableLimit}
-                                                onChange={(e) => setTableLimit(parseInt(e.target.value) || 10)}
+                                                value={defaultLimit}
+                                                onChange={(e) => setDefaultLimit(parseInt(e.target.value) || 10)}
                                                 className="w-16 px-2 py-1 border border-amber-300 rounded text-sm text-center focus:ring-2 focus:ring-amber-500 outline-none"
                                             />
                                             <span className="text-sm text-amber-700">人</span>
@@ -604,14 +617,14 @@ export default function GuestManagementPage() {
                                                 type="number"
                                                 min="0"
                                                 max="10"
-                                                value={bufferLimit}
-                                                onChange={(e) => setBufferLimit(parseInt(e.target.value) || 0)}
+                                                value={defaultBuffer}
+                                                onChange={(e) => setDefaultBuffer(parseInt(e.target.value) || 0)}
                                                 className="w-16 px-2 py-1 border border-amber-300 rounded text-sm text-center focus:ring-2 focus:ring-amber-500 outline-none"
                                             />
                                             <span className="text-sm text-amber-700">人</span>
                                         </div>
                                         <div className="text-xs text-amber-600">
-                                            (超過 {tableLimit} 人會顯示黃色警告，超過 {tableLimit + bufferLimit} 人會顯示紅色警告)
+                                            (此為預設值，可在下方逐桌調整)
                                         </div>
                                     </div>
                                 </div>
@@ -642,16 +655,21 @@ export default function GuestManagementPage() {
 
                                 {/* 各桌圖表 */}
                                 <div className="space-y-2">
-                                    <h4 className="text-sm font-medium text-gray-700 mb-3">各桌人數分布</h4>
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <h4 className="text-sm font-medium text-gray-700">各桌人數分布</h4>
+                                        <span className="text-xs text-gray-500">(可點擊數字調整上限)</span>
+                                    </div>
                                     {tableStats.map((t) => {
-                                        const isOverLimit = t.adults > tableLimit
-                                        const isOverBuffer = t.adults > tableLimit + bufferLimit
+                                        const limit = getTableLimit(t.table)
+                                        const buffer = getTableBuffer(t.table)
+                                        const isOverLimit = t.adults > limit
+                                        const isOverBuffer = t.adults > limit + buffer
                                         const statusColor = isOverBuffer ? 'text-red-600 bg-red-50' : isOverLimit ? 'text-amber-600 bg-amber-50' : 'text-gray-700'
                                         const barBgColor = isOverBuffer ? 'bg-red-100' : isOverLimit ? 'bg-amber-100' : 'bg-gray-100'
 
                                         return (
-                                            <div key={t.table} className={`flex items-center gap-3 p-1 rounded ${isOverLimit ? (isOverBuffer ? 'bg-red-50' : 'bg-amber-50') : ''}`}>
-                                                <div className={`w-16 text-right font-medium text-sm ${statusColor}`}>
+                                            <div key={t.table} className={`flex items-center gap-2 p-1 rounded ${isOverLimit ? (isOverBuffer ? 'bg-red-50' : 'bg-amber-50') : ''}`}>
+                                                <div className={`w-14 text-right font-medium text-sm ${statusColor}`}>
                                                     {t.table}
                                                     {isOverBuffer && ' ⚠️'}
                                                     {isOverLimit && !isOverBuffer && ' ❗'}
@@ -660,8 +678,8 @@ export default function GuestManagementPage() {
                                                     {/* 上限線標記 */}
                                                     <div
                                                         className="absolute h-full border-r-2 border-dashed border-amber-500 z-10"
-                                                        style={{ left: `${(tableLimit / maxTableTotal) * 100}%` }}
-                                                        title={`上限: ${tableLimit} 人`}
+                                                        style={{ left: `${(limit / maxTableTotal) * 100}%` }}
+                                                        title={`上限: ${limit} 人`}
                                                     />
                                                     <div
                                                         className={`h-full ${isOverBuffer ? 'bg-red-500' : isOverLimit ? 'bg-amber-500' : 'bg-blue-500'} flex items-center justify-center text-xs text-white font-medium`}
@@ -677,10 +695,32 @@ export default function GuestManagementPage() {
                                                     </div>
                                                 </div>
                                                 {/* 素食人數 */}
-                                                <div className={`w-10 text-center text-xs font-medium ${t.vegetarian > 0 ? 'bg-emerald-100 text-emerald-700 py-0.5 px-1 rounded' : 'text-gray-400'}`}>
+                                                <div className={`w-8 text-center text-xs font-medium ${t.vegetarian > 0 ? 'bg-emerald-100 text-emerald-700 py-0.5 px-1 rounded' : 'text-gray-400'}`}>
                                                     {t.vegetarian > 0 ? `🌱${t.vegetarian}` : '-'}
                                                 </div>
-                                                <div className={`w-12 text-right text-sm font-bold ${isOverBuffer ? 'text-red-700' : isOverLimit ? 'text-amber-700' : 'text-purple-700'}`}>
+                                                {/* 逐桌上限設定 */}
+                                                <div className="flex items-center gap-1">
+                                                    <input
+                                                        type="number"
+                                                        min="1"
+                                                        max="20"
+                                                        value={limit}
+                                                        onChange={(e) => setTableLimit(t.table, parseInt(e.target.value) || defaultLimit)}
+                                                        className="w-10 px-1 py-0.5 border border-gray-300 rounded text-xs text-center focus:ring-1 focus:ring-amber-500 outline-none"
+                                                        title="上限人數"
+                                                    />
+                                                    <span className="text-xs text-gray-400">+</span>
+                                                    <input
+                                                        type="number"
+                                                        min="0"
+                                                        max="10"
+                                                        value={buffer}
+                                                        onChange={(e) => setTableBuffer(t.table, parseInt(e.target.value) || 0)}
+                                                        className="w-8 px-1 py-0.5 border border-gray-300 rounded text-xs text-center focus:ring-1 focus:ring-amber-500 outline-none"
+                                                        title="緩衝人數"
+                                                    />
+                                                </div>
+                                                <div className={`w-10 text-right text-sm font-bold ${isOverBuffer ? 'text-red-700' : isOverLimit ? 'text-amber-700' : 'text-purple-700'}`}>
                                                     {t.total}
                                                 </div>
                                             </div>
@@ -689,19 +729,19 @@ export default function GuestManagementPage() {
                                 </div>
 
                                 {/* 超額統計 */}
-                                {tableStats.some(t => t.adults > tableLimit) && (
+                                {tableStats.some(t => t.adults > getTableLimit(t.table)) && (
                                     <div className="mt-4 pt-3 border-t border-gray-100">
                                         <div className="flex flex-wrap gap-4 text-sm">
                                             <div className="flex items-center gap-2">
                                                 <span className="text-amber-600">❗ 超過上限:</span>
                                                 <span className="font-medium text-amber-700">
-                                                    {tableStats.filter(t => t.adults > tableLimit && t.adults <= tableLimit + bufferLimit).length} 桌
+                                                    {tableStats.filter(t => t.adults > getTableLimit(t.table) && t.adults <= getTableLimit(t.table) + getTableBuffer(t.table)).length} 桌
                                                 </span>
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 <span className="text-red-600">⚠️ 超過緩衝:</span>
                                                 <span className="font-medium text-red-700">
-                                                    {tableStats.filter(t => t.adults > tableLimit + bufferLimit).length} 桌
+                                                    {tableStats.filter(t => t.adults > getTableLimit(t.table) + getTableBuffer(t.table)).length} 桌
                                                 </span>
                                             </div>
                                         </div>
