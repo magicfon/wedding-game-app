@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { Client, WebhookEvent, MessageEvent, PostbackEvent } from '@line/bot-sdk'
-import { createClient } from '@supabase/supabase-js'
+import { Client, WebhookEvent, PostbackEvent } from '@line/bot-sdk'
 import crypto from 'crypto'
 
 const config = {
@@ -25,87 +24,6 @@ function validateSignature(body: string, signature: string): boolean {
   return hash === signature
 }
 
-// 主選單訊息 - 使用 LIFF URL
-const getMainMenuMessage = () => {
-  const liffId = process.env.NEXT_PUBLIC_LIFF_ID
-
-  if (!liffId) {
-    return {
-      type: 'text' as const,
-      text: '⚠️ 系統設定錯誤：LIFF ID 未配置\n請聯絡管理員'
-    }
-  }
-
-  return {
-    type: 'text' as const,
-    text: `🎉 歡迎來到婚禮互動遊戲！
-
-請點擊以下連結參與各種精彩活動：
-
-🎮 遊戲實況：
-https://liff.line.me/${liffId}/game-live
-
-❓ 快問快答：
-https://liff.line.me/${liffId}/quiz
-
-📸 照片上傳：
-https://liff.line.me/${liffId}/photo-upload
-
-🖼️ 照片牆：
-https://liff.line.me/${liffId}/photo-wall
-
-❤️ 快門傳情：
-https://liff.line.me/${liffId}/photo-slideshow
-
-🏆 排行榜：
-https://liff.line.me/${liffId}/leaderboard
-
-📊 積分歷史：
-https://liff.line.me/${liffId}/score-history
-
-🏠 回到首頁：
-https://liff.line.me/${liffId}
-
-輸入「選單」可重新顯示此訊息
-輸入「幫助」查看詳細說明`
-  }
-}
-
-// 處理訊息事件
-async function handleMessage(event: MessageEvent) {
-  if (!client || event.message.type !== 'text') return
-
-  const text = event.message.text.toLowerCase()
-
-  if (text.includes('選單') || text.includes('menu') || text.includes('開始')) {
-    await client.replyMessage(event.replyToken, getMainMenuMessage())
-  } else if (text.includes('help') || text.includes('幫助')) {
-    await client.replyMessage(event.replyToken, {
-      type: 'text',
-      text: `🎉 歡迎使用婚禮互動遊戲！
-
-可用指令：
-• 輸入「選單」查看所有功能
-• 點擊下方按鈕直接進入遊戲
-
-功能介紹：
-🎮 遊戲實況 - 觀看正在進行的遊戲
-❓ 快問快答 - 參與答題競賽
-📸 照片上傳 - 分享美好回憶
-🖼️ 照片牆 - 瀏覽和投票
-❤️ 快門傳情 - 輪播展示照片
-🏆 排行榜 - 查看積分排名
-
-請點擊「🚀 開始遊戲」進行登入！`
-    })
-  } else {
-    await client.replyMessage(event.replyToken, {
-      type: 'text',
-      text: '歡迎來到婚禮互動遊戲！🎉\n\n請輸入「選單」查看所有功能，或點擊「🚀 開始遊戲」立即開始！'
-    })
-  }
-}
-
 // 處理 Rich Menu 分頁切換
 async function handleRichMenuSwitch(userId: string, targetTab: string) {
   try {
@@ -128,7 +46,7 @@ async function handleRichMenuSwitch(userId: string, targetTab: string) {
   }
 }
 
-// 處理 Postback 事件
+// 處理 Postback 事件 (僅處理 Rich Menu 切換，不回覆訊息)
 async function handlePostback(event: PostbackEvent) {
   if (!client) return
 
@@ -146,27 +64,15 @@ async function handlePostback(event: PostbackEvent) {
     const result = await handleRichMenuSwitch(userId, targetTab)
 
     if (result.success) {
-      // 不需要回覆訊息，Rich Menu 會自動切換
       console.log(`Switched user ${userId} to ${targetTab} tab`)
     } else {
-      // 切換失敗，通知用戶
-      await client.replyMessage(event.replyToken, {
-        type: 'text',
-        text: result.message || '分頁切換失敗，請稍後再試'
-      })
+      console.error(`Failed to switch user ${userId} to ${targetTab} tab:`, result.error)
     }
     return
   }
 
-  switch (data) {
-    case 'show_menu':
-      await client.replyMessage(event.replyToken, getMainMenuMessage())
-      break
-    default:
-      console.log('Unknown postback data:', data)
-      // 不回覆錯誤訊息，避免干擾 Rich Menu 切換或其他未處理的操作
-      break
-  }
+  // 其他 postback 事件只記錄，不回覆
+  console.log('Postback data:', data)
 }
 
 export async function POST(request: NextRequest) {
@@ -183,20 +89,13 @@ export async function POST(request: NextRequest) {
     await Promise.all(
       events.map(async (event) => {
         switch (event.type) {
-          case 'message':
-            await handleMessage(event)
-            break
           case 'postback':
             await handlePostback(event)
             break
+          case 'message':
           case 'follow':
-            // 用戶加入好友時的歡迎訊息
-            if (client) {
-              await client.replyMessage(event.replyToken, {
-                type: 'text',
-                text: '🎉 感謝您參與我們的婚禮!'
-              })
-            }
+          case 'unfollow':
+            // 不處理這些事件，由 LINE OA 後台設定處理
             break
         }
       })
