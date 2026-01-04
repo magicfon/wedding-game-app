@@ -1039,7 +1039,7 @@ export default function GuestManagementPage() {
                                                     )}
                                                 </td>
                                                 <td className="px-4 py-3 text-center">
-                                                    <span className="font-bold text-purple-700">{guest.total_guests || ((guest.adults || 1) + (guest.children || 0))}</span>
+                                                    <span className="font-bold text-purple-700">{(guest.adults || 0) + (guest.children || 0) + (guest.vegetarian || 0)}</span>
                                                 </td>
                                                 <td className="px-4 py-3">
                                                     {editingId === guest.id ? (
