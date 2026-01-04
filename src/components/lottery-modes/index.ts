@@ -3,7 +3,6 @@ export { FastShuffleLottery } from './FastShuffleLottery'
 export { SlotMachineLottery } from './SlotMachineLottery'
 export { WaterfallLottery } from './WaterfallLottery'
 export { TournamentLottery } from './TournamentLottery'
-export { SpiralLottery } from './SpiralLottery'
 
 // Export types
 export * from './types'

@@ -12,7 +12,6 @@ import {
   SlotMachineLottery,
   WaterfallLottery,
   TournamentLottery,
-  SpiralLottery,
   AnimationMode,
   ANIMATION_MODE_INFO
 } from '@/components/lottery-modes'
@@ -587,7 +586,7 @@ export default function LotteryLivePage() {
     // 如果使用舊式 grid 動畫模式 (keeping backward compatibility)
     // 新模式會透過組件自己處理動畫
     if (animationMode === 'fast_shuffle' || animationMode === 'slot_machine' ||
-      animationMode === 'waterfall' || animationMode === 'tournament' || animationMode === 'spiral') {
+      animationMode === 'waterfall' || animationMode === 'tournament') {
       // 新模式：動畫由組件自己控制，這裡不需要調用 animateSelection
       console.log('📱 使用新動畫模式，由組件控制動畫')
     } else {
@@ -978,16 +977,7 @@ export default function LotteryLivePage() {
                   scale={scale}
                 />
               )}
-              {animationMode === 'spiral' && (
-                <SpiralLottery
-                  photos={photos}
-                  winnerPhoto={selectedWinnerPhoto}
-                  winnerIndex={winnerIndex}
-                  onAnimationComplete={handleAnimationComplete}
-                  isAnimating={isAnimating}
-                  scale={scale}
-                />
-              )}
+
             </>
           )}
 
