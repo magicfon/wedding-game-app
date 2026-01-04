@@ -42,6 +42,7 @@ interface ManualGuest {
     table_number: string
     adults: number
     children: number
+    vegetarian: number
     total_guests: number
     notes: string | null
 }
@@ -62,6 +63,7 @@ export default function GuestManagementPage() {
     const [editIsActive, setEditIsActive] = useState(true)
     const [editAdults, setEditAdults] = useState(1)
     const [editChildren, setEditChildren] = useState(0)
+    const [editVegetarian, setEditVegetarian] = useState(0)
     const [editNotes, setEditNotes] = useState('')
 
     // 新增狀態
@@ -70,11 +72,12 @@ export default function GuestManagementPage() {
     const [newGuestTable, setNewGuestTable] = useState('')
     const [newGuestAdults, setNewGuestAdults] = useState(1)
     const [newGuestChildren, setNewGuestChildren] = useState(0)
+    const [newGuestVegetarian, setNewGuestVegetarian] = useState(0)
     const [newGuestNotes, setNewGuestNotes] = useState('')
 
     // CSV 匯入狀態
     const [showImportModal, setShowImportModal] = useState(false)
-    const [csvData, setCsvData] = useState<{ name: string, table_number: string, adults: number, children: number, total_guests: number, notes: string }[]>([])
+    const [csvData, setCsvData] = useState<{ name: string, table_number: string, adults: number, children: number, vegetarian: number, total_guests: number, notes: string }[]>([])
     const [csvError, setCsvError] = useState('')
     const [importing, setImporting] = useState(false)
 
@@ -88,15 +91,16 @@ export default function GuestManagementPage() {
 
     // 計算各桌統計
     const tableStats = useMemo(() => {
-        const stats: Record<string, { adults: number, children: number, total: number, count: number }> = {}
+        const stats: Record<string, { adults: number, children: number, vegetarian: number, total: number, count: number }> = {}
 
         guests.forEach(guest => {
             const table = guest.table_number || '未分配'
             if (!stats[table]) {
-                stats[table] = { adults: 0, children: 0, total: 0, count: 0 }
+                stats[table] = { adults: 0, children: 0, vegetarian: 0, total: 0, count: 0 }
             }
             stats[table].adults += guest.adults || 1
             stats[table].children += guest.children || 0
+            stats[table].vegetarian += guest.vegetarian || 0
             stats[table].total += guest.total_guests || ((guest.adults || 1) + (guest.children || 0))
             stats[table].count += 1
         })
@@ -113,11 +117,12 @@ export default function GuestManagementPage() {
             (acc, t) => ({
                 adults: acc.adults + t.adults,
                 children: acc.children + t.children,
+                vegetarian: acc.vegetarian + t.vegetarian,
                 total: acc.total + t.total,
                 count: acc.count + t.count,
                 tables: acc.tables + 1
             }),
-            { adults: 0, children: 0, total: 0, count: 0, tables: 0 }
+            { adults: 0, children: 0, vegetarian: 0, total: 0, count: 0, tables: 0 }
         )
     }, [tableStats])
 
@@ -291,6 +296,7 @@ export default function GuestManagementPage() {
                     table_number: editTable.trim(),
                     adults: editAdults,
                     children: editChildren,
+                    vegetarian: editVegetarian,
                     total_guests: editAdults + editChildren,
                     notes: editNotes.trim()
                 })
@@ -304,6 +310,7 @@ export default function GuestManagementPage() {
                         table_number: editTable.trim(),
                         adults: editAdults,
                         children: editChildren,
+                        vegetarian: editVegetarian,
                         total_guests: editAdults + editChildren,
                         notes: editNotes.trim()
                     } : g
@@ -334,6 +341,7 @@ export default function GuestManagementPage() {
                     table_number: newGuestTable.trim(),
                     adults: newGuestAdults,
                     children: newGuestChildren,
+                    vegetarian: newGuestVegetarian,
                     total_guests: newGuestAdults + newGuestChildren,
                     notes: newGuestNotes.trim()
                 })
@@ -347,6 +355,7 @@ export default function GuestManagementPage() {
                 setNewGuestTable('')
                 setNewGuestAdults(1)
                 setNewGuestChildren(0)
+                setNewGuestVegetarian(0)
                 setNewGuestNotes('')
             } else {
                 alert('新增失敗')
@@ -402,6 +411,7 @@ export default function GuestManagementPage() {
                 const tableIdx = headers.findIndex(h => h.includes('table') || h.includes('桌') || h.includes('座位'))
                 const adultsIdx = headers.findIndex(h => h.includes('adult') || h.includes('大人'))
                 const childrenIdx = headers.findIndex(h => h.includes('child') || h.includes('小孩') || h.includes('兒童'))
+                const vegetarianIdx = headers.findIndex(h => h.includes('vegetarian') || h.includes('素食') || h.includes('素'))
                 const totalIdx = headers.findIndex(h => h.includes('total') || h.includes('總') || h.includes('人數'))
                 const notesIdx = headers.findIndex(h => h.includes('notes') || h.includes('備註') || h.includes('note'))
 
@@ -418,11 +428,12 @@ export default function GuestManagementPage() {
                     const table_number = values[tableIdx]?.trim()
                     const adults = adultsIdx !== -1 ? parseInt(values[adultsIdx]?.trim()) || 1 : 1
                     const children = childrenIdx !== -1 ? parseInt(values[childrenIdx]?.trim()) || 0 : 0
+                    const vegetarian = vegetarianIdx !== -1 ? parseInt(values[vegetarianIdx]?.trim()) || 0 : 0
                     const total_guests = totalIdx !== -1 ? parseInt(values[totalIdx]?.trim()) || (adults + children) : (adults + children)
                     const notes = notesIdx !== -1 ? values[notesIdx]?.trim() || '' : ''
 
                     if (name && table_number) {
-                        parsedData.push({ name, table_number, adults, children, total_guests, notes })
+                        parsedData.push({ name, table_number, adults, children, vegetarian, total_guests, notes })
                     }
                 }
 
@@ -568,7 +579,7 @@ export default function GuestManagementPage() {
                         {showStats && (
                             <div className="p-4 border-t border-gray-100">
                                 {/* 總計卡片 */}
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                                <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
                                     <div className="bg-purple-50 rounded-lg p-3 text-center">
                                         <div className="text-2xl font-bold text-purple-700">{totalStats.tables}</div>
                                         <div className="text-xs text-purple-600">桌數</div>
@@ -580,6 +591,10 @@ export default function GuestManagementPage() {
                                     <div className="bg-pink-50 rounded-lg p-3 text-center">
                                         <div className="text-2xl font-bold text-pink-700">{totalStats.children}</div>
                                         <div className="text-xs text-pink-600">小孩</div>
+                                    </div>
+                                    <div className="bg-emerald-50 rounded-lg p-3 text-center">
+                                        <div className="text-2xl font-bold text-emerald-700">{totalStats.vegetarian}</div>
+                                        <div className="text-xs text-emerald-600">素食</div>
                                     </div>
                                     <div className="bg-green-50 rounded-lg p-3 text-center">
                                         <div className="text-2xl font-bold text-green-700">{totalStats.total}</div>
@@ -796,6 +811,7 @@ export default function GuestManagementPage() {
                                         <th className="px-4 py-4 font-medium">桌次</th>
                                         <th className="px-4 py-4 font-medium text-center">大人</th>
                                         <th className="px-4 py-4 font-medium text-center">小孩</th>
+                                        <th className="px-4 py-4 font-medium text-center">素食</th>
                                         <th className="px-4 py-4 font-medium text-center">總人數</th>
                                         <th className="px-4 py-4 font-medium">備註</th>
                                         <th className="px-4 py-4 font-medium text-right">操作</th>
@@ -804,7 +820,7 @@ export default function GuestManagementPage() {
                                 <tbody className="divide-y divide-gray-100">
                                     {filteredGuests.length === 0 ? (
                                         <tr>
-                                            <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
+                                            <td colSpan={8} className="px-6 py-8 text-center text-gray-500">
                                                 {guests.length === 0 ? '目前沒有手動名單資料，請點擊「新增賓客」' : '找不到符合的資料'}
                                             </td>
                                         </tr>
@@ -864,6 +880,19 @@ export default function GuestManagementPage() {
                                                     )}
                                                 </td>
                                                 <td className="px-4 py-3 text-center">
+                                                    {editingId === guest.id ? (
+                                                        <input
+                                                            type="number"
+                                                            min="0"
+                                                            value={editVegetarian}
+                                                            onChange={(e) => setEditVegetarian(parseInt(e.target.value) || 0)}
+                                                            className="w-14 px-2 py-1 border border-purple-300 rounded text-sm text-center"
+                                                        />
+                                                    ) : (
+                                                        <span className={`${(guest.vegetarian || 0) > 0 ? 'text-emerald-700 font-medium' : 'text-gray-400'}`}>{guest.vegetarian || 0}</span>
+                                                    )}
+                                                </td>
+                                                <td className="px-4 py-3 text-center">
                                                     <span className="font-bold text-purple-700">{guest.total_guests || ((guest.adults || 1) + (guest.children || 0))}</span>
                                                 </td>
                                                 <td className="px-4 py-3">
@@ -904,6 +933,7 @@ export default function GuestManagementPage() {
                                                                     setEditTable(guest.table_number)
                                                                     setEditAdults(guest.adults || 1)
                                                                     setEditChildren(guest.children || 0)
+                                                                    setEditVegetarian(guest.vegetarian || 0)
                                                                     setEditNotes(guest.notes || '')
                                                                 }}
                                                                 className="text-gray-400 hover:text-purple-600 transition-colors"
@@ -988,6 +1018,18 @@ export default function GuestManagementPage() {
                                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none"
                                         />
                                     </div>
+                                    <div className="flex-1">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            素食人數
+                                        </label>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            value={newGuestVegetarian}
+                                            onChange={(e) => setNewGuestVegetarian(parseInt(e.target.value) || 0)}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none"
+                                        />
+                                    </div>
                                 </div>
 
                                 <div>
@@ -1054,6 +1096,7 @@ export default function GuestManagementPage() {
                                             <li><strong>桌次</strong> (必填)：table 或 桌次</li>
                                             <li><strong>大人</strong> (選填)：adult 或 大人</li>
                                             <li><strong>小孩</strong> (選填)：child 或 小孩</li>
+                                            <li><strong>素食</strong> (選填)：vegetarian 或 素食</li>
                                             <li><strong>總人數</strong> (選填)：total 或 人數</li>
                                             <li><strong>備註</strong> (選填)：notes 或 備註</li>
                                         </ul>
@@ -1093,6 +1136,7 @@ export default function GuestManagementPage() {
                                                     <th className="px-2 py-2 text-left font-medium text-gray-600">桌次</th>
                                                     <th className="px-2 py-2 text-center font-medium text-gray-600">大人</th>
                                                     <th className="px-2 py-2 text-center font-medium text-gray-600">小孩</th>
+                                                    <th className="px-2 py-2 text-center font-medium text-gray-600">素食</th>
                                                     <th className="px-2 py-2 text-center font-medium text-gray-600">總人數</th>
                                                     <th className="px-2 py-2 text-left font-medium text-gray-600">備註</th>
                                                 </tr>
@@ -1104,13 +1148,14 @@ export default function GuestManagementPage() {
                                                         <td className="px-2 py-2 text-gray-900">{row.table_number}</td>
                                                         <td className="px-2 py-2 text-center text-gray-700">{row.adults}</td>
                                                         <td className="px-2 py-2 text-center text-gray-700">{row.children}</td>
+                                                        <td className="px-2 py-2 text-center text-emerald-700">{row.vegetarian || 0}</td>
                                                         <td className="px-2 py-2 text-center font-bold text-purple-700">{row.total_guests}</td>
                                                         <td className="px-2 py-2 text-gray-500">{row.notes || '-'}</td>
                                                     </tr>
                                                 ))}
                                                 {csvData.length > 20 && (
                                                     <tr>
-                                                        <td colSpan={6} className="px-3 py-2 text-center text-gray-500 italic">
+                                                        <td colSpan={7} className="px-3 py-2 text-center text-gray-500 italic">
                                                             ...還有 {csvData.length - 20} 筆資料
                                                         </td>
                                                     </tr>

@@ -67,6 +67,7 @@ export async function POST(request: Request) {
                     table_number: g.table_number.trim(),
                     adults: parseInt(g.adults) || 1,
                     children: parseInt(g.children) || 0,
+                    vegetarian: parseInt(g.vegetarian) || 0,
                     total_guests: parseInt(g.total_guests) || (parseInt(g.adults) || 1) + (parseInt(g.children) || 0),
                     notes: g.notes?.trim() || null
                 }))
@@ -93,7 +94,7 @@ export async function POST(request: Request) {
         }
 
         // 單筆新增
-        const { name, table_number, adults, children, total_guests, notes } = body
+        const { name, table_number, adults, children, vegetarian, total_guests, notes } = body
 
         if (!name || !table_number) {
             return NextResponse.json(
@@ -104,6 +105,7 @@ export async function POST(request: Request) {
 
         const adultsNum = parseInt(adults) || 1
         const childrenNum = parseInt(children) || 0
+        const vegetarianNum = parseInt(vegetarian) || 0
 
         const { data, error } = await supabase
             .from('guest_list')
@@ -112,6 +114,7 @@ export async function POST(request: Request) {
                 table_number,
                 adults: adultsNum,
                 children: childrenNum,
+                vegetarian: vegetarianNum,
                 total_guests: parseInt(total_guests) || (adultsNum + childrenNum),
                 notes
             })
@@ -165,6 +168,7 @@ export async function PUT(request: Request) {
             if (name) updates.guest_name = name
             if (body.adults !== undefined) updates.adults = parseInt(body.adults) || 0
             if (body.children !== undefined) updates.children = parseInt(body.children) || 0
+            if (body.vegetarian !== undefined) updates.vegetarian = parseInt(body.vegetarian) || 0
             if (body.total_guests !== undefined) updates.total_guests = parseInt(body.total_guests) || 0
             if (notes !== undefined) updates.notes = notes
 
