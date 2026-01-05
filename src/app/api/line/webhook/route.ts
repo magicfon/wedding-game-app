@@ -46,6 +46,41 @@ async function handleRichMenuSwitch(userId: string, targetTab: string) {
   }
 }
 
+// 處理 Follow 事件 - 用戶加入好友時自動新增到 users 表
+async function handleFollow(userId: string) {
+  if (!client) {
+    console.log('LINE client not available, skipping user sync')
+    return
+  }
+
+  try {
+    // 透過 LINE API 獲取用戶 profile
+    const profile = await client.getProfile(userId)
+
+    // 呼叫現有的 liff-sync API 來新增/更新用戶
+    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/auth/liff-sync`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        profile: {
+          userId: profile.userId,
+          displayName: profile.displayName,
+          pictureUrl: profile.pictureUrl
+        }
+      })
+    })
+
+    if (response.ok) {
+      const result = await response.json()
+      console.log(`User ${profile.displayName} synced on follow:`, result.isNewUser ? 'new user created' : 'existing user updated')
+    } else {
+      console.error('Failed to sync user on follow:', await response.text())
+    }
+  } catch (error) {
+    console.error('Error handling follow event:', error)
+  }
+}
+
 // 處理 Postback 事件 (僅處理 Rich Menu 切換，不回覆訊息)
 async function handlePostback(event: PostbackEvent) {
   if (!client) return
@@ -93,9 +128,16 @@ export async function POST(request: NextRequest) {
             await handlePostback(event)
             break
           case 'message':
+            // 不處理 message 事件，由 LINE OA 後台設定處理
+            break
           case 'follow':
+            // 用戶加入好友時，自動新增到 users 表
+            if (event.source?.userId) {
+              await handleFollow(event.source.userId)
+            }
+            break
           case 'unfollow':
-            // 不處理這些事件，由 LINE OA 後台設定處理
+            // 用戶取消好友，目前不做處理
             break
         }
       })
