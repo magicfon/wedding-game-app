@@ -72,43 +72,50 @@ interface SlotColumnProps {
 }
 
 const SlotColumn = memo(({ photos, targetIndex, delay, isCenter, onStop }: SlotColumnProps) => {
-    const [offset, setOffset] = useState(0)
     const [isStopping, setIsStopping] = useState(false)
     const [stopped, setStopped] = useState(false)
+    const containerRef = useRef<HTMLDivElement>(null)
     const animationRef = useRef<number | null>(null)
     const startTimeRef = useRef<number>(0)
+    const hasStartedRef = useRef(false)
 
     // 創建循環列表（重複 4 次足夠平滑滾動，減少 DOM 節點）
     const extendedPhotos = useMemo(() => {
         const result: Photo[] = []
-        for (let i = 0; i < 4; i++) { // 從 10 次減少到 4 次
+        for (let i = 0; i < 4; i++) {
             result.push(...photos)
         }
         return result
     }, [photos])
 
     useEffect(() => {
-        if (stopped) return
+        if (stopped || hasStartedRef.current) return
+        hasStartedRef.current = true
 
         const totalHeight = photos.length * (PHOTO_SIZE + 16) // 16 = gap
         const targetOffset = targetIndex * (PHOTO_SIZE + 16)
 
         // 計算最終停止位置（多轉幾圈）
-        const minSpins = 3 + (delay / 1000) // 根據延遲多轉幾圈
+        const minSpins = 3 + (delay / 1000)
         const finalOffset = (minSpins * totalHeight) + targetOffset
-
-        startTimeRef.current = performance.now()
-        const spinDuration = 3000 + delay // 基礎 3 秒 + 延遲
+        const spinDuration = 3000 + delay
 
         const animate = (currentTime: number) => {
+            if (!startTimeRef.current) {
+                startTimeRef.current = currentTime
+            }
+
             const elapsed = currentTime - startTimeRef.current
             const progress = Math.min(elapsed / spinDuration, 1)
 
             // 使用 easeOutCubic 減速曲線
             const easeOut = 1 - Math.pow(1 - progress, 3)
+            const currentOffset = (finalOffset * easeOut) % (totalHeight * 4)
 
-            const currentOffset = finalOffset * easeOut
-            setOffset(currentOffset % (totalHeight * 5)) // 保持在合理範圍
+            // 直接操作 DOM，避免 React re-render
+            if (containerRef.current) {
+                containerRef.current.style.transform = `translateY(-${currentOffset}px) translateZ(0)`
+            }
 
             if (progress >= 0.8 && !isStopping) {
                 setIsStopping(true)
@@ -118,7 +125,10 @@ const SlotColumn = memo(({ photos, targetIndex, delay, isCenter, onStop }: SlotC
                 animationRef.current = requestAnimationFrame(animate)
             } else {
                 setStopped(true)
-                setOffset(targetOffset)
+                // 最終位置
+                if (containerRef.current) {
+                    containerRef.current.style.transform = `translateY(-${targetOffset}px) translateZ(0)`
+                }
                 onStop?.()
             }
         }
@@ -136,22 +146,32 @@ const SlotColumn = memo(({ photos, targetIndex, delay, isCenter, onStop }: SlotC
         }
     }, [photos.length, targetIndex, delay, stopped, onStop, isStopping])
 
+    // 重置狀態當動畫重新開始
+    useEffect(() => {
+        return () => {
+            hasStartedRef.current = false
+            startTimeRef.current = 0
+        }
+    }, [])
+
     return (
         <div
             className={`relative overflow-hidden rounded-2xl ${isCenter ? 'border-4 border-yellow-400' : 'border-2 border-white/50'
                 }`}
             style={{
                 height: `${COLUMN_HEIGHT}px`,
-                width: `${PHOTO_SIZE + 20}px`
+                width: `${PHOTO_SIZE + 20}px`,
+                contain: 'strict' // 限制重繪範圍
             }}
         >
-            {/* 滾動容器 - GPU 加速 */}
+            {/* 滾動容器 - 使用 ref 直接操作 */}
             <div
-                className="absolute left-0 right-0 transition-none lottery-animated"
+                ref={containerRef}
+                className="absolute left-0 right-0"
                 style={{
-                    transform: `translateY(-${offset}px) translateZ(0)`,
-                    top: `${COLUMN_HEIGHT / 2 - PHOTO_SIZE / 2}px`, // 中心對齊
-                    contain: 'strict' // 限制重繪範圍
+                    top: `${COLUMN_HEIGHT / 2 - PHOTO_SIZE / 2}px`,
+                    willChange: 'transform',
+                    backfaceVisibility: 'hidden'
                 }}
             >
                 {extendedPhotos.map((photo, idx) => (
