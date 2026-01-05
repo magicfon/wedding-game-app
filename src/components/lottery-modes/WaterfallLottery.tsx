@@ -187,29 +187,27 @@ export const WaterfallLottery = memo(({
                 {/* 下落的照片 */}
                 {fallingPhotos.map(falling => {
                     const isWinnerPhoto = falling.id === 'winner-final'
-                    const elapsed = Date.now() - falling.startTime
-                    const progress = Math.min(elapsed / FALL_DURATION, 1)
 
-                    // 如果正在抓住且是中獎照片，改變動畫
-                    const shouldCatch = catchingWinner && isWinnerPhoto && progress > 0.4
+                    // 使用純 CSS 動畫，不再在 render 中計算位置
+                    const shouldCatch = catchingWinner && isWinnerPhoto
 
                     return (
                         <div
                             key={falling.id}
-                            className={`absolute transition-all ${shouldCatch
-                                ? 'duration-700 ease-out scale-150 z-50'
-                                : 'duration-100 ease-linear'
+                            className={`absolute lottery-animated ${shouldCatch
+                                ? 'transition-all duration-700 ease-out scale-150 z-50'
+                                : 'falling-photo'
                                 }`}
                             style={{
                                 left: shouldCatch
                                     ? 'calc(50% - 90px)'
                                     : `${trackPositions[falling.track]}px`,
-                                top: shouldCatch
-                                    ? '30%'
-                                    : `${progress * 100}%`,
+                                top: shouldCatch ? '30%' : undefined,
                                 width: `${PHOTO_SIZE}px`,
                                 height: `${PHOTO_SIZE}px`,
-                                opacity: shouldCatch ? 1 : (1 - progress * 0.5)
+                                animationDelay: shouldCatch ? undefined : `${falling.delay}ms`,
+                                // 捕捉時暫停下落動畫
+                                animationPlayState: shouldCatch ? 'paused' : 'running'
                             }}
                         >
                             <img

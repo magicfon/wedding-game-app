@@ -110,8 +110,8 @@ export const FastShuffleLottery = memo(({
     const [displayedPhoto, setDisplayedPhoto] = useState<Photo>(photos[0])
     const [isSlowingDown, setIsSlowingDown] = useState(false)
     const [showWinnerReveal, setShowWinnerReveal] = useState(false)
-    const animationRef = useRef<NodeJS.Timeout | null>(null)
-    const stepRef = useRef(0)
+    const rafRef = useRef<number | null>(null)
+    const scheduleRef = useRef<{ photoIndex: number; time: number }[]>([])
 
     // 照片大小
     const photoSize = Math.min(700, DESIGN_WIDTH * 0.4)
@@ -123,22 +123,22 @@ export const FastShuffleLottery = memo(({
         setShowWinnerReveal(false)
         setIsSlowingDown(false)
 
-        // 動畫參數
-        const schedule: { photoIndex: number; delay: number }[] = []
+        // 動畫參數 - 預先計算時間表（累積時間）
+        const schedule: { photoIndex: number; time: number }[] = []
         let currentDelay = 40 // 初始速度極快
         const maxDelay = 600
         const totalDuration = 10000 // 10秒
-        let totalTime = 0
+        let cumulativeTime = 0
 
         // 生成時間表
-        while (totalTime < totalDuration - 2000) { // 留 2 秒給減速
+        while (cumulativeTime < totalDuration - 2000) { // 留 2 秒給減速
             const randomIndex = Math.floor(Math.random() * photos.length)
-            schedule.push({ photoIndex: randomIndex, delay: currentDelay })
-            totalTime += currentDelay
+            schedule.push({ photoIndex: randomIndex, time: cumulativeTime })
+            cumulativeTime += currentDelay
             currentDelay = Math.min(maxDelay, currentDelay * 1.05)
         }
 
-        // 最後 5 步確保落在 winner
+        // 最後 8 步確保落在 winner
         const finalSteps = 8
         for (let i = 0; i < finalSteps; i++) {
             let photoIdx: number
@@ -152,40 +152,51 @@ export const FastShuffleLottery = memo(({
                 photoIdx = winnerIndex
             }
             const delay = 300 + i * 150 // 300, 450, 600, 750, ...
-            schedule.push({ photoIndex: photoIdx, delay })
-            totalTime += delay
+            schedule.push({ photoIndex: photoIdx, time: cumulativeTime })
+            cumulativeTime += delay
         }
 
-        console.log(`🔀 FastShuffle: ${schedule.length} 步, 預計 ${(totalTime / 1000).toFixed(2)}s`)
+        scheduleRef.current = schedule
+        const slowdownStartStep = schedule.length - 10
 
-        // 執行動畫
-        stepRef.current = 0
+        console.log(`🔀 FastShuffle: ${schedule.length} 步, 預計 ${(cumulativeTime / 1000).toFixed(2)}s`)
 
-        const runStep = () => {
-            if (stepRef.current >= schedule.length) {
+        // 使用 requestAnimationFrame 執行動畫
+        const startTime = performance.now()
+        let currentStep = 0
+
+        const animate = (currentTime: number) => {
+            const elapsed = currentTime - startTime
+
+            // 找到當前應該顯示的步驟
+            while (currentStep < schedule.length && schedule[currentStep].time <= elapsed) {
+                currentStep++
+            }
+
+            if (currentStep >= schedule.length) {
                 // 動畫結束，顯示中獎揭曉
                 setDisplayedPhoto(winnerPhoto)
                 setShowWinnerReveal(true)
                 return
             }
 
-            const step = schedule[stepRef.current]
-            setDisplayedPhoto(photos[step.photoIndex])
+            // 顯示前一步的照片（因為我們已經過了那個時間點）
+            const stepToShow = Math.max(0, currentStep - 1)
+            setDisplayedPhoto(photos[schedule[stepToShow].photoIndex])
 
             // 檢測是否進入減速階段
-            if (stepRef.current >= schedule.length - 10) {
+            if (stepToShow >= slowdownStartStep) {
                 setIsSlowingDown(true)
             }
 
-            stepRef.current++
-            animationRef.current = setTimeout(runStep, step.delay)
+            rafRef.current = requestAnimationFrame(animate)
         }
 
-        runStep()
+        rafRef.current = requestAnimationFrame(animate)
 
         return () => {
-            if (animationRef.current) {
-                clearTimeout(animationRef.current)
+            if (rafRef.current) {
+                cancelAnimationFrame(rafRef.current)
             }
         }
     }, [isAnimating, photos, winnerPhoto, winnerIndex])

@@ -224,7 +224,7 @@ export const TournamentLottery = memo(({
                     {candidates.map(candidate => (
                         <div
                             key={candidate.photo.id}
-                            className={`relative transition-all duration-700 ${candidate.eliminated
+                            className={`relative lottery-animated transition-all duration-700 ${candidate.eliminated
                                 ? 'opacity-0 scale-50 rotate-12'
                                 : 'opacity-100 scale-100'
                                 }`}

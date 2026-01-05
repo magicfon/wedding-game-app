@@ -54,18 +54,26 @@ const DESIGN_HEIGHT = 1080
 
 // --- Memoized Components ---
 
+// 預計算粒子位置，避免每次 render 重新隨機
+const PARTICLE_POSITIONS = Array.from({ length: 30 }, () => ({
+  left: `${Math.random() * 100}%`,
+  top: `${Math.random() * 100}%`,
+  delay: `${Math.random() * 2}s`,
+  duration: `${3 + Math.random() * 2}s`
+}))
+
 const BackgroundParticles = memo(() => {
   return (
     <div className="absolute inset-0 pointer-events-none">
-      {[...Array(30)].map((_, i) => (
+      {PARTICLE_POSITIONS.map((p, i) => (
         <div
           key={i}
-          className="absolute animate-float"
+          className="absolute animate-float lottery-animated"
           style={{
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
-            animationDelay: `${Math.random() * 2}s`,
-            animationDuration: `${3 + Math.random() * 2}s`
+            left: p.left,
+            top: p.top,
+            animationDelay: p.delay,
+            animationDuration: p.duration
           }}
         >
           <Sparkles className="w-6 h-6 text-white opacity-30" />
@@ -76,25 +84,32 @@ const BackgroundParticles = memo(() => {
 })
 BackgroundParticles.displayName = 'BackgroundParticles'
 
+// 預計算紙屑位置和顏色
+const CONFETTI_COLORS = ['#ff6b6b', '#ffd93d', '#6bcf7f', '#4d96ff', '#ff6bff']
+const CONFETTI_PARTICLES = Array.from({ length: 150 }, () => ({
+  left: `${Math.random() * 100}%`,
+  delay: `${Math.random() * 0.5}s`,
+  duration: `${2 + Math.random()}s`,
+  color: CONFETTI_COLORS[Math.floor(Math.random() * 5)]
+}))
+
 const Confetti = memo(() => {
   return (
     <div className="absolute inset-0 pointer-events-none z-30">
-      {[...Array(150)].map((_, i) => (
+      {CONFETTI_PARTICLES.map((c, i) => (
         <div
           key={i}
-          className="absolute animate-confetti"
+          className="absolute animate-confetti lottery-animated"
           style={{
-            left: `${Math.random() * 100}%`,
+            left: c.left,
             top: '-10%',
-            animationDelay: `${Math.random() * 0.5}s`,
-            animationDuration: `${2 + Math.random()}s`
+            animationDelay: c.delay,
+            animationDuration: c.duration
           }}
         >
           <div
             className="w-3 h-3 rounded-full"
-            style={{
-              backgroundColor: ['#ff6b6b', '#ffd93d', '#6bcf7f', '#4d96ff', '#ff6bff'][Math.floor(Math.random() * 5)]
-            }}
+            style={{ backgroundColor: c.color }}
           />
         </div>
       ))}

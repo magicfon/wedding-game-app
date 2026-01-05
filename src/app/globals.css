@@ -187,3 +187,48 @@ body:has([data-lottery-live]) {
     opacity: 1;
   }
 }
+
+/* 瀑布下落動畫 - 使用 GPU 加速 */
+@keyframes fallDown {
+  0% {
+    transform: translateY(-120px) translateZ(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(800px) translateZ(0);
+    opacity: 0.5;
+  }
+}
+
+/* 老虎機滾動動畫 */
+@keyframes slotSpin {
+  0% {
+    transform: translateY(0) translateZ(0);
+  }
+  100% {
+    transform: translateY(var(--final-offset)) translateZ(0);
+  }
+}
+
+/* 快速閃爍效果 */
+@keyframes shuffleGlow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(255, 215, 0, 0.8);
+  }
+}
+
+/* GPU 加速提示 - 用於動畫元素 */
+.lottery-animated {
+  will-change: transform, opacity;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* 瀑布照片專用 */
+.falling-photo {
+  will-change: transform;
+  animation: fallDown 4s linear forwards;
+}

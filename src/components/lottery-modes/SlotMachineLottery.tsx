@@ -78,10 +78,10 @@ const SlotColumn = memo(({ photos, targetIndex, delay, isCenter, onStop }: SlotC
     const animationRef = useRef<number | null>(null)
     const startTimeRef = useRef<number>(0)
 
-    // 創建循環列表（重複多次以確保平滑滾動）
+    // 創建循環列表（重複 4 次足夠平滑滾動，減少 DOM 節點）
     const extendedPhotos = useMemo(() => {
         const result: Photo[] = []
-        for (let i = 0; i < 10; i++) { // 重複 10 次
+        for (let i = 0; i < 4; i++) { // 從 10 次減少到 4 次
             result.push(...photos)
         }
         return result
@@ -145,13 +145,13 @@ const SlotColumn = memo(({ photos, targetIndex, delay, isCenter, onStop }: SlotC
                 width: `${PHOTO_SIZE + 20}px`
             }}
         >
-            {/* 滾動容器 */}
+            {/* 滾動容器 - GPU 加速 */}
             <div
-                className="absolute left-0 right-0 transition-none"
+                className="absolute left-0 right-0 transition-none lottery-animated"
                 style={{
-                    transform: `translateY(-${offset}px)`,
+                    transform: `translateY(-${offset}px) translateZ(0)`,
                     top: `${COLUMN_HEIGHT / 2 - PHOTO_SIZE / 2}px`, // 中心對齊
-                    willChange: 'transform'
+                    contain: 'strict' // 限制重繪範圍
                 }}
             >
                 {extendedPhotos.map((photo, idx) => (
