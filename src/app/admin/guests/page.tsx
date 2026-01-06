@@ -20,7 +20,9 @@ import {
     ChevronDown,
     ChevronUp,
     Shield,
-    ShieldOff
+    ShieldOff,
+    Link2,
+    Unlink
 } from 'lucide-react'
 
 interface LineUser {
@@ -34,6 +36,7 @@ interface LineUser {
     admin_level?: 'system' | 'event' | null
     join_time: string | null
     created_at: string | null
+    linked_guest_id: number | null
 }
 
 interface ManualGuest {
@@ -67,6 +70,7 @@ export default function GuestManagementPage() {
     const [editChildren, setEditChildren] = useState(0)
     const [editVegetarian, setEditVegetarian] = useState(0)
     const [editNotes, setEditNotes] = useState('')
+    const [editLinkedGuestId, setEditLinkedGuestId] = useState<number | null>(null)
 
     // 新增狀態
     const [showAddModal, setShowAddModal] = useState(false)
@@ -180,15 +184,20 @@ export default function GuestManagementPage() {
     // 更新 LINE 用戶資料
     const handleUpdateLineUser = async (user: LineUser) => {
         try {
+            // 如果選擇了連結賓客，自動使用該賓客的桌次
+            const linkedGuest = editLinkedGuestId ? guests.find(g => g.id === editLinkedGuestId) : null
+            const finalTableNumber = linkedGuest ? linkedGuest.table_number : (editTable.trim() || null)
+
             const response = await fetch('/api/admin/guests', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     type: 'user',
                     id: user.line_id,
-                    table_number: editTable.trim() || null,
+                    table_number: finalTableNumber,
                     display_name: editDisplayName.trim() || user.display_name,
-                    is_active: editIsActive
+                    is_active: editIsActive,
+                    linked_guest_id: editLinkedGuestId
                 })
             })
 
@@ -196,9 +205,10 @@ export default function GuestManagementPage() {
                 setUsers(users.map(u =>
                     u.line_id === user.line_id ? {
                         ...u,
-                        table_number: editTable.trim() || null,
+                        table_number: finalTableNumber,
                         display_name: editDisplayName.trim() || u.display_name,
-                        is_active: editIsActive
+                        is_active: editIsActive,
+                        linked_guest_id: editLinkedGuestId
                     } : u
                 ))
                 setEditingId(null)
@@ -792,10 +802,11 @@ export default function GuestManagementPage() {
                     ) : activeTab === 'line' ? (
                         // LINE 用戶列表
                         <div className="overflow-x-auto">
-                            <table className="w-full text-left min-w-[800px]">
+                            <table className="w-full text-left min-w-[900px]">
                                 <thead className="bg-gray-50 text-gray-600 text-xs uppercase">
                                     <tr>
                                         <th className="px-4 py-4 font-medium">用戶</th>
+                                        <th className="px-4 py-4 font-medium">連結賓客</th>
                                         <th className="px-4 py-4 font-medium">桌次</th>
                                         <th className="px-4 py-4 font-medium text-center">積分</th>
                                         <th className="px-4 py-4 font-medium text-center">狀態</th>
@@ -807,7 +818,7 @@ export default function GuestManagementPage() {
                                 <tbody className="divide-y divide-gray-100">
                                     {filteredUsers.length === 0 ? (
                                         <tr>
-                                            <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
+                                            <td colSpan={8} className="px-6 py-8 text-center text-gray-500">
                                                 找不到符合的資料
                                             </td>
                                         </tr>
@@ -840,6 +851,42 @@ export default function GuestManagementPage() {
                                                             </div>
                                                         </div>
                                                     </div>
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    {editingId === user.line_id ? (
+                                                        <select
+                                                            value={editLinkedGuestId || ''}
+                                                            onChange={(e) => {
+                                                                const guestId = e.target.value ? parseInt(e.target.value) : null
+                                                                setEditLinkedGuestId(guestId)
+                                                                // 自動填入桌次
+                                                                if (guestId) {
+                                                                    const guest = guests.find(g => g.id === guestId)
+                                                                    if (guest) setEditTable(guest.table_number)
+                                                                }
+                                                            }}
+                                                            className="w-32 px-2 py-1 border border-purple-300 rounded text-sm"
+                                                        >
+                                                            <option value="">未連結</option>
+                                                            {guests.map((guest) => (
+                                                                <option key={guest.id} value={guest.id}>
+                                                                    {guest.guest_name} (桌{guest.table_number})
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                    ) : (
+                                                        user.linked_guest_id ? (
+                                                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-sm bg-blue-50 text-blue-700 font-medium">
+                                                                <Link2 className="w-3 h-3" />
+                                                                {guests.find(g => g.id === user.linked_guest_id)?.guest_name || '未知'}
+                                                            </span>
+                                                        ) : (
+                                                            <span className="inline-flex items-center gap-1 text-gray-400 text-sm italic">
+                                                                <Unlink className="w-3 h-3" />
+                                                                未連結
+                                                            </span>
+                                                        )
+                                                    )}
                                                 </td>
                                                 <td className="px-4 py-3">
                                                     {editingId === user.line_id ? (
@@ -921,6 +968,7 @@ export default function GuestManagementPage() {
                                                                     setEditTable(user.table_number || '')
                                                                     setEditDisplayName(user.display_name)
                                                                     setEditIsActive(user.is_active)
+                                                                    setEditLinkedGuestId(user.linked_guest_id)
                                                                 }}
                                                                 className="text-gray-400 hover:text-purple-600 transition-colors"
                                                             >

@@ -146,7 +146,7 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
     try {
         const body = await request.json()
-        const { type, id, table_number, name, notes, display_name, is_active, total_score } = body
+        const { type, id, table_number, name, notes, display_name, is_active, total_score, linked_guest_id } = body
 
         if (!type || !id) {
             return NextResponse.json(
@@ -164,6 +164,24 @@ export async function PUT(request: Request) {
             if (display_name !== undefined) updates.display_name = display_name
             if (is_active !== undefined) updates.is_active = is_active
             if (total_score !== undefined) updates.total_score = parseInt(total_score) || 0
+
+            // 處理賓客連結
+            if (linked_guest_id !== undefined) {
+                updates.linked_guest_id = linked_guest_id || null
+
+                // 如果選擇了賓客，自動同步桌次
+                if (linked_guest_id) {
+                    const { data: guestData } = await supabase
+                        .from('guest_list')
+                        .select('table_number')
+                        .eq('id', linked_guest_id)
+                        .single()
+
+                    if (guestData?.table_number) {
+                        updates.table_number = guestData.table_number
+                    }
+                }
+            }
 
             const { error } = await supabase
                 .from('users')
