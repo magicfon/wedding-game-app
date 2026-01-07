@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="婚紗照精選相簿">
+    <title>婚紗照 | 我們的幸福時刻</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <!-- 頁面標題 -->
+    <header class="header">
+        <div class="header-content">
+            <h1 class="title">💕 婚紗照</h1>
+            <p class="subtitle">點擊照片查看大圖</p>
+        </div>
+    </header>
+
+    <!-- 照片網格 -->
+    <main class="gallery-container">
+        <div class="gallery" id="gallery">
+            <!-- 照片將由 JavaScript 動態載入 -->
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>載入中...</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- 燈箱 -->
+    <div class="lightbox" id="lightbox">
+        <button class="lightbox-close" id="lightbox-close" aria-label="關閉">&times;</button>
+
+        <button class="lightbox-nav lightbox-prev" id="lightbox-prev" aria-label="上一張">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+        </button>
+
+        <div class="lightbox-content">
+            <img src="" alt="婚紗照" id="lightbox-img">
+        </div>
+
+        <button class="lightbox-nav lightbox-next" id="lightbox-next" aria-label="下一張">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+        </button>
+
+        <div class="lightbox-counter" id="lightbox-counter">1 / 10</div>
+    </div>
+
+    <script src="js/gallery.js"></script>
+</body>
+
+</html>
