@@ -343,11 +343,14 @@ export default function GuestManagementPage() {
             })
 
             if (response.ok) {
+                const newTableNumber = editTable.trim()
+
+                // 更新手動名單
                 setGuests(guests.map(g =>
                     g.id === guest.id ? {
                         ...g,
                         guest_name: editName.trim(),
-                        table_number: editTable.trim(),
+                        table_number: newTableNumber,
                         adults: editAdults,
                         children: editChildren,
                         vegetarian: editVegetarian,
@@ -355,6 +358,15 @@ export default function GuestManagementPage() {
                         notes: editNotes.trim()
                     } : g
                 ))
+
+                // 同步更新連結到此賓客的 LINE 用戶桌次
+                setUsers(users.map(u =>
+                    u.linked_guest_id === guest.id ? {
+                        ...u,
+                        table_number: newTableNumber
+                    } : u
+                ))
+
                 setEditingId(null)
             } else {
                 alert('更新失敗')

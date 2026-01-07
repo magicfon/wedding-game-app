@@ -205,6 +205,22 @@ export async function PUT(request: Request) {
                 .eq('id', id)
 
             if (error) throw error
+
+            // 同步更新所有連結到此賓客的 LINE 用戶桌次
+            if (table_number !== undefined) {
+                const { error: syncError } = await supabase
+                    .from('users')
+                    .update({
+                        table_number,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('linked_guest_id', id)
+
+                if (syncError) {
+                    console.error('Error syncing linked users:', syncError)
+                    // 不阻擋主要操作，只記錄錯誤
+                }
+            }
         } else {
             return NextResponse.json(
                 { error: 'Invalid type' },
