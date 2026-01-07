@@ -7,23 +7,38 @@
     'use strict';
 
     // ===== Configuration =====
-    // 照片配置 - 請將您的照片放入 images/photos/ 資料夾
+    // 照片配置 - 婚紗照列表
     // 格式: { src: '檔案名', landscape: true/false }
     const PHOTOS = [
-        // 示例照片 - 請替換為您的實際照片
-        { src: '01.jpg', landscape: false },
-        { src: '02.jpg', landscape: true },
-        { src: '03.jpg', landscape: false },
-        { src: '04.jpg', landscape: false },
-        { src: '05.jpg', landscape: true },
-        { src: '06.jpg', landscape: false },
-        { src: '07.jpg', landscape: false },
-        { src: '08.jpg', landscape: true },
-        { src: '09.jpg', landscape: false },
+        { src: '1.jpg', landscape: false },
+        { src: '2.jpg', landscape: false },
+        { src: '3.jpg', landscape: false },
+        { src: '4.jpg', landscape: false },
+        { src: '5.jpg', landscape: false },
+        { src: '5-2.jpg', landscape: false },
+        { src: '6.jpg', landscape: false },
+        { src: '7.jpg', landscape: false },
+        { src: '8.jpg', landscape: false },
+        { src: '9.jpg', landscape: false },
         { src: '10.jpg', landscape: false },
+        { src: '11.jpg', landscape: false },
+        { src: '12.jpg', landscape: false },
+        { src: '13.jpg', landscape: false },
+        { src: '13-2.jpg', landscape: false },
+        { src: '14.jpg', landscape: false },
+        { src: '15.jpg', landscape: false },
+        { src: '16.jpg', landscape: false },
+        { src: '17.jpg', landscape: false },
+        { src: '18.jpg', landscape: false },
+        { src: '19.jpg', landscape: false },
+        { src: '20.jpg', landscape: false },
+        { src: '21.jpg', landscape: false },
+        { src: 'SON05434.jpg', landscape: false },
+        { src: 'SON05435.jpg', landscape: false },
+        { src: 'SON05436.jpg', landscape: false },
     ];
 
-    const IMAGE_PATH = 'images/photos/';
+    const IMAGE_PATH = 'images/';
 
     // ===== DOM Elements =====
     const gallery = document.getElementById('gallery');
