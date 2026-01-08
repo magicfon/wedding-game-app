@@ -316,7 +316,7 @@ export default function WeddingPhotosPage() {
                                                 }
                                             }}
                                             disabled={votingInProgress.size > 0}
-                                            className="flex items-center space-x-1 px-2 py-1 text-xs font-medium text-red-500 hover:text-red-600 hover:bg-red-50 rounded-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 rounded-full shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
                                             <X className="w-3 h-3" />
                                             <span>撤回並重新投票</span>
