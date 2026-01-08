@@ -303,9 +303,25 @@ export default function WeddingPhotosPage() {
                                     💕 幸福多選一，你 Pick 哪一張？
                                 </p>
                                 {getRemainingVotes() === 0 ? (
-                                    <p className="text-sm font-semibold text-green-600">
-                                        ✓ 完成投票
-                                    </p>
+                                    <div className="flex items-center justify-center space-x-3">
+                                        <p className="text-sm font-semibold text-green-600">
+                                            ✓ 完成投票
+                                        </p>
+                                        <button
+                                            onClick={() => {
+                                                // 找到已投票的照片並撤回
+                                                const votedPhotoId = Object.keys(userVotes).find(id => userVotes[id] > 0)
+                                                if (votedPhotoId) {
+                                                    handleVote(votedPhotoId)
+                                                }
+                                            }}
+                                            disabled={votingInProgress.size > 0}
+                                            className="flex items-center space-x-1 px-2 py-1 text-xs font-medium text-red-500 hover:text-red-600 hover:bg-red-50 rounded-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            <X className="w-3 h-3" />
+                                            <span>撤回並重新投票</span>
+                                        </button>
+                                    </div>
                                 ) : (
                                     <p className="text-sm font-semibold text-red-500">
                                         ○ 尚未投票
