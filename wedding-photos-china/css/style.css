@@ -118,17 +118,17 @@ body {
 
 .photo-card img {
     width: 100%;
-    height: auto;
+    height: 100%;
     display: block;
     object-fit: cover;
     transition: transform var(--transition-normal);
 }
 
-.photo-card.portrait img {
+.photo-card.portrait {
     aspect-ratio: 3 / 4;
 }
 
-.photo-card.landscape img {
+.photo-card.landscape {
     aspect-ratio: 16 / 9;
 }
 
