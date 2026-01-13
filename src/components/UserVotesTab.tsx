@@ -226,14 +226,23 @@ export default function UserVotesTab() {
                                                     {user.photoWallVotes.map((vote) => (
                                                         <div
                                                             key={vote.photoId}
-                                                            className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0"
+                                                            className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0 relative"
                                                         >
                                                             {vote.thumbnailUrl ? (
-                                                                <img
-                                                                    src={vote.thumbnailUrl}
-                                                                    alt={`照片 ${vote.photoId}`}
-                                                                    className="w-full h-full object-cover"
-                                                                />
+                                                                <>
+                                                                    <img
+                                                                        src={vote.thumbnailUrl}
+                                                                        alt={`照片 ${vote.photoId}`}
+                                                                        className="w-full h-full object-cover"
+                                                                        onError={(e) => {
+                                                                            e.currentTarget.style.display = 'none'
+                                                                            e.currentTarget.nextElementSibling?.classList.remove('hidden')
+                                                                        }}
+                                                                    />
+                                                                    <div className="hidden w-full h-full flex items-center justify-center absolute inset-0 bg-gray-100">
+                                                                        <ImageIcon className="w-6 h-6 text-gray-400" />
+                                                                    </div>
+                                                                </>
                                                             ) : (
                                                                 <div className="w-full h-full flex items-center justify-center">
                                                                     <ImageIcon className="w-6 h-6 text-gray-400" />
@@ -258,14 +267,23 @@ export default function UserVotesTab() {
                                                         return (
                                                             <div
                                                                 key={vote.photoId}
-                                                                className="w-16 h-20 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0"
+                                                                className="w-16 h-20 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0 relative"
                                                             >
                                                                 {thumbnailUrl ? (
-                                                                    <img
-                                                                        src={thumbnailUrl}
-                                                                        alt={`婚紗照 ${vote.photoId}`}
-                                                                        className="w-full h-full object-cover"
-                                                                    />
+                                                                    <>
+                                                                        <img
+                                                                            src={thumbnailUrl}
+                                                                            alt={`婚紗照 ${vote.photoId}`}
+                                                                            className="w-full h-full object-cover"
+                                                                            onError={(e) => {
+                                                                                e.currentTarget.style.display = 'none'
+                                                                                e.currentTarget.nextElementSibling?.classList.remove('hidden')
+                                                                            }}
+                                                                        />
+                                                                        <div className="hidden w-full h-full flex items-center justify-center absolute inset-0 bg-gray-100">
+                                                                            <Camera className="w-6 h-6 text-gray-400" />
+                                                                        </div>
+                                                                    </>
                                                                 ) : (
                                                                     <div className="w-full h-full flex items-center justify-center">
                                                                         <Camera className="w-6 h-6 text-gray-400" />

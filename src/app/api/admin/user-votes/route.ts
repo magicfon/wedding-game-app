@@ -31,21 +31,34 @@ export async function GET(request: NextRequest) {
         // 2. 獲取照片牆投票記錄（使用 votes 表）
         const { data: photoVotes, error: photoVotesError } = await supabaseAdmin
             .from('votes')
-            .select(`
-                voter_line_id,
-                photo_id,
-                created_at,
-                photos:photo_id (
-                    id,
-                    image_url,
-                    thumbnail_small_url,
-                    thumbnail_medium_url
-                )
-            `)
+            .select('voter_line_id, photo_id, created_at')
             .order('created_at', { ascending: false })
 
         if (photoVotesError) {
             console.error('獲取照片牆投票失敗:', photoVotesError)
+        }
+
+        // 2.1 獲取所有投票涉及的照片信息
+        const photoIds = [...new Set(photoVotes?.map(v => v.photo_id) || [])]
+        let photosMap = new Map<number, { image_url: string; thumbnail_small_url?: string; thumbnail_medium_url?: string }>()
+
+        if (photoIds.length > 0) {
+            const { data: photos, error: photosError } = await supabaseAdmin
+                .from('photos')
+                .select('id, image_url, thumbnail_small_url, thumbnail_medium_url')
+                .in('id', photoIds)
+
+            if (photosError) {
+                console.error('獲取照片信息失敗:', photosError)
+            } else if (photos) {
+                for (const photo of photos) {
+                    photosMap.set(photo.id, {
+                        image_url: photo.image_url,
+                        thumbnail_small_url: photo.thumbnail_small_url,
+                        thumbnail_medium_url: photo.thumbnail_medium_url
+                    })
+                }
+            }
         }
 
         // 3. 獲取婚紗照投票記錄
@@ -77,8 +90,7 @@ export async function GET(request: NextRequest) {
                 if (!photoVotesByUser.has(userId)) {
                     photoVotesByUser.set(userId, [])
                 }
-                // Supabase foreign key join returns the related record
-                const photo = vote.photos as unknown as { id: number; image_url: string; thumbnail_small_url?: string; thumbnail_medium_url?: string } | null
+                const photo = photosMap.get(vote.photo_id)
                 photoVotesByUser.get(userId)!.push({
                     photoId: vote.photo_id,
                     thumbnailUrl: photo?.thumbnail_small_url || photo?.thumbnail_medium_url || photo?.image_url || null,
