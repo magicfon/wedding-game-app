@@ -1024,6 +1024,7 @@ export default function GuestManagementPage() {
                                         <th className="px-4 py-4 font-medium text-center">小孩</th>
                                         <th className="px-4 py-4 font-medium text-center">素食大人</th>
                                         <th className="px-4 py-4 font-medium text-center">總人數</th>
+                                        <th className="px-4 py-4 font-medium text-center">LINE連結</th>
                                         <th className="px-4 py-2 font-medium bg-gray-50 min-w-[150px]">
                                             <div className="flex flex-col gap-1">
                                                 <span className="text-xs text-gray-500">備註</span>
@@ -1116,6 +1117,25 @@ export default function GuestManagementPage() {
                                                 </td>
                                                 <td className="px-4 py-3 text-center">
                                                     <span className="font-bold text-purple-700">{(guest.adults || 0) + (guest.children || 0) + (guest.vegetarian || 0)}</span>
+                                                </td>
+                                                <td className="px-4 py-3 text-center">
+                                                    {(() => {
+                                                        const expectedLinks = (guest.adults || 0) + (guest.vegetarian || 0)
+                                                        const actualLinks = users.filter(u => u.linked_guest_id === guest.id).length
+                                                        const unlinked = expectedLinks - actualLinks
+                                                        return (
+                                                            <div className="flex flex-col items-center gap-0.5">
+                                                                <span className={`text-sm ${unlinked > 0 ? 'text-amber-600' : 'text-green-600'}`}>
+                                                                    {actualLinks}/{expectedLinks}
+                                                                </span>
+                                                                {unlinked > 0 && (
+                                                                    <span className="text-xs text-red-500 font-medium">
+                                                                        {unlinked}人未連結
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        )
+                                                    })()}
                                                 </td>
                                                 <td className="px-4 py-3">
                                                     {editingId === guest.id ? (
