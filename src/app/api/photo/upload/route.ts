@@ -127,14 +127,11 @@ async function processDirectUploadMetadata({
   } else if (mediaType === 'video' && !thumbnailUrl) {
     console.warn('⚠️ [API] 影片但沒有收到 thumbnailUrl！');
   } else if (mediaType === 'image') {
-    // 圖片：使用原圖 URL
-    // 這裡我們假設使用 Vercel Image Optimization (如果部署在 Vercel)
-    // 或者 Supabase 的 Image Transformation
-    const baseUrl = fileUrl
-    // 簡單起見，直接存儲原圖 URL，前端負責添加寬高參數
-    thumbnailSmallUrl = baseUrl
-    thumbnailMediumUrl = baseUrl
-    thumbnailLargeUrl = baseUrl
+    // 圖片：生成 Vercel Image Optimization URLs
+    const encodedUrl = encodeURIComponent(fileUrl)
+    thumbnailSmallUrl = `/_vercel/image?url=${encodedUrl}&w=200&q=75&f=auto`
+    thumbnailMediumUrl = `/_vercel/image?url=${encodedUrl}&w=400&q=80&f=auto`
+    thumbnailLargeUrl = `/_vercel/image?url=${encodedUrl}&w=800&q=85&f=auto`
   }
 
   // 儲存到資料庫
