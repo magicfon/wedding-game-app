@@ -28,11 +28,11 @@ export async function GET(request: NextRequest) {
             })
         }
 
-        // 2. 獲取照片牆投票記錄
+        // 2. 獲取照片牆投票記錄（使用 votes 表）
         const { data: photoVotes, error: photoVotesError } = await supabaseAdmin
-            .from('photo_votes')
+            .from('votes')
             .select(`
-                voter_id,
+                voter_line_id,
                 photo_id,
                 created_at,
                 photos:photo_id (
@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
         // 處理照片牆投票
         if (photoVotes) {
             for (const vote of photoVotes) {
-                const userId = vote.voter_id
+                const userId = vote.voter_line_id
                 if (!photoVotesByUser.has(userId)) {
                     photoVotesByUser.set(userId, [])
                 }
