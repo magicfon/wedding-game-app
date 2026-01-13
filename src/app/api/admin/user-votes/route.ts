@@ -85,15 +85,33 @@ export async function GET(request: NextRequest) {
 
         // 處理照片牆投票
         if (photoVotes) {
+            // 輔助函數：檢查 URL 是否有效（非空且非空字串）
+            const isValidUrl = (url: string | null | undefined): url is string => {
+                return !!url && url.trim() !== ''
+            }
+
             for (const vote of photoVotes) {
                 const userId = vote.voter_line_id
                 if (!photoVotesByUser.has(userId)) {
                     photoVotesByUser.set(userId, [])
                 }
                 const photo = photosMap.get(vote.photo_id)
+
+                // 按優先順序選擇有效的縮圖 URL
+                let thumbnailUrl: string | null = null
+                if (photo) {
+                    if (isValidUrl(photo.thumbnail_small_url)) {
+                        thumbnailUrl = photo.thumbnail_small_url
+                    } else if (isValidUrl(photo.thumbnail_medium_url)) {
+                        thumbnailUrl = photo.thumbnail_medium_url
+                    } else if (isValidUrl(photo.image_url)) {
+                        thumbnailUrl = photo.image_url
+                    }
+                }
+
                 photoVotesByUser.get(userId)!.push({
                     photoId: vote.photo_id,
-                    thumbnailUrl: photo?.thumbnail_small_url || photo?.thumbnail_medium_url || photo?.image_url || null,
+                    thumbnailUrl,
                     votedAt: vote.created_at
                 })
             }
