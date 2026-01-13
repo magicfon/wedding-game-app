@@ -97,7 +97,7 @@ export async function GET(request: NextRequest) {
                 }
                 const photo = photosMap.get(vote.photo_id)
 
-                // 按優先順序選擇有效的縮圖 URL
+                // 優先使用縮圖，回退到原圖
                 let thumbnailUrl: string | null = null
                 if (photo) {
                     if (isValidUrl(photo.thumbnail_small_url)) {
