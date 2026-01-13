@@ -1,1 +1,0 @@
-只能push到https://gitee.com/Jim790123/wedding-photo.git
