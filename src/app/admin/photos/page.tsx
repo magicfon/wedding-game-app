@@ -7,8 +7,9 @@ import AdminLayout from '@/components/AdminLayout'
 import { Eye, EyeOff, Download, Trash2, Image as ImageIcon, Clock, User, Heart, Filter, CheckCircle, XCircle, Loader2, Users, HardDrive, CheckSquare, Square, Video, Play, ArrowDownWideNarrow, ArrowUpDown, Camera } from 'lucide-react'
 import ResponsiveImage from '@/components/ResponsiveImage'
 import WeddingPhotosTab from '@/components/WeddingPhotosTab'
+import UserVotesTab from '@/components/UserVotesTab'
 
-type TabType = 'photo-wall' | 'wedding-photos'
+type TabType = 'photo-wall' | 'wedding-photos' | 'user-votes'
 
 interface PhotoWithUser {
   id: number
@@ -393,10 +394,23 @@ export default function PhotosManagePage() {
               <Camera className="w-5 h-5" />
               <span>婚紗照</span>
             </button>
+            <button
+              onClick={() => setActiveTab('user-votes')}
+              className={`flex-1 flex items-center justify-center space-x-2 py-3 px-4 rounded-lg font-medium transition-colors ${activeTab === 'user-votes'
+                ? 'bg-pink-500 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+            >
+              <Users className="w-5 h-5" />
+              <span>用戶投票</span>
+            </button>
           </div>
 
           {/* 婚紗照 Tab 內容 */}
           {activeTab === 'wedding-photos' && <WeddingPhotosTab />}
+
+          {/* 用戶投票 Tab 內容 */}
+          {activeTab === 'user-votes' && <UserVotesTab />}
 
           {/* 統計卡片 - 照片牆 Tab */}
           <div className={activeTab !== 'photo-wall' ? 'hidden' : ''}>
