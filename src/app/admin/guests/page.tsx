@@ -814,7 +814,7 @@ export default function GuestManagementPage() {
                     ) : activeTab === 'line' ? (
                         // LINE 用戶列表
                         <div className="overflow-x-auto">
-                            <table className="w-full text-left min-w-[900px]">
+                            <table className="w-full text-left min-w-[700px]">
                                 <thead className="bg-gray-50 text-gray-600 text-xs uppercase">
                                     <tr>
                                         <th className="px-4 py-4 font-medium">用戶</th>
