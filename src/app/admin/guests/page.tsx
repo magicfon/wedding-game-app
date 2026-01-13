@@ -821,7 +821,6 @@ export default function GuestManagementPage() {
                                         <th className="px-4 py-4 font-medium">連結賓客</th>
                                         <th className="px-4 py-4 font-medium">桌次</th>
                                         <th className="px-4 py-4 font-medium text-center">積分</th>
-                                        <th className="px-4 py-4 font-medium text-center">狀態</th>
                                         <th className="px-4 py-4 font-medium text-center">管理員</th>
                                         <th className="px-4 py-4 font-medium">加入時間</th>
                                         <th className="px-4 py-4 font-medium text-right">操作</th>
@@ -830,7 +829,7 @@ export default function GuestManagementPage() {
                                 <tbody className="divide-y divide-gray-100">
                                     {filteredUsers.length === 0 ? (
                                         <tr>
-                                            <td colSpan={8} className="px-6 py-8 text-center text-gray-500">
+                                            <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
                                                 找不到符合的資料
                                             </td>
                                         </tr>
@@ -917,20 +916,6 @@ export default function GuestManagementPage() {
                                                 </td>
                                                 <td className="px-4 py-3 text-center">
                                                     <span className="font-bold text-amber-600">{user.total_score || 0}</span>
-                                                </td>
-                                                <td className="px-4 py-3 text-center">
-                                                    {editingId === user.line_id ? (
-                                                        <button
-                                                            onClick={() => setEditIsActive(!editIsActive)}
-                                                            className={`px-2 py-1 rounded text-xs font-medium ${editIsActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}
-                                                        >
-                                                            {editIsActive ? '啟用' : '停用'}
-                                                        </button>
-                                                    ) : (
-                                                        <span className={`px-2 py-1 rounded text-xs font-medium ${user.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                                                            {user.is_active ? '啟用' : '停用'}
-                                                        </span>
-                                                    )}
                                                 </td>
                                                 <td className="px-4 py-3 text-center">
                                                     <button
