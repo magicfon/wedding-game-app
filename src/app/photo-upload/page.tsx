@@ -94,17 +94,28 @@ export default function PhotoUploadPage() {
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
 
-    // 驗證檔案數量
-    if (files.length > maxPhotoCount) {
-      setError(`最多只能選擇 ${maxPhotoCount} 張照片`);
+    // 檢查目前已選數量加上新選的是否超過上限
+    const currentCount = previews.length;
+    const remainingSlots = maxPhotoCount - currentCount;
+
+    if (remainingSlots <= 0) {
+      setError(`已達到上限 ${maxPhotoCount} 張，請先移除部分檔案再新增`);
+      // 清空 input 以便可以再次選擇
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
       return;
     }
+
+    // 如果新選的檔案超過剩餘空間，只取前面的
+    const filesToAdd = files.slice(0, remainingSlots);
+    const ignoredCount = files.length - filesToAdd.length;
 
     // 驗證每個檔案的類型和大小
     const invalidTypeFiles: string[] = [];
     const oversizedFiles: { name: string; size: number }[] = [];
 
-    const validFiles = files.filter(file => {
+    const validFiles = filesToAdd.filter(file => {
       if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
         invalidTypeFiles.push(file.name);
         return false;
@@ -123,6 +134,9 @@ export default function PhotoUploadPage() {
     // 顯示具體的錯誤訊息
     if (invalidTypeFiles.length > 0) {
       setError(`以下檔案格式不支援：${invalidTypeFiles.join(', ')}`);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
       return;
     }
 
@@ -132,14 +146,18 @@ export default function PhotoUploadPage() {
         return `${f.name} (${sizeGB} GB)`;
       }).join('\n');
       setError(`以下檔案超過 5 GB 限制：\n${fileList}`);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
       return;
     }
 
-    if (validFiles.length !== files.length) {
-      setError('部分檔案不符合要求，請選擇圖片或影片');
+    if (validFiles.length === 0) {
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
       return;
     }
-
 
     // 生成預覽
     const newPreviews = await Promise.all(validFiles.map(async (file, index) => {
@@ -164,42 +182,27 @@ export default function PhotoUploadPage() {
         file,
         preview: previewUrl,
         id: `preview-${Date.now()}-${index}`,
-        sequence: index + 1,
+        sequence: currentCount + index + 1,
         type: isVideo ? 'video' : 'image',
         thumbnailFile,
         isLargeFile: file.size > 50 * 1024 * 1024 // 50MB check
       } as Preview;
     }));
 
-    // Combine with existing (if we want to support append) or replace. 
-    // The original code replaced: setSelectedFiles(validFiles);
-    // But we need to store the extra metadata now.
-    // The original code used a separate state for Previews inside generatePreviews, 
-    // but actually generatePreviews just set selectedFiles state.
-    // Wait, original `setSelectedFiles` stored just `File[]`. 
-    // I need to update state to store `Preview[]` instead of `File[]` to keep the thumbnail info accessible during upload.
-    // BUT checking original code: `const [selectedFiles, setSelectedFiles] = useState<File[]>([]);`
-    // If I change the state type, I need to update all usages.
-    // Let's refactor `selectedFiles` to store `Preview[]` objects which wrap the File.
+    // 將新選的檔案累積到現有的 previews
+    setPreviews(prev => [...prev, ...newPreviews]);
 
-    // Actually, to minimize impact, I can store `previews` in a new state and keep `selectedFiles` as File[]?
-    // No, that's messy. Let's change `selectedFiles` to be `Preview[]` or simpler:
-    // Just create a new state `filePreviews` and keep `selectedFiles` as is?
-    // No, `handleFileSelect` logic needs to be robust. 
+    // 顯示提示訊息（如果有被忽略的檔案）
+    if (ignoredCount > 0) {
+      setError(`已達上限，${ignoredCount} 個檔案未被加入`);
+    } else {
+      setError(null);
+    }
 
-    // Let's change `selectedFiles` to `Preview[]` because we need the thumbnailFile for upload.
-    // I need to update the `selectedFiles` type definition at the top of the component first?
-    // The previous chunk updated the interface `Preview`.
-    // I will use a separate state `previews` to store this info, OR change `selectedFiles`.
-    // Changing `selectedFiles` to `Preview[]` seems best but requires updating `handleUpload` and `handleRemove`.
-    // Let's do that.
-
-    // Wait, I can't change the `useState` line in this chunk easily without potentially overlapping edits if I am not careful.
-    // The `useState` line is line 19. My first chunk ended at line 16.
-    // I will add a chunk to change the state definition.
-
-    setError(null);
-    setPreviews(newPreviews);
+    // 清空 input 以便可以再次選擇相同檔案
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   // NOTE: I need to add `const [previews, setPreviews] = useState<Preview[]>([]);`
