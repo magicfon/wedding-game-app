@@ -46,7 +46,7 @@ async function handleRichMenuSwitch(userId: string, targetTab: string) {
   }
 }
 
-// 處理 Follow 事件 - 用戶加入好友時自動新增到 users 表
+// 處理 Follow 事件 - 用戶加入好友時自動新增到 users 表並發送歡迎訊息
 async function handleFollow(userId: string) {
   if (!client) {
     console.log('LINE client not available, skipping user sync')
@@ -76,6 +76,33 @@ async function handleFollow(userId: string) {
     } else {
       console.error('Failed to sync user on follow:', await response.text())
     }
+
+    // 發送歡迎訊息
+    const welcomeMessage = `${profile.displayName} 感謝您加入我們的婚禮官方帳號！
+這個帳號僅供參加家宴的人使用，請勿外傳哦！
+
+期待2026/2/7與您相見！
+菜單與桌次內容可能還會更動，請以當日資訊為主，謝謝您！`
+
+    // Google Drive 影片直連（轉換後的連結）
+    const videoUrl = 'https://drive.google.com/uc?export=download&id=1PEbKq63iZoUHVmga1dS-Z6quxjyF3Pm-'
+    // 影片預覽圖（使用 Google Drive 縮圖）
+    const previewImageUrl = 'https://drive.google.com/thumbnail?id=1PEbKq63iZoUHVmga1dS-Z6quxjyF3Pm-&sz=w480'
+
+    // 發送文字訊息和影片
+    await client.pushMessage(userId, [
+      {
+        type: 'text',
+        text: welcomeMessage
+      },
+      {
+        type: 'video',
+        originalContentUrl: videoUrl,
+        previewImageUrl: previewImageUrl
+      }
+    ])
+    console.log(`Welcome message and video sent to ${profile.displayName}`)
+
   } catch (error) {
     console.error('Error handling follow event:', error)
   }
