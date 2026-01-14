@@ -22,8 +22,11 @@ import {
     Shield,
     ShieldOff,
     Link2,
-    Unlink
+    Unlink,
+    Activity,
+    RefreshCw
 } from 'lucide-react'
+import { createSupabaseBrowser } from '@/lib/supabase'
 
 interface LineUser {
     line_id: string
@@ -50,11 +53,23 @@ interface ManualGuest {
     notes: string | null
 }
 
+interface OnlineUser {
+    line_id: string
+    display_name: string
+    avatar_url: string | null
+    table_number: string | null
+    last_active_at: string
+    is_in_quiz_page: boolean
+}
+
 export default function GuestManagementPage() {
     const router = useRouter()
-    const [activeTab, setActiveTab] = useState<'line' | 'manual'>('line')
+    const supabase = createSupabaseBrowser()
+    const [activeTab, setActiveTab] = useState<'line' | 'manual' | 'online'>('line')
     const [users, setUsers] = useState<LineUser[]>([])
     const [guests, setGuests] = useState<ManualGuest[]>([])
+    const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([])
+    const [onlineLoading, setOnlineLoading] = useState(false)
     const [loading, setLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState('')
     const [tableFilter, setTableFilter] = useState('') // 桌次篩選
@@ -177,9 +192,41 @@ export default function GuestManagementPage() {
         }
     }
 
+    // 載入線上用戶資料
+    const fetchOnlineUsers = async () => {
+        try {
+            setOnlineLoading(true)
+            // 查詢在過去2分鐘內有活動的用戶
+            const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString()
+
+            const { data: onlineData, error } = await supabase
+                .from('users')
+                .select('line_id, display_name, avatar_url, table_number, last_active_at, is_in_quiz_page')
+                .gte('last_active_at', twoMinutesAgo)
+                .order('last_active_at', { ascending: false })
+
+            if (error) throw error
+
+            setOnlineUsers(onlineData || [])
+        } catch (error) {
+            console.error('Error fetching online users:', error)
+        } finally {
+            setOnlineLoading(false)
+        }
+    }
+
     useEffect(() => {
         fetchData()
     }, [])
+
+    // 自動刷新線上用戶列表
+    useEffect(() => {
+        if (activeTab === 'online') {
+            fetchOnlineUsers()
+            const interval = setInterval(fetchOnlineUsers, 10000) // 每10秒刷新
+            return () => clearInterval(interval)
+        }
+    }, [activeTab, supabase])
 
     // 更新 LINE 用戶資料
     const handleUpdateLineUser = async (user: LineUser) => {
@@ -591,6 +638,18 @@ export default function GuestManagementPage() {
                                 手動名單 ({guests.length})
                             </span>
                         </button>
+                        <button
+                            onClick={() => setActiveTab('online')}
+                            className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'online'
+                                ? 'bg-white text-green-600 shadow-sm'
+                                : 'text-gray-600 hover:text-gray-900'
+                                }`}
+                        >
+                            <span className="flex items-center gap-2">
+                                <Activity className="w-4 h-4" />
+                                目前線上 ({onlineUsers.length})
+                            </span>
+                        </button>
                     </div>
 
                     <div className="flex flex-wrap gap-2 w-full md:w-auto">
@@ -986,7 +1045,7 @@ export default function GuestManagementPage() {
                                 </tbody>
                             </table>
                         </div>
-                    ) : (
+                    ) : activeTab === 'manual' ? (
                         // 手動名單列表
                         <div className="overflow-x-auto">
                             <table className="w-full text-left min-w-[700px]">
@@ -1181,6 +1240,126 @@ export default function GuestManagementPage() {
                                     )}
                                 </tbody>
                             </table>
+                        </div>
+                    ) : (
+                        // 線上用戶列表
+                        <div className="p-4">
+                            {/* 標題和刷新按鈕 */}
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                                        <span className="text-lg font-semibold text-gray-900">
+                                            目前線上 {onlineUsers.length} 人
+                                        </span>
+                                    </div>
+                                    <span className="text-sm text-gray-500">
+                                        (過去 2 分鐘內有活動)
+                                    </span>
+                                </div>
+                                <button
+                                    onClick={fetchOnlineUsers}
+                                    disabled={onlineLoading}
+                                    className="flex items-center gap-2 px-3 py-1.5 text-sm bg-green-50 text-green-700 hover:bg-green-100 rounded-lg transition-colors disabled:opacity-50"
+                                >
+                                    <RefreshCw className={`w-4 h-4 ${onlineLoading ? 'animate-spin' : ''}`} />
+                                    刷新
+                                </button>
+                            </div>
+
+                            {/* 提示訊息 */}
+                            <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
+                                <p className="text-sm text-green-800">
+                                    💡 此列表顯示在過去 2 分鐘內有任何操作的用戶，每 10 秒自動刷新一次。
+                                    標記「答題中」表示用戶正在快問快答頁面。
+                                </p>
+                            </div>
+
+                            {onlineLoading && onlineUsers.length === 0 ? (
+                                <div className="flex justify-center items-center h-32">
+                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+                                </div>
+                            ) : onlineUsers.length === 0 ? (
+                                <div className="text-center py-12 text-gray-500">
+                                    <Activity className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                                    <p className="text-lg">目前沒有線上用戶</p>
+                                    <p className="text-sm mt-1">用戶在網站進行操作後會顯示在這裡</p>
+                                </div>
+                            ) : (
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left">
+                                        <thead className="bg-gray-50 text-gray-600 text-xs uppercase">
+                                            <tr>
+                                                <th className="px-4 py-3 font-medium">用戶</th>
+                                                <th className="px-4 py-3 font-medium">桌次</th>
+                                                <th className="px-4 py-3 font-medium text-center">狀態</th>
+                                                <th className="px-4 py-3 font-medium">最後活動時間</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-100">
+                                            {onlineUsers.map((user) => {
+                                                const lastActiveDate = new Date(user.last_active_at)
+                                                const secondsAgo = Math.floor((Date.now() - lastActiveDate.getTime()) / 1000)
+                                                const timeAgo = secondsAgo < 60
+                                                    ? `${secondsAgo} 秒前`
+                                                    : `${Math.floor(secondsAgo / 60)} 分鐘前`
+
+                                                return (
+                                                    <tr key={user.line_id} className="hover:bg-gray-50">
+                                                        <td className="px-4 py-3">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="relative">
+                                                                    {user.avatar_url ? (
+                                                                        <img
+                                                                            src={user.avatar_url}
+                                                                            alt={user.display_name}
+                                                                            className="w-10 h-10 rounded-full"
+                                                                        />
+                                                                    ) : (
+                                                                        <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-gray-500">
+                                                                            <User className="w-5 h-5" />
+                                                                        </div>
+                                                                    )}
+                                                                    {/* 線上狀態指示燈 */}
+                                                                    <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white"></div>
+                                                                </div>
+                                                                <div>
+                                                                    <span className="font-medium text-gray-900">{user.display_name}</span>
+                                                                    <div className="text-xs text-gray-400 truncate max-w-[160px]" title={user.line_id}>
+                                                                        {user.line_id.substring(0, 16)}...
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-4 py-3">
+                                                            <span className={`px-2 py-1 rounded text-sm ${user.table_number ? 'bg-purple-50 text-purple-700 font-medium' : 'text-gray-400 italic'}`}>
+                                                                {user.table_number || '未設定'}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-4 py-3 text-center">
+                                                            {user.is_in_quiz_page ? (
+                                                                <span className="inline-flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-medium">
+                                                                    🎯 答題中
+                                                                </span>
+                                                            ) : (
+                                                                <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
+                                                                    ✓ 線上
+                                                                </span>
+                                                            )}
+                                                        </td>
+                                                        <td className="px-4 py-3">
+                                                            <div className="text-sm text-gray-600">{timeAgo}</div>
+                                                            <div className="text-xs text-gray-400">
+                                                                {lastActiveDate.toLocaleTimeString('zh-TW')}
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                )
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
