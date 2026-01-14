@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Heart, User, Users, Loader2, Image as ImageIcon, Camera, ChevronDown, ChevronUp } from 'lucide-react'
+import { Heart, User, Users, Loader2, Image as ImageIcon, Camera, ChevronDown, ChevronUp, X } from 'lucide-react'
 import ResponsiveImage from './ResponsiveImage'
 
 interface PhotoWallVote {
@@ -39,6 +39,7 @@ export default function UserVotesTab() {
     const [error, setError] = useState<string | null>(null)
     const [expandedUsers, setExpandedUsers] = useState<Set<string>>(new Set())
     const [weddingPhotoThumbnails, setWeddingPhotoThumbnails] = useState<Map<string, string>>(new Map())
+    const [selectedPhoto, setSelectedPhoto] = useState<PhotoWallVote | null>(null)
 
     // 獲取用戶投票記錄
     const fetchUserVotes = async () => {
@@ -232,7 +233,8 @@ export default function UserVotesTab() {
                                                     {user.photoWallVotes.map((vote) => (
                                                         <div
                                                             key={vote.photoId}
-                                                            className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0 relative"
+                                                            className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0 relative cursor-pointer hover:ring-2 hover:ring-pink-400 transition-all"
+                                                            onClick={() => vote.imageUrl && setSelectedPhoto(vote)}
                                                         >
                                                             {vote.imageUrl ? (
                                                                 <ResponsiveImage
@@ -313,6 +315,48 @@ export default function UserVotesTab() {
                             </div>
                         )
                     })}
+                </div>
+            )}
+
+            {/* 照片放大檢視模態框 */}
+            {selectedPhoto && (
+                <div
+                    className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
+                    onClick={() => setSelectedPhoto(null)}
+                >
+                    {/* 關閉按鈕 */}
+                    <button
+                        onClick={() => setSelectedPhoto(null)}
+                        className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors z-10"
+                    >
+                        <X className="w-6 h-6 text-white" />
+                    </button>
+
+                    {/* 照片內容 */}
+                    <div
+                        className="max-w-4xl max-h-[90vh] w-full flex items-center justify-center"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <ResponsiveImage
+                            src={selectedPhoto.imageUrl!}
+                            alt={`照片 ${selectedPhoto.photoId}`}
+                            className="max-w-full max-h-[85vh] w-auto h-auto rounded-lg shadow-2xl"
+                            thumbnailUrls={{
+                                small: selectedPhoto.thumbnailUrls.small || undefined,
+                                medium: selectedPhoto.thumbnailUrls.medium || undefined,
+                                large: selectedPhoto.thumbnailUrls.large || undefined
+                            }}
+                            lightboxMode={true}
+                            progressiveLoad={true}
+                            priority={true}
+                            quality={100}
+                        />
+                    </div>
+
+                    {/* 照片 ID 顯示 */}
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white px-4 py-2 rounded-full text-sm">
+                        照片 #{selectedPhoto.photoId}
+                    </div>
                 </div>
             )}
         </div>
