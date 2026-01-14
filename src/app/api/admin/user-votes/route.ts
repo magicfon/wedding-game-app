@@ -40,12 +40,17 @@ export async function GET(request: NextRequest) {
 
         // 2.1 獲取所有投票涉及的照片信息
         const photoIds = [...new Set(photoVotes?.map(v => v.photo_id) || [])]
-        let photosMap = new Map<number, { image_url: string; thumbnail_small_url?: string; thumbnail_medium_url?: string }>()
+        let photosMap = new Map<number, {
+            image_url: string
+            thumbnail_small_url?: string
+            thumbnail_medium_url?: string
+            thumbnail_large_url?: string
+        }>()
 
         if (photoIds.length > 0) {
             const { data: photos, error: photosError } = await supabaseAdmin
                 .from('photos')
-                .select('id, image_url, thumbnail_small_url, thumbnail_medium_url')
+                .select('id, image_url, thumbnail_small_url, thumbnail_medium_url, thumbnail_large_url')
                 .in('id', photoIds)
 
             if (photosError) {
@@ -55,7 +60,8 @@ export async function GET(request: NextRequest) {
                     photosMap.set(photo.id, {
                         image_url: photo.image_url,
                         thumbnail_small_url: photo.thumbnail_small_url,
-                        thumbnail_medium_url: photo.thumbnail_medium_url
+                        thumbnail_medium_url: photo.thumbnail_medium_url,
+                        thumbnail_large_url: photo.thumbnail_large_url
                     })
                 }
             }
@@ -74,7 +80,12 @@ export async function GET(request: NextRequest) {
         // 4. 建立用戶投票映射
         const photoVotesByUser = new Map<string, Array<{
             photoId: number
-            thumbnailUrl: string | null
+            imageUrl: string | null
+            thumbnailUrls: {
+                small: string | null
+                medium: string | null
+                large: string | null
+            }
             votedAt: string
         }>>()
 
@@ -85,11 +96,6 @@ export async function GET(request: NextRequest) {
 
         // 處理照片牆投票
         if (photoVotes) {
-            // 輔助函數：檢查 URL 是否有效（非空且非空字串）
-            const isValidUrl = (url: string | null | undefined): url is string => {
-                return !!url && url.trim() !== ''
-            }
-
             for (const vote of photoVotes) {
                 const userId = vote.voter_line_id
                 if (!photoVotesByUser.has(userId)) {
@@ -97,21 +103,14 @@ export async function GET(request: NextRequest) {
                 }
                 const photo = photosMap.get(vote.photo_id)
 
-                // 優先使用縮圖，回退到原圖
-                let thumbnailUrl: string | null = null
-                if (photo) {
-                    if (isValidUrl(photo.thumbnail_small_url)) {
-                        thumbnailUrl = photo.thumbnail_small_url
-                    } else if (isValidUrl(photo.thumbnail_medium_url)) {
-                        thumbnailUrl = photo.thumbnail_medium_url
-                    } else if (isValidUrl(photo.image_url)) {
-                        thumbnailUrl = photo.image_url
-                    }
-                }
-
                 photoVotesByUser.get(userId)!.push({
                     photoId: vote.photo_id,
-                    thumbnailUrl,
+                    imageUrl: photo?.image_url || null,
+                    thumbnailUrls: {
+                        small: photo?.thumbnail_small_url || null,
+                        medium: photo?.thumbnail_medium_url || null,
+                        large: photo?.thumbnail_large_url || null
+                    },
                     votedAt: vote.created_at
                 })
             }

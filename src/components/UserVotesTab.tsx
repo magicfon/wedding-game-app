@@ -2,10 +2,16 @@
 
 import { useState, useEffect } from 'react'
 import { Heart, User, Users, Loader2, Image as ImageIcon, Camera, ChevronDown, ChevronUp } from 'lucide-react'
+import ResponsiveImage from './ResponsiveImage'
 
 interface PhotoWallVote {
     photoId: number
-    thumbnailUrl: string | null
+    imageUrl: string | null
+    thumbnailUrls: {
+        small: string | null
+        medium: string | null
+        large: string | null
+    }
     votedAt: string
 }
 
@@ -228,21 +234,20 @@ export default function UserVotesTab() {
                                                             key={vote.photoId}
                                                             className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0 relative"
                                                         >
-                                                            {vote.thumbnailUrl ? (
-                                                                <>
-                                                                    <img
-                                                                        src={vote.thumbnailUrl}
-                                                                        alt={`照片 ${vote.photoId}`}
-                                                                        className="w-full h-full object-cover"
-                                                                        onError={(e) => {
-                                                                            e.currentTarget.style.display = 'none'
-                                                                            e.currentTarget.nextElementSibling?.classList.remove('hidden')
-                                                                        }}
-                                                                    />
-                                                                    <div className="hidden w-full h-full flex items-center justify-center absolute inset-0 bg-gray-100">
-                                                                        <ImageIcon className="w-6 h-6 text-gray-400" />
-                                                                    </div>
-                                                                </>
+                                                            {vote.imageUrl ? (
+                                                                <ResponsiveImage
+                                                                    src={vote.imageUrl}
+                                                                    alt={`照片 ${vote.photoId}`}
+                                                                    className="w-full h-full object-cover absolute inset-0"
+                                                                    thumbnailUrls={{
+                                                                        small: vote.thumbnailUrls.small || undefined,
+                                                                        medium: vote.thumbnailUrls.medium || undefined,
+                                                                        large: vote.thumbnailUrls.large || undefined
+                                                                    }}
+                                                                    sizes="64px"
+                                                                    width={64}
+                                                                    height={64}
+                                                                />
                                                             ) : (
                                                                 <div className="w-full h-full flex items-center justify-center">
                                                                     <ImageIcon className="w-6 h-6 text-gray-400" />
