@@ -435,8 +435,11 @@ export default function PhotoUploadPage() {
 
                 {/* 錯誤提示 */}
                 {error && (
-                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-                    <p className="text-sm">{error}</p>
+                  <div className="bg-yellow-50 border-2 border-yellow-400 text-yellow-800 px-4 py-4 rounded-lg shadow-md">
+                    <p className="text-base font-semibold flex items-center gap-2">
+                      <span>⚠️</span>
+                      {error}
+                    </p>
                   </div>
                 )}
 
