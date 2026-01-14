@@ -155,7 +155,10 @@ export async function POST(request: NextRequest) {
             await handlePostback(event)
             break
           case 'message':
-            // 不處理 message 事件，由 LINE OA 後台設定處理
+            // 收到任何訊息時，發送歡迎訊息
+            if (event.source?.userId) {
+              await handleFollow(event.source.userId)
+            }
             break
           case 'follow':
             // 用戶加入好友時，自動新增到 users 表
