@@ -40,6 +40,7 @@ export default function UserVotesTab() {
     const [expandedUsers, setExpandedUsers] = useState<Set<string>>(new Set())
     const [weddingPhotoThumbnails, setWeddingPhotoThumbnails] = useState<Map<string, string>>(new Map())
     const [selectedPhoto, setSelectedPhoto] = useState<PhotoWallVote | null>(null)
+    const [selectedWeddingPhoto, setSelectedWeddingPhoto] = useState<{ photoId: string; thumbnailUrl: string } | null>(null)
 
     // 獲取用戶投票記錄
     const fetchUserVotes = async () => {
@@ -274,7 +275,8 @@ export default function UserVotesTab() {
                                                         return (
                                                             <div
                                                                 key={vote.photoId}
-                                                                className="w-16 h-20 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0 relative"
+                                                                className="w-16 h-20 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0 relative cursor-pointer hover:ring-2 hover:ring-pink-400 transition-all"
+                                                                onClick={() => thumbnailUrl && setSelectedWeddingPhoto({ photoId: vote.photoId, thumbnailUrl })}
                                                             >
                                                                 {thumbnailUrl ? (
                                                                     <>
@@ -356,6 +358,39 @@ export default function UserVotesTab() {
                     {/* 照片 ID 顯示 */}
                     <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white px-4 py-2 rounded-full text-sm">
                         照片 #{selectedPhoto.photoId}
+                    </div>
+                </div>
+            )}
+
+            {/* 婚紗照放大檢視模態框 */}
+            {selectedWeddingPhoto && (
+                <div
+                    className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
+                    onClick={() => setSelectedWeddingPhoto(null)}
+                >
+                    {/* 關閉按鈕 */}
+                    <button
+                        onClick={() => setSelectedWeddingPhoto(null)}
+                        className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors z-10"
+                    >
+                        <X className="w-6 h-6 text-white" />
+                    </button>
+
+                    {/* 婚紗照內容 */}
+                    <div
+                        className="max-w-4xl max-h-[90vh] w-full flex items-center justify-center"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <img
+                            src={selectedWeddingPhoto.thumbnailUrl}
+                            alt={`婚紗照 ${selectedWeddingPhoto.photoId}`}
+                            className="max-w-full max-h-[85vh] w-auto h-auto rounded-lg shadow-2xl object-contain"
+                        />
+                    </div>
+
+                    {/* 婚紗照 ID 顯示 */}
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white px-4 py-2 rounded-full text-sm">
+                        婚紗照 #{selectedWeddingPhoto.photoId}
                     </div>
                 </div>
             )}
