@@ -244,7 +244,7 @@ export default function PhotoUploadPage() {
 
         // 2. 上傳主檔案
         const processedBlessingMessage = blessingMessage
-          ? `${blessingMessage} (${index + 1}/${previews.length})`
+          ? (previews.length > 1 ? `${blessingMessage} (${index + 1}/${previews.length})` : blessingMessage)
           : blessingMessage;
 
         const uploadResult = await directUploadToSupabase({
@@ -506,11 +506,17 @@ export default function PhotoUploadPage() {
             {blessingMessage && previews.length > 0 && (
               <div className="mt-3 p-3 bg-gray-50 rounded-lg">
                 <p className="text-sm font-medium text-gray-700 mb-2">祝福語預覽：</p>
-                {Array.from({ length: previews.length }, (_, index) => (
-                  <p key={index} className="text-sm text-gray-600">
-                    "{blessingMessage} ({index + 1}/{previews.length})"
+                {previews.length > 1 ? (
+                  Array.from({ length: previews.length }, (_, index) => (
+                    <p key={index} className="text-sm text-gray-600">
+                      "{blessingMessage} ({index + 1}/{previews.length})"
+                    </p>
+                  ))
+                ) : (
+                  <p className="text-sm text-gray-600">
+                    "{blessingMessage}"
                   </p>
-                ))}
+                )}
               </div>
             )}
           </div>
