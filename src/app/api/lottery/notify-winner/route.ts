@@ -28,6 +28,17 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Lottery record not found' }, { status: 404 })
         }
 
+        // 檢查是否啟用中獎通知
+        const { data: lotteryState } = await supabase
+            .from('lottery_state')
+            .select('notify_winner_enabled')
+            .single()
+
+        if (lotteryState?.notify_winner_enabled === false) {
+            console.log('⏭️ 中獎通知已關閉，跳過發送')
+            return NextResponse.json({ success: true, skipped: true, message: '中獎通知已關閉' })
+        }
+
         const winnerLineId = lotteryRecord.winner_line_id
 
         if (!winnerLineId) {

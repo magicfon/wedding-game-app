@@ -18,7 +18,9 @@ import {
   Shuffle,
   Disc,
   Droplets,
-  Trophy
+  Trophy,
+  Bell,
+  BellOff
 } from 'lucide-react'
 
 // 動畫模式類型和資訊
@@ -59,6 +61,7 @@ interface LotteryState {
   current_draw_id: number | null
   max_photos_for_lottery: number
   animation_mode?: AnimationMode
+  notify_winner_enabled?: boolean
 }
 
 export default function LotteryManagePage() {
@@ -68,7 +71,8 @@ export default function LotteryManagePage() {
     is_lottery_active: false,
     is_drawing: false,
     current_draw_id: null,
-    max_photos_for_lottery: 5
+    max_photos_for_lottery: 5,
+    notify_winner_enabled: true
   })
   const [loading, setLoading] = useState(true)
   const [drawing, setDrawing] = useState(false)
@@ -560,6 +564,62 @@ export default function LotteryManagePage() {
                   </div>
                 </button>
               ))}
+            </div>
+          </div>
+
+          {/* 中獎通知設定 */}
+          <div className="mt-6 border-t pt-6">
+            <h3 className="text-lg font-semibold text-gray-800 mb-3">📱 中獎通知設定</h3>
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  {lotteryState.notify_winner_enabled ? (
+                    <Bell className="w-6 h-6 text-green-600" />
+                  ) : (
+                    <BellOff className="w-6 h-6 text-gray-400" />
+                  )}
+                  <div>
+                    <div className="font-medium text-gray-800">
+                      LINE 中獎通知
+                    </div>
+                    <p className="text-sm text-gray-600">
+                      {lotteryState.notify_winner_enabled
+                        ? '中獎時會自動發送 LINE 訊息通知中獎者'
+                        : '中獎時不會發送 LINE 訊息通知'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={async () => {
+                    try {
+                      const response = await fetch('/api/lottery/control', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          notify_winner_enabled: !lotteryState.notify_winner_enabled,
+                          admin_id: profile?.userId
+                        }),
+                      })
+                      const data = await response.json()
+                      if (data.success) {
+                        setLotteryState(data.state)
+                        showMessage('success', data.state.notify_winner_enabled ? '中獎通知已開啟' : '中獎通知已關閉')
+                      } else {
+                        showMessage('error', data.error || '更新失敗')
+                      }
+                    } catch {
+                      showMessage('error', '更新失敗')
+                    }
+                  }}
+                  className={`relative w-14 h-8 rounded-full transition-colors duration-200 ${lotteryState.notify_winner_enabled ? 'bg-green-500' : 'bg-gray-300'
+                    }`}
+                >
+                  <div
+                    className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow transition-transform duration-200 ${lotteryState.notify_winner_enabled ? 'translate-x-7' : 'translate-x-1'
+                      }`}
+                  />
+                </button>
+              </div>
             </div>
           </div>
         </div>

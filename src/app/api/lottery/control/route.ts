@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
     const supabase = await createSupabaseServer()
     const body = await request.json()
 
-    const { is_lottery_active, max_photos_for_lottery, admin_id } = body
+    const { is_lottery_active, max_photos_for_lottery, notify_winner_enabled, admin_id } = body
 
     console.log(`🎰 更新抽獎設定 (管理員: ${admin_id})`)
 
@@ -87,6 +87,12 @@ export async function POST(request: NextRequest) {
     if (typeof max_photos_for_lottery === 'number') {
       updateFields.max_photos_for_lottery = max_photos_for_lottery
       console.log(`  - 加權上限: ${max_photos_for_lottery} 張照片${max_photos_for_lottery === 0 ? '（平等機率）' : ''}`)
+    }
+
+    // 如果提供了 notify_winner_enabled，更新它
+    if (typeof notify_winner_enabled === 'boolean') {
+      updateFields.notify_winner_enabled = notify_winner_enabled
+      console.log(`  - 中獎通知: ${notify_winner_enabled ? '啟用' : '關閉'}`)
     }
 
     // 更新狀態
