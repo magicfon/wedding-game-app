@@ -206,7 +206,7 @@ export async function PATCH(request: NextRequest) {
     const { animation_mode, admin_id } = body
 
     // 驗證動畫模式
-    const validModes = ['fast_shuffle', 'slot_machine', 'waterfall', 'tournament']
+    const validModes = ['fast_shuffle', 'waterfall', 'tournament']
     if (!validModes.includes(animation_mode)) {
       return NextResponse.json({
         error: '無效的動畫模式',
@@ -249,7 +249,6 @@ export async function PATCH(request: NextRequest) {
 
     const modeNames: { [key: string]: string } = {
       fast_shuffle: '快速切換',
-      slot_machine: '老虎機',
       waterfall: '瀑布流',
       tournament: '淘汰賽'
     }

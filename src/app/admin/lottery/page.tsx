@@ -16,7 +16,7 @@ import {
   XCircle,
   ExternalLink,
   Shuffle,
-  Disc,
+
   Droplets,
   Trophy,
   Bell,
@@ -24,11 +24,11 @@ import {
 } from 'lucide-react'
 
 // 動畫模式類型和資訊
-type AnimationMode = 'fast_shuffle' | 'slot_machine' | 'waterfall' | 'tournament'
+type AnimationMode = 'fast_shuffle' | 'waterfall' | 'tournament'
 
 const ANIMATION_MODES: { mode: AnimationMode; name: string; icon: React.ReactNode; description: string }[] = [
   { mode: 'fast_shuffle', name: '快速切換', icon: <Shuffle className="w-6 h-6" />, description: '單張照片快速隨機切換' },
-  { mode: 'slot_machine', name: '老虎機', icon: <Disc className="w-6 h-6" />, description: '經典三欄老虎機效果' },
+
   { mode: 'waterfall', name: '瀑布流', icon: <Droplets className="w-6 h-6" />, description: '照片如雨滴般流動' },
   { mode: 'tournament', name: '淘汰賽', icon: <Trophy className="w-6 h-6" />, description: '多輪淘汰賽制揭曉' },
 ]
