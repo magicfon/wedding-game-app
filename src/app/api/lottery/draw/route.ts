@@ -101,9 +101,30 @@ export async function POST(request: NextRequest) {
 
     // 5. 使用加權抽獎（根據照片數量，設定上限）
     const maxPhotos = currentState.max_photos_for_lottery || 5
+    const winnersCount = currentState.winners_per_draw || 1
     console.log(`⚖️ 加權設定：每人最多計算 ${maxPhotos} 張照片`)
+    console.log(`🎯 本次抽獎人數：${winnersCount} 位`)
 
-    // 建立加權池
+    // 確保不會抽取超過可用人數
+    const actualWinnersCount = Math.min(winnersCount, availableUsers.length)
+    if (actualWinnersCount < winnersCount) {
+      console.log(`⚠️ 可用人數不足，調整為 ${actualWinnersCount} 位`)
+    }
+
+    // 定義中獎者類型
+    interface WinnerInfo {
+      line_id: string
+      display_name: string
+      avatar_url: string
+      photo_count: number
+      photo_id: number | null
+      photo_url: string | null
+    }
+
+    const winners: WinnerInfo[] = []
+    const selectedLineIds = new Set<string>() // 追蹤已中獎的用戶，避免重複
+
+    // 建立加權池（會在每次抽獎後移除中獎者）
     interface WeightedUser {
       line_id: string
       display_name: string
@@ -111,80 +132,100 @@ export async function POST(request: NextRequest) {
       photo_count: number
     }
 
-    const weightedPool: WeightedUser[] = []
+    // 抽取多位中獎者
+    for (let i = 0; i < actualWinnersCount; i++) {
+      // 過濾掉已中獎的用戶
+      const remainingUsers = availableUsers.filter(
+        (user: EligibleUser) => !selectedLineIds.has(user.line_id)
+      )
 
-    if (maxPhotos === 0) {
-      // 平等機率模式：每人只算一次
-      console.log('📊 使用平等機率模式（不加權）')
-      weightedPool.push(...availableUsers)
-    } else {
-      // 加權模式：根據照片數量
-      console.log('📊 使用加權機率模式')
-      availableUsers.forEach(user => {
-        const effectiveCount = Math.min(user.photo_count, maxPhotos)
-        console.log(`  - ${user.display_name}: ${user.photo_count} 張照片，有效 ${effectiveCount} 次機會`)
-        for (let i = 0; i < effectiveCount; i++) {
-          weightedPool.push(user)
-        }
-      })
-    }
+      if (remainingUsers.length === 0) {
+        console.log(`⚠️ 已無可抽獎用戶，停止抽獎`)
+        break
+      }
 
-    console.log(`🎲 加權池總數: ${weightedPool.length}`)
+      // 建立加權池
+      const weightedPool: WeightedUser[] = []
 
-    // 從加權池中隨機選擇
-    const randomIndex = Math.floor(Math.random() * weightedPool.length)
-    const winner = weightedPool[randomIndex]
+      if (maxPhotos === 0) {
+        // 平等機率模式：每人只算一次
+        weightedPool.push(...remainingUsers)
+      } else {
+        // 加權模式：根據照片數量
+        remainingUsers.forEach((user: EligibleUser) => {
+          const effectiveCount = Math.min(user.photo_count, maxPhotos)
+          for (let j = 0; j < effectiveCount; j++) {
+            weightedPool.push(user)
+          }
+        })
+      }
 
-    // 計算中獎機率
-    const winnerEffectiveCount = Math.min(winner.photo_count, maxPhotos || winner.photo_count)
-    const winProbability = ((winnerEffectiveCount / weightedPool.length) * 100).toFixed(2)
+      // 從加權池中隨機選擇
+      const randomIndex = Math.floor(Math.random() * weightedPool.length)
+      const winner = weightedPool[randomIndex]
 
-    console.log('🎉 中獎者:', winner.display_name)
-    console.log('   照片數:', winner.photo_count)
-    console.log('   有效機會:', winnerEffectiveCount)
-    console.log('   中獎機率:', `${winProbability}%`)
+      // 標記為已中獎
+      selectedLineIds.add(winner.line_id)
 
-    // 5. 從中獎者的照片中隨機選一張作為中獎照片
-    const { data: winnerPhotos, error: photosError } = await supabase
-      .from('photos')
-      .select('id, image_url, thumbnail_medium_url')
-      .eq('user_id', winner.line_id)
-      .eq('is_public', true)
+      // 從中獎者的照片中隨機選一張作為中獎照片
+      const { data: winnerPhotos, error: photosError } = await supabase
+        .from('photos')
+        .select('id, image_url, thumbnail_medium_url')
+        .eq('user_id', winner.line_id)
+        .eq('is_public', true)
 
-    let winnerPhotoId: number | null = null
-    let winnerPhotoUrl: string | null = null
+      let winnerPhotoId: number | null = null
+      let winnerPhotoUrl: string | null = null
 
-    if (!photosError && winnerPhotos && winnerPhotos.length > 0) {
-      const randomPhoto = winnerPhotos[Math.floor(Math.random() * winnerPhotos.length)]
-      winnerPhotoId = randomPhoto.id
-      winnerPhotoUrl = randomPhoto.thumbnail_medium_url || randomPhoto.image_url
-      console.log('📸 選中的中獎照片 ID:', winnerPhotoId, 'URL:', winnerPhotoUrl)
-    } else {
-      console.error('⚠️ 無法取得中獎者照片:', photosError)
-    }
+      if (!photosError && winnerPhotos && winnerPhotos.length > 0) {
+        const randomPhoto = winnerPhotos[Math.floor(Math.random() * winnerPhotos.length)]
+        winnerPhotoId = randomPhoto.id
+        winnerPhotoUrl = randomPhoto.thumbnail_medium_url || randomPhoto.image_url
+      }
 
-    // 6. 記錄抽獎結果（包含中獎照片）
-    const { data: lotteryRecord, error: recordError } = await supabase
-      .from('lottery_history')
-      .insert({
-        winner_line_id: winner.line_id,
-        winner_display_name: winner.display_name,
-        winner_avatar_url: winner.avatar_url,
+      winners.push({
+        line_id: winner.line_id,
+        display_name: winner.display_name,
+        avatar_url: winner.avatar_url,
         photo_count: winner.photo_count,
-        winner_photo_id: winnerPhotoId,
-        winner_photo_url: winnerPhotoUrl,
-        admin_id: admin_id || 'system',
-        admin_name: admin_name || '系統管理員',
-        participants_count: eligibleUsers.length,
-        participants_snapshot: JSON.stringify(eligibleUsers),
-        notes: notes || null
+        photo_id: winnerPhotoId,
+        photo_url: winnerPhotoUrl
       })
-      .select()
-      .single()
 
-    if (recordError) {
-      console.error('❌ 記錄抽獎結果失敗:', recordError)
+      console.log(`🎉 第 ${i + 1} 位中獎者: ${winner.display_name}`)
+    }
 
+    console.log(`📊 共抽出 ${winners.length} 位中獎者`)
+
+    // 6. 記錄所有中獎者（每位中獎者一筆記錄）
+    const lotteryRecords = []
+    for (const winner of winners) {
+      const { data: lotteryRecord, error: recordError } = await supabase
+        .from('lottery_history')
+        .insert({
+          winner_line_id: winner.line_id,
+          winner_display_name: winner.display_name,
+          winner_avatar_url: winner.avatar_url,
+          photo_count: winner.photo_count,
+          winner_photo_id: winner.photo_id,
+          winner_photo_url: winner.photo_url,
+          admin_id: admin_id || 'system',
+          admin_name: admin_name || '系統管理員',
+          participants_count: eligibleUsers.length,
+          participants_snapshot: JSON.stringify(eligibleUsers),
+          notes: notes || null
+        })
+        .select()
+        .single()
+
+      if (recordError) {
+        console.error(`❌ 記錄中獎者 ${winner.display_name} 失敗:`, recordError)
+      } else {
+        lotteryRecords.push(lotteryRecord)
+      }
+    }
+
+    if (lotteryRecords.length === 0) {
       // 重置抽獎狀態
       await supabase
         .from('lottery_state')
@@ -196,16 +237,16 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         error: '記錄抽獎結果失敗',
-        details: recordError.message
+        details: '無法記錄任何中獎者'
       }, { status: 500 })
     }
 
-    // 6. 更新抽獎狀態
+    // 7. 更新抽獎狀態（使用第一位中獎者的 ID 作為 current_draw_id）
     const { error: finalStateError } = await supabase
       .from('lottery_state')
       .update({
         is_drawing: false,
-        current_draw_id: lotteryRecord.id,
+        current_draw_id: lotteryRecords[0].id,
         updated_at: new Date().toISOString()
       })
       .eq('id', currentState.id)
@@ -216,18 +257,32 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ 抽獎完成！')
 
+    // 生成中獎訊息
+    const winnerNames = winners.map(w => w.display_name).join('、')
+    const message = winners.length === 1
+      ? `🎉 恭喜 ${winnerNames} 中獎！`
+      : `🎉 恭喜 ${winners.length} 位中獎者：${winnerNames}！`
+
     return NextResponse.json({
       success: true,
-      winner: {
-        line_id: winner.line_id,
-        display_name: winner.display_name,
-        avatar_url: winner.avatar_url,
-        photo_count: winner.photo_count
-      },
-      lottery_id: lotteryRecord.id,
-      draw_time: lotteryRecord.draw_time,
+      winners: winners.map(w => ({
+        line_id: w.line_id,
+        display_name: w.display_name,
+        avatar_url: w.avatar_url,
+        photo_count: w.photo_count
+      })),
+      // 保持向後相容
+      winner: winners.length > 0 ? {
+        line_id: winners[0].line_id,
+        display_name: winners[0].display_name,
+        avatar_url: winners[0].avatar_url,
+        photo_count: winners[0].photo_count
+      } : null,
+      lottery_ids: lotteryRecords.map(r => r.id),
+      lottery_id: lotteryRecords[0]?.id,
+      draw_time: lotteryRecords[0]?.draw_time,
       participants_count: eligibleUsers.length,
-      message: `🎉 恭喜 ${winner.display_name} 中獎！`
+      message
     })
 
   } catch (error) {

@@ -62,6 +62,7 @@ interface LotteryState {
   max_photos_for_lottery: number
   animation_mode?: AnimationMode
   notify_winner_enabled?: boolean
+  winners_per_draw?: number
 }
 
 export default function LotteryManagePage() {
@@ -72,13 +73,15 @@ export default function LotteryManagePage() {
     is_drawing: false,
     current_draw_id: null,
     max_photos_for_lottery: 5,
-    notify_winner_enabled: true
+    notify_winner_enabled: true,
+    winners_per_draw: 1
   })
   const [loading, setLoading] = useState(true)
   const [drawing, setDrawing] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
   const [maxPhotosInput, setMaxPhotosInput] = useState<number>(5)
+  const [winnersPerDrawInput, setWinnersPerDrawInput] = useState<number>(1)
   const [animationMode, setAnimationMode] = useState<AnimationMode>('fast_shuffle')
   const [updatingMode, setUpdatingMode] = useState(false)
 
@@ -133,6 +136,7 @@ export default function LotteryManagePage() {
       if (data.success) {
         setLotteryState(data.state)
         setMaxPhotosInput(data.state.max_photos_for_lottery || 5)
+        setWinnersPerDrawInput(data.state.winners_per_draw || 1)
         if (data.state.animation_mode) {
           setAnimationMode(data.state.animation_mode)
         }
@@ -527,6 +531,67 @@ export default function LotteryManagePage() {
                   <div className="text-xs text-gray-500">
                     {lotteryState.max_photos_for_lottery === 0 ? '平等' : '加權'}
                   </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 每次抽獎人數設定 */}
+          <div className="mt-6 border-t pt-6">
+            <h3 className="text-lg font-semibold text-gray-800 mb-3">🎯 每次抽獎人數</h3>
+            <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg p-4">
+              <div className="flex items-center gap-4">
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    一次抽獎抽出幾位中獎者
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min="1"
+                      max="10"
+                      value={winnersPerDrawInput}
+                      onChange={(e) => setWinnersPerDrawInput(Math.max(1, parseInt(e.target.value) || 1))}
+                      className="w-32 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-black"
+                    />
+                    <span className="text-gray-600">位</span>
+                    <button
+                      onClick={async () => {
+                        try {
+                          const response = await fetch('/api/lottery/control', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              winners_per_draw: winnersPerDrawInput,
+                              admin_id: profile?.userId
+                            }),
+                          })
+                          const data = await response.json()
+                          if (data.success) {
+                            setLotteryState(data.state)
+                            showMessage('success', `每次抽獎人數已設為 ${winnersPerDrawInput} 位`)
+                          } else {
+                            showMessage('error', data.error || '更新失敗')
+                          }
+                        } catch {
+                          showMessage('error', '更新失敗')
+                        }
+                      }}
+                      className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors font-medium"
+                    >
+                      更新設定
+                    </button>
+                  </div>
+                  <p className="mt-2 text-xs text-gray-600">
+                    設定每次點擊「開始抽獎」時，一次抽出多少位中獎者
+                  </p>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm text-gray-600 mb-1">目前設定</div>
+                  <div className="text-3xl font-bold text-orange-600">
+                    {lotteryState.winners_per_draw || 1}
+                  </div>
+                  <div className="text-xs text-gray-500">位/次</div>
                 </div>
               </div>
             </div>

@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
     const supabase = await createSupabaseServer()
     const body = await request.json()
 
-    const { is_lottery_active, max_photos_for_lottery, notify_winner_enabled, admin_id } = body
+    const { is_lottery_active, max_photos_for_lottery, notify_winner_enabled, winners_per_draw, admin_id } = body
 
     console.log(`🎰 更新抽獎設定 (管理員: ${admin_id})`)
 
@@ -93,6 +93,12 @@ export async function POST(request: NextRequest) {
     if (typeof notify_winner_enabled === 'boolean') {
       updateFields.notify_winner_enabled = notify_winner_enabled
       console.log(`  - 中獎通知: ${notify_winner_enabled ? '啟用' : '關閉'}`)
+    }
+
+    // 如果提供了 winners_per_draw，更新它
+    if (typeof winners_per_draw === 'number' && winners_per_draw >= 1) {
+      updateFields.winners_per_draw = winners_per_draw
+      console.log(`  - 每次抽獎人數: ${winners_per_draw} 位`)
     }
 
     // 更新狀態
