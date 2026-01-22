@@ -106,6 +106,8 @@ export const LotteryMachineLottery = memo(({
 
   const rafRef = useRef<number | null>(null)
   const photoIdRef = useRef(0)
+  const bouncingPhotosRef = useRef<BouncingPhoto[]>([])
+  const winnersDrawnRef = useRef(0)
 
   // 預設抽出 3 位中獎者（可以從外部傳入或從 API 獲取）
   const winnersPerDraw = 3
@@ -135,6 +137,7 @@ export const LotteryMachineLottery = memo(({
       })
     }
     setBouncingPhotos(newPhotos)
+    bouncingPhotosRef.current = newPhotos
     setDrawnWinners([])
     setAnimationPhase('idle')
   }, [photos])
@@ -142,7 +145,7 @@ export const LotteryMachineLottery = memo(({
   // 物理模擬：照片彈跳
   const updatePhysics = useCallback(() => {
     setBouncingPhotos(prevPhotos => {
-      return prevPhotos.map(photo => {
+      const newPhotos = prevPhotos.map(photo => {
         if (photo.isFlyingOut) {
           // 飛出動畫
           const dx = photo.targetX - photo.x
@@ -210,6 +213,10 @@ export const LotteryMachineLottery = memo(({
           angle: photo.angle + photo.vAngle
         }
       })
+
+      // 同步 ref
+      bouncingPhotosRef.current = newPhotos
+      return newPhotos
     })
   }, [])
 
@@ -217,11 +224,14 @@ export const LotteryMachineLottery = memo(({
   const startDrawing = useCallback(() => {
     setAnimationPhase('drawing')
 
-    let winnersDrawn = 0
+    // 重置計數器
+    winnersDrawnRef.current = 0
     const totalWinners = winnersPerDraw
 
     const drawNextWinner = () => {
-      if (winnersDrawn >= totalWinners) {
+      const currentDrawn = winnersDrawnRef.current
+
+      if (currentDrawn >= totalWinners) {
         // 抽獎完成
         setAnimationPhase('complete')
         setTimeout(() => {
@@ -230,22 +240,32 @@ export const LotteryMachineLottery = memo(({
         return
       }
 
-      // 隨機選擇一張照片作為中獎者
+      // 從 ref 中獲取當前照片列表
+      const currentPhotos = bouncingPhotosRef.current
+      const availablePhotos = currentPhotos.filter(p => !p.isFlyingOut && !p.isWinner)
+
+      if (availablePhotos.length === 0) {
+        // 沒有可用的照片，結束抽獎
+        setAnimationPhase('complete')
+        setTimeout(() => {
+          setShowWinnerReveal(true)
+        }, 1000)
+        return
+      }
+
+      const randomIndex = Math.floor(Math.random() * availablePhotos.length)
+      const winnerPhoto = availablePhotos[randomIndex]
+
+      // 計算目標位置（中獎者顯示區）
+      const winnerOrder = currentDrawn + 1
+      const spacing = 300
+      const startX = (DESIGN_WIDTH - (totalWinners * spacing)) / 2 + spacing / 2
+      const targetX = startX + (winnerOrder - 1) * spacing
+      const targetY = DESIGN_HEIGHT - 200
+
+      // 更新照片狀態
       setBouncingPhotos(prevPhotos => {
-        const availablePhotos = prevPhotos.filter(p => !p.isFlyingOut && !p.isWinner)
-        if (availablePhotos.length === 0) return prevPhotos
-
-        const randomIndex = Math.floor(Math.random() * availablePhotos.length)
-        const winnerPhoto = availablePhotos[randomIndex]
-
-        // 計算目標位置（中獎者顯示區）
-        const winnerOrder = winnersDrawn + 1
-        const spacing = 300
-        const startX = (DESIGN_WIDTH - (totalWinners * spacing)) / 2 + spacing / 2
-        const targetX = startX + (winnerOrder - 1) * spacing
-        const targetY = DESIGN_HEIGHT - 200
-
-        return prevPhotos.map(p => {
+        const newPhotos = prevPhotos.map(p => {
           if (p.id === winnerPhoto.id) {
             return {
               ...p,
@@ -258,17 +278,27 @@ export const LotteryMachineLottery = memo(({
           }
           return p
         })
+
+        // 同步 ref
+        bouncingPhotosRef.current = newPhotos
+
+        return newPhotos
       })
 
-      winnersDrawn++
-      setDrawnWinners(prev => [...prev, bouncingPhotos.find(p => p.isWinner && p.winnerOrder === winnersDrawn)!])
+      // 添加到中獎者列表（在下一個 tick 執行）
+      setTimeout(() => {
+        setDrawnWinners(prev => [...prev, winnerPhoto])
+      }, 50)
+
+      // 增加計數器
+      winnersDrawnRef.current++
 
       // 1.5秒後抽下一個
       setTimeout(drawNextWinner, 1500)
     }
 
     drawNextWinner()
-  }, [winnersPerDraw, bouncingPhotos])
+  }, [winnersPerDraw])
 
   // 動畫循環
   useEffect(() => {
