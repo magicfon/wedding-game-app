@@ -20,17 +20,19 @@ import {
   Droplets,
   Trophy,
   Bell,
-  BellOff
+  BellOff,
+  Box
 } from 'lucide-react'
 
 // 動畫模式類型和資訊
-type AnimationMode = 'fast_shuffle' | 'waterfall' | 'tournament'
+type AnimationMode = 'fast_shuffle' | 'waterfall' | 'tournament' | 'lottery_machine'
 
 const ANIMATION_MODES: { mode: AnimationMode; name: string; icon: React.ReactNode; description: string }[] = [
   { mode: 'fast_shuffle', name: '快速切換', icon: <Shuffle className="w-6 h-6" />, description: '單張照片快速隨機切換' },
 
   { mode: 'waterfall', name: '瀑布流', icon: <Droplets className="w-6 h-6" />, description: '照片如雨滴般流動' },
   { mode: 'tournament', name: '淘汰賽', icon: <Trophy className="w-6 h-6" />, description: '多輪淘汰賽制揭曉' },
+  { mode: 'lottery_machine', name: '彩票機', icon: <Box className="w-6 h-6" />, description: '照片在腔體內彈跳，依序抽出得獎者' },
 ]
 
 interface EligibleUser {

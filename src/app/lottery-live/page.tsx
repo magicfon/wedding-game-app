@@ -11,6 +11,7 @@ import {
   FastShuffleLottery,
   WaterfallLottery,
   TournamentLottery,
+  LotteryMachineLottery,
   AnimationMode,
   ANIMATION_MODE_INFO
 } from '@/components/lottery-modes'
@@ -974,6 +975,16 @@ export default function LotteryLivePage() {
               )}
               {animationMode === 'tournament' && (
                 <TournamentLottery
+                  photos={photos}
+                  winnerPhoto={selectedWinnerPhoto}
+                  winnerIndex={winnerIndex}
+                  onAnimationComplete={handleAnimationComplete}
+                  isAnimating={isAnimating}
+                  scale={scale}
+                />
+              )}
+              {animationMode === 'lottery_machine' && (
+                <LotteryMachineLottery
                   photos={photos}
                   winnerPhoto={selectedWinnerPhoto}
                   winnerIndex={winnerIndex}

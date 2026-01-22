@@ -22,7 +22,7 @@ export interface LotteryModeProps {
     scale: number
 }
 
-export type AnimationMode = 'fast_shuffle' | 'waterfall' | 'tournament'
+export type AnimationMode = 'fast_shuffle' | 'waterfall' | 'tournament' | 'lottery_machine'
 
 export const ANIMATION_MODE_INFO: Record<AnimationMode, { name: string; icon: string; description: string }> = {
     fast_shuffle: {
@@ -40,5 +40,10 @@ export const ANIMATION_MODE_INFO: Record<AnimationMode, { name: string; icon: st
         name: '淘汰賽',
         icon: '🏆',
         description: '多輪淘汰，最終 2 張對決揭曉'
+    },
+    lottery_machine: {
+        name: '彩票機',
+        icon: '🎰',
+        description: '照片在腔體內彈跳，依序抽出得獎者'
     }
 }
