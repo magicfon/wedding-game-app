@@ -560,6 +560,76 @@ export default function LotteryMachineLivePage() {
         )}
       </div>
 
+      {/* 軌道容器 - 移到 main-content 之外 */}
+      <div className="track-container">
+        {/* SVG 軌道 */}
+        <div className="track-svg-container">
+          <svg xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="trackGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" style={{ stopColor: 'rgba(100, 180, 255, 0.7)' }} />
+                <stop offset="50%" style={{ stopColor: 'rgba(150, 120, 200, 0.7)' }} />
+                <stop offset="100%" style={{ stopColor: 'rgba(200, 100, 150, 0.7)' }} />
+              </linearGradient>
+            </defs>
+            <path id="trackPath" className="track-path" d={generateTrackPath()} />
+          </svg>
+        </div>
+
+        {/* 軌道編輯器 */}
+        {isEditorMode && (
+          <div className="track-editor">
+            {/* 起點 */}
+            <div
+              className={`track-node track-node-start ${draggingNode?.type === 'start' ? 'dragging' : ''}`}
+              style={{
+                left: `${trackConfig.startPoint.x}%`,
+                top: `${trackConfig.startPoint.y}%`
+              }}
+              onMouseDown={(e) => handleDragStart(e, 'start')}
+            >
+              <span className="node-label">起點</span>
+            </div>
+
+            {/* 終點 */}
+            <div
+              className={`track-node track-node-end ${draggingNode?.type === 'end' ? 'dragging' : ''}`}
+              style={{
+                left: `${trackConfig.endPoint.x}%`,
+                top: `${trackConfig.endPoint.y}%`
+              }}
+              onMouseDown={(e) => handleDragStart(e, 'end')}
+            >
+              <span className="node-label">終點</span>
+            </div>
+
+            {/* 節點 */}
+            {trackConfig.nodes.map((node, index) => (
+              <div
+                key={node.id}
+                className={`track-node ${draggingNode?.type === 'node' && draggingNode.index === index ? 'dragging' : ''}`}
+                style={{
+                  left: `${node.x}%`,
+                  top: `${node.y}%`
+                }}
+                onMouseDown={(e) => handleDragStart(e, 'node', index)}
+              >
+                <span className="node-label">{node.id}</span>
+                <button
+                  className="node-delete"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    removeNode(index)
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* 主要內容區域 */}
       <div className="main-content" onMouseMove={handleDragMove} onMouseUp={handleDragEnd}>
         {/* 中獎者平台 */}
@@ -572,81 +642,11 @@ export default function LotteryMachineLivePage() {
           <div className="platform-base"></div>
         </div>
 
-        {/* 軌道容器 */}
-        <div className="track-container">
-          {/* SVG 軌道 */}
-          <div className="track-svg-container">
-            <svg xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <linearGradient id="trackGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" style={{ stopColor: 'rgba(100, 180, 255, 0.7)' }} />
-                  <stop offset="50%" style={{ stopColor: 'rgba(150, 120, 200, 0.7)' }} />
-                  <stop offset="100%" style={{ stopColor: 'rgba(200, 100, 150, 0.7)' }} />
-                </linearGradient>
-              </defs>
-              <path id="trackPath" className="track-path" d={generateTrackPath()} />
-            </svg>
-          </div>
-
-          {/* 軌道編輯器 */}
-          {isEditorMode && (
-            <div className="track-editor">
-              {/* 起點 */}
-              <div
-                className={`track-node track-node-start ${draggingNode?.type === 'start' ? 'dragging' : ''}`}
-                style={{
-                  left: `${trackConfig.startPoint.x}%`,
-                  top: `${trackConfig.startPoint.y}%`
-                }}
-                onMouseDown={(e) => handleDragStart(e, 'start')}
-              >
-                <span className="node-label">起點</span>
-              </div>
-
-              {/* 終點 */}
-              <div
-                className={`track-node track-node-end ${draggingNode?.type === 'end' ? 'dragging' : ''}`}
-                style={{
-                  left: `${trackConfig.endPoint.x}%`,
-                  top: `${trackConfig.endPoint.y}%`
-                }}
-                onMouseDown={(e) => handleDragStart(e, 'end')}
-              >
-                <span className="node-label">終點</span>
-              </div>
-
-              {/* 節點 */}
-              {trackConfig.nodes.map((node, index) => (
-                <div
-                  key={node.id}
-                  className={`track-node ${draggingNode?.type === 'node' && draggingNode.index === index ? 'dragging' : ''}`}
-                  style={{
-                    left: `${node.x}%`,
-                    top: `${node.y}%`
-                  }}
-                  onMouseDown={(e) => handleDragStart(e, 'node', index)}
-                >
-                  <span className="node-label">{node.id}</span>
-                  <button
-                    className="node-delete"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      removeNode(index)
-                    }}
-                  >
-                    ✕
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
         {/* 彩票機腔體 */}
         <div className="lottery-machine" ref={chamberRef}>
           <div className="chamber">
             <div className="chamber-glass"></div>
-            
+
             <div className="photos-container" ref={photosContainerRef}>
               {photos.map(photo => (
                 <div
@@ -675,7 +675,7 @@ export default function LotteryMachineLivePage() {
               <div className="vent"></div>
               <div className="vent"></div>
             </div>
-            
+
             {/* 氣泡效果 */}
             <div className="air-bubbles" id="airBubbles"></div>
           </div>
