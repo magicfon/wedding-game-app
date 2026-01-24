@@ -940,12 +940,12 @@ export default function LotteryMachineLivePage() {
 
         .lottery-machine {
           position: absolute;
-          bottom: 0;
+          top: 12vh;
           left: 50%;
           transform: translateX(-50%);
           width: 55%;
           max-width: clamp(320px, 35vw, 520px);
-          z-index: 10;
+          z-index: 5;
           display: flex;
           flex-direction: column;
           align-items: center;
@@ -1076,11 +1076,14 @@ export default function LotteryMachineLivePage() {
         }
 
         .control-panel {
+          position: absolute;
+          top: calc(12vh + clamp(160px, 18vh, 280px) + 20px);
+          left: 50%;
+          transform: translateX(-50%);
           display: flex;
           gap: 12px;
           justify-content: center;
-          flex-shrink: 0;
-          padding: 5px 0;
+          z-index: 10;
         }
 
         .btn {
