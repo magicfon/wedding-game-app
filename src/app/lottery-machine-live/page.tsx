@@ -70,8 +70,14 @@ export default function LotteryMachineLivePage() {
 
   // 照片載入後啟動彈跳動畫
   useEffect(() => {
-    if (photos.length > 0 && chamberRef.current && photosContainerRef.current) {
-      startBounceAnimation()
+    if (photos.length > 0) {
+      // 等待 DOM 渲染完成後再啟動動畫
+      const timer = setTimeout(() => {
+        if (chamberRef.current && photosContainerRef.current) {
+          startBounceAnimation()
+        }
+      }, 100)
+      return () => clearTimeout(timer)
     }
   }, [photos])
 
@@ -148,14 +154,44 @@ export default function LotteryMachineLivePage() {
 
     const photoElements = container.querySelectorAll('.photo-item')
     const chamberRect = chamberRef.current?.getBoundingClientRect()
-    if (!chamberRect) return
+    if (!chamberRect || photoElements.length === 0) return
+
+    // 初始化照片位置到腔體內
+    const photoSize = 42 // 彩球直徑
+    photoElements.forEach((photoEl: Element) => {
+      const el = photoEl as HTMLElement
+      const currentLeft = parseFloat(el.style.left || '0')
+      const currentTop = parseFloat(el.style.top || '0')
+      
+      // 確保照片在腔體範圍內
+      let x = Math.min(Math.max(0, currentLeft), chamberRect.width - photoSize)
+      let y = Math.min(Math.max(0, currentTop), chamberRect.height - photoSize)
+      
+      // 如果照片在腔體外，重新定位到中心
+      if (x < 0 || x > chamberRect.width - photoSize || y < 0 || y > chamberRect.height - photoSize) {
+        x = (chamberRect.width - photoSize) / 2 + (Math.random() - 0.5) * 50
+        y = (chamberRect.height - photoSize) / 2 + (Math.random() - 0.5) * 50
+      }
+      
+      el.style.left = `${x}px`
+      el.style.top = `${y}px`
+      
+      // 確保有速度
+      if (!el.dataset.vx || el.dataset.vx === '0') {
+        el.dataset.vx = ((Math.random() - 0.5) * 10).toString()
+      }
+      if (!el.dataset.vy || el.dataset.vy === '0') {
+        el.dataset.vy = ((Math.random() - 0.5) * 10).toString()
+      }
+    })
 
     const animate = () => {
       photoElements.forEach((photoEl: Element) => {
-        const x = parseFloat((photoEl as HTMLElement).style.left || '0')
-        const y = parseFloat((photoEl as HTMLElement).style.top || '0')
-        const vx = parseFloat((photoEl as HTMLElement).dataset.vx || '0')
-        const vy = parseFloat((photoEl as HTMLElement).dataset.vy || '0')
+        const el = photoEl as HTMLElement
+        const x = parseFloat(el.style.left || '0')
+        const y = parseFloat(el.style.top || '0')
+        const vx = parseFloat(el.dataset.vx || '0')
+        const vy = parseFloat(el.dataset.vy || '0')
         
         // 重力
         let newVy = vy + 0.35
@@ -199,7 +235,6 @@ export default function LotteryMachineLivePage() {
         let newY = y + clampedVy
         
         // 邊界碰撞
-        const photoSize = 80
         const containerWidth = chamberRect.width
         const containerHeight = chamberRect.height
         
@@ -222,19 +257,19 @@ export default function LotteryMachineLivePage() {
         }
         
         // 旋轉
-        const rotation = parseFloat((photoEl as HTMLElement).dataset.rotation || '0')
-        const rotationSpeed = parseFloat((photoEl as HTMLElement).dataset.rotationSpeed || '0')
+        const rotation = parseFloat(el.dataset.rotation || '0')
+        const rotationSpeed = parseFloat(el.dataset.rotationSpeed || '0')
         const newRotation = rotation + rotationSpeed + clampedVx * 0.5
         
         // 更新 DOM
-        ;(photoEl as HTMLElement).style.left = `${newX}px`
-        ;(photoEl as HTMLElement).style.top = `${newY}px`
-        ;(photoEl as HTMLElement).style.transform = `rotate(${newRotation}deg)`
+        el.style.left = `${newX}px`
+        el.style.top = `${newY}px`
+        el.style.transform = `rotate(${newRotation}deg)`
         
         // 更新資料屬性
-        ;(photoEl as HTMLElement).dataset.vx = clampedVx.toString()
-        ;(photoEl as HTMLElement).dataset.vy = clampedVy.toString()
-        ;(photoEl as HTMLElement).dataset.rotation = newRotation.toString()
+        el.dataset.vx = clampedVx.toString()
+        el.dataset.vy = clampedVy.toString()
+        el.dataset.rotation = newRotation.toString()
       })
       
       animationFrameRef.current = requestAnimationFrame(animate)
