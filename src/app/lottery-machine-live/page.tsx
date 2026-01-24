@@ -395,14 +395,14 @@ export default function LotteryMachineLivePage() {
 
   const handleDragMove = (e: React.MouseEvent) => {
     if (!draggingNode) return
-    
-    const rect = e.currentTarget.getBoundingClientRect()
-    const x = ((e.clientX - rect.left) / rect.width) * 100
-    const y = ((e.clientY - rect.top) / rect.height) * 100
-    
+
+    // 使用整個視窗的尺寸，不受 main-content 限制
+    const x = (e.clientX / window.innerWidth) * 100
+    const y = (e.clientY / window.innerHeight) * 100
+
     const clampedX = Math.max(0, Math.min(100, x))
     const clampedY = Math.max(0, Math.min(100, y))
-    
+
     if (draggingNode.type === 'start') {
       setTrackConfig(prev => ({ ...prev, startPoint: { x: clampedX, y: clampedY } }))
     } else if (draggingNode.type === 'end') {
