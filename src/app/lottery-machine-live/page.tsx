@@ -100,70 +100,70 @@ export default function LotteryMachineLivePage() {
     return () => clearInterval(bubbleInterval)
   }, [])
 
-  // 訂閱 Realtime 更新
-  useEffect(() => {
-    let eventSource: EventSource | null = null
-    let reconnectTimeout: NodeJS.Timeout | null = null
-    let errorCount = 0
-    const maxErrors = 5
+  // Realtime 連接管理
+  const eventSourceRef = useRef<EventSource | null>(null)
 
-    const connect = () => {
-      try {
-        eventSource = new EventSource('/api/lottery-machine/state/stream')
-
-        eventSource.onmessage = (event) => {
-          try {
-            const data = JSON.parse(event.data)
-            console.log('Realtime 更新:', data)
-
-            if (data.type === 'connected') {
-              errorCount = 0
-            } else if (data.type === 'lottery_state') {
-              setLotteryState(data.state)
-            } else if (data.type === 'new_winner') {
-              setWinners(prev => [...prev, data.winner])
-            } else if (data.type === 'error') {
-              console.error('Realtime 錯誤:', data.message)
-            }
-          } catch (e) {
-            console.error('解析 Realtime 訊息失敗:', e)
-          }
-        }
-
-        eventSource.onerror = () => {
-          errorCount++
-          console.warn(`Realtime 連接錯誤 (${errorCount}/${maxErrors})`)
-
-          if (errorCount >= maxErrors) {
-            console.error('Realtime 連接失敗次數過多，停止重連')
-            if (eventSource) {
-              eventSource.close()
-              eventSource = null
-            }
-          } else {
-            // 延遲重連
-            if (eventSource) {
-              eventSource.close()
-            }
-            reconnectTimeout = setTimeout(() => {
-              connect()
-            }, 3000 * errorCount) // 遞增延遲
-          }
-        }
-      } catch (e) {
-        console.error('建立 EventSource 失敗:', e)
-      }
+  // 建立並開始 Realtime 連接
+  const startRealtimeConnection = () => {
+    if (eventSourceRef.current) {
+      console.log('Realtime 已連接，跳過')
+      return
     }
 
-    connect()
+    try {
+      console.log('建立 Realtime 連接...')
+      const eventSource = new EventSource('/api/lottery-machine/state/stream')
+      eventSourceRef.current = eventSource
+
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data)
+          console.log('Realtime 更新:', data)
+
+          if (data.type === 'connected') {
+            console.log('Realtime 連接成功')
+          } else if (data.type === 'lottery_state') {
+            setLotteryState(data.state)
+          } else if (data.type === 'new_winner') {
+            setWinners(prev => [...prev, data.winner])
+          } else if (data.type === 'error') {
+            console.error('Realtime 錯誤:', data.message)
+          }
+        } catch (e) {
+          console.error('解析 Realtime 訊息失敗:', e)
+        }
+      }
+
+      eventSource.onerror = () => {
+        console.warn('Realtime 連接錯誤')
+        stopRealtimeConnection()
+      }
+    } catch (e) {
+      console.error('建立 EventSource 失敗:', e)
+    }
+  }
+
+  // 停止 Realtime 連接
+  const stopRealtimeConnection = () => {
+    if (eventSourceRef.current) {
+      console.log('關閉 Realtime 連接')
+      eventSourceRef.current.close()
+      eventSourceRef.current = null
+    }
+  }
+
+  // 頁面載入時建立連接獲取初始狀態
+  useEffect(() => {
+    startRealtimeConnection()
+
+    // 5秒後關閉連接（只獲取初始狀態）
+    const timer = setTimeout(() => {
+      stopRealtimeConnection()
+    }, 5000)
 
     return () => {
-      if (reconnectTimeout) {
-        clearTimeout(reconnectTimeout)
-      }
-      if (eventSource) {
-        eventSource.close()
-      }
+      clearTimeout(timer)
+      stopRealtimeConnection()
     }
   }, [])
 
@@ -322,28 +322,38 @@ export default function LotteryMachineLivePage() {
 
   const drawWinner = async () => {
     if (lotteryState.is_drawing || photos.length === 0) return
-    
+
+    // 抽獎前建立 Realtime 連接
+    startRealtimeConnection()
+
     try {
       const response = await fetch('/api/lottery-machine/draw', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       })
       const data = await response.json()
-      
+
       if (data.success) {
         setLotteryState(prev => ({ ...prev, is_drawing: true }))
-        
+
         // 動畫效果
         await animateWinnerSelection(data.winner)
-        
+
         setWinners(prev => [...prev, { photo: data.winner, order: prev.length + 1 }])
         setLotteryState(prev => ({ ...prev, is_drawing: false }))
+
+        // 抽獎完成後關閉 Realtime 連接
+        setTimeout(() => {
+          stopRealtimeConnection()
+        }, 1000)
       } else {
         setError(data.error || '抽獎失敗')
+        stopRealtimeConnection()
       }
     } catch (err) {
       console.error('抽獎失敗:', err)
       setError('抽獎失敗')
+      stopRealtimeConnection()
     }
   }
 
