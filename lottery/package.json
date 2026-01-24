@@ -1,0 +1,16 @@
+{
+  "name": "lottery-machine",
+  "version": "1.0.0",
+  "description": "抽獎機 - Lottery Machine",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "keywords": ["lottery", "game"],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}

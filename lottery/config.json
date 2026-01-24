@@ -1,0 +1,56 @@
+{
+    "trackConfig": {
+        "chamberWidth": 448,
+        "chamberHeight": 160,
+        "ballDiameter": 61,
+        "trackWidth": 46,
+        "startPoint": {
+            "x": 45,
+            "y": 92
+        },
+        "endPoint": {
+            "x": 71,
+            "y": 9
+        },
+        "nodes": [
+            {
+                "id": 1,
+                "x": 6,
+                "y": 89
+            },
+            {
+                "id": 2,
+                "x": 20,
+                "y": 51
+            },
+            {
+                "id": 3,
+                "x": 86,
+                "y": 50
+            },
+            {
+                "id": 4,
+                "x": 96,
+                "y": 8
+            }
+        ]
+    },
+    "physics": {
+        "gravity": 0.65,
+        "airForce": 0.8,
+        "lateralAirForce": 1,
+        "maxVelocity": 30
+    },
+    "chamberStyle": {
+        "left": "62.7327%",
+        "bottom": "0px",
+        "width": "874px",
+        "chamberHeight": "160px"
+    },
+    "platformStyle": {
+        "left": "0.427167%",
+        "top": "7px",
+        "width": "901px",
+        "height": "225px"
+    }
+}
