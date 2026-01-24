@@ -102,26 +102,68 @@ export default function LotteryMachineLivePage() {
 
   // 訂閱 Realtime 更新
   useEffect(() => {
-    const eventSource = new EventSource('/api/lottery-machine/state/stream')
+    let eventSource: EventSource | null = null
+    let reconnectTimeout: NodeJS.Timeout | null = null
+    let errorCount = 0
+    const maxErrors = 5
 
-    eventSource.onmessage = (event) => {
-      const data = JSON.parse(event.data)
-      console.log('Realtime 更新:', data)
+    const connect = () => {
+      try {
+        eventSource = new EventSource('/api/lottery-machine/state/stream')
 
-      if (data.type === 'lottery_state') {
-        setLotteryState(data.state)
-      } else if (data.type === 'new_winner') {
-        setWinners(prev => [...prev, data.winner])
+        eventSource.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data)
+            console.log('Realtime 更新:', data)
+
+            if (data.type === 'connected') {
+              errorCount = 0
+            } else if (data.type === 'lottery_state') {
+              setLotteryState(data.state)
+            } else if (data.type === 'new_winner') {
+              setWinners(prev => [...prev, data.winner])
+            } else if (data.type === 'error') {
+              console.error('Realtime 錯誤:', data.message)
+            }
+          } catch (e) {
+            console.error('解析 Realtime 訊息失敗:', e)
+          }
+        }
+
+        eventSource.onerror = () => {
+          errorCount++
+          console.warn(`Realtime 連接錯誤 (${errorCount}/${maxErrors})`)
+
+          if (errorCount >= maxErrors) {
+            console.error('Realtime 連接失敗次數過多，停止重連')
+            if (eventSource) {
+              eventSource.close()
+              eventSource = null
+            }
+          } else {
+            // 延遲重連
+            if (eventSource) {
+              eventSource.close()
+            }
+            reconnectTimeout = setTimeout(() => {
+              connect()
+            }, 3000 * errorCount) // 遞增延遲
+          }
+        }
+      } catch (e) {
+        console.error('建立 EventSource 失敗:', e)
       }
     }
 
-    eventSource.onerror = () => {
-      console.error('Realtime 連接錯誤')
-      setError('無法連接到即時更新')
-    }
+    connect()
 
     return () => {
-      eventSource.close()
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout)
+      }
+      if (eventSource) {
+        eventSource.close()
+      }
     }
   }, [])
 
