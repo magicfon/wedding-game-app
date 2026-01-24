@@ -22,6 +22,18 @@ interface Winner {
   order: number
 }
 
+interface TrackNode {
+  id: number
+  x: number
+  y: number
+}
+
+interface TrackConfig {
+  startPoint: { x: number; y: number }
+  endPoint: { x: number; y: number }
+  nodes: TrackNode[]
+}
+
 export default function LotteryMachineLivePage() {
   const [photos, setPhotos] = useState<Photo[]>([])
   const [winners, setWinners] = useState<Winner[]>([])
@@ -32,6 +44,19 @@ export default function LotteryMachineLivePage() {
   })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [trackConfig, setTrackConfig] = useState<TrackConfig>({
+    startPoint: { x: 50, y: 75 },
+    endPoint: { x: 15, y: 8 },
+    nodes: [
+      { id: 1, x: 95, y: 75 },
+      { id: 2, x: 95, y: 55 },
+      { id: 3, x: 5, y: 55 },
+      { id: 4, x: 5, y: 25 },
+      { id: 5, x: 25, y: 25 }
+    ]
+  })
+  const [isEditorMode, setIsEditorMode] = useState(false)
+  const [draggingNode, setDraggingNode] = useState<{ type: 'start' | 'end' | 'node', index?: number } | null>(null)
 
   const chamberRef = useRef<HTMLDivElement>(null)
   const photosContainerRef = useRef<HTMLDivElement>(null)
@@ -41,6 +66,32 @@ export default function LotteryMachineLivePage() {
   // 載入照片
   useEffect(() => {
     fetchPhotos()
+  }, [])
+
+  // 照片載入後啟動彈跳動畫
+  useEffect(() => {
+    if (photos.length > 0 && chamberRef.current && photosContainerRef.current) {
+      startBounceAnimation()
+    }
+  }, [photos])
+
+  // 待機狀態也顯示氣泡效果
+  useEffect(() => {
+    const airBubbles = document.getElementById('airBubbles')
+    if (!airBubbles) return
+    
+    const bubbleInterval = setInterval(() => {
+      const bubble = document.createElement('div')
+      bubble.className = 'bubble'
+      bubble.style.left = `${10 + Math.random() * 80}%`
+      bubble.style.animationDuration = `${1 + Math.random() * 0.5}s`
+      bubble.style.width = `${4 + Math.random() * 6}px`
+      bubble.style.height = bubble.style.width
+      airBubbles.appendChild(bubble)
+      setTimeout(() => bubble.remove(), 1400)
+    }, 100)
+    
+    return () => clearInterval(bubbleInterval)
   }, [])
 
   // 訂閱 Realtime 更新
@@ -259,6 +310,113 @@ export default function LotteryMachineLivePage() {
     platformSlots.appendChild(winnerEl)
   }
 
+  // 拖曳處理
+  const handleDragStart = (e: React.MouseEvent, type: 'start' | 'end' | 'node', index?: number) => {
+    e.preventDefault()
+    setDraggingNode({ type, index })
+  }
+
+  const handleDragMove = (e: React.MouseEvent) => {
+    if (!draggingNode) return
+    
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = ((e.clientX - rect.left) / rect.width) * 100
+    const y = ((e.clientY - rect.top) / rect.height) * 100
+    
+    const clampedX = Math.max(0, Math.min(100, x))
+    const clampedY = Math.max(0, Math.min(100, y))
+    
+    if (draggingNode.type === 'start') {
+      setTrackConfig(prev => ({ ...prev, startPoint: { x: clampedX, y: clampedY } }))
+    } else if (draggingNode.type === 'end') {
+      setTrackConfig(prev => ({ ...prev, endPoint: { x: clampedX, y: clampedY } }))
+    } else if (draggingNode.type === 'node' && draggingNode.index !== undefined) {
+      setTrackConfig(prev => ({
+        ...prev,
+        nodes: prev.nodes.map((n, i) => i === draggingNode.index ? { ...n, x: clampedX, y: clampedY } : n)
+      }))
+    }
+  }
+
+  const handleDragEnd = () => {
+    setDraggingNode(null)
+  }
+
+  const addNode = () => {
+    const newId = trackConfig.nodes.length + 1
+    const lastNode = trackConfig.nodes[trackConfig.nodes.length - 1] || trackConfig.startPoint
+    setTrackConfig(prev => ({
+      ...prev,
+      nodes: [
+        ...prev.nodes,
+        {
+          id: newId,
+          x: Math.min(95, lastNode.x + 10),
+          y: Math.max(5, lastNode.y - 10)
+        }
+      ]
+    }))
+  }
+
+  const removeNode = (index: number) => {
+    setTrackConfig(prev => ({
+      ...prev,
+      nodes: prev.nodes.filter((_, i) => i !== index).map((n, i) => ({ ...n, id: i + 1 }))
+    }))
+  }
+
+  const saveTrackConfig = async () => {
+    try {
+      const response = await fetch('/api/lottery-machine/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ trackConfig })
+      })
+      const data = await response.json()
+      if (data.success) {
+        alert('軌道設定已儲存')
+      } else {
+        alert('儲存失敗: ' + data.error)
+      }
+    } catch (err) {
+      alert('儲存失敗')
+    }
+  }
+
+  // 生成貝茲曲線路徑
+  const generateTrackPath = () => {
+    const { startPoint, endPoint, nodes } = trackConfig
+    const containerWidth = window.innerWidth
+    const containerHeight = window.innerHeight
+    
+    const start = { x: (startPoint.x / 100) * containerWidth, y: (startPoint.y / 100) * containerHeight }
+    const end = { x: (endPoint.x / 100) * containerWidth, y: (endPoint.y / 100) * containerHeight }
+    
+    const controlPoints = nodes.map(n => ({
+      x: (n.x / 100) * containerWidth,
+      y: (n.y / 100) * containerHeight
+    }))
+    
+    if (controlPoints.length === 0) {
+      return `M ${start.x},${start.y} L ${end.x},${end.y}`
+    }
+    
+    let path = `M ${start.x},${start.y}`
+    for (let i = 0; i < controlPoints.length; i++) {
+      const cp = controlPoints[i]
+      if (i === controlPoints.length - 1) {
+        path += ` Q ${cp.x},${cp.y} ${end.x},${end.y}`
+      } else {
+        const nextCp = controlPoints[i + 1]
+        const midX = (cp.x + nextCp.x) / 2
+        const midY = (cp.y + nextCp.y) / 2
+        path += ` Q ${cp.x},${cp.y} ${midX},${midY}`
+      }
+    }
+    
+    return path
+  }
+
   // 氣泡效果
   useEffect(() => {
     if (!lotteryState.is_lottery_active) return
@@ -304,25 +462,29 @@ export default function LotteryMachineLivePage() {
     )
   }
 
-  if (!lotteryState.is_lottery_active) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-100 to-indigo-100 flex items-center justify-center">
-        <div className="text-center">
-          <Gift className="w-32 h-32 text-gray-400 mx-auto mb-8" />
-          <h1 className="text-4xl font-bold text-gray-600 mb-4">彩票機</h1>
-          <p className="text-xl text-gray-500">等待開始...</p>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className="lottery-machine-live-page">
       {/* 標題 */}
       <div className="title">🎰 幸運抽獎機 🎰</div>
 
+      {/* 編輯器控制按鈕 */}
+      <div className="editor-controls">
+        <button
+          onClick={() => setIsEditorMode(!isEditorMode)}
+          className={`editor-btn ${isEditorMode ? 'active' : ''}`}
+        >
+          {isEditorMode ? '✓ 完成編輯' : '✏️ 編輯軌道'}
+        </button>
+        {isEditorMode && (
+          <>
+            <button onClick={addNode} className="editor-btn">➕ 新增節點</button>
+            <button onClick={saveTrackConfig} className="editor-btn save">💾 儲存設定</button>
+          </>
+        )}
+      </div>
+
       {/* 主要內容區域 */}
-      <div className="main-content">
+      <div className="main-content" onMouseMove={handleDragMove} onMouseUp={handleDragEnd}>
         {/* 中獎者平台 */}
         <div className="winners-platform">
           <div className="platform-surface">
@@ -345,9 +507,62 @@ export default function LotteryMachineLivePage() {
                   <stop offset="100%" style={{ stopColor: 'rgba(200, 100, 150, 0.7)' }} />
                 </linearGradient>
               </defs>
-              <path id="trackPath" className="track-path" d="M 400,100 C 600,100 600,50 200,50 L 200,300 L 400,300 L 400,400" />
+              <path id="trackPath" className="track-path" d={generateTrackPath()} />
             </svg>
           </div>
+
+          {/* 軌道編輯器 */}
+          {isEditorMode && (
+            <div className="track-editor">
+              {/* 起點 */}
+              <div
+                className={`track-node track-node-start ${draggingNode?.type === 'start' ? 'dragging' : ''}`}
+                style={{
+                  left: `${trackConfig.startPoint.x}%`,
+                  top: `${trackConfig.startPoint.y}%`
+                }}
+                onMouseDown={(e) => handleDragStart(e, 'start')}
+              >
+                <span className="node-label">起點</span>
+              </div>
+
+              {/* 終點 */}
+              <div
+                className={`track-node track-node-end ${draggingNode?.type === 'end' ? 'dragging' : ''}`}
+                style={{
+                  left: `${trackConfig.endPoint.x}%`,
+                  top: `${trackConfig.endPoint.y}%`
+                }}
+                onMouseDown={(e) => handleDragStart(e, 'end')}
+              >
+                <span className="node-label">終點</span>
+              </div>
+
+              {/* 節點 */}
+              {trackConfig.nodes.map((node, index) => (
+                <div
+                  key={node.id}
+                  className={`track-node ${draggingNode?.type === 'node' && draggingNode.index === index ? 'dragging' : ''}`}
+                  style={{
+                    left: `${node.x}%`,
+                    top: `${node.y}%`
+                  }}
+                  onMouseDown={(e) => handleDragStart(e, 'node', index)}
+                >
+                  <span className="node-label">{node.id}</span>
+                  <button
+                    className="node-delete"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      removeNode(index)
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* 彩票機腔體 */}
@@ -561,6 +776,129 @@ export default function LotteryMachineLivePage() {
           stroke-linecap: round;
           stroke-linejoin: round;
           filter: drop-shadow(0 2px 8px rgba(100,150,255,0.4));
+        }
+
+        .editor-controls {
+          position: fixed;
+          top: 16px;
+          right: 16px;
+          display: flex;
+          gap: 8px;
+          z-index: 1000;
+        }
+
+        .editor-btn {
+          padding: 8px 16px;
+          background: rgba(255, 255, 255, 0.1);
+          border: 2px solid rgba(255, 255, 255, 0.3);
+          border-radius: 8px;
+          color: white;
+          font-size: 0.85rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+
+        .editor-btn:hover {
+          background: rgba(255, 255, 255, 0.2);
+          transform: translateY(-2px);
+        }
+
+        .editor-btn.active {
+          background: linear-gradient(135deg, #f5af19 0%, #f12711 100%);
+          border-color: #f5af19;
+        }
+
+        .editor-btn.save {
+          background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+          border-color: #4CAF50;
+        }
+
+        .track-editor {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          pointer-events: auto;
+          z-index: 50;
+        }
+
+        .track-node {
+          position: absolute;
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: move;
+          transform: translate(-50%, -50%);
+          transition: transform 0.1s ease, box-shadow 0.1s ease;
+          z-index: 100;
+        }
+
+        .track-node:hover {
+          transform: translate(-50%, -50%) scale(1.1);
+        }
+
+        .track-node.dragging {
+          transform: translate(-50%, -50%) scale(1.2);
+          box-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+        }
+
+        .track-node-start {
+          background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+          border: 3px solid #81C784;
+          box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+        }
+
+        .track-node-end {
+          background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+          border: 3px solid #E57373;
+          box-shadow: 0 4px 15px rgba(244, 67, 54, 0.4);
+        }
+
+        .track-node:not(.track-node-start):not(.track-node-end) {
+          background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+          border: 3px solid #64B5F6;
+          box-shadow: 0 4px 15px rgba(33, 150, 243, 0.4);
+        }
+
+        .node-label {
+          color: white;
+          font-size: 0.7rem;
+          font-weight: 700;
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+          pointer-events: none;
+        }
+
+        .node-delete {
+          position: absolute;
+          top: -8px;
+          right: -8px;
+          width: 20px;
+          height: 20px;
+          background: #f44336;
+          border: 2px solid white;
+          border-radius: 50%;
+          color: white;
+          font-size: 0.7rem;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          opacity: 0;
+          transition: opacity 0.2s ease;
+        }
+
+        .track-node:hover .node-delete {
+          opacity: 1;
+        }
+
+        .node-delete:hover {
+          background: #d32f2f;
+          transform: scale(1.1);
         }
 
         .lottery-machine {
