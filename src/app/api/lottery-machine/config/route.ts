@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createSupabaseServer } from '@/lib/supabase-server'
+import { createSupabaseAdmin } from '@/lib/supabase-server'
 
 // 獲取彩球機設定
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createSupabaseServer()
+    const supabase = createSupabaseAdmin()
     
     console.log('📋 獲取彩球機設定...')
     
@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
 // 儲存彩球機設定
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createSupabaseServer()
+    const supabase = createSupabaseAdmin()
     const body = await request.json()
     
     const { trackConfig, physics, chamberStyle, platformStyle } = body
