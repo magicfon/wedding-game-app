@@ -403,32 +403,47 @@ export default function LotteryMachineLivePage() {
     return new Promise(resolve => {
       const container = photosContainerRef.current
       if (!container) {
+        console.error('❌ photos-container 不存在')
         resolve()
         return
       }
 
       const photoElements = Array.from(container.querySelectorAll('.photo-item')) as HTMLElement[]
+      console.log('📸 找到照片元素數量:', photoElements.length)
+      
       const winnerEl = photoElements.find((el: HTMLElement) => {
         const photoId = parseInt(el.dataset.id || '0')
         return photoId === winner.id
       })
 
       if (!winnerEl) {
-        console.warn('找不到中獎者照片元素:', winner.id)
+        console.error('❌ 找不到中獎者照片元素:', winner.id)
+        console.log('📋 所有照片 ID:', photoElements.map(el => parseInt(el.dataset.id || '0')))
         resolve()
         return
       }
 
       console.log('🎯 開始抽獎動畫，中獎者 ID:', winner.id)
+      console.log('📍 中獎者照片當前位置:', {
+        left: winnerEl.style.left,
+        top: winnerEl.style.top,
+        opacity: winnerEl.style.opacity,
+        zIndex: winnerEl.style.zIndex,
+        display: window.getComputedStyle(winnerEl).display,
+        visibility: window.getComputedStyle(winnerEl).visibility
+      })
 
       // 階段 1: 中獎照片瞬間移動到起點位置
       winnerEl.style.transition = 'none'
       winnerEl.style.zIndex = '1000'
+      winnerEl.style.opacity = '1'
+      winnerEl.style.visibility = 'visible'
       
       // 計算起點位置（相對於 photos-container）
       const trackContainer = trackContainerRef.current
       const photosContainer = photosContainerRef.current
       if (!trackContainer || !photosContainer) {
+        console.error('❌ track-container 或 photos-container 不存在')
         resolve()
         return
       }
@@ -436,21 +451,41 @@ export default function LotteryMachineLivePage() {
       const trackRect = trackContainer.getBoundingClientRect()
       const photosRect = photosContainer.getBoundingClientRect()
       
+      console.log('📐 容器尺寸:', {
+        trackRect: { width: trackRect.width, height: trackRect.height, left: trackRect.left, top: trackRect.top },
+        photosRect: { width: photosRect.width, height: photosRect.height, left: photosRect.left, top: photosRect.top },
+        startPoint: trackConfig.startPoint,
+        endPoint: trackConfig.endPoint
+      })
+      
       const startX = (trackConfig.startPoint.x / 100) * trackRect.width - photosRect.left
       const startY = (trackConfig.startPoint.y / 100) * trackRect.height - photosRect.top
+      
+      console.log('🚀 計算起點位置:', { startX, startY })
       
       winnerEl.style.left = `${startX}px`
       winnerEl.style.top = `${startY}px`
       winnerEl.style.transform = 'scale(1.5)'
+      
+      console.log('✅ 階段 1 完成：照片已移動到起點')
+      console.log('📍 照片新位置:', {
+        left: winnerEl.style.left,
+        top: winnerEl.style.top,
+        transform: winnerEl.style.transform
+      })
 
       // 階段 2: 沿著軌道滾動到終點
       setTimeout(() => {
         const endX = (trackConfig.endPoint.x / 100) * trackRect.width - photosRect.left
         const endY = (trackConfig.endPoint.y / 100) * trackRect.height - photosRect.top
         
-        winnerEl.style.transition = 'all 2s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+        console.log('🏁 計算終點位置:', { endX, endY })
+        
+        winnerEl.style.transition = 'all 2.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
         winnerEl.style.left = `${endX}px`
         winnerEl.style.top = `${endY}px`
+        
+        console.log('✅ 階段 2 開始：照片開始沿軌道滾動 (2.5秒)')
         
         // 添加滾動旋轉效果
         let rotation = 0
@@ -462,6 +497,8 @@ export default function LotteryMachineLivePage() {
         // 階段 3: 到達終點後，出現在 WINNER PLATFORM
         setTimeout(() => {
           clearInterval(rotateInterval)
+          
+          console.log('🎉 階段 3：照片到達終點')
           
           // 播放彩紙效果
           triggerConfetti()
@@ -478,6 +515,9 @@ export default function LotteryMachineLivePage() {
               <div class="platform-winner-rank">#${winners.length + 1}</div>
             `
             platformSlots.appendChild(winnerEl)
+            console.log('✅ 中獎者已添加到平台')
+          } else {
+            console.error('❌ platformSlots 不存在')
           }
           
           // 恢復中獎照片到腔體中（但隱藏它）
@@ -486,9 +526,10 @@ export default function LotteryMachineLivePage() {
             winnerEl.style.zIndex = '1'
             winnerEl.style.transform = ''
             
+            console.log('✅ 動畫完成，中獎照片已隱藏')
             resolve()
           }, 500)
-        }, 2000)
+        }, 2500)
       }, 100)
     })
   }
