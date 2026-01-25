@@ -63,6 +63,7 @@ export default function LotteryMachineLivePage() {
   const chamberRef = useRef<HTMLDivElement>(null)
   const photosContainerRef = useRef<HTMLDivElement>(null)
   const platformSlotsRef = useRef<HTMLDivElement>(null)
+  const trackContainerRef = useRef<HTMLDivElement>(null)
   const animationFrameRef = useRef<number | null>(null)
   const dragAnimationFrameRef = useRef<number | null>(null)
 
@@ -537,14 +538,51 @@ export default function LotteryMachineLivePage() {
     const containerWidth = windowSize.width
     const containerHeight = windowSize.height
     
+    // 使用 ref 獲取 track-container 的實際尺寸和位置
+    let trackRect = { left: 0, top: 0, width: containerWidth, height: containerHeight }
+    if (trackContainerRef.current) {
+      const rect = trackContainerRef.current.getBoundingClientRect()
+      trackRect = { left: rect.left, top: rect.top, width: rect.width, height: rect.height }
+    }
+    
+    // 獲取 SVG 容器的實際尺寸和位置
+    const svgContainer = document.querySelector('.track-svg-container')
+    let svgRect = { left: 0, top: 0, width: containerWidth, height: containerHeight }
+    if (svgContainer) {
+      const rect = svgContainer.getBoundingClientRect()
+      svgRect = { left: rect.left, top: rect.top, width: rect.width, height: rect.height }
+    }
+    
+    // 計算坐標偏移（SVG 容器相對於 track-container 的偏移）
+    const offsetX = svgRect.left - trackRect.left
+    const offsetY = svgRect.top - trackRect.top
+    
     // 節點有 transform: translate(-50%, -50%)，所以路徑需要對齊節點中心
-    const start = { x: (startPoint.x / 100) * containerWidth, y: (startPoint.y / 100) * containerHeight }
-    const end = { x: (endPoint.x / 100) * containerWidth, y: (endPoint.y / 100) * containerHeight }
+    // 節點是相對於 track-container 定位的，所以需要將坐標轉換到 SVG 容器的坐標系
+    const start = { 
+      x: (startPoint.x / 100) * trackRect.width - offsetX, 
+      y: (startPoint.y / 100) * trackRect.height - offsetY 
+    }
+    const end = { 
+      x: (endPoint.x / 100) * trackRect.width - offsetX, 
+      y: (endPoint.y / 100) * trackRect.height - offsetY 
+    }
     
     const controlPoints = nodes.map(n => ({
-      x: (n.x / 100) * containerWidth,
-      y: (n.y / 100) * containerHeight
+      x: (n.x / 100) * trackRect.width - offsetX,
+      y: (n.y / 100) * trackRect.height - offsetY
     }))
+    
+    // 調試日誌
+    console.log('📍 軌道路徑生成調試：', {
+      containerSize: { width: containerWidth, height: containerHeight },
+      svgRect: { left: svgRect.left, top: svgRect.top, width: svgRect.width, height: svgRect.height },
+      trackRect: { left: trackRect.left, top: trackRect.top, width: trackRect.width, height: trackRect.height },
+      offset: { x: offsetX, y: offsetY },
+      startPoint: { pct: startPoint, pixel: start },
+      endPoint: { pct: endPoint, pixel: end },
+      controlPoints: nodes.map((n, i) => ({ pct: n, pixel: controlPoints[i] }))
+    })
     
     if (controlPoints.length === 0) {
       return `M ${start.x},${start.y} L ${end.x},${end.y}`
@@ -633,7 +671,7 @@ export default function LotteryMachineLivePage() {
       </div>
 
       {/* 軌道容器 - 移到 main-content 之外 */}
-      <div className="track-container">
+      <div className="track-container" ref={trackContainerRef}>
         {/* SVG 軌道 */}
         <div className="track-svg-container">
           <svg xmlns="http://www.w3.org/2000/svg">
@@ -918,11 +956,14 @@ export default function LotteryMachineLivePage() {
           height: 100%;
           pointer-events: none;
           z-index: 4;
+          overflow: visible;
         }
 
         .track-svg-container svg {
           width: 100%;
           height: 100%;
+          display: block;
+          overflow: visible;
         }
 
         .track-path {
