@@ -401,14 +401,15 @@ export default function LotteryMachineLivePage() {
 
   const animateWinnerSelection = (winner: Photo): Promise<void> => {
     return new Promise(resolve => {
-      const container = photosContainerRef.current
-      if (!container) {
-        console.error('❌ photos-container 不存在')
+      const trackContainer = trackContainerRef.current
+      const photosContainer = photosContainerRef.current
+      if (!trackContainer || !photosContainer) {
+        console.error('❌ track-container 或 photos-container 不存在')
         resolve()
         return
       }
 
-      const photoElements = Array.from(container.querySelectorAll('.photo-item')) as HTMLElement[]
+      const photoElements = Array.from(photosContainer.querySelectorAll('.photo-item')) as HTMLElement[]
       console.log('📸 找到照片元素數量:', photoElements.length)
       
       const winnerEl = photoElements.find((el: HTMLElement) => {
@@ -424,81 +425,58 @@ export default function LotteryMachineLivePage() {
       }
 
       console.log('🎯 開始抽獎動畫，中獎者 ID:', winner.id)
-      console.log('📍 中獎者照片當前位置:', {
-        left: winnerEl.style.left,
-        top: winnerEl.style.top,
-        opacity: winnerEl.style.opacity,
-        zIndex: winnerEl.style.zIndex,
-        display: window.getComputedStyle(winnerEl).display,
-        visibility: window.getComputedStyle(winnerEl).visibility
-      })
 
-      // 階段 1: 中獎照片瞬間移動到起點位置
-      winnerEl.style.transition = 'none'
-      winnerEl.style.zIndex = '1000'
-      winnerEl.style.opacity = '1'
-      winnerEl.style.visibility = 'visible'
-      
-      // 計算起點位置（相對於 photos-container）
-      const trackContainer = trackContainerRef.current
-      const photosContainer = photosContainerRef.current
-      if (!trackContainer || !photosContainer) {
-        console.error('❌ track-container 或 photos-container 不存在')
-        resolve()
-        return
-      }
+      // 隱藏原始中獎照片
+      winnerEl.style.opacity = '0'
 
+      // 創建動畫元素（在 track-container 中）
+      const animationEl = document.createElement('div')
+      animationEl.className = 'winner-animation-ball'
+      animationEl.innerHTML = `<img src="${winner.image_url}" alt="${winner.display_name}">`
+      trackContainer.appendChild(animationEl)
+
+      // 設置動畫元素的初始樣式
       const trackRect = trackContainer.getBoundingClientRect()
-      const photosRect = photosContainer.getBoundingClientRect()
+      const startX = (trackConfig.startPoint.x / 100) * trackRect.width
+      const startY = (trackConfig.startPoint.y / 100) * trackRect.height
+      const endX = (trackConfig.endPoint.x / 100) * trackRect.width
+      const endY = (trackConfig.endPoint.y / 100) * trackRect.height
       
-      console.log('📐 容器尺寸:', {
-        trackRect: { width: trackRect.width, height: trackRect.height, left: trackRect.left, top: trackRect.top },
-        photosRect: { width: photosRect.width, height: photosRect.height, left: photosRect.left, top: photosRect.top },
+      console.log('📍 軌道坐標:', {
         startPoint: trackConfig.startPoint,
-        endPoint: trackConfig.endPoint
+        endPoint: trackConfig.endPoint,
+        startPixel: { x: startX, y: startY },
+        endPixel: { x: endX, y: endY }
       })
+
+      // 階段 1: 將動畫球瞬間移動到起點
+      animationEl.style.transition = 'none'
+      animationEl.style.left = `${startX}px`
+      animationEl.style.top = `${startY}px`
+      animationEl.style.transform = 'translate(-50%, -50%) scale(1.5)'
       
-      const startX = (trackConfig.startPoint.x / 100) * trackRect.width - photosRect.left
-      const startY = (trackConfig.startPoint.y / 100) * trackRect.height - photosRect.top
-      
-      console.log('🚀 計算起點位置:', { startX, startY })
-      
-      winnerEl.style.left = `${startX}px`
-      winnerEl.style.top = `${startY}px`
-      winnerEl.style.transform = 'scale(1.5)'
-      
-      console.log('✅ 階段 1 完成：照片已移動到起點')
-      console.log('📍 照片新位置:', {
-        left: winnerEl.style.left,
-        top: winnerEl.style.top,
-        transform: winnerEl.style.transform
-      })
+      console.log('✅ 階段 1 完成：動畫球已移動到起點')
 
       // 階段 2: 沿著軌道滾動到終點
       setTimeout(() => {
-        const endX = (trackConfig.endPoint.x / 100) * trackRect.width - photosRect.left
-        const endY = (trackConfig.endPoint.y / 100) * trackRect.height - photosRect.top
+        animationEl.style.transition = 'all 2.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+        animationEl.style.left = `${endX}px`
+        animationEl.style.top = `${endY}px`
         
-        console.log('🏁 計算終點位置:', { endX, endY })
-        
-        winnerEl.style.transition = 'all 2.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
-        winnerEl.style.left = `${endX}px`
-        winnerEl.style.top = `${endY}px`
-        
-        console.log('✅ 階段 2 開始：照片開始沿軌道滾動 (2.5秒)')
+        console.log('✅ 階段 2 開始：動畫球開始沿軌道滾動 (2.5秒)')
         
         // 添加滾動旋轉效果
         let rotation = 0
         const rotateInterval = setInterval(() => {
           rotation += 15
-          winnerEl.style.transform = `scale(1.5) rotate(${rotation}deg)`
+          animationEl.style.transform = `translate(-50%, -50%) scale(1.5) rotate(${rotation}deg)`
         }, 50)
         
         // 階段 3: 到達終點後，出現在 WINNER PLATFORM
         setTimeout(() => {
           clearInterval(rotateInterval)
           
-          console.log('🎉 階段 3：照片到達終點')
+          console.log('🎉 階段 3：動畫球到達終點')
           
           // 播放彩紙效果
           triggerConfetti()
@@ -520,13 +498,10 @@ export default function LotteryMachineLivePage() {
             console.error('❌ platformSlots 不存在')
           }
           
-          // 恢復中獎照片到腔體中（但隱藏它）
+          // 移除動畫元素
           setTimeout(() => {
-            winnerEl.style.opacity = '0'
-            winnerEl.style.zIndex = '1'
-            winnerEl.style.transform = ''
-            
-            console.log('✅ 動畫完成，中獎照片已隱藏')
+            animationEl.remove()
+            console.log('✅ 動畫完成，動畫球已移除')
             resolve()
           }, 500)
         }, 2500)
@@ -1486,6 +1461,24 @@ export default function LotteryMachineLivePage() {
             transform: translateY(100vh) rotate(720deg);
             opacity: 0;
           }
+        }
+
+        .winner-animation-ball {
+          position: absolute;
+          width: clamp(45px, 5vw, 75px);
+          height: clamp(45px, 5vw, 75px);
+          border-radius: 50%;
+          overflow: hidden;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+          border: 3px solid #ffd700;
+          z-index: 1000;
+          will-change: transform, left, top;
+        }
+
+        .winner-animation-ball img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
         }
       `}</style>
     </div>
