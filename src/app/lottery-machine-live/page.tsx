@@ -59,6 +59,7 @@ export default function LotteryMachineLivePage() {
   const [draggingNode, setDraggingNode] = useState<{ type: 'start' | 'end' | 'node', index?: number } | null>(null)
   const [windowSize, setWindowSize] = useState({ width: typeof window !== 'undefined' ? window.innerWidth : 1920, height: typeof window !== 'undefined' ? window.innerHeight : 1080 })
   const [dragPosition, setDragPosition] = useState<{ x: number; y: number } | null>(null)
+  const [isAnimating, setIsAnimating] = useState(false)
 
   const chamberRef = useRef<HTMLDivElement>(null)
   const photosContainerRef = useRef<HTMLDivElement>(null)
@@ -266,6 +267,12 @@ export default function LotteryMachineLivePage() {
     })
 
     const animate = () => {
+      // 如果正在抽獎動畫中，跳過彈跳動畫
+      if (isAnimating) {
+        animationFrameRef.current = requestAnimationFrame(animate)
+        return
+      }
+
       photoElements.forEach((photoEl: Element) => {
         const el = photoEl as HTMLElement
         const x = parseFloat(el.style.left || '0')
@@ -375,10 +382,20 @@ export default function LotteryMachineLivePage() {
       if (data.success) {
         setLotteryState(prev => ({ ...prev, is_drawing: true }))
 
-        // 動畫效果
-        await animateWinnerSelection(data.winner)
+        // 構建完整的 Photo 物件用於動畫
+        const winnerPhoto: Photo = {
+          id: data.winner_photo.id,
+          image_url: data.winner_photo.url,
+          user_id: data.winner.line_id,
+          display_name: data.winner.display_name,
+          avatar_url: data.winner.avatar_url
+        }
 
-        setWinners(prev => [...prev, { photo: data.winner, order: prev.length + 1 }])
+        // 動畫效果 - 傳入完整的 Photo 物件
+        await animateWinnerSelection(winnerPhoto)
+
+        // 將中獎者添加到得獎者列表
+        setWinners(prev => [...prev, { photo: winnerPhoto, order: prev.length + 1 }])
         setLotteryState(prev => ({ ...prev, is_drawing: false }))
       } else {
         setError(data.error || '抽獎失敗')
@@ -391,27 +408,120 @@ export default function LotteryMachineLivePage() {
 
   const animateWinnerSelection = (winner: Photo): Promise<void> => {
     return new Promise(resolve => {
-      // 選中一個照片並高亮
-      const container = photosContainerRef.current
-      if (!container) return
+      setIsAnimating(true)
       
-      const photoElements = container.querySelectorAll('.photo-item')
-      const winnerEl = Array.from(photoElements).find((el: Element) => {
-        const photoId = parseInt((el as HTMLElement).dataset.id || '0')
+      const container = photosContainerRef.current
+      if (!container) {
+        setIsAnimating(false)
+        resolve()
+        return
+      }
+
+      const photoElements = Array.from(container.querySelectorAll('.photo-item')) as HTMLElement[]
+      const winnerEl = photoElements.find((el: HTMLElement) => {
+        const photoId = parseInt(el.dataset.id || '0')
         return photoId === winner.id
       })
-      
-      if (winnerEl) {
-        winnerEl.classList.add('selected')
-        
-        // 2秒後揭曉
-        setTimeout(() => {
-          resolve()
-        }, 2000)
-      } else {
+
+      if (!winnerEl) {
+        console.warn('找不到中獎者照片元素:', winner.id)
+        setIsAnimating(false)
         resolve()
+        return
       }
+
+      console.log('🎯 開始抽獎動畫，中獎者 ID:', winner.id)
+
+      // 階段 1: 縮小所有照片
+      photoElements.forEach(el => {
+        el.style.transition = 'transform 0.3s ease-out, opacity 0.3s ease-out'
+        el.style.transform = 'scale(0.3)'
+        el.style.opacity = '0.3'
+      })
+
+      // 階段 2: 快速閃爍照片，模擬抽獎過程
+      let flashCount = 0
+      const maxFlashes = 8
+      const flashInterval = setInterval(() => {
+        // 隨機選擇一張照片放大
+        photoElements.forEach(el => {
+          el.style.transform = 'scale(0.3)'
+          el.style.opacity = '0.3'
+        })
+
+        const randomIndex = Math.floor(Math.random() * photoElements.length)
+        const randomEl = photoElements[randomIndex]
+        randomEl.style.transform = 'scale(1.2)'
+        randomEl.style.opacity = '1'
+
+        flashCount++
+        if (flashCount >= maxFlashes) {
+          clearInterval(flashInterval)
+
+          // 階段 3: 顯示中獎者
+          setTimeout(() => {
+            // 縮小所有照片
+            photoElements.forEach(el => {
+              el.style.transform = 'scale(0.2)'
+              el.style.opacity = '0.2'
+            })
+
+            // 高亮中獎者
+            setTimeout(() => {
+              winnerEl.classList.add('selected')
+              winnerEl.style.transform = 'scale(1.5)'
+              winnerEl.style.opacity = '1'
+              winnerEl.style.zIndex = '1000'
+
+              // 階段 4: 播放彩紙效果
+              triggerConfetti()
+
+              // 2秒後揭曉
+              setTimeout(() => {
+                // 恢復所有照片的正常狀態
+                photoElements.forEach(el => {
+                  el.style.transition = 'transform 0.5s ease-out, opacity 0.5s ease-out'
+                  el.style.transform = ''
+                  el.style.opacity = '1'
+                  el.style.zIndex = '1'
+                })
+                
+                // 移除中獎者的 selected class
+                winnerEl.classList.remove('selected')
+                winnerEl.style.transform = ''
+                winnerEl.style.zIndex = '1'
+                
+                setIsAnimating(false)
+                resolve()
+              }, 2000)
+            }, 300)
+          }, 200)
+        }
+      }, 150)
     })
+  }
+
+  const triggerConfetti = () => {
+    const container = document.querySelector('.confetti-container')
+    if (!container) return
+
+    const colors = ['#f5af19', '#f12711', '#4CAF50', '#2196F3', '#9C27B0', '#FF9800']
+    const confettiCount = 100
+
+    for (let i = 0; i < confettiCount; i++) {
+      const confetti = document.createElement('div')
+      confetti.className = 'confetti'
+      confetti.style.left = `${Math.random() * 100}%`
+      confetti.style.top = '-10px'
+      confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)]
+      confetti.style.width = `${5 + Math.random() * 10}px`
+      confetti.style.height = `${5 + Math.random() * 10}px`
+      confetti.style.animationDuration = `${2 + Math.random() * 3}s`
+      confetti.style.animationDelay = `${Math.random() * 0.5}s`
+      container.appendChild(confetti)
+
+      setTimeout(() => confetti.remove(), 5000)
+    }
   }
 
   const addToPlatform = (winner: Winner) => {
@@ -1326,6 +1436,23 @@ export default function LotteryMachineLivePage() {
           pointer-events: none;
           z-index: 1000;
           overflow: hidden;
+        }
+
+        .confetti {
+          position: absolute;
+          border-radius: 2px;
+          animation: confettiFall linear forwards;
+        }
+
+        @keyframes confettiFall {
+          0% {
+            transform: translateY(0) rotate(0deg);
+            opacity: 1;
+          }
+          100% {
+            transform: translateY(100vh) rotate(720deg);
+            opacity: 0;
+          }
         }
       `}</style>
     </div>
