@@ -435,76 +435,91 @@ export default function LotteryMachineLivePage() {
       animationEl.innerHTML = `<img src="${winner.image_url}" alt="${winner.display_name}">`
       trackContainer.appendChild(animationEl)
 
-      // 設置動畫元素的初始樣式
+      // 計算軌道上的所有點（起點 + 節點 + 終點）
       const trackRect = trackContainer.getBoundingClientRect()
-      const startX = (trackConfig.startPoint.x / 100) * trackRect.width
-      const startY = (trackConfig.startPoint.y / 100) * trackRect.height
-      const endX = (trackConfig.endPoint.x / 100) * trackRect.width
-      const endY = (trackConfig.endPoint.y / 100) * trackRect.height
+      const points = [
+        { x: (trackConfig.startPoint.x / 100) * trackRect.width, y: (trackConfig.startPoint.y / 100) * trackRect.height },
+        ...trackConfig.nodes.map(n => ({ x: (n.x / 100) * trackRect.width, y: (n.y / 100) * trackRect.height })),
+        { x: (trackConfig.endPoint.x / 100) * trackRect.width, y: (trackConfig.endPoint.y / 100) * trackRect.height }
+      ]
       
-      console.log('📍 軌道坐標:', {
-        startPoint: trackConfig.startPoint,
-        endPoint: trackConfig.endPoint,
-        startPixel: { x: startX, y: startY },
-        endPixel: { x: endX, y: endY }
-      })
+      console.log('📍 軌道路徑點:', points)
 
       // 階段 1: 將動畫球瞬間移動到起點
       animationEl.style.transition = 'none'
-      animationEl.style.left = `${startX}px`
-      animationEl.style.top = `${startY}px`
+      animationEl.style.left = `${points[0].x}px`
+      animationEl.style.top = `${points[0].y}px`
       animationEl.style.transform = 'translate(-50%, -50%) scale(1.5)'
       
       console.log('✅ 階段 1 完成：動畫球已移動到起點')
 
-      // 階段 2: 沿著軌道滾動到終點
+      // 階段 2: 沿著軌道滾動到終點（經過所有節點）
       setTimeout(() => {
-        animationEl.style.transition = 'all 2.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
-        animationEl.style.left = `${endX}px`
-        animationEl.style.top = `${endY}px`
-        
-        console.log('✅ 階段 2 開始：動畫球開始沿軌道滾動 (2.5秒)')
-        
-        // 添加滾動旋轉效果
+        const totalDuration = 2500 // 2.5秒
+        const startTime = performance.now()
         let rotation = 0
-        const rotateInterval = setInterval(() => {
+        
+        const animate = (currentTime: number) => {
+          const elapsed = currentTime - startTime
+          const progress = Math.min(elapsed / totalDuration, 1)
+          
+          // 計算當前應該在哪個線段上
+          const totalSegments = points.length - 1
+          const segmentProgress = progress * totalSegments
+          const currentSegment = Math.min(Math.floor(segmentProgress), totalSegments - 1)
+          const segmentT = segmentProgress - currentSegment
+          
+          // 線性插值計算當前位置
+          const p1 = points[currentSegment]
+          const p2 = points[currentSegment + 1]
+          const x = p1.x + (p2.x - p1.x) * segmentT
+          const y = p1.y + (p2.y - p1.y) * segmentT
+          
+          // 更新動畫球位置
+          animationEl.style.left = `${x}px`
+          animationEl.style.top = `${y}px`
+          
+          // 滾動旋轉效果
           rotation += 15
           animationEl.style.transform = `translate(-50%, -50%) scale(1.5) rotate(${rotation}deg)`
-        }, 50)
-        
-        // 階段 3: 到達終點後，出現在 WINNER PLATFORM
-        setTimeout(() => {
-          clearInterval(rotateInterval)
           
-          console.log('🎉 階段 3：動畫球到達終點')
-          
-          // 播放彩紙效果
-          triggerConfetti()
-          
-          // 將中獎者添加到平台
-          const platformSlots = platformSlotsRef.current
-          if (platformSlots) {
-            const winnerEl = document.createElement('div')
-            winnerEl.className = 'platform-winner'
-            winnerEl.innerHTML = `
-              <div class="platform-winner-photo">
-                <img src="${winner.image_url}" alt="${winner.display_name}">
-              </div>
-              <div class="platform-winner-rank">#${winners.length + 1}</div>
-            `
-            platformSlots.appendChild(winnerEl)
-            console.log('✅ 中獎者已添加到平台')
+          if (progress < 1) {
+            requestAnimationFrame(animate)
           } else {
-            console.error('❌ platformSlots 不存在')
+            // 階段 3: 到達終點後，出現在 WINNER PLATFORM
+            console.log('🎉 階段 3：動畫球到達終點')
+            
+            // 播放彩紙效果
+            triggerConfetti()
+            
+            // 將中獎者添加到平台
+            const platformSlots = platformSlotsRef.current
+            if (platformSlots) {
+              const winnerEl = document.createElement('div')
+              winnerEl.className = 'platform-winner'
+              winnerEl.innerHTML = `
+                <div class="platform-winner-photo">
+                  <img src="${winner.image_url}" alt="${winner.display_name}">
+                </div>
+                <div class="platform-winner-rank">#${winners.length + 1}</div>
+              `
+              platformSlots.appendChild(winnerEl)
+              console.log('✅ 中獎者已添加到平台')
+            } else {
+              console.error('❌ platformSlots 不存在')
+            }
+            
+            // 移除動畫元素
+            setTimeout(() => {
+              animationEl.remove()
+              console.log('✅ 動畫完成，動畫球已移除')
+              resolve()
+            }, 500)
           }
-          
-          // 移除動畫元素
-          setTimeout(() => {
-            animationEl.remove()
-            console.log('✅ 動畫完成，動畫球已移除')
-            resolve()
-          }, 500)
-        }, 2500)
+        }
+        
+        console.log('✅ 階段 2 開始：動畫球開始沿軌道滾動 (2.5秒)')
+        requestAnimationFrame(animate)
       }, 100)
     })
   }
