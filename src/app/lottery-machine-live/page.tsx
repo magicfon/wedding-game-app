@@ -554,9 +554,20 @@ export default function LotteryMachineLivePage() {
     
     curveWaypoints.forEach(pt => {
       // 使用與 generateTrackPath 相同的坐標轉換邏輯
+      // generateTrackPath 中的公式：x: (pt.x / 100) * trackRect.width - offsetX
+      // 這裡我們需要減去 halfSize 來讓元素中心對齊軌道中心
       const relativeX = (pt.x / 100) * trackRect.width - offsetX - halfSize
       const relativeY = (pt.y / 100) * trackRect.height - offsetY - halfSize
       waypoints.push({ x: relativeX, y: relativeY })
+    })
+    
+    console.log('📍 路徑點生成：', {
+      trackRect: { left: trackRect.left, top: trackRect.top, width: trackRect.width, height: trackRect.height },
+      svgRect: { left: svgRect.left, top: svgRect.top, width: svgRect.width, height: svgRect.height },
+      offset: { x: offsetX, y: offsetY },
+      initialPos: { x: initialX, y: initialY },
+      firstWaypoint: waypoints[1],
+      lastWaypoint: waypoints[waypoints.length - 1]
     })
     
     return waypoints
@@ -824,18 +835,19 @@ export default function LotteryMachineLivePage() {
     
     // 節點有 transform: translate(-50%, -50%)，所以路徑需要對齊節點中心
     // 節點是相對於 track-container 定位的，所以需要將坐標轉換到 SVG 容器的坐標系
-    const start = { 
-      x: (startPoint.x / 100) * trackRect.width - offsetX, 
-      y: (startPoint.y / 100) * trackRect.height - offsetY 
+    const halfSize = 21 // 彩球直徑的一半 (42 / 2)
+    const start = {
+      x: (startPoint.x / 100) * trackRect.width - offsetX - halfSize,
+      y: (startPoint.y / 100) * trackRect.height - offsetY - halfSize
     }
-    const end = { 
-      x: (endPoint.x / 100) * trackRect.width - offsetX, 
-      y: (endPoint.y / 100) * trackRect.height - offsetY 
+    const end = {
+      x: (endPoint.x / 100) * trackRect.width - offsetX - halfSize,
+      y: (endPoint.y / 100) * trackRect.height - offsetY - halfSize
     }
     
     const controlPoints = nodes.map(n => ({
-      x: (n.x / 100) * trackRect.width - offsetX,
-      y: (n.y / 100) * trackRect.height - offsetY
+      x: (n.x / 100) * trackRect.width - offsetX - halfSize,
+      y: (n.y / 100) * trackRect.height - offsetY - halfSize
     }))
     
     // 調試日誌
