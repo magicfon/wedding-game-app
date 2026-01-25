@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { Gift } from 'lucide-react'
 
 interface Photo {
@@ -57,11 +57,22 @@ export default function LotteryMachineLivePage() {
   })
   const [isEditorMode, setIsEditorMode] = useState(false)
   const [draggingNode, setDraggingNode] = useState<{ type: 'start' | 'end' | 'node', index?: number } | null>(null)
+  const [windowSize, setWindowSize] = useState({ width: typeof window !== 'undefined' ? window.innerWidth : 1920, height: typeof window !== 'undefined' ? window.innerHeight : 1080 })
 
   const chamberRef = useRef<HTMLDivElement>(null)
   const photosContainerRef = useRef<HTMLDivElement>(null)
   const platformSlotsRef = useRef<HTMLDivElement>(null)
   const animationFrameRef = useRef<number | null>(null)
+
+  // 監聽窗口大小變化
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowSize({ width: window.innerWidth, height: window.innerHeight })
+    }
+    
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   // 載入照片
   useEffect(() => {
@@ -400,15 +411,22 @@ export default function LotteryMachineLivePage() {
   // 拖曳處理
   const handleDragStart = (e: React.MouseEvent, type: 'start' | 'end' | 'node', index?: number) => {
     e.preventDefault()
+    e.stopPropagation()
     setDraggingNode({ type, index })
+    
+    // 啟用 track-container 的 pointer-events 以便接收滑鼠事件
+    const trackContainer = document.querySelector('.track-container') as HTMLElement
+    if (trackContainer) {
+      trackContainer.style.pointerEvents = 'auto'
+    }
   }
 
   const handleDragMove = (e: React.MouseEvent) => {
     if (!draggingNode) return
 
     // 使用整個視窗的尺寸，不受 main-content 限制
-    const x = (e.clientX / window.innerWidth) * 100
-    const y = (e.clientY / window.innerHeight) * 100
+    const x = (e.clientX / windowSize.width) * 100
+    const y = (e.clientY / windowSize.height) * 100
 
     const clampedX = Math.max(0, Math.min(100, x))
     const clampedY = Math.max(0, Math.min(100, y))
@@ -427,6 +445,12 @@ export default function LotteryMachineLivePage() {
 
   const handleDragEnd = () => {
     setDraggingNode(null)
+    
+    // 恢復 track-container 的 pointer-events 為 none
+    const trackContainer = document.querySelector('.track-container') as HTMLElement
+    if (trackContainer) {
+      trackContainer.style.pointerEvents = 'none'
+    }
   }
 
   const addNode = () => {
@@ -471,10 +495,10 @@ export default function LotteryMachineLivePage() {
   }
 
   // 生成貝茲曲線路徑
-  const generateTrackPath = () => {
+  const generateTrackPath = useCallback(() => {
     const { startPoint, endPoint, nodes } = trackConfig
-    const containerWidth = window.innerWidth
-    const containerHeight = window.innerHeight
+    const containerWidth = windowSize.width
+    const containerHeight = windowSize.height
     
     const start = { x: (startPoint.x / 100) * containerWidth, y: (startPoint.y / 100) * containerHeight }
     const end = { x: (endPoint.x / 100) * containerWidth, y: (endPoint.y / 100) * containerHeight }
@@ -502,7 +526,7 @@ export default function LotteryMachineLivePage() {
     }
     
     return path
-  }
+  }, [trackConfig, windowSize])
 
   // 氣泡效果
   useEffect(() => {
