@@ -518,11 +518,22 @@ export default function LotteryMachineLivePage() {
 
   // 生成路徑點（使用 Catmull-Rom spline）
   const generateWaypoints = (photoRect: DOMRect) => {
-    // 使用 mainContent 作為坐標系（參考 lottery/ 的實現）
-    const mainContent = document.querySelector('.main-content') as HTMLElement
-    if (!mainContent) return []
+    // 使用 track-container 作為坐標系（與 generateTrackPath 保持一致）
+    const trackContainer = trackContainerRef.current
+    if (!trackContainer) return []
     
-    const mainRect = mainContent.getBoundingClientRect()
+    const trackRect = trackContainer.getBoundingClientRect()
+    
+    // 獲取 SVG 容器的實際尺寸和位置
+    const svgContainer = document.querySelector('.track-svg-container')
+    if (!svgContainer) return []
+    
+    const svgRect = svgContainer.getBoundingClientRect()
+    
+    // 計算坐標偏移（SVG 容器相對於 track-container 的偏移）
+    const offsetX = svgRect.left - trackRect.left
+    const offsetY = svgRect.top - trackRect.top
+    
     const halfSize = 21 // 彩球直徑的一半 (42 / 2)
     
     // 構建控制點
@@ -535,12 +546,13 @@ export default function LotteryMachineLivePage() {
     // 生成平滑曲線路徑點（Catmull-Rom spline 採樣）
     const curveWaypoints = sampleCatmullRomSpline(controlPoints, 50)
     
-    // 轉換百分比坐標為螢幕坐標
+    // 轉換百分比坐標為螢幕坐標（與 generateTrackPath 使用相同的坐標系）
     const waypoints = [{ x: photoRect.left, y: photoRect.top }]
     
     curveWaypoints.forEach(pt => {
-      const screenX = mainRect.left + (pt.x / 100) * mainRect.width - halfSize
-      const screenY = mainRect.top + (pt.y / 100) * mainRect.height - halfSize
+      // 使用與 generateTrackPath 相同的坐標轉換邏輯
+      const screenX = trackRect.left + (pt.x / 100) * trackRect.width - offsetX - halfSize
+      const screenY = trackRect.top + (pt.y / 100) * trackRect.height - offsetY - halfSize
       waypoints.push({ x: screenX, y: screenY })
     })
     
