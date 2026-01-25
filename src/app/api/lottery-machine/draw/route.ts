@@ -123,6 +123,12 @@ export async function POST(request: NextRequest) {
     const photoCount = userPhotos?.length || 0
 
     // 8. 記錄中獎者
+    // 只存儲必要的信息，避免 payload string too long 錯誤
+    const participantsSnapshot = photos.map(p => ({
+      id: p.id,
+      user_id: p.user_id
+    }))
+
     const { data: lotteryRecord, error: recordError } = await supabase
       .from('lottery_history')
       .insert({
@@ -135,7 +141,7 @@ export async function POST(request: NextRequest) {
         admin_id: admin_id || 'system',
         admin_name: admin_name || '系統管理員',
         participants_count: photos.length,
-        participants_snapshot: JSON.stringify(photos),
+        participants_snapshot: JSON.stringify(participantsSnapshot),
         notes: notes || null
       })
       .select()
