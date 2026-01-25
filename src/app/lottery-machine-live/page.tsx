@@ -588,17 +588,41 @@ export default function LotteryMachineLivePage() {
       return `M ${start.x},${start.y} L ${end.x},${end.y}`
     }
     
-    let path = `M ${start.x},${start.y}`
-    for (let i = 0; i < controlPoints.length; i++) {
-      const cp = controlPoints[i]
-      if (i === controlPoints.length - 1) {
-        path += ` Q ${cp.x},${cp.y} ${end.x},${end.y}`
-      } else {
-        const nextCp = controlPoints[i + 1]
-        const midX = (cp.x + nextCp.x) / 2
-        const midY = (cp.y + nextCp.y) / 2
-        path += ` Q ${cp.x},${cp.y} ${midX},${midY}`
+    // 使用 Catmull-Rom 樣條曲線生成平滑路徑
+    // 這種曲線確保路徑穿過所有控制點，並且在節點之間平滑連接
+    const points = [start, ...controlPoints, end]
+    
+    if (points.length < 2) {
+      return `M ${start.x},${start.y} L ${end.x},${end.y}`
+    }
+    
+    // Catmull-Rom 樣條曲線轉換為貝茲曲線
+    const catmullRom2Bezier = (p0: { x: number; y: number }, p1: { x: number; y: number }, p2: { x: number; y: number }, p3: { x: number; y: number }) => {
+      const t = 0.5 // tension parameter, lower = smoother
+      
+      const cp1x = p1.x + (p2.x - p0.x) / 6 * t
+      const cp1y = p1.y + (p2.y - p0.y) / 6 * t
+      
+      const cp2x = p2.x - (p3.x - p1.x) / 6 * t
+      const cp2y = p2.y - (p3.y - p1.y) / 6 * t
+      
+      return {
+        cp1: { x: cp1x, y: cp1y },
+        cp2: { x: cp2x, y: cp2y },
+        end: { x: p2.x, y: p2.y }
       }
+    }
+    
+    let path = `M ${points[0].x},${points[0].y}`
+    
+    for (let i = 0; i < points.length - 1; i++) {
+      const p0 = points[Math.max(0, i - 1)]
+      const p1 = points[i]
+      const p2 = points[i + 1]
+      const p3 = points[Math.min(points.length - 1, i + 2)]
+      
+      const bezier = catmullRom2Bezier(p0, p1, p2, p3)
+      path += ` C ${bezier.cp1.x},${bezier.cp1.y} ${bezier.cp2.x},${bezier.cp2.y} ${bezier.end.x},${bezier.end.y}`
     }
     
     return path
