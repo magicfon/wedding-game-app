@@ -429,29 +429,24 @@ export default function LotteryMachineLivePage() {
       // 隱藏原始中獎照片
       winnerEl.style.opacity = '0'
 
-      // 創建動畫元素（添加到 track-container，使用 position: absolute）
+      // 創建動畫元素（添加到 document.body，使用 position: fixed，與 lottery/ 完全相同）
       const travelingPhoto = document.createElement('div')
       travelingPhoto.className = 'photo-traveling'
       travelingPhoto.innerHTML = `<img src="${winner.image_url}" alt="${winner.display_name}">`
-      trackContainer.appendChild(travelingPhoto)
+      document.body.appendChild(travelingPhoto)
 
-      // 設置動畫元素的初始樣式
+      // 設置動畫元素的初始樣式（使用螢幕坐標，與 lottery/ 完全相同）
       const photoRect = winnerEl.getBoundingClientRect()
-      const trackRect = trackContainer.getBoundingClientRect()
       const photoSize = 42 // 彩球直徑
       
-      // 計算相對於 track-container 的初始位置
-      const initialX = photoRect.left - trackRect.left
-      const initialY = photoRect.top - trackRect.top
-      
       travelingPhoto.style.transition = 'none'
-      travelingPhoto.style.left = `${initialX}px`
-      travelingPhoto.style.top = `${initialY}px`
+      travelingPhoto.style.left = `${photoRect.left}px`
+      travelingPhoto.style.top = `${photoRect.top}px`
       travelingPhoto.style.width = `${photoSize}px`
       travelingPhoto.style.height = `${photoSize}px`
       
       // 生成路徑點（使用 Catmull-Rom spline）
-      const waypoints = generateWaypoints(photoRect, trackRect)
+      const waypoints = generateWaypoints(photoRect)
       console.log('📍 路徑點數量:', waypoints.length)
       console.log('📍 前5個路徑點:', waypoints.slice(0, 5))
       console.log('📍 最後5個路徑點:', waypoints.slice(-5))
@@ -521,18 +516,13 @@ export default function LotteryMachineLivePage() {
     })
   }
 
-  // 生成路徑點（使用 Catmull-Rom spline）
-  const generateWaypoints = (photoRect: DOMRect, trackRect: DOMRect) => {
-    // 獲取 SVG 容器的實際尺寸和位置
-    const svgContainer = document.querySelector('.track-svg-container')
-    if (!svgContainer) return []
+  // 生成路徑點（使用 Catmull-Rom spline，與 lottery/ 完全相同）
+  const generateWaypoints = (photoRect: DOMRect) => {
+    // 使用 mainContent 作為坐標系（與 lottery/ 完全相同）
+    const mainContent = document.querySelector('.main-content') as HTMLElement
+    if (!mainContent) return []
     
-    const svgRect = svgContainer.getBoundingClientRect()
-    
-    // 計算坐標偏移（SVG 容器相對於 track-container 的偏移）
-    const offsetX = svgRect.left - trackRect.left
-    const offsetY = svgRect.top - trackRect.top
-    
+    const mainRect = mainContent.getBoundingClientRect()
     const halfSize = 21 // 彩球直徑的一半 (42 / 2)
     
     // 構建控制點
@@ -545,27 +535,19 @@ export default function LotteryMachineLivePage() {
     // 生成平滑曲線路徑點（Catmull-Rom spline 採樣）
     const curveWaypoints = sampleCatmullRomSpline(controlPoints, 50)
     
-    // 計算相對於 track-container 的初始位置
-    const initialX = photoRect.left - trackRect.left
-    const initialY = photoRect.top - trackRect.top
-    
-    // 轉換百分比坐標為相對於 track-container 的坐標
-    const waypoints = [{ x: initialX, y: initialY }]
+    // 轉換百分比坐標為螢幕坐標（與 lottery/ 完全相同）
+    const waypoints = [{ x: photoRect.left, y: photoRect.top }]
     
     curveWaypoints.forEach(pt => {
-      // 使用與 generateTrackPath 相同的坐標轉換邏輯
-      // generateTrackPath 中的公式：x: (pt.x / 100) * trackRect.width - offsetX
-      // 這裡我們需要減去 halfSize 來讓元素中心對齊軌道中心
-      const relativeX = (pt.x / 100) * trackRect.width - offsetX - halfSize
-      const relativeY = (pt.y / 100) * trackRect.height - offsetY - halfSize
-      waypoints.push({ x: relativeX, y: relativeY })
+      const screenX = mainRect.left + (pt.x / 100) * mainRect.width - halfSize
+      const screenY = mainRect.top + (pt.y / 100) * mainRect.height - halfSize
+      waypoints.push({ x: screenX, y: screenY })
     })
     
     console.log('📍 路徑點生成：', {
-      trackRect: { left: trackRect.left, top: trackRect.top, width: trackRect.width, height: trackRect.height },
-      svgRect: { left: svgRect.left, top: svgRect.top, width: svgRect.width, height: svgRect.height },
-      offset: { x: offsetX, y: offsetY },
-      initialPos: { x: initialX, y: initialY },
+      mainRect: { left: mainRect.left, top: mainRect.top, width: mainRect.width, height: mainRect.height },
+      photoRect: { left: photoRect.left, top: photoRect.top, width: photoRect.width, height: photoRect.height },
+      initialPos: { x: photoRect.left, y: photoRect.top },
       firstWaypoint: waypoints[1],
       lastWaypoint: waypoints[waypoints.length - 1]
     })
@@ -1647,7 +1629,7 @@ export default function LotteryMachineLivePage() {
         }
 
         .photo-traveling {
-          position: absolute;
+          position: fixed;
           width: clamp(60px, 6vw, 90px);
           height: clamp(60px, 6vw, 90px);
           border-radius: 50%;
