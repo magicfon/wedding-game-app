@@ -58,11 +58,13 @@ export default function LotteryMachineLivePage() {
   const [isEditorMode, setIsEditorMode] = useState(false)
   const [draggingNode, setDraggingNode] = useState<{ type: 'start' | 'end' | 'node', index?: number } | null>(null)
   const [windowSize, setWindowSize] = useState({ width: typeof window !== 'undefined' ? window.innerWidth : 1920, height: typeof window !== 'undefined' ? window.innerHeight : 1080 })
+  const [dragPosition, setDragPosition] = useState<{ x: number; y: number } | null>(null)
 
   const chamberRef = useRef<HTMLDivElement>(null)
   const photosContainerRef = useRef<HTMLDivElement>(null)
   const platformSlotsRef = useRef<HTMLDivElement>(null)
   const animationFrameRef = useRef<number | null>(null)
+  const dragAnimationFrameRef = useRef<number | null>(null)
 
   // 監聽窗口大小變化
   useEffect(() => {
@@ -414,6 +416,11 @@ export default function LotteryMachineLivePage() {
     e.stopPropagation()
     setDraggingNode({ type, index })
     
+    // 初始化拖曳位置
+    const x = (e.clientX / windowSize.width) * 100
+    const y = (e.clientY / windowSize.height) * 100
+    setDragPosition({ x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) })
+    
     // 啟用 track-container 的 pointer-events 以便接收滑鼠事件
     const trackContainer = document.querySelector('.track-container') as HTMLElement
     if (trackContainer) {
@@ -424,27 +431,43 @@ export default function LotteryMachineLivePage() {
   const handleDragMove = (e: React.MouseEvent) => {
     if (!draggingNode) return
 
-    // 使用整個視窗的尺寸，不受 main-content 限制
-    const x = (e.clientX / windowSize.width) * 100
-    const y = (e.clientY / windowSize.height) * 100
-
-    const clampedX = Math.max(0, Math.min(100, x))
-    const clampedY = Math.max(0, Math.min(100, y))
-
-    if (draggingNode.type === 'start') {
-      setTrackConfig(prev => ({ ...prev, startPoint: { x: clampedX, y: clampedY } }))
-    } else if (draggingNode.type === 'end') {
-      setTrackConfig(prev => ({ ...prev, endPoint: { x: clampedX, y: clampedY } }))
-    } else if (draggingNode.type === 'node' && draggingNode.index !== undefined) {
-      setTrackConfig(prev => ({
-        ...prev,
-        nodes: prev.nodes.map((n, i) => i === draggingNode.index ? { ...n, x: clampedX, y: clampedY } : n)
-      }))
+    // 取消之前的動畫幀
+    if (dragAnimationFrameRef.current) {
+      cancelAnimationFrame(dragAnimationFrameRef.current)
     }
+
+    // 使用 requestAnimationFrame 優化拖曳更新
+    dragAnimationFrameRef.current = requestAnimationFrame(() => {
+      const x = (e.clientX / windowSize.width) * 100
+      const y = (e.clientY / windowSize.height) * 100
+
+      const clampedX = Math.max(0, Math.min(100, x))
+      const clampedY = Math.max(0, Math.min(100, y))
+
+      setDragPosition({ x: clampedX, y: clampedY })
+
+      if (draggingNode.type === 'start') {
+        setTrackConfig(prev => ({ ...prev, startPoint: { x: clampedX, y: clampedY } }))
+      } else if (draggingNode.type === 'end') {
+        setTrackConfig(prev => ({ ...prev, endPoint: { x: clampedX, y: clampedY } }))
+      } else if (draggingNode.type === 'node' && draggingNode.index !== undefined) {
+        setTrackConfig(prev => ({
+          ...prev,
+          nodes: prev.nodes.map((n, i) => i === draggingNode.index ? { ...n, x: clampedX, y: clampedY } : n)
+        }))
+      }
+    })
   }
 
   const handleDragEnd = () => {
+    // 取消動畫幀
+    if (dragAnimationFrameRef.current) {
+      cancelAnimationFrame(dragAnimationFrameRef.current)
+      dragAnimationFrameRef.current = null
+    }
+    
     setDraggingNode(null)
+    setDragPosition(null)
     
     // 恢復 track-container 的 pointer-events 為 none
     const trackContainer = document.querySelector('.track-container') as HTMLElement
@@ -500,6 +523,7 @@ export default function LotteryMachineLivePage() {
     const containerWidth = windowSize.width
     const containerHeight = windowSize.height
     
+    // 節點有 transform: translate(-50%, -50%)，所以路徑需要對齊節點中心
     const start = { x: (startPoint.x / 100) * containerWidth, y: (startPoint.y / 100) * containerHeight }
     const end = { x: (endPoint.x / 100) * containerWidth, y: (endPoint.y / 100) * containerHeight }
     
@@ -617,8 +641,8 @@ export default function LotteryMachineLivePage() {
             <div
               className={`track-node track-node-start ${draggingNode?.type === 'start' ? 'dragging' : ''}`}
               style={{
-                left: `${trackConfig.startPoint.x}%`,
-                top: `${trackConfig.startPoint.y}%`
+                left: `${draggingNode?.type === 'start' && dragPosition ? dragPosition.x : trackConfig.startPoint.x}%`,
+                top: `${draggingNode?.type === 'start' && dragPosition ? dragPosition.y : trackConfig.startPoint.y}%`
               }}
               onMouseDown={(e) => handleDragStart(e, 'start')}
             >
@@ -629,8 +653,8 @@ export default function LotteryMachineLivePage() {
             <div
               className={`track-node track-node-end ${draggingNode?.type === 'end' ? 'dragging' : ''}`}
               style={{
-                left: `${trackConfig.endPoint.x}%`,
-                top: `${trackConfig.endPoint.y}%`
+                left: `${draggingNode?.type === 'end' && dragPosition ? dragPosition.x : trackConfig.endPoint.x}%`,
+                top: `${draggingNode?.type === 'end' && dragPosition ? dragPosition.y : trackConfig.endPoint.y}%`
               }}
               onMouseDown={(e) => handleDragStart(e, 'end')}
             >
@@ -643,8 +667,8 @@ export default function LotteryMachineLivePage() {
                 key={node.id}
                 className={`track-node ${draggingNode?.type === 'node' && draggingNode.index === index ? 'dragging' : ''}`}
                 style={{
-                  left: `${node.x}%`,
-                  top: `${node.y}%`
+                  left: `${draggingNode?.type === 'node' && draggingNode.index === index && dragPosition ? dragPosition.x : node.x}%`,
+                  top: `${draggingNode?.type === 'node' && draggingNode.index === index && dragPosition ? dragPosition.y : node.y}%`
                 }}
                 onMouseDown={(e) => handleDragStart(e, 'node', index)}
               >
