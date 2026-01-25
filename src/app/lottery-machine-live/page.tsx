@@ -460,7 +460,7 @@ export default function LotteryMachineLivePage() {
           const from = waypoints[i]
           const to = waypoints[i + 1]
           const distance = Math.sqrt(Math.pow(to.x - from.x, 2) + Math.pow(to.y - from.y, 2))
-          const duration = distance * 1.2 // 1.2ms per pixel
+          const duration = distance * 2.4 // 2.4ms per pixel (減慢速度)
           
           console.log(`📍 線段 ${i + 1}/${waypoints.length - 1}:`, {
             from: { x: Math.round(from.x), y: Math.round(from.y) },
@@ -1620,13 +1620,13 @@ export default function LotteryMachineLivePage() {
 
         .photo-traveling {
           position: fixed;
-          width: clamp(28px, 3vw, 48px);
-          height: clamp(28px, 3vw, 48px);
+          width: clamp(60px, 6vw, 90px);
+          height: clamp(60px, 6vw, 90px);
           border-radius: 50%;
           overflow: hidden;
-          border: clamp(2px, 0.2vw, 3px) solid #ffd700;
-          box-shadow: 0 0 clamp(14px, 1.5vw, 25px) rgba(255, 215, 0, 0.6);
-          z-index: 500;
+          border: clamp(3px, 0.3vw, 5px) solid #ffd700;
+          box-shadow: 0 0 clamp(20px, 2vw, 35px) rgba(255, 215, 0, 0.8);
+          z-index: 1000;
           pointer-events: none;
         }
 
