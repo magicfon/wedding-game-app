@@ -420,23 +420,16 @@ export default function LotteryMachineLivePage() {
     const x = (e.clientX / windowSize.width) * 100
     const y = (e.clientY / windowSize.height) * 100
     setDragPosition({ x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) })
-    
-    // 啟用 track-container 的 pointer-events 以便接收滑鼠事件
-    const trackContainer = document.querySelector('.track-container') as HTMLElement
-    if (trackContainer) {
-      trackContainer.style.pointerEvents = 'auto'
-    }
   }
 
   const handleDragMove = (e: React.MouseEvent) => {
     if (!draggingNode) return
 
-    // 取消之前的動畫幀
+    // 使用 requestAnimationFrame 優化拖曳更新
     if (dragAnimationFrameRef.current) {
       cancelAnimationFrame(dragAnimationFrameRef.current)
     }
 
-    // 使用 requestAnimationFrame 優化拖曳更新
     dragAnimationFrameRef.current = requestAnimationFrame(() => {
       const x = (e.clientX / windowSize.width) * 100
       const y = (e.clientY / windowSize.height) * 100
@@ -468,12 +461,6 @@ export default function LotteryMachineLivePage() {
     
     setDraggingNode(null)
     setDragPosition(null)
-    
-    // 恢復 track-container 的 pointer-events 為 none
-    const trackContainer = document.querySelector('.track-container') as HTMLElement
-    if (trackContainer) {
-      trackContainer.style.pointerEvents = 'none'
-    }
   }
 
   const addNode = () => {
@@ -636,7 +623,12 @@ export default function LotteryMachineLivePage() {
 
         {/* 軌道編輯器 */}
         {isEditorMode && (
-          <div className="track-editor">
+          <div
+            className="track-editor"
+            onMouseMove={handleDragMove}
+            onMouseUp={handleDragEnd}
+            onMouseLeave={handleDragEnd}
+          >
             {/* 起點 */}
             <div
               className={`track-node track-node-start ${draggingNode?.type === 'start' ? 'dragging' : ''}`}
@@ -689,7 +681,7 @@ export default function LotteryMachineLivePage() {
       </div>
 
       {/* 主要內容區域 */}
-      <div className="main-content" onMouseMove={handleDragMove} onMouseUp={handleDragEnd}>
+      <div className="main-content">
         {/* 中獎者平台 */}
         <div className="winners-platform">
           <div className="platform-surface">
