@@ -361,9 +361,6 @@ export default function LotteryMachineLivePage() {
   const drawWinner = async () => {
     if (lotteryState.is_drawing || photos.length === 0) return
 
-    // 抽獎前建立 Realtime 連接
-    startRealtimeConnection()
-
     try {
       const response = await fetch('/api/lottery-machine/draw', {
         method: 'POST',
@@ -383,19 +380,12 @@ export default function LotteryMachineLivePage() {
 
         setWinners(prev => [...prev, { photo: data.winner, order: prev.length + 1 }])
         setLotteryState(prev => ({ ...prev, is_drawing: false }))
-
-        // 抽獎完成後關閉 Realtime 連接
-        setTimeout(() => {
-          stopRealtimeConnection()
-        }, 1000)
       } else {
         setError(data.error || '抽獎失敗')
-        stopRealtimeConnection()
       }
     } catch (err) {
       console.error('抽獎失敗:', err)
       setError('抽獎失敗')
-      stopRealtimeConnection()
     }
   }
 
