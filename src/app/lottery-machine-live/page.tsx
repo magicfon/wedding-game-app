@@ -367,7 +367,11 @@ export default function LotteryMachineLivePage() {
     try {
       const response = await fetch('/api/lottery-machine/draw', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          admin_id: 'system',
+          admin_name: '系統管理員'
+        })
       })
       const data = await response.json()
 
