@@ -79,6 +79,7 @@ export default function LotteryMachineLivePage() {
   // 載入照片
   useEffect(() => {
     fetchPhotos()
+    loadTrackConfig()
   }, [])
 
   // 照片載入後啟動彈跳動畫
@@ -196,6 +197,29 @@ export default function LotteryMachineLivePage() {
       console.error('載入照片失敗:', err)
       setError('載入照片失敗')
       setLoading(false)
+    }
+  }
+
+  const loadTrackConfig = async () => {
+    try {
+      const response = await fetch('/api/lottery-machine/config')
+      const data = await response.json()
+
+      if (data.success && data.config?.track_config) {
+        const savedConfig = data.config.track_config
+        // 檢查是否有有效的設定
+        if (savedConfig && savedConfig.startPoint && savedConfig.endPoint && savedConfig.nodes) {
+          setTrackConfig({
+            startPoint: savedConfig.startPoint,
+            endPoint: savedConfig.endPoint,
+            nodes: savedConfig.nodes
+          })
+          console.log('✅ 已載入儲存的軌道設定')
+        }
+      }
+    } catch (err) {
+      console.error('載入軌道設定失敗:', err)
+      // 不影響頁面正常運作，使用預設值
     }
   }
 
@@ -488,19 +512,22 @@ export default function LotteryMachineLivePage() {
 
   const saveTrackConfig = async () => {
     try {
+      console.log('💾 儲存軌道設定...', trackConfig)
       const response = await fetch('/api/lottery-machine/config', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ trackConfig })
       })
       const data = await response.json()
+      console.log('📥 儲存回應:', data)
       if (data.success) {
-        alert('軌道設定已儲存')
+        alert('✅ 軌道設定已儲存')
       } else {
-        alert('儲存失敗: ' + data.error)
+        alert('❌ 儲存失敗: ' + data.error)
       }
     } catch (err) {
-      alert('儲存失敗')
+      console.error('❌ 儲存錯誤:', err)
+      alert('❌ 儲存失敗')
     }
   }
 
