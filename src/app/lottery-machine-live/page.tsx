@@ -59,7 +59,6 @@ export default function LotteryMachineLivePage() {
   const [draggingNode, setDraggingNode] = useState<{ type: 'start' | 'end' | 'node', index?: number } | null>(null)
   const [windowSize, setWindowSize] = useState({ width: typeof window !== 'undefined' ? window.innerWidth : 1920, height: typeof window !== 'undefined' ? window.innerHeight : 1080 })
   const [dragPosition, setDragPosition] = useState<{ x: number; y: number } | null>(null)
-  const [isAnimating, setIsAnimating] = useState(false)
 
   const chamberRef = useRef<HTMLDivElement>(null)
   const photosContainerRef = useRef<HTMLDivElement>(null)
@@ -267,12 +266,6 @@ export default function LotteryMachineLivePage() {
     })
 
     const animate = () => {
-      // 如果正在抽獎動畫中，跳過彈跳動畫
-      if (isAnimating) {
-        animationFrameRef.current = requestAnimationFrame(animate)
-        return
-      }
-
       photoElements.forEach((photoEl: Element) => {
         const el = photoEl as HTMLElement
         const x = parseFloat(el.style.left || '0')
@@ -408,11 +401,8 @@ export default function LotteryMachineLivePage() {
 
   const animateWinnerSelection = (winner: Photo): Promise<void> => {
     return new Promise(resolve => {
-      setIsAnimating(true)
-      
       const container = photosContainerRef.current
       if (!container) {
-        setIsAnimating(false)
         resolve()
         return
       }
@@ -425,79 +415,81 @@ export default function LotteryMachineLivePage() {
 
       if (!winnerEl) {
         console.warn('找不到中獎者照片元素:', winner.id)
-        setIsAnimating(false)
         resolve()
         return
       }
 
       console.log('🎯 開始抽獎動畫，中獎者 ID:', winner.id)
 
-      // 階段 1: 縮小所有照片
-      photoElements.forEach(el => {
-        el.style.transition = 'transform 0.3s ease-out, opacity 0.3s ease-out'
-        el.style.transform = 'scale(0.3)'
-        el.style.opacity = '0.3'
-      })
+      // 階段 1: 中獎照片瞬間移動到起點位置
+      winnerEl.style.transition = 'none'
+      winnerEl.style.zIndex = '1000'
+      
+      // 計算起點位置（相對於 photos-container）
+      const trackContainer = trackContainerRef.current
+      const photosContainer = photosContainerRef.current
+      if (!trackContainer || !photosContainer) {
+        resolve()
+        return
+      }
 
-      // 階段 2: 快速閃爍照片，模擬抽獎過程
-      let flashCount = 0
-      const maxFlashes = 8
-      const flashInterval = setInterval(() => {
-        // 隨機選擇一張照片放大
-        photoElements.forEach(el => {
-          el.style.transform = 'scale(0.3)'
-          el.style.opacity = '0.3'
-        })
+      const trackRect = trackContainer.getBoundingClientRect()
+      const photosRect = photosContainer.getBoundingClientRect()
+      
+      const startX = (trackConfig.startPoint.x / 100) * trackRect.width - photosRect.left
+      const startY = (trackConfig.startPoint.y / 100) * trackRect.height - photosRect.top
+      
+      winnerEl.style.left = `${startX}px`
+      winnerEl.style.top = `${startY}px`
+      winnerEl.style.transform = 'scale(1.5)'
 
-        const randomIndex = Math.floor(Math.random() * photoElements.length)
-        const randomEl = photoElements[randomIndex]
-        randomEl.style.transform = 'scale(1.2)'
-        randomEl.style.opacity = '1'
-
-        flashCount++
-        if (flashCount >= maxFlashes) {
-          clearInterval(flashInterval)
-
-          // 階段 3: 顯示中獎者
+      // 階段 2: 沿著軌道滾動到終點
+      setTimeout(() => {
+        const endX = (trackConfig.endPoint.x / 100) * trackRect.width - photosRect.left
+        const endY = (trackConfig.endPoint.y / 100) * trackRect.height - photosRect.top
+        
+        winnerEl.style.transition = 'all 2s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+        winnerEl.style.left = `${endX}px`
+        winnerEl.style.top = `${endY}px`
+        
+        // 添加滾動旋轉效果
+        let rotation = 0
+        const rotateInterval = setInterval(() => {
+          rotation += 15
+          winnerEl.style.transform = `scale(1.5) rotate(${rotation}deg)`
+        }, 50)
+        
+        // 階段 3: 到達終點後，出現在 WINNER PLATFORM
+        setTimeout(() => {
+          clearInterval(rotateInterval)
+          
+          // 播放彩紙效果
+          triggerConfetti()
+          
+          // 將中獎者添加到平台
+          const platformSlots = platformSlotsRef.current
+          if (platformSlots) {
+            const winnerEl = document.createElement('div')
+            winnerEl.className = 'platform-winner'
+            winnerEl.innerHTML = `
+              <div class="platform-winner-photo">
+                <img src="${winner.image_url}" alt="${winner.display_name}">
+              </div>
+              <div class="platform-winner-rank">#${winners.length + 1}</div>
+            `
+            platformSlots.appendChild(winnerEl)
+          }
+          
+          // 恢復中獎照片到腔體中（但隱藏它）
           setTimeout(() => {
-            // 縮小所有照片
-            photoElements.forEach(el => {
-              el.style.transform = 'scale(0.2)'
-              el.style.opacity = '0.2'
-            })
-
-            // 高亮中獎者
-            setTimeout(() => {
-              winnerEl.classList.add('selected')
-              winnerEl.style.transform = 'scale(1.5)'
-              winnerEl.style.opacity = '1'
-              winnerEl.style.zIndex = '1000'
-
-              // 階段 4: 播放彩紙效果
-              triggerConfetti()
-
-              // 2秒後揭曉
-              setTimeout(() => {
-                // 恢復所有照片的正常狀態
-                photoElements.forEach(el => {
-                  el.style.transition = 'transform 0.5s ease-out, opacity 0.5s ease-out'
-                  el.style.transform = ''
-                  el.style.opacity = '1'
-                  el.style.zIndex = '1'
-                })
-                
-                // 移除中獎者的 selected class
-                winnerEl.classList.remove('selected')
-                winnerEl.style.transform = ''
-                winnerEl.style.zIndex = '1'
-                
-                setIsAnimating(false)
-                resolve()
-              }, 2000)
-            }, 300)
-          }, 200)
-        }
-      }, 150)
+            winnerEl.style.opacity = '0'
+            winnerEl.style.zIndex = '1'
+            winnerEl.style.transform = ''
+            
+            resolve()
+          }, 500)
+        }, 2000)
+      }, 100)
     })
   }
 
