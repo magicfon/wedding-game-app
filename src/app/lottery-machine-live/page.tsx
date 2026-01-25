@@ -460,7 +460,7 @@ export default function LotteryMachineLivePage() {
           const from = waypoints[i]
           const to = waypoints[i + 1]
           const distance = Math.sqrt(Math.pow(to.x - from.x, 2) + Math.pow(to.y - from.y, 2))
-          const duration = distance * 2.4 // 2.4ms per pixel (減慢速度)
+          const duration = distance * 1.2 // 1.2ms per pixel (參考 lottery/ 的實現)
           
           console.log(`📍 線段 ${i + 1}/${waypoints.length - 1}:`, {
             from: { x: Math.round(from.x), y: Math.round(from.y) },
@@ -470,7 +470,7 @@ export default function LotteryMachineLivePage() {
           })
           
           await animateSegment(travelingPhoto, from.x, from.y, to.x, to.y, duration, rotation)
-          rotation += distance * 0.5 // 降低自旋轉速度
+          rotation += distance * 0.5 // 降低自旋轉速度（參考 lottery/ 的實現）
         }
       }
       
@@ -518,11 +518,12 @@ export default function LotteryMachineLivePage() {
 
   // 生成路徑點（使用 Catmull-Rom spline）
   const generateWaypoints = (photoRect: DOMRect) => {
-    const trackContainer = trackContainerRef.current
-    if (!trackContainer) return []
+    // 使用 mainContent 作為坐標系（參考 lottery/ 的實現）
+    const mainContent = document.querySelector('.main-content') as HTMLElement
+    if (!mainContent) return []
     
-    const trackRect = trackContainer.getBoundingClientRect()
-    const halfSize = 21 // 彩球直徑的一半
+    const mainRect = mainContent.getBoundingClientRect()
+    const halfSize = 21 // 彩球直徑的一半 (42 / 2)
     
     // 構建控制點
     const controlPoints = [
@@ -538,8 +539,8 @@ export default function LotteryMachineLivePage() {
     const waypoints = [{ x: photoRect.left, y: photoRect.top }]
     
     curveWaypoints.forEach(pt => {
-      const screenX = trackRect.left + (pt.x / 100) * trackRect.width - halfSize
-      const screenY = trackRect.top + (pt.y / 100) * trackRect.height - halfSize
+      const screenX = mainRect.left + (pt.x / 100) * mainRect.width - halfSize
+      const screenY = mainRect.top + (pt.y / 100) * mainRect.height - halfSize
       waypoints.push({ x: screenX, y: screenY })
     })
     
