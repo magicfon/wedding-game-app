@@ -448,15 +448,26 @@ export default function LotteryMachineLivePage() {
       // 生成路徑點（使用 Catmull-Rom spline）
       const waypoints = generateWaypoints(photoRect)
       console.log('📍 路徑點數量:', waypoints.length)
+      console.log('📍 前5個路徑點:', waypoints.slice(0, 5))
+      console.log('📍 最後5個路徑點:', waypoints.slice(-5))
 
       // 沿著路徑動畫
       let rotation = 0
       const animatePath = async () => {
+        console.log('🚀 開始沿著路徑動畫，總共', waypoints.length - 1, '個線段')
+        
         for (let i = 0; i < waypoints.length - 1; i++) {
           const from = waypoints[i]
           const to = waypoints[i + 1]
           const distance = Math.sqrt(Math.pow(to.x - from.x, 2) + Math.pow(to.y - from.y, 2))
           const duration = distance * 1.2 // 1.2ms per pixel
+          
+          console.log(`📍 線段 ${i + 1}/${waypoints.length - 1}:`, {
+            from: { x: Math.round(from.x), y: Math.round(from.y) },
+            to: { x: Math.round(to.x), y: Math.round(to.y) },
+            distance: Math.round(distance),
+            duration: Math.round(duration)
+          })
           
           await animateSegment(travelingPhoto, from.x, from.y, to.x, to.y, duration, rotation)
           rotation += distance * 0.5 // 降低自旋轉速度
@@ -600,6 +611,13 @@ export default function LotteryMachineLivePage() {
     return new Promise(resolve => {
       const startTime = performance.now()
       
+      console.log('🎬 開始動畫線段:', {
+        from: { x: Math.round(fromX), y: Math.round(fromY) },
+        to: { x: Math.round(toX), y: Math.round(toY) },
+        duration: Math.round(duration),
+        startRotation: Math.round(startRotation)
+      })
+      
       const animate = (currentTime: number) => {
         const elapsed = currentTime - startTime
         const progress = Math.min(elapsed / duration, 1)
@@ -619,6 +637,7 @@ export default function LotteryMachineLivePage() {
         if (progress < 1) {
           requestAnimationFrame(animate)
         } else {
+          console.log('✅ 線段動畫完成')
           resolve()
         }
       }
