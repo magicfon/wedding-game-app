@@ -429,98 +429,201 @@ export default function LotteryMachineLivePage() {
       // 隱藏原始中獎照片
       winnerEl.style.opacity = '0'
 
-      // 創建動畫元素（在 track-container 中）
-      const animationEl = document.createElement('div')
-      animationEl.className = 'winner-animation-ball'
-      animationEl.innerHTML = `<img src="${winner.image_url}" alt="${winner.display_name}">`
-      trackContainer.appendChild(animationEl)
+      // 創建動畫元素（添加到 document.body，使用 position: fixed）
+      const travelingPhoto = document.createElement('div')
+      travelingPhoto.className = 'photo-traveling'
+      travelingPhoto.innerHTML = `<img src="${winner.image_url}" alt="${winner.display_name}">`
+      document.body.appendChild(travelingPhoto)
 
-      // 計算軌道上的所有點（起點 + 節點 + 終點）
-      const trackRect = trackContainer.getBoundingClientRect()
-      const points = [
-        { x: (trackConfig.startPoint.x / 100) * trackRect.width, y: (trackConfig.startPoint.y / 100) * trackRect.height },
-        ...trackConfig.nodes.map(n => ({ x: (n.x / 100) * trackRect.width, y: (n.y / 100) * trackRect.height })),
-        { x: (trackConfig.endPoint.x / 100) * trackRect.width, y: (trackConfig.endPoint.y / 100) * trackRect.height }
-      ]
+      // 設置動畫元素的初始樣式
+      const photoRect = winnerEl.getBoundingClientRect()
+      const photoSize = 42 // 彩球直徑
       
-      console.log('📍 軌道路徑點:', points)
-
-      // 階段 1: 將動畫球瞬間移動到起點
-      animationEl.style.transition = 'none'
-      animationEl.style.left = `${points[0].x}px`
-      animationEl.style.top = `${points[0].y}px`
-      animationEl.style.transform = 'translate(-50%, -50%) scale(1.5)'
+      travelingPhoto.style.transition = 'none'
+      travelingPhoto.style.left = `${photoRect.left}px`
+      travelingPhoto.style.top = `${photoRect.top}px`
+      travelingPhoto.style.width = `${photoSize}px`
+      travelingPhoto.style.height = `${photoSize}px`
       
-      console.log('✅ 階段 1 完成：動畫球已移動到起點')
+      // 生成路徑點（使用 Catmull-Rom spline）
+      const waypoints = generateWaypoints(photoRect)
+      console.log('📍 路徑點數量:', waypoints.length)
 
-      // 階段 2: 沿著軌道滾動到終點（經過所有節點）
-      setTimeout(() => {
-        const totalDuration = 2500 // 2.5秒
-        const startTime = performance.now()
-        let rotation = 0
+      // 沿著路徑動畫
+      let rotation = 0
+      const animatePath = async () => {
+        for (let i = 0; i < waypoints.length - 1; i++) {
+          const from = waypoints[i]
+          const to = waypoints[i + 1]
+          const distance = Math.sqrt(Math.pow(to.x - from.x, 2) + Math.pow(to.y - from.y, 2))
+          const duration = distance * 1.2 // 1.2ms per pixel
+          
+          await animateSegment(travelingPhoto, from.x, from.y, to.x, to.y, duration, rotation)
+          rotation += distance * 0.5 // 降低自旋轉速度
+        }
+      }
+      
+      // 動畫完成後的處理
+      const onAnimationComplete = () => {
+        console.log('🎉 動畫完成')
         
-        const animate = (currentTime: number) => {
-          const elapsed = currentTime - startTime
-          const progress = Math.min(elapsed / totalDuration, 1)
+        // 播放彩紙效果
+        triggerConfetti()
+        
+        // 將中獎者添加到平台
+        const platformSlots = platformSlotsRef.current
+        if (platformSlots) {
+          const platformSurface = platformSlots.parentElement?.querySelector('.platform-surface') as HTMLElement
+          const platformHeight = platformSurface?.clientHeight || 60
+          const ballSize = Math.max(20, Math.round(platformHeight * 0.9))
           
-          // 計算當前應該在哪個線段上
-          const totalSegments = points.length - 1
-          const segmentProgress = progress * totalSegments
-          const currentSegment = Math.min(Math.floor(segmentProgress), totalSegments - 1)
-          const segmentT = segmentProgress - currentSegment
-          
-          // 線性插值計算當前位置
-          const p1 = points[currentSegment]
-          const p2 = points[currentSegment + 1]
-          const x = p1.x + (p2.x - p1.x) * segmentT
-          const y = p1.y + (p2.y - p1.y) * segmentT
-          
-          // 更新動畫球位置
-          animationEl.style.left = `${x}px`
-          animationEl.style.top = `${y}px`
-          
-          // 滾動旋轉效果
-          rotation += 15
-          animationEl.style.transform = `translate(-50%, -50%) scale(1.5) rotate(${rotation}deg)`
-          
-          if (progress < 1) {
-            requestAnimationFrame(animate)
-          } else {
-            // 階段 3: 到達終點後，出現在 WINNER PLATFORM
-            console.log('🎉 階段 3：動畫球到達終點')
-            
-            // 播放彩紙效果
-            triggerConfetti()
-            
-            // 將中獎者添加到平台
-            const platformSlots = platformSlotsRef.current
-            if (platformSlots) {
-              const winnerEl = document.createElement('div')
-              winnerEl.className = 'platform-winner'
-              winnerEl.innerHTML = `
-                <div class="platform-winner-photo">
-                  <img src="${winner.image_url}" alt="${winner.display_name}">
-                </div>
-                <div class="platform-winner-rank">#${winners.length + 1}</div>
-              `
-              platformSlots.appendChild(winnerEl)
-              console.log('✅ 中獎者已添加到平台')
-            } else {
-              console.error('❌ platformSlots 不存在')
-            }
-            
-            // 移除動畫元素
-            setTimeout(() => {
-              animationEl.remove()
-              console.log('✅ 動畫完成，動畫球已移除')
-              resolve()
-            }, 500)
-          }
+          const winnerEl = document.createElement('div')
+          winnerEl.className = 'platform-winner'
+          winnerEl.innerHTML = `
+            <div class="platform-winner-photo" style="width: ${ballSize}px; height: ${ballSize}px;">
+              <img src="${winner.image_url}" alt="${winner.display_name}">
+            </div>
+            <div class="platform-winner-rank">#${winners.length + 1}</div>
+          `
+          platformSlots.appendChild(winnerEl)
+          console.log('✅ 中獎者已添加到平台')
+        } else {
+          console.error('❌ platformSlots 不存在')
         }
         
-        console.log('✅ 階段 2 開始：動畫球開始沿軌道滾動 (2.5秒)')
-        requestAnimationFrame(animate)
-      }, 100)
+        // 移除動畫元素
+        setTimeout(() => {
+          travelingPhoto.remove()
+          console.log('✅ 動畫完成，動畫元素已移除')
+          resolve()
+        }, 500)
+      }
+      
+      // 開始動畫
+      console.log('✅ 開始沿著路徑動畫')
+      animatePath().then(onAnimationComplete)
+    })
+  }
+
+  // 生成路徑點（使用 Catmull-Rom spline）
+  const generateWaypoints = (photoRect: DOMRect) => {
+    const trackContainer = trackContainerRef.current
+    if (!trackContainer) return []
+    
+    const trackRect = trackContainer.getBoundingClientRect()
+    const halfSize = 21 // 彩球直徑的一半
+    
+    // 構建控制點
+    const controlPoints = [
+      { x: trackConfig.startPoint.x, y: trackConfig.startPoint.y },
+      ...trackConfig.nodes.map(n => ({ x: n.x, y: n.y })),
+      { x: trackConfig.endPoint.x, y: trackConfig.endPoint.y }
+    ]
+    
+    // 生成平滑曲線路徑點（Catmull-Rom spline 採樣）
+    const curveWaypoints = sampleCatmullRomSpline(controlPoints, 50)
+    
+    // 轉換百分比坐標為螢幕坐標
+    const waypoints = [{ x: photoRect.left, y: photoRect.top }]
+    
+    curveWaypoints.forEach(pt => {
+      const screenX = trackRect.left + (pt.x / 100) * trackRect.width - halfSize
+      const screenY = trackRect.top + (pt.y / 100) * trackRect.height - halfSize
+      waypoints.push({ x: screenX, y: screenY })
+    })
+    
+    return waypoints
+  }
+
+  // Catmull-Rom spline 採樣
+  const sampleCatmullRomSpline = (points: { x: number; y: number }[], numSamples: number) => {
+    if (points.length < 2) return points
+    if (points.length === 2) {
+      const samples = []
+      for (let i = 0; i <= numSamples; i++) {
+        const t = i / numSamples
+        samples.push({
+          x: points[0].x + (points[1].x - points[0].x) * t,
+          y: points[0].y + (points[1].y - points[0].y) * t
+        })
+      }
+      return samples
+    }
+    
+    // 添加虛擬點以獲得平滑端點
+    const extendedPoints = [
+      { x: points[0].x * 2 - points[1].x, y: points[0].y * 2 - points[1].y },
+      ...points,
+      { x: points[points.length - 1].x * 2 - points[points.length - 2].x, y: points[points.length - 1].y * 2 - points[points.length - 2].y }
+    ]
+    
+    const samples = []
+    const totalSegments = points.length - 1
+    const samplesPerSegment = Math.ceil(numSamples / totalSegments)
+    
+    for (let seg = 0; seg < totalSegments; seg++) {
+      const p0 = extendedPoints[seg]
+      const p1 = extendedPoints[seg + 1]
+      const p2 = extendedPoints[seg + 2]
+      const p3 = extendedPoints[seg + 3]
+      
+      for (let i = 0; i <= samplesPerSegment; i++) {
+        if (seg > 0 && i === 0) continue // 避免線段邊界重複
+        const t = i / samplesPerSegment
+        
+        // Catmull-Rom spline 插值
+        const t2 = t * t
+        const t3 = t2 * t
+        
+        const x = 0.5 * (
+          (2 * p1.x) +
+          (-p0.x + p2.x) * t +
+          (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * t2 +
+          (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * t3
+        )
+        const y = 0.5 * (
+          (2 * p1.y) +
+          (-p0.y + p2.y) * t +
+          (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * t2 +
+          (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * t3
+        )
+        
+        samples.push({ x, y })
+      }
+    }
+    
+    return samples
+  }
+
+  // 動畫單個線段
+  const animateSegment = (el: HTMLElement, fromX: number, fromY: number, toX: number, toY: number, duration: number, startRotation: number): Promise<void> => {
+    return new Promise(resolve => {
+      const startTime = performance.now()
+      
+      const animate = (currentTime: number) => {
+        const elapsed = currentTime - startTime
+        const progress = Math.min(elapsed / duration, 1)
+        // 使用 ease-in-out 緩動函數
+        const eased = progress < 0.5
+          ? 2 * progress * progress
+          : 1 - Math.pow(-2 * progress + 2, 2) / 2
+        
+        const x = fromX + (toX - fromX) * eased
+        const y = fromY + (toY - fromY) * eased
+        const rotation = startRotation + progress * 60 // 降低每段的旋轉角度
+        
+        el.style.left = `${x}px`
+        el.style.top = `${y}px`
+        el.style.transform = `rotate(${rotation}deg)`
+        
+        if (progress < 1) {
+          requestAnimationFrame(animate)
+        } else {
+          resolve()
+        }
+      }
+      
+      requestAnimationFrame(animate)
     })
   }
 
@@ -1491,6 +1594,24 @@ export default function LotteryMachineLivePage() {
         }
 
         .winner-animation-ball img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
+        .photo-traveling {
+          position: fixed;
+          width: clamp(28px, 3vw, 48px);
+          height: clamp(28px, 3vw, 48px);
+          border-radius: 50%;
+          overflow: hidden;
+          border: clamp(2px, 0.2vw, 3px) solid #ffd700;
+          box-shadow: 0 0 clamp(14px, 1.5vw, 25px) rgba(255, 215, 0, 0.6);
+          z-index: 500;
+          pointer-events: none;
+        }
+
+        .photo-traveling img {
           width: 100%;
           height: 100%;
           object-fit: cover;
