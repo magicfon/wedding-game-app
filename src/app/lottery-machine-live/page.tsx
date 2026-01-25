@@ -36,6 +36,7 @@ interface TrackConfig {
 
 export default function LotteryMachineLivePage() {
   const [photos, setPhotos] = useState<Photo[]>([])
+  const [avatarBalls, setAvatarBalls] = useState<Photo[]>([])
   const [winners, setWinners] = useState<Winner[]>([])
   const [lotteryState, setLotteryState] = useState<LotteryMachineState>({
     is_lottery_active: false,
@@ -85,7 +86,7 @@ export default function LotteryMachineLivePage() {
 
   // 照片載入後啟動彈跳動畫
   useEffect(() => {
-    if (photos.length > 0) {
+    if (avatarBalls.length > 0) {
       // 等待 DOM 渲染完成後再啟動動畫
       const timer = setTimeout(() => {
         if (chamberRef.current && photosContainerRef.current) {
@@ -94,7 +95,7 @@ export default function LotteryMachineLivePage() {
       }, 100)
       return () => clearTimeout(timer)
     }
-  }, [photos])
+  }, [avatarBalls])
 
   // 待機狀態也顯示氣泡效果
   useEffect(() => {
@@ -188,7 +189,35 @@ export default function LotteryMachineLivePage() {
       const data = await response.json()
 
       if (data.success) {
-        setPhotos(data.photos || [])
+        const fetchedPhotos = data.photos || []
+        setPhotos(fetchedPhotos)
+
+        // 按 user_id 分組照片，為每個用戶創建多個大頭貼彩球
+        const userPhotosMap = new Map<string, Photo[]>()
+        fetchedPhotos.forEach((photo: Photo) => {
+          if (!userPhotosMap.has(photo.user_id)) {
+            userPhotosMap.set(photo.user_id, [])
+          }
+          userPhotosMap.get(photo.user_id)!.push(photo)
+        })
+
+        // 為每個用戶根據其上傳的照片數量創建多個彩球
+        const balls: Photo[] = []
+        userPhotosMap.forEach((photos, userId) => {
+          const userPhoto = photos[0] // 使用第一張照片的用戶資訊
+          // 為該用戶創建與照片數量相同的彩球數量
+          for (let i = 0; i < photos.length; i++) {
+            balls.push({
+              id: userPhoto.id + i * 1000000, // 為每個彩球生成唯一 ID
+              image_url: userPhoto.avatar_url, // 使用大頭貼 URL
+              user_id: userId,
+              display_name: userPhoto.display_name,
+              avatar_url: userPhoto.avatar_url
+            })
+          }
+        })
+
+        setAvatarBalls(balls)
         setLoading(false)
       } else {
         setError(data.error || '載入照片失敗')
@@ -359,7 +388,7 @@ export default function LotteryMachineLivePage() {
   }
 
   const drawWinner = async () => {
-    if (lotteryState.is_drawing || photos.length === 0) return
+    if (lotteryState.is_drawing || avatarBalls.length === 0) return
 
     try {
       const response = await fetch('/api/lottery-machine/draw', {
@@ -438,7 +467,7 @@ export default function LotteryMachineLivePage() {
       
       const travelingPhoto = document.createElement('div')
       travelingPhoto.className = 'photo-traveling'
-      travelingPhoto.innerHTML = `<img src="${winner.image_url}" alt="${winner.display_name}">`
+      travelingPhoto.innerHTML = `<img src="${winner.avatar_url}" alt="${winner.display_name}">`
       mainContent.appendChild(travelingPhoto)
 
       // 設置動畫元素的初始樣式（使用相對於 main-content 的坐標）
@@ -503,7 +532,7 @@ export default function LotteryMachineLivePage() {
           winnerEl.className = 'platform-winner'
           winnerEl.innerHTML = `
             <div class="platform-winner-photo" style="width: ${ballSize}px; height: ${ballSize}px;">
-              <img src="${winner.image_url}" alt="${winner.display_name}">
+              <img src="${winner.avatar_url}" alt="${winner.display_name}">
             </div>
             <div class="platform-winner-rank">#${winners.length + 1}</div>
           `
@@ -696,7 +725,7 @@ export default function LotteryMachineLivePage() {
     winnerEl.className = 'platform-winner'
     winnerEl.innerHTML = `
       <div class="platform-winner-photo">
-        <img src="${winner.photo.image_url}" alt="${winner.photo.display_name}">
+        <img src="${winner.photo.avatar_url}" alt="${winner.photo.display_name}">
       </div>
       <div class="platform-winner-rank">#${winner.order}</div>
     `
@@ -1056,11 +1085,11 @@ export default function LotteryMachineLivePage() {
             <div className="chamber-glass"></div>
 
             <div className="photos-container" ref={photosContainerRef}>
-              {photos.map(photo => (
+              {avatarBalls.map(ball => (
                 <div
-                  key={photo.id}
+                  key={ball.id}
                   className="photo-item"
-                  data-id={photo.id}
+                  data-id={ball.id}
                   data-vx={(Math.random() - 0.5) * 15}
                   data-vy={(Math.random() - 0.5) * 15}
                   data-rotation={Math.random() * 360}
@@ -1070,7 +1099,7 @@ export default function LotteryMachineLivePage() {
                     top: `${Math.random() * 200}px`
                   }}
                 >
-                  <img src={photo.image_url} alt={photo.display_name} />
+                  <img src={ball.avatar_url} alt={ball.display_name} />
                 </div>
               ))}
             </div>
@@ -1094,7 +1123,7 @@ export default function LotteryMachineLivePage() {
       <div className="control-panel">
         <button
           onClick={drawWinner}
-          disabled={lotteryState.is_drawing || photos.length === 0}
+          disabled={lotteryState.is_drawing || avatarBalls.length === 0}
           className="btn btn-draw"
         >
           <span className="btn-text">🎲 抽出得獎者</span>
