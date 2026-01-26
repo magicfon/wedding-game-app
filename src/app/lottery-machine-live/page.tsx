@@ -69,6 +69,35 @@ export default function LotteryMachineLivePage() {
   const [windowSize, setWindowSize] = useState({ width: typeof window !== 'undefined' ? window.innerWidth : 1920, height: typeof window !== 'undefined' ? window.innerHeight : 1080 })
   const [dragPosition, setDragPosition] = useState<{ x: number; y: number } | null>(null)
 
+  // 元素拖曳狀態
+  const [elementDragState, setElementDragState] = useState<{
+    type: 'chamber' | 'platform' | null
+    action: string | null
+    startX: number
+    startY: number
+    startWidth: number
+    startHeight: number
+    startLeft: number
+    startTop: number
+    startBottom: number
+  } | null>(null)
+
+  // 元素位置和大小狀態
+  const [chamberStyle, setChamberStyle] = useState({
+    left: '50%',
+    bottom: '0px',
+    width: '55%',
+    maxWidth: `${trackConfig.chamberWidth}px`
+  })
+  const [platformStyle, setPlatformStyle] = useState({
+    top: '0.5vh',
+    left: '5%',
+    width: 'clamp(180px, 15vw, 280px)'
+  })
+  const [platformSurfaceStyle, setPlatformSurfaceStyle] = useState({
+    height: 'clamp(60px, 6vh, 100px)'
+  })
+
   const chamberRef = useRef<HTMLDivElement>(null)
   const photosContainerRef = useRef<HTMLDivElement>(null)
   const platformSlotsRef = useRef<HTMLDivElement>(null)
@@ -873,6 +902,142 @@ export default function LotteryMachineLivePage() {
     }
   }
 
+  // 元素拖曳開始
+  const handleElementDragStart = (e: React.MouseEvent, type: 'chamber' | 'platform', action: string) => {
+    if (!isEditorMode) return
+    e.preventDefault()
+    e.stopPropagation()
+
+    const element = type === 'chamber'
+      ? chamberRef.current
+      : document.querySelector('.winners-platform') as HTMLElement
+
+    if (!element) return
+
+    const rect = element.getBoundingClientRect()
+    const mainRect = document.querySelector('.main-content')?.getBoundingClientRect() || new DOMRect(0, 0, window.innerWidth, window.innerHeight)
+
+    let startHeight = rect.height
+    if (type === 'platform') {
+      const platformSurface = element.querySelector('.platform-surface') as HTMLElement
+      if (platformSurface) {
+        startHeight = platformSurface.offsetHeight
+      }
+    }
+
+    setElementDragState({
+      type,
+      action,
+      startX: e.clientX,
+      startY: e.clientY,
+      startWidth: rect.width,
+      startHeight,
+      startLeft: rect.left - mainRect.left,
+      startTop: rect.top - mainRect.top,
+      startBottom: mainRect.bottom - rect.bottom
+    })
+  }
+
+  // 元素拖曳移動
+  const handleElementDragMove = (e: React.MouseEvent) => {
+    if (!elementDragState || !isEditorMode) return
+
+    const { type, action, startX, startY, startWidth, startHeight, startLeft, startTop, startBottom } = elementDragState
+    if (!action) return
+
+    const dx = e.clientX - startX
+    const dy = e.clientY - startY
+
+    if (action === 'move') {
+      if (type === 'chamber') {
+        const newLeftPercent = ((startLeft + dx + startWidth / 2) / windowSize.width) * 100
+        setChamberStyle(prev => ({
+          ...prev,
+          left: `${Math.max(0, Math.min(100, newLeftPercent))}%`,
+          bottom: `${Math.max(0, -dy)}px`
+        }))
+      } else {
+        const newLeft = ((startLeft + dx) / windowSize.width) * 100
+        const newTop = startTop + dy
+        setPlatformStyle(prev => ({
+          ...prev,
+          left: `${Math.max(0, newLeft)}%`,
+          top: `${Math.max(0, newTop)}px`
+        }))
+      }
+    } else if (action.startsWith('resize')) {
+      const direction = action.replace('resize-', '')
+      let newWidth = startWidth
+      let newHeight = startHeight
+
+      if (direction.includes('e')) {
+        newWidth = startWidth + dx
+      } else if (direction.includes('w')) {
+        newWidth = startWidth - dx
+      }
+
+      if (direction.includes('s')) {
+        newHeight = startHeight + dy
+      } else if (direction.includes('n')) {
+        newHeight = startHeight - dy
+      }
+
+      newWidth = Math.max(100, newWidth)
+      newHeight = Math.max(40, newHeight)
+
+      if (type === 'chamber') {
+        setChamberStyle(prev => ({
+          ...prev,
+          width: `${newWidth}px`,
+          maxWidth: 'none'
+        }))
+        setTrackConfig(prev => ({
+          ...prev,
+          chamberWidth: newWidth,
+          chamberHeight: newHeight
+        }))
+      } else {
+        setPlatformStyle(prev => ({
+          ...prev,
+          width: `${newWidth}px`
+        }))
+        setPlatformSurfaceStyle(prev => ({
+          ...prev,
+          height: `${newHeight}px`,
+          minHeight: `${newHeight}px`
+        }))
+      }
+    }
+  }
+
+  // 元素拖曳結束
+  const handleElementDragEnd = () => {
+    if (elementDragState) {
+      setElementDragState(null)
+    }
+  }
+
+  // 全局滑鼠移動和釋放事件
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      handleElementDragMove(e as unknown as React.MouseEvent)
+    }
+
+    const handleMouseUp = () => {
+      handleElementDragEnd()
+    }
+
+    if (elementDragState) {
+      document.addEventListener('mousemove', handleMouseMove)
+      document.addEventListener('mouseup', handleMouseUp)
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [elementDragState, isEditorMode])
+
   // 生成貝茲曲線路徑
   const generateTrackPath = useCallback(() => {
     const { startPoint, endPoint, nodes } = trackConfig
@@ -1114,8 +1279,55 @@ export default function LotteryMachineLivePage() {
       {/* 主要內容區域 */}
       <div className="main-content">
         {/* 中獎者平台 */}
-        <div className="winners-platform">
-          <div className="platform-surface">
+        <div
+          className={`winners-platform ${isEditorMode ? 'edit-mode-active' : ''}`}
+          style={platformStyle}
+        >
+          {/* 移動手柄 */}
+          {isEditorMode && (
+            <div
+              className="move-handle"
+              onMouseDown={(e) => handleElementDragStart(e, 'platform', 'move')}
+            />
+          )}
+          {/* 調整大小手柄 */}
+          {isEditorMode && (
+            <>
+              <div
+                className="resize-handle corner-se"
+                onMouseDown={(e) => handleElementDragStart(e, 'platform', 'resize-se')}
+              />
+              <div
+                className="resize-handle corner-sw"
+                onMouseDown={(e) => handleElementDragStart(e, 'platform', 'resize-sw')}
+              />
+              <div
+                className="resize-handle corner-ne"
+                onMouseDown={(e) => handleElementDragStart(e, 'platform', 'resize-ne')}
+              />
+              <div
+                className="resize-handle corner-nw"
+                onMouseDown={(e) => handleElementDragStart(e, 'platform', 'resize-nw')}
+              />
+              <div
+                className="resize-handle edge-e"
+                onMouseDown={(e) => handleElementDragStart(e, 'platform', 'resize-e')}
+              />
+              <div
+                className="resize-handle edge-w"
+                onMouseDown={(e) => handleElementDragStart(e, 'platform', 'resize-w')}
+              />
+              <div
+                className="resize-handle edge-s"
+                onMouseDown={(e) => handleElementDragStart(e, 'platform', 'resize-s')}
+              />
+              <div
+                className="resize-handle edge-n"
+                onMouseDown={(e) => handleElementDragStart(e, 'platform', 'resize-n')}
+              />
+            </>
+          )}
+          <div className="platform-surface" style={platformSurfaceStyle}>
             <div className="platform-slots" ref={platformSlotsRef}>
               {winners.length === 0 && <span className="placeholder">等待得獎者...</span>}
             </div>
@@ -1124,7 +1336,55 @@ export default function LotteryMachineLivePage() {
         </div>
 
         {/* 彩票機腔體 */}
-        <div className="lottery-machine" ref={chamberRef} style={{ maxWidth: `${trackConfig.chamberWidth}px` }}>
+        <div
+          className={`lottery-machine ${isEditorMode ? 'edit-mode-active' : ''}`}
+          ref={chamberRef}
+          style={chamberStyle}
+        >
+          {/* 移動手柄 */}
+          {isEditorMode && (
+            <div
+              className="move-handle"
+              onMouseDown={(e) => handleElementDragStart(e, 'chamber', 'move')}
+            />
+          )}
+          {/* 調整大小手柄 */}
+          {isEditorMode && (
+            <>
+              <div
+                className="resize-handle corner-se"
+                onMouseDown={(e) => handleElementDragStart(e, 'chamber', 'resize-se')}
+              />
+              <div
+                className="resize-handle corner-sw"
+                onMouseDown={(e) => handleElementDragStart(e, 'chamber', 'resize-sw')}
+              />
+              <div
+                className="resize-handle corner-ne"
+                onMouseDown={(e) => handleElementDragStart(e, 'chamber', 'resize-ne')}
+              />
+              <div
+                className="resize-handle corner-nw"
+                onMouseDown={(e) => handleElementDragStart(e, 'chamber', 'resize-nw')}
+              />
+              <div
+                className="resize-handle edge-e"
+                onMouseDown={(e) => handleElementDragStart(e, 'chamber', 'resize-e')}
+              />
+              <div
+                className="resize-handle edge-w"
+                onMouseDown={(e) => handleElementDragStart(e, 'chamber', 'resize-w')}
+              />
+              <div
+                className="resize-handle edge-s"
+                onMouseDown={(e) => handleElementDragStart(e, 'chamber', 'resize-s')}
+              />
+              <div
+                className="resize-handle edge-n"
+                onMouseDown={(e) => handleElementDragStart(e, 'chamber', 'resize-n')}
+              />
+            </>
+          )}
           <div className="chamber" style={{ height: `${trackConfig.chamberHeight}px` }}>
             <div className="chamber-glass"></div>
 
@@ -1655,6 +1915,140 @@ export default function LotteryMachineLivePage() {
         .btn-text {
           position: relative;
           z-index: 1;
+        }
+
+        /* Edit Mode Styles */
+        .edit-mode-active {
+          outline: 2px dashed rgba(255, 215, 0, 0.5);
+          outline-offset: 5px;
+        }
+
+        /* Resize Handles */
+        .resize-handle {
+          position: absolute;
+          background: linear-gradient(135deg, #ffd700 0%, #ffaa00 100%);
+          border: clamp(1px, 0.1vw, 2px) solid white;
+          border-radius: clamp(3px, 0.3vw, 5px);
+          z-index: 10000;
+          opacity: 0;
+          transition: opacity 0.2s ease, transform 0.1s ease;
+        }
+
+        .edit-mode-active .resize-handle {
+          opacity: 1;
+        }
+
+        .resize-handle:hover {
+          transform: scale(1.2);
+          box-shadow: 0 0 clamp(7px, 0.7vw, 12px) rgba(255, 215, 0, 0.8);
+        }
+
+        /* Corner resize handles */
+        .resize-handle.corner-se {
+          width: clamp(14px, 1.5vw, 22px);
+          height: clamp(14px, 1.5vw, 22px);
+          right: calc(-1 * clamp(7px, 0.75vw, 11px));
+          bottom: calc(-1 * clamp(7px, 0.75vw, 11px));
+          cursor: nwse-resize;
+          border-radius: 50%;
+        }
+
+        .resize-handle.corner-ne {
+          width: clamp(14px, 1.5vw, 22px);
+          height: clamp(14px, 1.5vw, 22px);
+          right: calc(-1 * clamp(7px, 0.75vw, 11px));
+          top: calc(-1 * clamp(7px, 0.75vw, 11px));
+          cursor: nesw-resize;
+          border-radius: 50%;
+        }
+
+        .resize-handle.corner-sw {
+          width: clamp(14px, 1.5vw, 22px);
+          height: clamp(14px, 1.5vw, 22px);
+          left: calc(-1 * clamp(7px, 0.75vw, 11px));
+          bottom: calc(-1 * clamp(7px, 0.75vw, 11px));
+          cursor: nesw-resize;
+          border-radius: 50%;
+        }
+
+        .resize-handle.corner-nw {
+          width: clamp(14px, 1.5vw, 22px);
+          height: clamp(14px, 1.5vw, 22px);
+          left: calc(-1 * clamp(7px, 0.75vw, 11px));
+          top: calc(-1 * clamp(7px, 0.75vw, 11px));
+          cursor: nwse-resize;
+          border-radius: 50%;
+        }
+
+        /* Edge resize handles */
+        .resize-handle.edge-e {
+          width: clamp(9px, 1vw, 16px);
+          height: clamp(45px, 5vw, 75px);
+          right: calc(-1 * clamp(4px, 0.4vw, 8px));
+          top: calc(50% - clamp(22px, 2.5vw, 37px));
+          cursor: ew-resize;
+        }
+
+        .resize-handle.edge-w {
+          width: clamp(9px, 1vw, 16px);
+          height: clamp(45px, 5vw, 75px);
+          left: calc(-1 * clamp(4px, 0.4vw, 8px));
+          top: calc(50% - clamp(22px, 2.5vw, 37px));
+          cursor: ew-resize;
+        }
+
+        .resize-handle.edge-s {
+          width: clamp(45px, 5vw, 75px);
+          height: clamp(9px, 1vw, 16px);
+          bottom: calc(-1 * clamp(4px, 0.4vw, 8px));
+          left: calc(50% - clamp(22px, 2.5vw, 37px));
+          cursor: ns-resize;
+        }
+
+        .resize-handle.edge-n {
+          width: clamp(45px, 5vw, 75px);
+          height: clamp(9px, 1vw, 16px);
+          top: calc(-1 * clamp(4px, 0.4vw, 8px));
+          left: calc(50% - clamp(22px, 2.5vw, 37px));
+          cursor: ns-resize;
+        }
+
+        /* Move handle (center grip) */
+        .move-handle {
+          position: absolute;
+          width: clamp(30px, 3vw, 50px);
+          height: clamp(15px, 1.5vw, 25px);
+          top: clamp(-18px, -2vh, -30px);
+          left: 50%;
+          transform: translateX(-50%);
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          border: clamp(1px, 0.1vw, 2px) solid white;
+          border-radius: clamp(7px, 0.7vw, 12px);
+          cursor: move;
+          z-index: 10000;
+          opacity: 0;
+          transition: opacity 0.2s ease, transform 0.1s ease;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          pointer-events: none;
+        }
+
+        .move-handle::before {
+          content: '⋮⋮';
+          font-size: clamp(7px, 0.8vw, 12px);
+          color: white;
+          letter-spacing: clamp(1px, 0.1vw, 3px);
+        }
+
+        .edit-mode-active .move-handle {
+          opacity: 1;
+          pointer-events: auto;
+        }
+
+        .move-handle:hover {
+          transform: translateX(-50%) scale(1.1);
+          box-shadow: 0 0 clamp(10px, 1vw, 18px) rgba(102, 126, 234, 0.8);
         }
       `}</style>
 
