@@ -1151,10 +1151,12 @@ export default function LotteryMachineLivePage() {
           color: white;
           font-family: 'Outfit', sans-serif;
           overflow: hidden;
+          display: flex;
+          flex-direction: column;
+          padding: 12px 20px;
         }
 
         .title {
-          text-align: center;
           font-size: clamp(1.1rem, 2.2vw, 1.8rem);
           font-weight: 700;
           background: linear-gradient(135deg, #f5af19 0%, #f12711 100%);
@@ -1162,9 +1164,10 @@ export default function LotteryMachineLivePage() {
           background-clip: text;
           -webkit-text-fill-color: transparent;
           text-fill-color: transparent;
-          padding: 12px 20px;
-          margin-bottom: 8px;
+          text-align: center;
           animation: titlePulse 2s ease-in-out infinite;
+          flex-shrink: 0;
+          margin-bottom: 8px;
         }
 
         @keyframes titlePulse {
@@ -1176,13 +1179,11 @@ export default function LotteryMachineLivePage() {
           flex: 1;
           position: relative;
           min-height: 0;
-          display: flex;
-          flex-direction: column;
         }
 
         .winners-platform {
           position: absolute;
-          top: 5vh;
+          top: 0.5vh;
           left: 5%;
           width: clamp(180px, 15vw, 280px);
           z-index: 20;
@@ -1422,15 +1423,16 @@ export default function LotteryMachineLivePage() {
 
         .lottery-machine {
           position: absolute;
-          top: 12vh;
+          bottom: 0;
           left: 50%;
           transform: translateX(-50%);
           width: 55%;
           max-width: clamp(320px, 35vw, 520px);
-          z-index: 5;
+          z-index: 10;
           display: flex;
           flex-direction: column;
           align-items: center;
+          overflow: visible;
         }
 
         .chamber {
@@ -1558,14 +1560,11 @@ export default function LotteryMachineLivePage() {
         }
 
         .control-panel {
-          position: absolute;
-          top: calc(12vh + clamp(160px, 18vh, 280px) + 20px);
-          left: 50%;
-          transform: translateX(-50%);
           display: flex;
           gap: 12px;
           justify-content: center;
-          z-index: 10;
+          flex-shrink: 0;
+          padding: 5px 0;
         }
 
         .btn {
