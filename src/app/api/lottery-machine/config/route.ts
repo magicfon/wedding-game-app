@@ -11,6 +11,8 @@ export async function GET(request: NextRequest) {
     const { data: config, error } = await supabase
       .from('lottery_machine_config')
       .select('*')
+      .order('updated_at', { ascending: false })
+      .limit(1)
       .single()
 
     if (error) {
