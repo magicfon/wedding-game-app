@@ -1771,10 +1771,6 @@ export default function LotteryMachineLivePage() {
         font-weight: 600;
         }
       `}</style>
-      <style jsx>{`
-
-
-      `}</style>
     </div>
   )
 }
