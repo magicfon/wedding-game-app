@@ -511,26 +511,20 @@ export default function LotteryMachineLivePage() {
       // 隱藏原始中獎照片
       winnerEl.style.opacity = '0'
 
-      // 創建動畫元素（添加到 main-content，使用 position: absolute）
-      const mainContent = document.querySelector('.main-content') as HTMLElement
-      if (!mainContent) {
-        console.error('❌ main-content 不存在')
-        return
-      }
-
+      // 創建動畫元素（添加到 body，使用 position: fixed）
       const travelingPhoto = document.createElement('div')
       travelingPhoto.className = 'photo-traveling'
       travelingPhoto.innerHTML = `<img src="${winner.avatar_url}" alt="${winner.display_name}">`
-      mainContent.appendChild(travelingPhoto)
+      document.body.appendChild(travelingPhoto)
 
-      // 設置動畫元素的初始樣式（使用相對於 main-content 的坐標）
+      // 設置動畫元素的初始樣式（使用相對於視口的坐標）
       const photoRect = winnerEl.getBoundingClientRect()
-      const mainRect = mainContent.getBoundingClientRect()
-      const photoSize = trackConfig.ballDiameter // 使用動態彩球直徑
+      const mainRect = document.querySelector('.main-content')?.getBoundingClientRect() || new DOMRect(0, 0, window.innerWidth, window.innerHeight) // Fallback if main-content not found
+      const photoSize = trackConfig.ballDiameter - 4 // 稍微縮小一點（參考 reference）
 
-      // 計算相對於 main-content 的初始位置
-      const initialX = photoRect.left - mainRect.left
-      const initialY = photoRect.top - mainRect.top
+      // 使用視口坐標 (fixed positioning)
+      const initialX = photoRect.left
+      const initialY = photoRect.top
 
       travelingPhoto.style.transition = 'none'
       travelingPhoto.style.left = `${initialX}px`
@@ -623,23 +617,20 @@ export default function LotteryMachineLivePage() {
     // 生成平滑曲線路徑點（Catmull-Rom spline 採樣）
     const curveWaypoints = sampleCatmullRomSpline(controlPoints, 50)
 
-    // 計算相對於 main-content 的初始位置
-    const initialX = photoRect.left - mainRect.left
-    const initialY = photoRect.top - mainRect.top
-
-    // 轉換百分比坐標為相對於 main-content 的坐標
-    const waypoints = [{ x: initialX, y: initialY }]
+    // 轉換百分比坐標為相對於視口的坐標 (Fixed positioning)
+    const waypoints = [{ x: photoRect.left, y: photoRect.top }]
 
     curveWaypoints.forEach(pt => {
-      const relativeX = (pt.x / 100) * mainRect.width - halfSize
-      const relativeY = (pt.y / 100) * mainRect.height - halfSize
-      waypoints.push({ x: relativeX, y: relativeY })
+      // 根據視口中的 main-content 位置計算絕對坐標
+      const screenX = mainRect.left + (pt.x / 100) * mainRect.width - halfSize
+      const screenY = mainRect.top + (pt.y / 100) * mainRect.height - halfSize
+      waypoints.push({ x: screenX, y: screenY })
     })
 
     console.log('📍 路徑點生成：', {
       mainRect: { left: mainRect.left, top: mainRect.top, width: mainRect.width, height: mainRect.height },
       photoRect: { left: photoRect.left, top: photoRect.top, width: photoRect.width, height: photoRect.height },
-      initialPos: { x: initialX, y: initialY },
+      initialPos: { x: photoRect.left, y: photoRect.top },
       firstWaypoint: waypoints[1],
       lastWaypoint: waypoints[waypoints.length - 1]
     })
@@ -1723,13 +1714,13 @@ export default function LotteryMachineLivePage() {
         }
 
         .photo-traveling {
-          position: absolute;
-          width: clamp(60px, 6vw, 90px);
-          height: clamp(60px, 6vw, 90px);
+          position: fixed;
+          width: clamp(28px, 3vw, 48px);
+          height: clamp(28px, 3vw, 48px);
           border-radius: 50%;
           overflow: hidden;
-          border: clamp(3px, 0.3vw, 5px) solid #ffd700;
-          box-shadow: 0 0 clamp(20px, 2vw, 35px) rgba(255, 215, 0, 0.8);
+          border: clamp(2px, 0.2vw, 3px) solid #ffd700;
+          box-shadow: 0 0 clamp(14px, 1.5vw, 25px) rgba(255, 215, 0, 0.6);
           z-index: 1000;
           pointer-events: none;
         }
