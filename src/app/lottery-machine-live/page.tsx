@@ -904,9 +904,10 @@ export default function LotteryMachineLivePage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          trackConfig,
-          chamberStyle,
-          platformStyle
+          track_config: trackConfig,
+          chamber_style: chamberStyle,
+          platform_style: platformStyle,
+          platform_surface_style: platformSurfaceStyle
         })
       })
       const data = await response.json()

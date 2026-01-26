@@ -1,7 +1,7 @@
 {
     "trackConfig": {
-        "chamberWidth": 520,
-        "chamberHeight": 191.88,
+        "chamberWidth": 634.0000305175781,
+        "chamberHeight": 189.87501525878906,
         "ballDiameter": 55,
         "trackWidth": 42,
         "startPoint": {
@@ -42,10 +42,10 @@
         "maxVelocity": 30
     },
     "chamberStyle": {
-        "left": "79.7615%",
-        "bottom": "16px",
-        "width": "448px",
-        "chamberHeight": "191.88px"
+        "left": "45.6536%",
+        "bottom": "166px",
+        "width": "634px",
+        "chamberHeight": "189.875px"
     },
     "platformStyle": {
         "left": "0.427167%",
