@@ -806,13 +806,6 @@ export default function LotteryMachineLivePage() {
     return new Promise(resolve => {
       const startTime = performance.now()
 
-      console.log('🎬 開始動畫線段:', {
-        from: { x: Math.round(fromX), y: Math.round(fromY) },
-        to: { x: Math.round(toX), y: Math.round(toY) },
-        duration: Math.round(duration),
-        startRotation: Math.round(startRotation)
-      })
-
       const animate = (currentTime: number) => {
         const elapsed = currentTime - startTime
         const progress = Math.min(elapsed / duration, 1)
