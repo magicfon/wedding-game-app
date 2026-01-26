@@ -207,7 +207,7 @@ export default function LotteryMachineLivePage() {
       }, 100)
       return () => clearTimeout(timer)
     }
-  }, [avatarBalls])
+  }, [avatarBalls, physics])
 
   // 待機狀態也顯示氣泡效果
   useEffect(() => {
@@ -415,8 +415,15 @@ export default function LotteryMachineLivePage() {
 
       // 載入物理參數
       if (data.success && data.config?.physics) {
-        setPhysics(data.config.physics)
-        console.log('✅ 已載入儲存的物理參數')
+        const savedPhysics = data.config.physics
+        // 只載入存在的參數，保留預設值
+        setPhysics(prev => ({
+          gravity: savedPhysics.gravity !== undefined ? savedPhysics.gravity : prev.gravity,
+          airForce: savedPhysics.airForce !== undefined ? savedPhysics.airForce : prev.airForce,
+          lateralAirForce: savedPhysics.lateralAirForce !== undefined ? savedPhysics.lateralAirForce : prev.lateralAirForce,
+          maxVelocity: savedPhysics.maxVelocity !== undefined ? savedPhysics.maxVelocity : prev.maxVelocity
+        }))
+        console.log('✅ 已載入儲存的物理參數:', savedPhysics)
       }
 
       // 載入 chamber 和 platform 樣式
@@ -545,7 +552,7 @@ export default function LotteryMachineLivePage() {
           newY = containerHeight - photoSize
           clampedVy = -clampedVy * 0.85
           // 底部額外氣流力
-          clampedVy -= 0.8 * 3
+          clampedVy -= physics.airForce * 3
         }
 
         // 旋轉
