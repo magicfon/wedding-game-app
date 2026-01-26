@@ -1680,7 +1680,7 @@ export default function LotteryMachineLivePage() {
           cursor: move;
           transform: translate(-50%, -50%);
           transition: transform 0.1s ease, box-shadow 0.1s ease;
-          z-index: 100;
+          z-index: 10000;
         }
 
         .track-node:hover {
