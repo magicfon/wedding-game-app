@@ -331,17 +331,13 @@ export default function LotteryMachineLivePage() {
       
       // 載入 chamber 和 platform 樣式
       if (data.success && data.config) {
-        if (data.config.chamberStyle) {
-          setChamberStyle(data.config.chamberStyle)
+        if (data.config.chamber_style) {
+          setChamberStyle(data.config.chamber_style)
           console.log('✅ 已載入儲存的 chamber 樣式')
         }
-        if (data.config.platformStyle) {
-          setPlatformStyle(data.config.platformStyle)
+        if (data.config.platform_style) {
+          setPlatformStyle(data.config.platform_style)
           console.log('✅ 已載入儲存的 platform 樣式')
-        }
-        if (data.config.platformSurfaceStyle) {
-          setPlatformSurfaceStyle(data.config.platformSurfaceStyle)
-          console.log('✅ 已載入儲存的 platform surface 樣式')
         }
       }
     } catch (err) {
@@ -900,14 +896,17 @@ export default function LotteryMachineLivePage() {
   const saveTrackConfig = async () => {
     try {
       console.log('💾 儲存軌道設定...', trackConfig)
+      console.log(' - chamberStyle:', chamberStyle)
+      console.log(' - platformStyle:', platformStyle)
+      console.log(' - platformSurfaceStyle:', platformSurfaceStyle)
+      
       const response = await fetch('/api/lottery-machine/config', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           trackConfig,
           chamberStyle,
-          platformStyle,
-          platformSurfaceStyle
+          platformStyle
         })
       })
       const data = await response.json()
