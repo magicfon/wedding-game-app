@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
+import { useState, useEffect, useRef, useMemo, useCallback, useLayoutEffect } from 'react'
 import { Gift } from 'lucide-react'
 
 interface Photo {
@@ -69,6 +69,8 @@ export default function LotteryMachineLivePage() {
   const [draggingNode, setDraggingNode] = useState<{ type: 'start' | 'end' | 'node', index?: number } | null>(null)
   const [windowSize, setWindowSize] = useState({ width: typeof window !== 'undefined' ? window.innerWidth : 1920, height: typeof window !== 'undefined' ? window.innerHeight : 1080 })
   const [dragPosition, setDragPosition] = useState<{ x: number; y: number } | null>(null)
+  const [isMounted, setIsMounted] = useState(false)
+  const [mainContentRect, setMainContentRect] = useState<DOMRect | null>(null)
 
   // 元素拖曳狀態
   const [elementDragState, setElementDragState] = useState<{
@@ -160,6 +162,20 @@ export default function LotteryMachineLivePage() {
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [updateResponsiveConfig])
+
+  // 確保組件已掛載後才渲染軌道
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
+  // 使用 useLayoutEffect 獲取 main-content 的尺寸
+  useLayoutEffect(() => {
+    const mainContent = document.querySelector('.main-content')
+    if (mainContent) {
+      const rect = mainContent.getBoundingClientRect()
+      setMainContentRect(rect)
+    }
+  }, [windowSize, isMounted])
 
   // 載入照片
   useEffect(() => {
@@ -1140,16 +1156,24 @@ export default function LotteryMachineLivePage() {
 
     // 獲取 main-content 的實際尺寸
     const mainContent = document.querySelector('.main-content')
-    if (!mainContent) return ''
+    let points: { x: number; y: number }[]
 
-    const mainRect = mainContent.getBoundingClientRect()
-
-    // 構建點數組
-    const points = [
-      { x: (startPoint.x / 100) * mainRect.width, y: (startPoint.y / 100) * mainRect.height },
-      ...nodes.map(n => ({ x: (n.x / 100) * mainRect.width, y: (n.y / 100) * mainRect.height })),
-      { x: (endPoint.x / 100) * mainRect.width, y: (endPoint.y / 100) * mainRect.height }
-    ]
+    if (!mainContent || !mainContentRect) {
+      // 如果 main-content 還不存在，使用 windowSize 作為備選
+      if (typeof window === 'undefined') return ''
+      points = [
+        { x: (startPoint.x / 100) * windowSize.width, y: (startPoint.y / 100) * windowSize.height },
+        ...nodes.map(n => ({ x: (n.x / 100) * windowSize.width, y: (n.y / 100) * windowSize.height })),
+        { x: (endPoint.x / 100) * windowSize.width, y: (endPoint.y / 100) * windowSize.height }
+      ]
+    } else {
+      // 使用 mainContentRect 的尺寸
+      points = [
+        { x: (startPoint.x / 100) * mainContentRect.width, y: (startPoint.y / 100) * mainContentRect.height },
+        ...nodes.map(n => ({ x: (n.x / 100) * mainContentRect.width, y: (n.y / 100) * mainContentRect.height })),
+        { x: (endPoint.x / 100) * mainContentRect.width, y: (endPoint.y / 100) * mainContentRect.height }
+      ]
+    }
 
     if (points.length < 2) return ''
 
@@ -1157,7 +1181,7 @@ export default function LotteryMachineLivePage() {
     const pathD = generateCatmullRomPath(points)
 
     return pathD
-  }, [trackConfig, windowSize])
+  }, [trackConfig, windowSize, mainContentRect])
 
   // 氣泡效果
   useEffect(() => {
@@ -1232,7 +1256,11 @@ export default function LotteryMachineLivePage() {
       <div className="main-content">
         {/* SVG 軌道 - 在 chamber 和 platform 下方，移到 main-content 內 */}
         <div className="track-svg-container">
-          <svg xmlns="http://www.w3.org/2000/svg">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox={mainContentRect ? `0 0 ${mainContentRect.width} ${mainContentRect.height}` : `0 0 ${windowSize.width} ${windowSize.height}`}
+            preserveAspectRatio="none"
+          >
             <defs>
               <linearGradient id="trackGradient" x1="0%" y1="0%" x2="100%" y2="0%">
                 <stop offset="0%" style={{ stopColor: 'rgba(100, 180, 255, 0.7)' }} />
