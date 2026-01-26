@@ -1212,80 +1212,77 @@ export default function LotteryMachineLivePage() {
         )}
       </div>
 
-      {/* 軌道容器 - 移到 main-content 之外 */}
-      <div className="track-container" ref={trackContainerRef}>
-        {/* SVG 軌道 */}
-        <div className="track-svg-container">
-          <svg xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <linearGradient id="trackGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" style={{ stopColor: 'rgba(100, 180, 255, 0.7)' }} />
-                <stop offset="50%" style={{ stopColor: 'rgba(150, 120, 200, 0.7)' }} />
-                <stop offset="100%" style={{ stopColor: 'rgba(200, 100, 150, 0.7)' }} />
-              </linearGradient>
-            </defs>
-            <path id="trackPath" className="track-path" d={generateTrackPath()} />
-          </svg>
-        </div>
-
-        {/* 軌道編輯器 */}
-        {isEditorMode && (
-          <div
-            className="track-editor"
-            onMouseMove={handleDragMove}
-            onMouseUp={handleDragEnd}
-            onMouseLeave={handleDragEnd}
-          >
-            {/* 起點 */}
-            <div
-              className={`track-node track-node-start ${draggingNode?.type === 'start' ? 'dragging' : ''}`}
-              style={{
-                left: `${draggingNode?.type === 'start' && dragPosition ? dragPosition.x : trackConfig.startPoint.x}%`,
-                top: `${draggingNode?.type === 'start' && dragPosition ? dragPosition.y : trackConfig.startPoint.y}%`
-              }}
-              onMouseDown={(e) => handleDragStart(e, 'start')}
-            >
-              <span className="node-label">起點</span>
-            </div>
-
-            {/* 終點 */}
-            <div
-              className={`track-node track-node-end ${draggingNode?.type === 'end' ? 'dragging' : ''}`}
-              style={{
-                left: `${draggingNode?.type === 'end' && dragPosition ? dragPosition.x : trackConfig.endPoint.x}%`,
-                top: `${draggingNode?.type === 'end' && dragPosition ? dragPosition.y : trackConfig.endPoint.y}%`
-              }}
-              onMouseDown={(e) => handleDragStart(e, 'end')}
-            >
-              <span className="node-label">終點</span>
-            </div>
-
-            {/* 節點 */}
-            {trackConfig.nodes.map((node, index) => (
-              <div
-                key={node.id}
-                className={`track-node ${draggingNode?.type === 'node' && draggingNode.index === index ? 'dragging' : ''}`}
-                style={{
-                  left: `${draggingNode?.type === 'node' && draggingNode.index === index && dragPosition ? dragPosition.x : node.x}%`,
-                  top: `${draggingNode?.type === 'node' && draggingNode.index === index && dragPosition ? dragPosition.y : node.y}%`
-                }}
-                onMouseDown={(e) => handleDragStart(e, 'node', index)}
-              >
-                <span className="node-label">{node.id}</span>
-                <button
-                  className="node-delete"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    removeNode(index)
-                  }}
-                >
-                  ✕
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
+      {/* SVG 軌道 - 在 chamber 和 platform 下方 */}
+      <div className="track-svg-container">
+        <svg xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="trackGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" style={{ stopColor: 'rgba(100, 180, 255, 0.7)' }} />
+              <stop offset="50%" style={{ stopColor: 'rgba(150, 120, 200, 0.7)' }} />
+              <stop offset="100%" style={{ stopColor: 'rgba(200, 100, 150, 0.7)' }} />
+            </linearGradient>
+          </defs>
+          <path id="trackPath" className="track-path" d={generateTrackPath()} />
+        </svg>
       </div>
+
+      {/* 軌道編輯器 - 在最上層 */}
+      {isEditorMode && (
+        <div
+          className="track-editor"
+          onMouseMove={handleDragMove}
+          onMouseUp={handleDragEnd}
+          onMouseLeave={handleDragEnd}
+        >
+          {/* 起點 */}
+          <div
+            className={`track-node track-node-start ${draggingNode?.type === 'start' ? 'dragging' : ''}`}
+            style={{
+              left: `${draggingNode?.type === 'start' && dragPosition ? dragPosition.x : trackConfig.startPoint.x}%`,
+              top: `${draggingNode?.type === 'start' && dragPosition ? dragPosition.y : trackConfig.startPoint.y}%`
+            }}
+            onMouseDown={(e) => handleDragStart(e, 'start')}
+          >
+            <span className="node-label">起點</span>
+          </div>
+
+          {/* 終點 */}
+          <div
+            className={`track-node track-node-end ${draggingNode?.type === 'end' ? 'dragging' : ''}`}
+            style={{
+              left: `${draggingNode?.type === 'end' && dragPosition ? dragPosition.x : trackConfig.endPoint.x}%`,
+              top: `${draggingNode?.type === 'end' && dragPosition ? dragPosition.y : trackConfig.endPoint.y}%`
+            }}
+            onMouseDown={(e) => handleDragStart(e, 'end')}
+          >
+            <span className="node-label">終點</span>
+          </div>
+
+          {/* 節點 */}
+          {trackConfig.nodes.map((node, index) => (
+            <div
+              key={node.id}
+              className={`track-node ${draggingNode?.type === 'node' && draggingNode.index === index ? 'dragging' : ''}`}
+              style={{
+                left: `${draggingNode?.type === 'node' && draggingNode.index === index && dragPosition ? dragPosition.x : node.x}%`,
+                top: `${draggingNode?.type === 'node' && draggingNode.index === index && dragPosition ? dragPosition.y : node.y}%`
+              }}
+              onMouseDown={(e) => handleDragStart(e, 'node', index)}
+            >
+              <span className="node-label">{node.id}</span>
+              <button
+                className="node-delete"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  removeNode(index)
+                }}
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* 主要內容區域 */}
       <div className="main-content">
@@ -1598,6 +1595,16 @@ export default function LotteryMachineLivePage() {
           pointer-events: none;
           z-index: 1;
           overflow: visible;
+        }
+
+        .track-editor {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          pointer-events: auto;
+          z-index: 100;
         }
 
         .track-svg-container svg {
