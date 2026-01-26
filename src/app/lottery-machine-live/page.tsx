@@ -36,6 +36,7 @@ interface TrackConfig {
   chamberWidth: number
   chamberHeight: number
   trackWidth: number
+  platformSurfaceHeight?: number
 }
 
 export default function LotteryMachineLivePage() {
@@ -314,7 +315,7 @@ export default function LotteryMachineLivePage() {
     try {
       const response = await fetch('/api/lottery-machine/config')
       const data = await response.json()
-      
+
       if (data.success && data.config?.track_config) {
         const savedConfig = data.config.track_config
         // 檢查是否有有效的設定
@@ -323,12 +324,25 @@ export default function LotteryMachineLivePage() {
             ...prev, // 保留當前的 responsive values
             startPoint: savedConfig.startPoint,
             endPoint: savedConfig.endPoint,
-            nodes: savedConfig.nodes
+            nodes: savedConfig.nodes,
+            // 如果有儲存的 chamber 大小，也一併載入
+            chamberWidth: savedConfig.chamberWidth || prev.chamberWidth,
+            chamberHeight: savedConfig.chamberHeight || prev.chamberHeight,
+            platformSurfaceHeight: savedConfig.platformSurfaceHeight
           }))
+
+          // 如果有儲存的 platformSurfaceHeight，應用它
+          if (savedConfig.platformSurfaceHeight) {
+            setPlatformSurfaceStyle(prev => ({
+              ...prev,
+              height: `${savedConfig.platformSurfaceHeight}px`
+            }))
+          }
+
           console.log('✅ 已載入儲存的軌道設定')
         }
       }
-      
+
       // 載入 chamber 和 platform 樣式
       if (data.success && data.config) {
         if (data.config.chamber_style) {
@@ -899,11 +913,11 @@ export default function LotteryMachineLivePage() {
       console.log(' - chamberStyle:', chamberStyle)
       console.log(' - platformStyle:', platformStyle)
       console.log(' - platformSurfaceStyle:', platformSurfaceStyle)
-      
+
       const response = await fetch('/api/lottery-machine/config', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           track_config: trackConfig,
           chamber_style: chamberStyle,
           platform_style: platformStyle,
@@ -1026,6 +1040,11 @@ export default function LotteryMachineLivePage() {
           ...prev,
           height: `${newHeight}px`,
           minHeight: `${newHeight}px`
+        }))
+        // 同步更新 trackConfig 中的 platformSurfaceHeight
+        setTrackConfig(prev => ({
+          ...prev,
+          platformSurfaceHeight: newHeight
         }))
       }
     }
