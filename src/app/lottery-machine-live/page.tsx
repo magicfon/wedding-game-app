@@ -1656,119 +1656,120 @@ export default function LotteryMachineLivePage() {
           position: relative;
           z-index: 1;
         }
+      `}</style>
 
       <style jsx global>{`
-        .confetti - container {
+        .confetti-container {
           position: fixed;
-        inset: 0;
-        pointer-events: none;
-        z-index: 1000;
-        overflow: hidden;
+          inset: 0;
+          pointer-events: none;
+          z-index: 1000;
+          overflow: hidden;
         }
 
         .confetti {
           position: absolute;
-        border-radius: 2px;
-        animation: confettiFall linear forwards;
+          border-radius: 2px;
+          animation: confettiFall linear forwards;
         }
 
         @keyframes confettiFall {
-          0 % {
+          0% {
             transform: translateY(0) rotate(0deg);
             opacity: 1;
           }
           100% {
-          transform: translateY(100vh) rotate(720deg);
-        opacity: 0;
+            transform: translateY(100vh) rotate(720deg);
+            opacity: 0;
           }
         }
 
         .winner-animation-ball {
           position: absolute;
-        width: clamp(45px, 5vw, 75px);
-        height: clamp(45px, 5vw, 75px);
-        border-radius: 50%;
-        overflow: hidden;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-        border: 3px solid #ffd700;
-        z-index: 1000;
-        will-change: transform, left, top;
+          width: clamp(45px, 5vw, 75px);
+          height: clamp(45px, 5vw, 75px);
+          border-radius: 50%;
+          overflow: hidden;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+          border: 3px solid #ffd700;
+          z-index: 1000;
+          will-change: transform, left, top;
         }
 
         .winner-animation-ball img {
           width: 100%;
-        height: 100%;
-        object-fit: cover;
+          height: 100%;
+          object-fit: cover;
         }
 
         .photo-traveling {
           position: fixed;
-        width: clamp(28px, 3vw, 48px);
-        height: clamp(28px, 3vw, 48px);
-        border-radius: 50%;
-        overflow: hidden;
-        border: clamp(2px, 0.2vw, 3px) solid #ffd700;
-        box-shadow: 0 0 clamp(14px, 1.5vw, 25px) rgba(255, 215, 0, 0.6);
-        z-index: 1000;
-        pointer-events: none;
+          width: clamp(28px, 3vw, 48px);
+          height: clamp(28px, 3vw, 48px);
+          border-radius: 50%;
+          overflow: hidden;
+          border: clamp(2px, 0.2vw, 3px) solid #ffd700;
+          box-shadow: 0 0 clamp(14px, 1.5vw, 25px) rgba(255, 215, 0, 0.6);
+          z-index: 1000;
+          pointer-events: none;
         }
 
         .photo-traveling img {
           width: 100%;
-        height: 100%;
-        object-fit: cover;
+          height: 100%;
+          object-fit: cover;
         }
 
         .bubble {
           position: absolute;
-        bottom: clamp(-7px, -0.7vh, -12px);
-        width: clamp(6px, 0.6vw, 10px);
-        height: clamp(6px, 0.6vw, 10px);
-        background: radial-gradient(circle at 30% 30%, rgba(100,200,255,0.5), rgba(100,200,255,0.1));
-        border-radius: 50%;
-        animation: bubbleRise 1.3s ease-out infinite;
+          bottom: clamp(-7px, -0.7vh, -12px);
+          width: clamp(6px, 0.6vw, 10px);
+          height: clamp(6px, 0.6vw, 10px);
+          background: radial-gradient(circle at 30% 30%, rgba(100,200,255,0.5), rgba(100,200,255,0.1));
+          border-radius: 50%;
+          animation: bubbleRise 1.3s ease-out infinite;
         }
 
         @keyframes bubbleRise {
-          0 % { transform: translateY(0) scale(1); opacity: 0.7; }
+          0% { transform: translateY(0) scale(1); opacity: 0.7; }
           100% {transform: translateY(clamp(-70px, -7vh, -120px)) scale(0.3); opacity: 0; }
         }
 
         .platform-winner {
           display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 2px;
-        animation: winnerLand 0.5s ease-out;
+          flex-direction: column;
+          align-items: center;
+          gap: 2px;
+          animation: winnerLand 0.5s ease-out;
         }
 
         @keyframes winnerLand {
-          0 % { transform: translateX(40px) scale(0.5); opacity: 0; }
+          0% { transform: translateX(40px) scale(0.5); opacity: 0; }
           60% {transform: translateX(-3px) scale(1.1); }
-        100% {transform: translateX(0) scale(1); opacity: 1; }
+          100% {transform: translateX(0) scale(1); opacity: 1; }
         }
 
         .platform-winner-photo {
-          border - radius: 50%;
-        overflow: hidden;
-        border: clamp(2px, 0.2vw, 3px) solid #ffd700;
-        box-shadow: 0 0 clamp(8px, 0.8vw, 12px) rgba(255,215,0,0.4);
-        transition: width 0.2s ease, height 0.2s ease;
+          border-radius: 50%;
+          overflow: hidden;
+          border: clamp(2px, 0.2vw, 3px) solid #ffd700;
+          box-shadow: 0 0 clamp(8px, 0.8vw, 12px) rgba(255,215,0,0.4);
+          transition: width 0.2s ease, height 0.2s ease;
         }
 
         .platform-winner-photo img {
           width: 100%;
-        height: 100%;
-        object-fit: cover;
+          height: 100%;
+          object-fit: cover;
         }
 
         .platform-winner-rank {
-          font - size: clamp(0.4rem, 0.5vw, 0.6rem);
-        color: #ffd700;
-        background: rgba(255,215,0,0.15);
-        padding: clamp(1px, 0.1vw, 2px) clamp(3px, 0.3vw, 5px);
-        border-radius: clamp(4px, 0.4vw, 6px);
-        font-weight: 600;
+          font-size: clamp(0.4rem, 0.5vw, 0.6rem);
+          color: #ffd700;
+          background: rgba(255,215,0,0.15);
+          padding: clamp(1px, 0.1vw, 2px) clamp(3px, 0.3vw, 5px);
+          border-radius: clamp(4px, 0.4vw, 6px);
+          font-weight: 600;
         }
       `}</style>
     </div>
