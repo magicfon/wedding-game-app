@@ -32,6 +32,10 @@ interface TrackConfig {
   startPoint: { x: number; y: number }
   endPoint: { x: number; y: number }
   nodes: TrackNode[]
+  ballDiameter: number
+  chamberWidth: number
+  chamberHeight: number
+  trackWidth: number
 }
 
 export default function LotteryMachineLivePage() {
@@ -54,7 +58,11 @@ export default function LotteryMachineLivePage() {
       { id: 3, x: 5, y: 55 },
       { id: 4, x: 5, y: 25 },
       { id: 5, x: 25, y: 25 }
-    ]
+    ],
+    ballDiameter: 42,
+    chamberWidth: 480,
+    chamberHeight: 220,
+    trackWidth: 32
   })
   const [isEditorMode, setIsEditorMode] = useState(false)
   const [draggingNode, setDraggingNode] = useState<{ type: 'start' | 'end' | 'node', index?: number } | null>(null)
@@ -68,15 +76,58 @@ export default function LotteryMachineLivePage() {
   const animationFrameRef = useRef<number | null>(null)
   const dragAnimationFrameRef = useRef<number | null>(null)
 
+  // 響應式配置更新
+  const updateResponsiveConfig = useCallback(() => {
+    if (typeof window === 'undefined') return
+
+    const viewportWidth = window.innerWidth
+    const viewportHeight = window.innerHeight
+
+    // 根據視口大小調整配置 (參考 lottery/script.js)
+    const minBallSize = 30
+    const maxBallSize = 55
+    const minChamberHeight = 160
+    const maxChamberHeight = 280
+    const minChamberWidth = 320
+    const maxChamberWidth = 520
+
+    // 計算相對於視口大小的值
+    const ballSize = Math.min(maxBallSize, Math.max(minBallSize, viewportWidth * 0.035))
+    const chamberHeight = Math.min(maxChamberHeight, Math.max(minChamberHeight, viewportHeight * 0.18))
+    const chamberWidth = Math.min(maxChamberWidth, Math.max(minChamberWidth, viewportWidth * 0.35))
+    const trackWidth = Math.round(ballSize * 0.76)
+
+    setTrackConfig(prev => ({
+      ...prev,
+      ballDiameter: ballSize,
+      chamberHeight: chamberHeight,
+      chamberWidth: chamberWidth,
+      trackWidth: trackWidth
+    }))
+
+    console.log('📏 響應式配置更新:', {
+      ballSize,
+      chamberHeight,
+      chamberWidth,
+      trackWidth,
+      viewportWidth,
+      viewportHeight
+    })
+  }, [])
+
   // 監聽窗口大小變化
   useEffect(() => {
     const handleResize = () => {
       setWindowSize({ width: window.innerWidth, height: window.innerHeight })
+      updateResponsiveConfig()
     }
-    
+
+    // 初始化
+    handleResize()
+
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
-  }, [])
+  }, [updateResponsiveConfig])
 
   // 載入照片
   useEffect(() => {
@@ -101,7 +152,7 @@ export default function LotteryMachineLivePage() {
   useEffect(() => {
     const airBubbles = document.getElementById('airBubbles')
     if (!airBubbles) return
-    
+
     const bubbleInterval = setInterval(() => {
       const bubble = document.createElement('div')
       bubble.className = 'bubble'
@@ -112,7 +163,7 @@ export default function LotteryMachineLivePage() {
       airBubbles.appendChild(bubble)
       setTimeout(() => bubble.remove(), 1400)
     }, 100)
-    
+
     return () => clearInterval(bubbleInterval)
   }, [])
 
@@ -239,11 +290,12 @@ export default function LotteryMachineLivePage() {
         const savedConfig = data.config.track_config
         // 檢查是否有有效的設定
         if (savedConfig && savedConfig.startPoint && savedConfig.endPoint && savedConfig.nodes) {
-          setTrackConfig({
+          setTrackConfig(prev => ({
+            ...prev, // 保留當前的 responsive values
             startPoint: savedConfig.startPoint,
             endPoint: savedConfig.endPoint,
             nodes: savedConfig.nodes
-          })
+          }))
           console.log('✅ 已載入儲存的軌道設定')
         }
       }
@@ -266,25 +318,25 @@ export default function LotteryMachineLivePage() {
     if (!chamberRect || photoElements.length === 0) return
 
     // 初始化照片位置到腔體內
-    const photoSize = 42 // 彩球直徑
+    const photoSize = trackConfig.ballDiameter // 使用動態彩球直徑
     photoElements.forEach((photoEl: Element) => {
       const el = photoEl as HTMLElement
       const currentLeft = parseFloat(el.style.left || '0')
       const currentTop = parseFloat(el.style.top || '0')
-      
+
       // 確保照片在腔體範圍內
       let x = Math.min(Math.max(0, currentLeft), chamberRect.width - photoSize)
       let y = Math.min(Math.max(0, currentTop), chamberRect.height - photoSize)
-      
+
       // 如果照片在腔體外，重新定位到中心
       if (x < 0 || x > chamberRect.width - photoSize || y < 0 || y > chamberRect.height - photoSize) {
         x = (chamberRect.width - photoSize) / 2 + (Math.random() - 0.5) * 50
         y = (chamberRect.height - photoSize) / 2 + (Math.random() - 0.5) * 50
       }
-      
+
       el.style.left = `${x}px`
       el.style.top = `${y}px`
-      
+
       // 確保有速度
       if (!el.dataset.vx || el.dataset.vx === '0') {
         el.dataset.vx = ((Math.random() - 0.5) * 10).toString()
@@ -301,35 +353,35 @@ export default function LotteryMachineLivePage() {
         const y = parseFloat(el.style.top || '0')
         const vx = parseFloat(el.dataset.vx || '0')
         const vy = parseFloat(el.dataset.vy || '0')
-        
+
         // 重力
         let newVy = vy + 0.35
-        
+
         // 氣流力
         const bottomFactor = y / chamberRect.height
         newVy -= 0.8 * (0.5 + bottomFactor * 1.5)
-        
+
         // 側向氣流力
         const horizontalFactor = x / chamberRect.width
         const newVx = vx + (Math.random() - 0.5) * 0.4 + (Math.random() - 0.5) * 0.2
-        
+
         // 摩擦力
         const friction = 0.995
         const finalVx = newVx * friction
         const finalVy = newVy * friction
-        
+
         // 速度限制
         const maxVelocity = 15
         let clampedVx = finalVx
         let clampedVy = finalVy
-        
+
         if (Math.abs(clampedVx) > maxVelocity) {
           clampedVx = Math.sign(clampedVx) * maxVelocity
         }
         if (Math.abs(clampedVy) > maxVelocity) {
           clampedVy = Math.sign(clampedVy) * maxVelocity
         }
-        
+
         // 最小速度
         const minVelocity = 4
         const speed = Math.sqrt(clampedVx * clampedVx + clampedVy * clampedVy)
@@ -338,15 +390,15 @@ export default function LotteryMachineLivePage() {
           clampedVx += Math.cos(angle) * minVelocity * 0.5
           clampedVy += Math.sin(angle) * minVelocity * 0.5
         }
-        
+
         // 更新位置
         let newX = x + clampedVx
         let newY = y + clampedVy
-        
+
         // 邊界碰撞
         const containerWidth = chamberRect.width
         const containerHeight = chamberRect.height
-        
+
         if (newX < 0) {
           newX = 0
           clampedVx = -clampedVx * 0.85
@@ -354,7 +406,7 @@ export default function LotteryMachineLivePage() {
           newX = containerWidth - photoSize
           clampedVx = -clampedVx * 0.85
         }
-        
+
         if (newY < 0) {
           newY = 0
           clampedVy = -clampedVy * 0.85
@@ -364,26 +416,26 @@ export default function LotteryMachineLivePage() {
           // 底部額外氣流力
           clampedVy -= 0.8 * 3
         }
-        
+
         // 旋轉
         const rotation = parseFloat(el.dataset.rotation || '0')
         const rotationSpeed = parseFloat(el.dataset.rotationSpeed || '0')
         const newRotation = rotation + rotationSpeed + clampedVx * 0.5
-        
+
         // 更新 DOM
         el.style.left = `${newX}px`
         el.style.top = `${newY}px`
         el.style.transform = `rotate(${newRotation}deg)`
-        
+
         // 更新資料屬性
         el.dataset.vx = clampedVx.toString()
         el.dataset.vy = clampedVy.toString()
         el.dataset.rotation = newRotation.toString()
       })
-      
+
       animationFrameRef.current = requestAnimationFrame(animate)
     }
-    
+
     animate()
   }
 
@@ -440,7 +492,7 @@ export default function LotteryMachineLivePage() {
 
       const photoElements = Array.from(photosContainer.querySelectorAll('.photo-item')) as HTMLElement[]
       console.log('📸 找到照片元素數量:', photoElements.length)
-      
+
       // 使用 user_id 來查找照片元素（因為同一用戶的所有彩球都使用相同的頭像）
       const winnerEl = photoElements.find((el: HTMLElement) => {
         const photoUserId = el.dataset.userId
@@ -465,7 +517,7 @@ export default function LotteryMachineLivePage() {
         console.error('❌ main-content 不存在')
         return
       }
-      
+
       const travelingPhoto = document.createElement('div')
       travelingPhoto.className = 'photo-traveling'
       travelingPhoto.innerHTML = `<img src="${winner.avatar_url}" alt="${winner.display_name}">`
@@ -474,18 +526,18 @@ export default function LotteryMachineLivePage() {
       // 設置動畫元素的初始樣式（使用相對於 main-content 的坐標）
       const photoRect = winnerEl.getBoundingClientRect()
       const mainRect = mainContent.getBoundingClientRect()
-      const photoSize = 42 // 彩球直徑
-      
+      const photoSize = trackConfig.ballDiameter // 使用動態彩球直徑
+
       // 計算相對於 main-content 的初始位置
       const initialX = photoRect.left - mainRect.left
       const initialY = photoRect.top - mainRect.top
-      
+
       travelingPhoto.style.transition = 'none'
       travelingPhoto.style.left = `${initialX}px`
       travelingPhoto.style.top = `${initialY}px`
       travelingPhoto.style.width = `${photoSize}px`
       travelingPhoto.style.height = `${photoSize}px`
-      
+
       // 生成路徑點（使用 Catmull-Rom spline）
       const waypoints = generateWaypoints(photoRect, mainRect)
       console.log('📍 路徑點數量:', waypoints.length)
@@ -496,39 +548,39 @@ export default function LotteryMachineLivePage() {
       let rotation = 0
       const animatePath = async () => {
         console.log('🚀 開始沿著路徑動畫，總共', waypoints.length - 1, '個線段')
-        
+
         for (let i = 0; i < waypoints.length - 1; i++) {
           const from = waypoints[i]
           const to = waypoints[i + 1]
           const distance = Math.sqrt(Math.pow(to.x - from.x, 2) + Math.pow(to.y - from.y, 2))
           const duration = distance * 1.2 // 1.2ms per pixel (參考 lottery/ 的實現)
-          
+
           console.log(`📍 線段 ${i + 1}/${waypoints.length - 1}:`, {
             from: { x: Math.round(from.x), y: Math.round(from.y) },
             to: { x: Math.round(to.x), y: Math.round(to.y) },
             distance: Math.round(distance),
             duration: Math.round(duration)
           })
-          
+
           await animateSegment(travelingPhoto, from.x, from.y, to.x, to.y, duration, rotation)
           rotation += distance * 0.5 // 降低自旋轉速度（參考 lottery/ 的實現）
         }
       }
-      
+
       // 動畫完成後的處理
       const onAnimationComplete = () => {
         console.log('🎉 動畫完成')
-        
+
         // 播放彩紙效果
         triggerConfetti()
-        
+
         // 將中獎者添加到平台
         const platformSlots = platformSlotsRef.current
         if (platformSlots) {
           const platformSurface = platformSlots.parentElement?.querySelector('.platform-surface') as HTMLElement
           const platformHeight = platformSurface?.clientHeight || 60
           const ballSize = Math.max(20, Math.round(platformHeight * 0.9))
-          
+
           const winnerEl = document.createElement('div')
           winnerEl.className = 'platform-winner'
           winnerEl.innerHTML = `
@@ -542,7 +594,7 @@ export default function LotteryMachineLivePage() {
         } else {
           console.error('❌ platformSlots 不存在')
         }
-        
+
         // 移除動畫元素
         setTimeout(() => {
           travelingPhoto.remove()
@@ -550,7 +602,7 @@ export default function LotteryMachineLivePage() {
           resolve()
         }, 500)
       }
-      
+
       // 開始動畫
       console.log('✅ 開始沿著路徑動畫')
       animatePath().then(onAnimationComplete)
@@ -559,31 +611,31 @@ export default function LotteryMachineLivePage() {
 
   // 生成路徑點（使用 Catmull-Rom spline，與 lottery/ 完全相同）
   const generateWaypoints = (photoRect: DOMRect, mainRect: DOMRect) => {
-    const halfSize = 21 // 彩球直徑的一半 (42 / 2)
-    
+    const halfSize = trackConfig.ballDiameter / 2 // 使用動態半徑
+
     // 構建控制點
     const controlPoints = [
       { x: trackConfig.startPoint.x, y: trackConfig.startPoint.y },
       ...trackConfig.nodes.map(n => ({ x: n.x, y: n.y })),
       { x: trackConfig.endPoint.x, y: trackConfig.endPoint.y }
     ]
-    
+
     // 生成平滑曲線路徑點（Catmull-Rom spline 採樣）
     const curveWaypoints = sampleCatmullRomSpline(controlPoints, 50)
-    
+
     // 計算相對於 main-content 的初始位置
     const initialX = photoRect.left - mainRect.left
     const initialY = photoRect.top - mainRect.top
-    
+
     // 轉換百分比坐標為相對於 main-content 的坐標
     const waypoints = [{ x: initialX, y: initialY }]
-    
+
     curveWaypoints.forEach(pt => {
       const relativeX = (pt.x / 100) * mainRect.width - halfSize
       const relativeY = (pt.y / 100) * mainRect.height - halfSize
       waypoints.push({ x: relativeX, y: relativeY })
     })
-    
+
     console.log('📍 路徑點生成：', {
       mainRect: { left: mainRect.left, top: mainRect.top, width: mainRect.width, height: mainRect.height },
       photoRect: { left: photoRect.left, top: photoRect.top, width: photoRect.width, height: photoRect.height },
@@ -591,7 +643,7 @@ export default function LotteryMachineLivePage() {
       firstWaypoint: waypoints[1],
       lastWaypoint: waypoints[waypoints.length - 1]
     })
-    
+
     return waypoints
   }
 
@@ -609,32 +661,32 @@ export default function LotteryMachineLivePage() {
       }
       return samples
     }
-    
+
     // 添加虛擬點以獲得平滑端點
     const extendedPoints = [
       { x: points[0].x * 2 - points[1].x, y: points[0].y * 2 - points[1].y },
       ...points,
       { x: points[points.length - 1].x * 2 - points[points.length - 2].x, y: points[points.length - 1].y * 2 - points[points.length - 2].y }
     ]
-    
+
     const samples = []
     const totalSegments = points.length - 1
     const samplesPerSegment = Math.ceil(numSamples / totalSegments)
-    
+
     for (let seg = 0; seg < totalSegments; seg++) {
       const p0 = extendedPoints[seg]
       const p1 = extendedPoints[seg + 1]
       const p2 = extendedPoints[seg + 2]
       const p3 = extendedPoints[seg + 3]
-      
+
       for (let i = 0; i <= samplesPerSegment; i++) {
         if (seg > 0 && i === 0) continue // 避免線段邊界重複
         const t = i / samplesPerSegment
-        
+
         // Catmull-Rom spline 插值
         const t2 = t * t
         const t3 = t2 * t
-        
+
         const x = 0.5 * (
           (2 * p1.x) +
           (-p0.x + p2.x) * t +
@@ -647,11 +699,11 @@ export default function LotteryMachineLivePage() {
           (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * t2 +
           (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * t3
         )
-        
+
         samples.push({ x, y })
       }
     }
-    
+
     return samples
   }
 
@@ -659,14 +711,14 @@ export default function LotteryMachineLivePage() {
   const animateSegment = (el: HTMLElement, fromX: number, fromY: number, toX: number, toY: number, duration: number, startRotation: number): Promise<void> => {
     return new Promise(resolve => {
       const startTime = performance.now()
-      
+
       console.log('🎬 開始動畫線段:', {
         from: { x: Math.round(fromX), y: Math.round(fromY) },
         to: { x: Math.round(toX), y: Math.round(toY) },
         duration: Math.round(duration),
         startRotation: Math.round(startRotation)
       })
-      
+
       const animate = (currentTime: number) => {
         const elapsed = currentTime - startTime
         const progress = Math.min(elapsed / duration, 1)
@@ -674,15 +726,15 @@ export default function LotteryMachineLivePage() {
         const eased = progress < 0.5
           ? 2 * progress * progress
           : 1 - Math.pow(-2 * progress + 2, 2) / 2
-        
+
         const x = fromX + (toX - fromX) * eased
         const y = fromY + (toY - fromY) * eased
         const rotation = startRotation + progress * 60 // 降低每段的旋轉角度
-        
+
         el.style.left = `${x}px`
         el.style.top = `${y}px`
         el.style.transform = `rotate(${rotation}deg)`
-        
+
         if (progress < 1) {
           requestAnimationFrame(animate)
         } else {
@@ -690,7 +742,7 @@ export default function LotteryMachineLivePage() {
           resolve()
         }
       }
-      
+
       requestAnimationFrame(animate)
     })
   }
@@ -721,7 +773,7 @@ export default function LotteryMachineLivePage() {
   const addToPlatform = (winner: Winner) => {
     const platformSlots = platformSlotsRef.current
     if (!platformSlots) return
-    
+
     const winnerEl = document.createElement('div')
     winnerEl.className = 'platform-winner'
     winnerEl.innerHTML = `
@@ -738,7 +790,7 @@ export default function LotteryMachineLivePage() {
     e.preventDefault()
     e.stopPropagation()
     setDraggingNode({ type, index })
-    
+
     // 初始化拖曳位置
     const x = (e.clientX / windowSize.width) * 100
     const y = (e.clientY / windowSize.height) * 100
@@ -781,7 +833,7 @@ export default function LotteryMachineLivePage() {
       cancelAnimationFrame(dragAnimationFrameRef.current)
       dragAnimationFrameRef.current = null
     }
-    
+
     setDraggingNode(null)
     setDragPosition(null)
   }
@@ -835,14 +887,14 @@ export default function LotteryMachineLivePage() {
     const { startPoint, endPoint, nodes } = trackConfig
     const containerWidth = windowSize.width
     const containerHeight = windowSize.height
-    
+
     // 使用 ref 獲取 track-container 的實際尺寸和位置
     let trackRect = { left: 0, top: 0, width: containerWidth, height: containerHeight }
     if (trackContainerRef.current) {
       const rect = trackContainerRef.current.getBoundingClientRect()
       trackRect = { left: rect.left, top: rect.top, width: rect.width, height: rect.height }
     }
-    
+
     // 獲取 SVG 容器的實際尺寸和位置
     const svgContainer = document.querySelector('.track-svg-container')
     let svgRect = { left: 0, top: 0, width: containerWidth, height: containerHeight }
@@ -850,14 +902,14 @@ export default function LotteryMachineLivePage() {
       const rect = svgContainer.getBoundingClientRect()
       svgRect = { left: rect.left, top: rect.top, width: rect.width, height: rect.height }
     }
-    
+
     // 計算坐標偏移（SVG 容器相對於 track-container 的偏移）
     const offsetX = svgRect.left - trackRect.left
     const offsetY = svgRect.top - trackRect.top
-    
+
     // 節點有 transform: translate(-50%, -50%)，所以路徑需要對齊節點中心
     // 節點是相對於 track-container 定位的，所以需要將坐標轉換到 SVG 容器的坐標系
-    const halfSize = 21 // 彩球直徑的一半 (42 / 2)
+    const halfSize = trackConfig.ballDiameter / 2 // 使用動態半徑
     const start = {
       x: (startPoint.x / 100) * trackRect.width - offsetX - halfSize,
       y: (startPoint.y / 100) * trackRect.height - offsetY - halfSize
@@ -866,12 +918,12 @@ export default function LotteryMachineLivePage() {
       x: (endPoint.x / 100) * trackRect.width - offsetX - halfSize,
       y: (endPoint.y / 100) * trackRect.height - offsetY - halfSize
     }
-    
+
     const controlPoints = nodes.map(n => ({
       x: (n.x / 100) * trackRect.width - offsetX - halfSize,
       y: (n.y / 100) * trackRect.height - offsetY - halfSize
     }))
-    
+
     // 調試日誌
     console.log('📍 軌道路徑生成調試：', {
       containerSize: { width: containerWidth, height: containerHeight },
@@ -882,58 +934,58 @@ export default function LotteryMachineLivePage() {
       endPoint: { pct: endPoint, pixel: end },
       controlPoints: nodes.map((n, i) => ({ pct: n, pixel: controlPoints[i] }))
     })
-    
+
     if (controlPoints.length === 0) {
       return `M ${start.x},${start.y} L ${end.x},${end.y}`
     }
-    
+
     // 使用 Catmull-Rom 樣條曲線生成平滑路徑
     // 這種曲線確保路徑穿過所有控制點，並且在節點之間平滑連接
     const points = [start, ...controlPoints, end]
-    
+
     if (points.length < 2) {
       return `M ${start.x},${start.y} L ${end.x},${end.y}`
     }
-    
+
     // Catmull-Rom 樣條曲線轉換為貝茲曲線
     const catmullRom2Bezier = (p0: { x: number; y: number }, p1: { x: number; y: number }, p2: { x: number; y: number }, p3: { x: number; y: number }) => {
       const t = 0.5 // tension parameter, lower = smoother
-      
+
       const cp1x = p1.x + (p2.x - p0.x) / 6 * t
       const cp1y = p1.y + (p2.y - p0.y) / 6 * t
-      
+
       const cp2x = p2.x - (p3.x - p1.x) / 6 * t
       const cp2y = p2.y - (p3.y - p1.y) / 6 * t
-      
+
       return {
         cp1: { x: cp1x, y: cp1y },
         cp2: { x: cp2x, y: cp2y },
         end: { x: p2.x, y: p2.y }
       }
     }
-    
+
     let path = `M ${points[0].x},${points[0].y}`
-    
+
     for (let i = 0; i < points.length - 1; i++) {
       const p0 = points[Math.max(0, i - 1)]
       const p1 = points[i]
       const p2 = points[i + 1]
       const p3 = points[Math.min(points.length - 1, i + 2)]
-      
+
       const bezier = catmullRom2Bezier(p0, p1, p2, p3)
       path += ` C ${bezier.cp1.x},${bezier.cp1.y} ${bezier.cp2.x},${bezier.cp2.y} ${bezier.end.x},${bezier.end.y}`
     }
-    
+
     return path
   }, [trackConfig, windowSize])
 
   // 氣泡效果
   useEffect(() => {
     if (!lotteryState.is_lottery_active) return
-    
+
     const airBubbles = document.getElementById('airBubbles')
     if (!airBubbles) return
-    
+
     const bubbleInterval = setInterval(() => {
       const bubble = document.createElement('div')
       bubble.className = 'bubble'
@@ -944,7 +996,7 @@ export default function LotteryMachineLivePage() {
       airBubbles.appendChild(bubble)
       setTimeout(() => bubble.remove(), 1400)
     }, 100)
-    
+
     return () => clearInterval(bubbleInterval)
   }, [lotteryState.is_lottery_active])
 
@@ -1081,8 +1133,8 @@ export default function LotteryMachineLivePage() {
         </div>
 
         {/* 彩票機腔體 */}
-        <div className="lottery-machine" ref={chamberRef}>
-          <div className="chamber">
+        <div className="lottery-machine" ref={chamberRef} style={{ maxWidth: `${trackConfig.chamberWidth}px` }}>
+          <div className="chamber" style={{ height: `${trackConfig.chamberHeight}px` }}>
             <div className="chamber-glass"></div>
 
             <div className="photos-container" ref={photosContainerRef}>
@@ -1097,8 +1149,10 @@ export default function LotteryMachineLivePage() {
                   data-rotation={Math.random() * 360}
                   data-rotation-speed={(Math.random() - 0.5) * 8}
                   style={{
-                    left: `${Math.random() * 400}px`,
-                    top: `${Math.random() * 200}px`
+                    left: `${Math.random() * (trackConfig.chamberWidth - trackConfig.ballDiameter)}px`,
+                    top: `${Math.random() * (trackConfig.chamberHeight - trackConfig.ballDiameter)}px`,
+                    width: `${trackConfig.ballDiameter}px`,
+                    height: `${trackConfig.ballDiameter}px`
                   }}
                 >
                   <img src={ball.avatar_url} alt={ball.display_name} />
