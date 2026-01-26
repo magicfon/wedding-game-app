@@ -441,14 +441,15 @@ export default function LotteryMachineLivePage() {
       const photoElements = Array.from(photosContainer.querySelectorAll('.photo-item')) as HTMLElement[]
       console.log('📸 找到照片元素數量:', photoElements.length)
       
+      // 使用 user_id 來查找照片元素（因為同一用戶的所有彩球都使用相同的頭像）
       const winnerEl = photoElements.find((el: HTMLElement) => {
-        const photoId = parseInt(el.dataset.id || '0')
-        return photoId === winner.id
+        const photoUserId = el.dataset.userId
+        return photoUserId === winner.user_id
       })
 
       if (!winnerEl) {
-        console.error('❌ 找不到中獎者照片元素:', winner.id)
-        console.log('📋 所有照片 ID:', photoElements.map(el => parseInt(el.dataset.id || '0')))
+        console.error('❌ 找不到中獎者照片元素，user_id:', winner.user_id)
+        console.log('📋 所有 user_id:', photoElements.map(el => el.dataset.userId))
         resolve()
         return
       }
@@ -1090,6 +1091,7 @@ export default function LotteryMachineLivePage() {
                   key={ball.id}
                   className="photo-item"
                   data-id={ball.id}
+                  data-user-id={ball.user_id}
                   data-vx={(Math.random() - 0.5) * 15}
                   data-vy={(Math.random() - 0.5) * 15}
                   data-rotation={Math.random() * 360}
