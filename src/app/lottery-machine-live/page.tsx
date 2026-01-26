@@ -1142,7 +1142,7 @@ export default function LotteryMachineLivePage() {
     const points = [
       { x: (startPoint.x / 100) * mainRect.width, y: (startPoint.y / 100) * mainRect.height },
       ...nodes.map(n => ({ x: (n.x / 100) * mainRect.width, y: (n.y / 100) * mainRect.height })),
-      { x: (endPoint.x / 100) * mainRect.width, y: (endPoint.y / 100) * mainRect.height })
+      { x: (endPoint.x / 100) * mainRect.width, y: (endPoint.y / 100) * mainRect.height }
     ]
 
     if (points.length < 2) return ''
