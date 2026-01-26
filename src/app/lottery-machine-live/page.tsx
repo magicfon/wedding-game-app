@@ -1312,7 +1312,14 @@ export default function LotteryMachineLivePage() {
                   min="25"
                   max="80"
                   value={trackConfig.ballDiameter}
-                  onChange={(e) => setTrackConfig(prev => ({ ...prev, ballDiameter: parseInt(e.target.value) }))}
+                  onChange={(e) => {
+                    const newBallDiameter = parseInt(e.target.value)
+                    setTrackConfig(prev => ({
+                      ...prev,
+                      ballDiameter: newBallDiameter,
+                      trackWidth: Math.round(newBallDiameter * 0.76) // 軌道寬度與彩球直徑連動
+                    }))
+                  }}
                   className="physics-control-slider"
                 />
                 <span className="physics-control-value">{trackConfig.ballDiameter}px</span>
