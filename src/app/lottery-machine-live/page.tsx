@@ -314,7 +314,7 @@ export default function LotteryMachineLivePage() {
     try {
       const response = await fetch('/api/lottery-machine/config')
       const data = await response.json()
-
+      
       if (data.success && data.config?.track_config) {
         const savedConfig = data.config.track_config
         // 檢查是否有有效的設定
@@ -326,6 +326,22 @@ export default function LotteryMachineLivePage() {
             nodes: savedConfig.nodes
           }))
           console.log('✅ 已載入儲存的軌道設定')
+        }
+      }
+      
+      // 載入 chamber 和 platform 樣式
+      if (data.success && data.config) {
+        if (data.config.chamberStyle) {
+          setChamberStyle(data.config.chamberStyle)
+          console.log('✅ 已載入儲存的 chamber 樣式')
+        }
+        if (data.config.platformStyle) {
+          setPlatformStyle(data.config.platformStyle)
+          console.log('✅ 已載入儲存的 platform 樣式')
+        }
+        if (data.config.platformSurfaceStyle) {
+          setPlatformSurfaceStyle(data.config.platformSurfaceStyle)
+          console.log('✅ 已載入儲存的 platform surface 樣式')
         }
       }
     } catch (err) {
@@ -887,12 +903,17 @@ export default function LotteryMachineLivePage() {
       const response = await fetch('/api/lottery-machine/config', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ trackConfig })
+        body: JSON.stringify({ 
+          trackConfig,
+          chamberStyle,
+          platformStyle,
+          platformSurfaceStyle
+        })
       })
       const data = await response.json()
       console.log('📥 儲存回應:', data)
       if (data.success) {
-        alert('✅ 軌道設定已儲存')
+        alert('✅ 設定已儲存')
       } else {
         alert('❌ 儲存失敗: ' + data.error)
       }
@@ -1013,6 +1034,8 @@ export default function LotteryMachineLivePage() {
   // 元素拖曳結束
   const handleElementDragEnd = () => {
     if (elementDragState) {
+      // 保存設定到後端
+      saveTrackConfig()
       setElementDragState(null)
     }
   }
