@@ -1212,6 +1212,9 @@ export default function LotteryMachineLivePage() {
         )}
       </div>
 
+      {/* 軌道容器 - 保持 ref 用於動畫 */}
+      <div className="track-container" ref={trackContainerRef}></div>
+
       {/* SVG 軌道 - 在 chamber 和 platform 下方 */}
       <div className="track-svg-container">
         <svg xmlns="http://www.w3.org/2000/svg">
@@ -1582,7 +1585,7 @@ export default function LotteryMachineLivePage() {
           left: 0;
           width: 100%;
           height: 100%;
-          z-index: 100;
+          z-index: 1;
           pointer-events: none;
         }
 
