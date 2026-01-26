@@ -1646,7 +1646,7 @@ export default function LotteryMachineLivePage() {
           left: 0;
           width: 100%;
           height: 100%;
-          pointer-events: auto;
+          pointer-events: none;
           z-index: 100;
         }
 
@@ -1714,6 +1714,7 @@ export default function LotteryMachineLivePage() {
           transform: translate(-50%, -50%);
           transition: transform 0.1s ease, box-shadow 0.1s ease;
           z-index: 10000;
+          pointer-events: auto;
         }
 
         .track-node:hover {
