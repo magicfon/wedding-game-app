@@ -81,6 +81,7 @@ export default function LotteryMachineLivePage() {
     startLeft: number
     startTop: number
     startBottom: number
+    mainRect?: DOMRect
   } | null>(null)
 
   // 元素位置和大小狀態
@@ -878,9 +879,13 @@ export default function LotteryMachineLivePage() {
     e.stopPropagation()
     setDraggingNode({ type, index })
 
-    // 初始化拖曳位置
-    const x = (e.clientX / windowSize.width) * 100
-    const y = (e.clientY / windowSize.height) * 100
+    // 初始化拖曳位置 - 使用相對於 main-content 的坐標
+    const mainContent = document.querySelector('.main-content')
+    if (!mainContent) return
+
+    const mainRect = mainContent.getBoundingClientRect()
+    const x = ((e.clientX - mainRect.left) / mainRect.width) * 100
+    const y = ((e.clientY - mainRect.top) / mainRect.height) * 100
     setDragPosition({ x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) })
   }
 
@@ -893,8 +898,12 @@ export default function LotteryMachineLivePage() {
     }
 
     dragAnimationFrameRef.current = requestAnimationFrame(() => {
-      const x = (e.clientX / windowSize.width) * 100
-      const y = (e.clientY / windowSize.height) * 100
+      const mainContent = document.querySelector('.main-content')
+      if (!mainContent) return
+
+      const mainRect = mainContent.getBoundingClientRect()
+      const x = ((e.clientX - mainRect.left) / mainRect.width) * 100
+      const y = ((e.clientY - mainRect.top) / mainRect.height) * 100
 
       const clampedX = Math.max(0, Math.min(100, x))
       const clampedY = Math.max(0, Math.min(100, y))
@@ -991,7 +1000,8 @@ export default function LotteryMachineLivePage() {
     if (!element) return
 
     const rect = element.getBoundingClientRect()
-    const mainRect = document.querySelector('.main-content')?.getBoundingClientRect() || new DOMRect(0, 0, window.innerWidth, window.innerHeight)
+    const mainRect = document.querySelector('.main-content')?.getBoundingClientRect()
+    if (!mainRect) return
 
     let startHeight = rect.height
     if (type === 'platform') {
@@ -1010,7 +1020,8 @@ export default function LotteryMachineLivePage() {
       startHeight,
       startLeft: rect.left - mainRect.left,
       startTop: rect.top - mainRect.top,
-      startBottom: mainRect.bottom - rect.bottom
+      startBottom: mainRect.bottom - rect.bottom,
+      mainRect
     })
   }
 
@@ -1018,22 +1029,24 @@ export default function LotteryMachineLivePage() {
   const handleElementDragMove = (e: React.MouseEvent) => {
     if (!elementDragState || !isEditorMode) return
 
-    const { type, action, startX, startY, startWidth, startHeight, startLeft, startTop, startBottom } = elementDragState
-    if (!action) return
+    const { type, action, startX, startY, startWidth, startHeight, startLeft, startTop, startBottom, mainRect } = elementDragState
+    if (!action || !mainRect) return
 
     const dx = e.clientX - startX
     const dy = e.clientY - startY
 
     if (action === 'move') {
       if (type === 'chamber') {
-        const newLeftPercent = ((startLeft + dx + startWidth / 2) / windowSize.width) * 100
+        // Chamber 使用相對於 main-content 的百分比位置
+        const newLeftPercent = ((startLeft + dx + startWidth / 2) / mainRect.width) * 100
         setChamberStyle(prev => ({
           ...prev,
           left: `${Math.max(0, Math.min(100, newLeftPercent))}%`,
           bottom: `${Math.max(0, -dy)}px`
         }))
       } else {
-        const newLeft = ((startLeft + dx) / windowSize.width) * 100
+        // Platform 使用相對於 main-content 的位置
+        const newLeft = ((startLeft + dx) / mainRect.width) * 100
         const newTop = startTop + dy
         setPlatformStyle(prev => ({
           ...prev,
@@ -1215,80 +1228,79 @@ export default function LotteryMachineLivePage() {
       {/* 軌道容器 - 保持 ref 用於動畫 */}
       <div className="track-container" ref={trackContainerRef}></div>
 
-      {/* SVG 軌道 - 在 chamber 和 platform 下方 */}
-      <div className="track-svg-container">
-        <svg xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="trackGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" style={{ stopColor: 'rgba(100, 180, 255, 0.7)' }} />
-              <stop offset="50%" style={{ stopColor: 'rgba(150, 120, 200, 0.7)' }} />
-              <stop offset="100%" style={{ stopColor: 'rgba(200, 100, 150, 0.7)' }} />
-            </linearGradient>
-          </defs>
-          <path id="trackPath" className="track-path" d={generateTrackPath()} />
-        </svg>
-      </div>
-
-      {/* 軌道編輯器 - 在最上層 */}
-      {isEditorMode && (
-        <div
-          className="track-editor"
-          onMouseMove={handleDragMove}
-          onMouseUp={handleDragEnd}
-          onMouseLeave={handleDragEnd}
-        >
-          {/* 起點 */}
-          <div
-            className={`track-node track-node-start ${draggingNode?.type === 'start' ? 'dragging' : ''}`}
-            style={{
-              left: `${draggingNode?.type === 'start' && dragPosition ? dragPosition.x : trackConfig.startPoint.x}%`,
-              top: `${draggingNode?.type === 'start' && dragPosition ? dragPosition.y : trackConfig.startPoint.y}%`
-            }}
-            onMouseDown={(e) => handleDragStart(e, 'start')}
-          >
-            <span className="node-label">起點</span>
-          </div>
-
-          {/* 終點 */}
-          <div
-            className={`track-node track-node-end ${draggingNode?.type === 'end' ? 'dragging' : ''}`}
-            style={{
-              left: `${draggingNode?.type === 'end' && dragPosition ? dragPosition.x : trackConfig.endPoint.x}%`,
-              top: `${draggingNode?.type === 'end' && dragPosition ? dragPosition.y : trackConfig.endPoint.y}%`
-            }}
-            onMouseDown={(e) => handleDragStart(e, 'end')}
-          >
-            <span className="node-label">終點</span>
-          </div>
-
-          {/* 節點 */}
-          {trackConfig.nodes.map((node, index) => (
-            <div
-              key={node.id}
-              className={`track-node ${draggingNode?.type === 'node' && draggingNode.index === index ? 'dragging' : ''}`}
-              style={{
-                left: `${draggingNode?.type === 'node' && draggingNode.index === index && dragPosition ? dragPosition.x : node.x}%`,
-                top: `${draggingNode?.type === 'node' && draggingNode.index === index && dragPosition ? dragPosition.y : node.y}%`
-              }}
-              onMouseDown={(e) => handleDragStart(e, 'node', index)}
-            >
-              <span className="node-label">{node.id}</span>
-              <button
-                className="node-delete"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  removeNode(index)
-                }}
-              >
-                ✕
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-
       {/* 主要內容區域 */}
       <div className="main-content">
+        {/* SVG 軌道 - 在 chamber 和 platform 下方，移到 main-content 內 */}
+        <div className="track-svg-container">
+          <svg xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="trackGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" style={{ stopColor: 'rgba(100, 180, 255, 0.7)' }} />
+                <stop offset="50%" style={{ stopColor: 'rgba(150, 120, 200, 0.7)' }} />
+                <stop offset="100%" style={{ stopColor: 'rgba(200, 100, 150, 0.7)' }} />
+              </linearGradient>
+            </defs>
+            <path id="trackPath" className="track-path" d={generateTrackPath()} />
+          </svg>
+        </div>
+
+        {/* 軌道編輯器 - 在最上層，移到 main-content 內 */}
+        {isEditorMode && (
+          <div
+            className="track-editor"
+            onMouseMove={handleDragMove}
+            onMouseUp={handleDragEnd}
+            onMouseLeave={handleDragEnd}
+          >
+            {/* 起點 */}
+            <div
+              className={`track-node track-node-start ${draggingNode?.type === 'start' ? 'dragging' : ''}`}
+              style={{
+                left: `${draggingNode?.type === 'start' && dragPosition ? dragPosition.x : trackConfig.startPoint.x}%`,
+                top: `${draggingNode?.type === 'start' && dragPosition ? dragPosition.y : trackConfig.startPoint.y}%`
+              }}
+              onMouseDown={(e) => handleDragStart(e, 'start')}
+            >
+              <span className="node-label">起點</span>
+            </div>
+
+            {/* 終點 */}
+            <div
+              className={`track-node track-node-end ${draggingNode?.type === 'end' ? 'dragging' : ''}`}
+              style={{
+                left: `${draggingNode?.type === 'end' && dragPosition ? dragPosition.x : trackConfig.endPoint.x}%`,
+                top: `${draggingNode?.type === 'end' && dragPosition ? dragPosition.y : trackConfig.endPoint.y}%`
+              }}
+              onMouseDown={(e) => handleDragStart(e, 'end')}
+            >
+              <span className="node-label">終點</span>
+            </div>
+
+            {/* 節點 */}
+            {trackConfig.nodes.map((node, index) => (
+              <div
+                key={node.id}
+                className={`track-node ${draggingNode?.type === 'node' && draggingNode.index === index ? 'dragging' : ''}`}
+                style={{
+                  left: `${draggingNode?.type === 'node' && draggingNode.index === index && dragPosition ? dragPosition.x : node.x}%`,
+                  top: `${draggingNode?.type === 'node' && draggingNode.index === index && dragPosition ? dragPosition.y : node.y}%`
+                }}
+                onMouseDown={(e) => handleDragStart(e, 'node', index)}
+              >
+                <span className="node-label">{node.id}</span>
+                <button
+                  className="node-delete"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    removeNode(index)
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
         {/* 中獎者平台 */}
         <div
           className={`winners-platform ${isEditorMode ? 'edit-mode-active' : ''}`}
@@ -1660,16 +1672,6 @@ export default function LotteryMachineLivePage() {
         .editor-btn.save {
           background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
           border-color: #4CAF50;
-        }
-
-        .track-editor {
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          pointer-events: auto;
-          z-index: 50;
         }
 
         .track-node {
