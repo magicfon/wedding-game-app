@@ -39,6 +39,13 @@ interface TrackConfig {
   platformSurfaceHeight?: number
 }
 
+interface PhysicsConfig {
+  gravity: number
+  airForce: number
+  lateralAirForce: number
+  maxVelocity: number
+}
+
 export default function LotteryMachineLivePage() {
   const [photos, setPhotos] = useState<Photo[]>([])
   const [avatarBalls, setAvatarBalls] = useState<Photo[]>([])
@@ -64,6 +71,12 @@ export default function LotteryMachineLivePage() {
     chamberWidth: 480,
     chamberHeight: 220,
     trackWidth: 32
+  })
+  const [physics, setPhysics] = useState<PhysicsConfig>({
+    gravity: 0.35,
+    airForce: 0.8,
+    lateralAirForce: 0.2,
+    maxVelocity: 15
   })
   const [isEditorMode, setIsEditorMode] = useState(false)
   const [draggingNode, setDraggingNode] = useState<{ type: 'start' | 'end' | 'node', index?: number } | null>(null)
@@ -400,6 +413,12 @@ export default function LotteryMachineLivePage() {
         }
       }
 
+      // 載入物理參數
+      if (data.success && data.config?.physics) {
+        setPhysics(data.config.physics)
+        console.log('✅ 已載入儲存的物理參數')
+      }
+
       // 載入 chamber 和 platform 樣式
       if (data.success && data.config) {
         if (data.config.chamber_style) {
@@ -468,15 +487,15 @@ export default function LotteryMachineLivePage() {
         const vy = parseFloat(el.dataset.vy || '0')
 
         // 重力
-        let newVy = vy + 0.35
+        let newVy = vy + physics.gravity
 
         // 氣流力
         const bottomFactor = y / chamberRect.height
-        newVy -= 0.8 * (0.5 + bottomFactor * 1.5)
+        newVy -= physics.airForce * (0.5 + bottomFactor * 1.5)
 
         // 側向氣流力
         const horizontalFactor = x / chamberRect.width
-        const newVx = vx + (Math.random() - 0.5) * 0.4 + (Math.random() - 0.5) * 0.2
+        const newVx = vx + (Math.random() - 0.5) * physics.lateralAirForce * 2 + (Math.random() - 0.5) * physics.lateralAirForce
 
         // 摩擦力
         const friction = 0.995
@@ -484,15 +503,14 @@ export default function LotteryMachineLivePage() {
         const finalVy = newVy * friction
 
         // 速度限制
-        const maxVelocity = 15
         let clampedVx = finalVx
         let clampedVy = finalVy
 
-        if (Math.abs(clampedVx) > maxVelocity) {
-          clampedVx = Math.sign(clampedVx) * maxVelocity
+        if (Math.abs(clampedVx) > physics.maxVelocity) {
+          clampedVx = Math.sign(clampedVx) * physics.maxVelocity
         }
-        if (Math.abs(clampedVy) > maxVelocity) {
-          clampedVy = Math.sign(clampedVy) * maxVelocity
+        if (Math.abs(clampedVy) > physics.maxVelocity) {
+          clampedVy = Math.sign(clampedVy) * physics.maxVelocity
         }
 
         // 最小速度
@@ -976,6 +994,7 @@ export default function LotteryMachineLivePage() {
   const saveTrackConfig = async () => {
     try {
       console.log('💾 儲存軌道設定...', trackConfig)
+      console.log(' - physics:', physics)
       console.log(' - chamberStyle:', chamberStyle)
       console.log(' - platformStyle:', platformStyle)
       console.log(' - platformSurfaceStyle:', platformSurfaceStyle)
@@ -985,6 +1004,7 @@ export default function LotteryMachineLivePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           trackConfig: trackConfig,
+          physics: physics,
           chamberStyle: chamberStyle,
           platformStyle: platformStyle,
           platform_surface_style: platformSurfaceStyle
@@ -1248,6 +1268,89 @@ export default function LotteryMachineLivePage() {
           </>
         )}
       </div>
+
+      {/* 物理參數控制面板 */}
+      {isEditorMode && (
+        <div className="physics-controls">
+          <h3 className="physics-controls-title">⚙️ 物理參數</h3>
+          <div className="physics-controls-grid">
+            <div className="physics-control-item">
+              <label className="physics-control-label">彩球直徑</label>
+              <div className="physics-control-input">
+                <input
+                  type="range"
+                  min="25"
+                  max="80"
+                  value={trackConfig.ballDiameter}
+                  onChange={(e) => setTrackConfig(prev => ({ ...prev, ballDiameter: parseInt(e.target.value) }))}
+                  className="physics-control-slider"
+                />
+                <span className="physics-control-value">{trackConfig.ballDiameter}px</span>
+              </div>
+            </div>
+            <div className="physics-control-item">
+              <label className="physics-control-label">重力</label>
+              <div className="physics-control-input">
+                <input
+                  type="range"
+                  min="0.1"
+                  max="1.0"
+                  step="0.05"
+                  value={physics.gravity}
+                  onChange={(e) => setPhysics(prev => ({ ...prev, gravity: parseFloat(e.target.value) }))}
+                  className="physics-control-slider"
+                />
+                <span className="physics-control-value">{physics.gravity}</span>
+              </div>
+            </div>
+            <div className="physics-control-item">
+              <label className="physics-control-label">氣流力</label>
+              <div className="physics-control-input">
+                <input
+                  type="range"
+                  min="0.2"
+                  max="2.0"
+                  step="0.1"
+                  value={physics.airForce}
+                  onChange={(e) => setPhysics(prev => ({ ...prev, airForce: parseFloat(e.target.value) }))}
+                  className="physics-control-slider"
+                />
+                <span className="physics-control-value">{physics.airForce}</span>
+              </div>
+            </div>
+            <div className="physics-control-item">
+              <label className="physics-control-label">側向氣流力</label>
+              <div className="physics-control-input">
+                <input
+                  type="range"
+                  min="0"
+                  max="1.0"
+                  step="0.05"
+                  value={physics.lateralAirForce}
+                  onChange={(e) => setPhysics(prev => ({ ...prev, lateralAirForce: parseFloat(e.target.value) }))}
+                  className="physics-control-slider"
+                />
+                <span className="physics-control-value">{physics.lateralAirForce}</span>
+              </div>
+            </div>
+            <div className="physics-control-item">
+              <label className="physics-control-label">最大速度</label>
+              <div className="physics-control-input">
+                <input
+                  type="range"
+                  min="5"
+                  max="30"
+                  step="1"
+                  value={physics.maxVelocity}
+                  onChange={(e) => setPhysics(prev => ({ ...prev, maxVelocity: parseInt(e.target.value) }))}
+                  className="physics-control-slider"
+                />
+                <span className="physics-control-value">{physics.maxVelocity}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 軌道容器 - 保持 ref 用於動畫 */}
       <div className="track-container" ref={trackContainerRef}></div>
@@ -1700,6 +1803,104 @@ export default function LotteryMachineLivePage() {
         .editor-btn.save {
           background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
           border-color: #4CAF50;
+        }
+
+        .physics-controls {
+          position: fixed;
+          top: 70px;
+          right: 16px;
+          width: 280px;
+          background: rgba(0, 0, 0, 0.8);
+          backdrop-filter: blur(10px);
+          border: 2px solid rgba(255, 215, 0, 0.5);
+          border-radius: 12px;
+          padding: 16px;
+          z-index: 999;
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        .physics-controls-title {
+          font-size: 1rem;
+          font-weight: 700;
+          color: #ffd700;
+          margin-bottom: 12px;
+          text-align: center;
+        }
+
+        .physics-controls-grid {
+          display: grid;
+          gap: 12px;
+        }
+
+        .physics-control-item {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+
+        .physics-control-label {
+          font-size: 0.8rem;
+          font-weight: 600;
+          color: rgba(255, 255, 255, 0.9);
+        }
+
+        .physics-control-input {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .physics-control-slider {
+          flex: 1;
+          -webkit-appearance: none;
+          appearance: none;
+          height: 6px;
+          background: rgba(255, 255, 255, 0.2);
+          border-radius: 3px;
+          outline: none;
+          cursor: pointer;
+        }
+
+        .physics-control-slider::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          appearance: none;
+          width: 16px;
+          height: 16px;
+          background: linear-gradient(135deg, #ffd700 0%, #ffaa00 100%);
+          border-radius: 50%;
+          cursor: pointer;
+          box-shadow: 0 2px 8px rgba(255, 215, 0, 0.5);
+          transition: transform 0.2s ease;
+        }
+
+        .physics-control-slider::-webkit-slider-thumb:hover {
+          transform: scale(1.2);
+        }
+
+        .physics-control-slider::-moz-range-thumb {
+          width: 16px;
+          height: 16px;
+          background: linear-gradient(135deg, #ffd700 0%, #ffaa00 100%);
+          border-radius: 50%;
+          cursor: pointer;
+          border: none;
+          box-shadow: 0 2px 8px rgba(255, 215, 0, 0.5);
+          transition: transform 0.2s ease;
+        }
+
+        .physics-control-slider::-moz-range-thumb:hover {
+          transform: scale(1.2);
+        }
+
+        .physics-control-value {
+          min-width: 50px;
+          text-align: right;
+          font-size: 0.75rem;
+          font-weight: 600;
+          color: #ffd700;
+          background: rgba(255, 215, 0, 0.1);
+          padding: 4px 8px;
+          border-radius: 4px;
         }
 
         .track-node {
