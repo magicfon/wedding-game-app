@@ -398,7 +398,9 @@ export default function LotteryMachineLivePage() {
             // 如果有儲存的 chamber 大小，也一併載入
             chamberWidth: savedConfig.chamberWidth || prev.chamberWidth,
             chamberHeight: savedConfig.chamberHeight || prev.chamberHeight,
-            platformSurfaceHeight: savedConfig.platformSurfaceHeight
+            platformSurfaceHeight: savedConfig.platformSurfaceHeight,
+            // 如果有儲存的彩球直徑，也一併載入
+            ballDiameter: savedConfig.ballDiameter || prev.ballDiameter
           }))
 
           // 如果有儲存的 platformSurfaceHeight，應用它
@@ -1279,7 +1281,28 @@ export default function LotteryMachineLivePage() {
       {/* 物理參數控制面板 */}
       {isEditorMode && (
         <div className="physics-controls">
-          <h3 className="physics-controls-title">⚙️ 物理參數</h3>
+          <div className="physics-controls-header">
+            <h3 className="physics-controls-title">⚙️ 物理參數</h3>
+            <button
+              onClick={() => {
+                setPhysics({
+                  gravity: 0.35,
+                  airForce: 0.8,
+                  lateralAirForce: 0.2,
+                  maxVelocity: 15
+                })
+                setTrackConfig(prev => ({
+                  ...prev,
+                  ballDiameter: 42
+                }))
+                console.log('🔄 物理參數已重置為預設值')
+              }}
+              className="physics-reset-btn"
+              title="重置為預設值"
+            >
+              🔄 重置
+            </button>
+          </div>
           <div className="physics-controls-grid">
             <div className="physics-control-item">
               <label className="physics-control-label">彩球直徑</label>
@@ -1826,12 +1849,34 @@ export default function LotteryMachineLivePage() {
           box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
         }
 
+        .physics-controls-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 12px;
+        }
+
         .physics-controls-title {
           font-size: 1rem;
           font-weight: 700;
           color: #ffd700;
-          margin-bottom: 12px;
-          text-align: center;
+        }
+
+        .physics-reset-btn {
+          padding: 6px 12px;
+          background: rgba(255, 215, 0, 0.2);
+          border: 1px solid rgba(255, 215, 0, 0.5);
+          border-radius: 6px;
+          color: #ffd700;
+          font-size: 0.75rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+
+        .physics-reset-btn:hover {
+          background: rgba(255, 215, 0, 0.3);
+          transform: scale(1.05);
         }
 
         .physics-controls-grid {
