@@ -100,6 +100,7 @@ export default function LotteryMachineLivePage() {
   })
 
   const chamberRef = useRef<HTMLDivElement>(null)
+  const chamberContainerRef = useRef<HTMLDivElement>(null)
   const photosContainerRef = useRef<HTMLDivElement>(null)
   const platformSlotsRef = useRef<HTMLDivElement>(null)
   const trackContainerRef = useRef<HTMLDivElement>(null)
@@ -196,6 +197,45 @@ export default function LotteryMachineLivePage() {
 
     return () => clearInterval(bubbleInterval)
   }, [])
+
+  // 監聽 platform 高度變化並自動更新彩球大小
+  useEffect(() => {
+    const platformSurface = document.querySelector('.platform-surface') as HTMLElement
+    if (!platformSurface) return
+
+    // 更新彩球大小的函數
+    const updateBallSizes = () => {
+      const platformHeight = platformSurface.offsetHeight
+      const ballSize = Math.max(20, Math.round(platformHeight * 0.9))
+
+      const winnerPhotos = document.querySelectorAll('.platform-winner-photo')
+      winnerPhotos.forEach(photo => {
+        const el = photo as HTMLElement
+        el.style.width = `${ballSize}px`
+        el.style.height = `${ballSize}px`
+      })
+
+      console.log('📏 更新彩球大小:', ballSize, 'px (平台高度:', platformHeight, 'px)')
+    }
+
+    // 使用 ResizeObserver 監聽 platform 高度變化
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.target === platformSurface) {
+          updateBallSizes()
+        }
+      }
+    })
+
+    resizeObserver.observe(platformSurface)
+
+    // 初始更新
+    updateBallSizes()
+
+    return () => {
+      resizeObserver.disconnect()
+    }
+  }, [winners.length]) // 當 winners 變化時重新設置
 
   // Realtime 連接管理
   const eventSourceRef = useRef<EventSource | null>(null)
@@ -366,11 +406,12 @@ export default function LotteryMachineLivePage() {
     }
 
     const container = photosContainerRef.current
-    if (!container) return
+    const chamberContainer = chamberContainerRef.current
+    if (!container || !chamberContainer) return
 
     const photoElements = container.querySelectorAll('.photo-item')
-    const chamberRect = chamberRef.current?.getBoundingClientRect()
-    if (!chamberRect || photoElements.length === 0) return
+    const chamberRect = chamberContainer.getBoundingClientRect()
+    if (photoElements.length === 0) return
 
     // 初始化照片位置到腔體內
     const photoSize = trackConfig.ballDiameter // 使用動態彩球直徑
@@ -546,7 +587,6 @@ export default function LotteryMachineLivePage() {
       }
 
       const photoElements = Array.from(photosContainer.querySelectorAll('.photo-item')) as HTMLElement[]
-      console.log('📸 找到照片元素數量:', photoElements.length)
 
       // 使用 user_id 來查找照片元素（因為同一用戶的所有彩球都使用相同的頭像）
       const winnerEl = photoElements.find((el: HTMLElement) => {
@@ -560,8 +600,6 @@ export default function LotteryMachineLivePage() {
         resolve()
         return
       }
-
-      console.log('🎯 開始抽獎動畫，中獎者 ID:', winner.id)
 
       // 隱藏原始中獎照片
       winnerEl.style.opacity = '0'
@@ -589,27 +627,15 @@ export default function LotteryMachineLivePage() {
 
       // 生成路徑點（使用 Catmull-Rom spline）
       const waypoints = generateWaypoints(photoRect, mainRect)
-      console.log('📍 路徑點數量:', waypoints.length)
-      console.log('📍 前5個路徑點:', waypoints.slice(0, 5))
-      console.log('📍 最後5個路徑點:', waypoints.slice(-5))
 
       // 沿著路徑動畫
       let rotation = 0
       const animatePath = async () => {
-        console.log('🚀 開始沿著路徑動畫，總共', waypoints.length - 1, '個線段')
-
         for (let i = 0; i < waypoints.length - 1; i++) {
           const from = waypoints[i]
           const to = waypoints[i + 1]
           const distance = Math.sqrt(Math.pow(to.x - from.x, 2) + Math.pow(to.y - from.y, 2))
           const duration = distance * 1.2 // 1.2ms per pixel (參考 lottery/ 的實現)
-
-          console.log(`📍 線段 ${i + 1}/${waypoints.length - 1}:`, {
-            from: { x: Math.round(from.x), y: Math.round(from.y) },
-            to: { x: Math.round(to.x), y: Math.round(to.y) },
-            distance: Math.round(distance),
-            duration: Math.round(duration)
-          })
 
           await animateSegment(travelingPhoto, from.x, from.y, to.x, to.y, duration, rotation)
           rotation += distance * 0.5 // 降低自旋轉速度（參考 lottery/ 的實現）
@@ -618,8 +644,6 @@ export default function LotteryMachineLivePage() {
 
       // 動畫完成後的處理
       const onAnimationComplete = () => {
-        console.log('🎉 動畫完成')
-
         // 播放彩紙效果
         triggerConfetti()
 
@@ -639,7 +663,6 @@ export default function LotteryMachineLivePage() {
             <div class="platform-winner-rank">#${winners.length + 1}</div>
           `
           platformSlots.appendChild(winnerEl)
-          console.log('✅ 中獎者已添加到平台')
         } else {
           console.error('❌ platformSlots 不存在')
         }
@@ -647,7 +670,6 @@ export default function LotteryMachineLivePage() {
         // 移除動畫元素
         setTimeout(() => {
           travelingPhoto.remove()
-          console.log('✅ 動畫完成，動畫元素已移除')
           resolve()
         }, 500)
       }
@@ -682,15 +704,41 @@ export default function LotteryMachineLivePage() {
       waypoints.push({ x: screenX, y: screenY })
     })
 
-    console.log('📍 路徑點生成：', {
-      mainRect: { left: mainRect.left, top: mainRect.top, width: mainRect.width, height: mainRect.height },
-      photoRect: { left: photoRect.left, top: photoRect.top, width: photoRect.width, height: photoRect.height },
-      initialPos: { x: photoRect.left, y: photoRect.top },
-      firstWaypoint: waypoints[1],
-      lastWaypoint: waypoints[waypoints.length - 1]
-    })
-
     return waypoints
+  }
+
+  // 生成 Catmull-Rom 路徑（用於視覺軌道）
+  const generateCatmullRomPath = (points: { x: number; y: number }[]) => {
+    if (points.length < 2) return ''
+    if (points.length === 2) {
+      return `M ${points[0].x},${points[0].y} L ${points[1].x},${points[1].y}`
+    }
+
+    // 添加虛擬點以獲得平滑端點
+    const extendedPoints = [
+      { x: points[0].x * 2 - points[1].x, y: points[0].y * 2 - points[1].y },
+      ...points,
+      { x: points[points.length - 1].x * 2 - points[points.length - 2].x, y: points[points.length - 1].y * 2 - points[points.length - 2].y }
+    ]
+
+    let path = `M ${points[0].x},${points[0].y}`
+
+    for (let i = 0; i < points.length - 1; i++) {
+      const p0 = extendedPoints[i]
+      const p1 = extendedPoints[i + 1]
+      const p2 = extendedPoints[i + 2]
+      const p3 = extendedPoints[i + 3]
+
+      // Catmull-Rom 到貝茲曲線的轉換
+      const cp1x = p1.x + (p2.x - p0.x) / 6
+      const cp1y = p1.y + (p2.y - p0.y) / 6
+      const cp2x = p2.x - (p3.x - p1.x) / 6
+      const cp2y = p2.y - (p3.y - p1.y) / 6
+
+      path += ` C ${cp1x},${cp1y} ${cp2x},${cp2y} ${p2.x},${p2.y}`
+    }
+
+    return path
   }
 
   // Catmull-Rom spline 採樣
@@ -1053,8 +1101,8 @@ export default function LotteryMachineLivePage() {
   // 元素拖曳結束
   const handleElementDragEnd = () => {
     if (elementDragState) {
-      // 保存設定到後端
-      saveTrackConfig()
+      // 不再自動儲存，只清除拖曳狀態
+      // 使用者需要點擊「儲存設定」按鈕來儲存變更
       setElementDragState(null)
     }
   }
@@ -1083,98 +1131,26 @@ export default function LotteryMachineLivePage() {
   // 生成貝茲曲線路徑
   const generateTrackPath = useCallback(() => {
     const { startPoint, endPoint, nodes } = trackConfig
-    const containerWidth = windowSize.width
-    const containerHeight = windowSize.height
 
-    // 使用 ref 獲取 track-container 的實際尺寸和位置
-    let trackRect = { left: 0, top: 0, width: containerWidth, height: containerHeight }
-    if (trackContainerRef.current) {
-      const rect = trackContainerRef.current.getBoundingClientRect()
-      trackRect = { left: rect.left, top: rect.top, width: rect.width, height: rect.height }
-    }
+    // 獲取 main-content 的實際尺寸
+    const mainContent = document.querySelector('.main-content')
+    if (!mainContent) return ''
 
-    // 獲取 SVG 容器的實際尺寸和位置
-    const svgContainer = document.querySelector('.track-svg-container')
-    let svgRect = { left: 0, top: 0, width: containerWidth, height: containerHeight }
-    if (svgContainer) {
-      const rect = svgContainer.getBoundingClientRect()
-      svgRect = { left: rect.left, top: rect.top, width: rect.width, height: rect.height }
-    }
+    const mainRect = mainContent.getBoundingClientRect()
 
-    // 計算坐標偏移（SVG 容器相對於 track-container 的偏移）
-    const offsetX = svgRect.left - trackRect.left
-    const offsetY = svgRect.top - trackRect.top
+    // 構建點數組
+    const points = [
+      { x: (startPoint.x / 100) * mainRect.width, y: (startPoint.y / 100) * mainRect.height },
+      ...nodes.map(n => ({ x: (n.x / 100) * mainRect.width, y: (n.y / 100) * mainRect.height })),
+      { x: (endPoint.x / 100) * mainRect.width, y: (endPoint.y / 100) * mainRect.height })
+    ]
 
-    // 節點有 transform: translate(-50%, -50%)，所以路徑需要對齊節點中心
-    // 節點是相對於 track-container 定位的，所以需要將坐標轉換到 SVG 容器的坐標系
-    const halfSize = trackConfig.ballDiameter / 2 // 使用動態半徑
-    const start = {
-      x: (startPoint.x / 100) * trackRect.width - offsetX - halfSize,
-      y: (startPoint.y / 100) * trackRect.height - offsetY - halfSize
-    }
-    const end = {
-      x: (endPoint.x / 100) * trackRect.width - offsetX - halfSize,
-      y: (endPoint.y / 100) * trackRect.height - offsetY - halfSize
-    }
-
-    const controlPoints = nodes.map(n => ({
-      x: (n.x / 100) * trackRect.width - offsetX - halfSize,
-      y: (n.y / 100) * trackRect.height - offsetY - halfSize
-    }))
-
-    // 調試日誌
-    console.log('📍 軌道路徑生成調試：', {
-      containerSize: { width: containerWidth, height: containerHeight },
-      svgRect: { left: svgRect.left, top: svgRect.top, width: svgRect.width, height: svgRect.height },
-      trackRect: { left: trackRect.left, top: trackRect.top, width: trackRect.width, height: trackRect.height },
-      offset: { x: offsetX, y: offsetY },
-      startPoint: { pct: startPoint, pixel: start },
-      endPoint: { pct: endPoint, pixel: end },
-      controlPoints: nodes.map((n, i) => ({ pct: n, pixel: controlPoints[i] }))
-    })
-
-    if (controlPoints.length === 0) {
-      return `M ${start.x},${start.y} L ${end.x},${end.y}`
-    }
+    if (points.length < 2) return ''
 
     // 使用 Catmull-Rom 樣條曲線生成平滑路徑
-    // 這種曲線確保路徑穿過所有控制點，並且在節點之間平滑連接
-    const points = [start, ...controlPoints, end]
+    const pathD = generateCatmullRomPath(points)
 
-    if (points.length < 2) {
-      return `M ${start.x},${start.y} L ${end.x},${end.y}`
-    }
-
-    // Catmull-Rom 樣條曲線轉換為貝茲曲線
-    const catmullRom2Bezier = (p0: { x: number; y: number }, p1: { x: number; y: number }, p2: { x: number; y: number }, p3: { x: number; y: number }) => {
-      const t = 0.5 // tension parameter, lower = smoother
-
-      const cp1x = p1.x + (p2.x - p0.x) / 6 * t
-      const cp1y = p1.y + (p2.y - p0.y) / 6 * t
-
-      const cp2x = p2.x - (p3.x - p1.x) / 6 * t
-      const cp2y = p2.y - (p3.y - p1.y) / 6 * t
-
-      return {
-        cp1: { x: cp1x, y: cp1y },
-        cp2: { x: cp2x, y: cp2y },
-        end: { x: p2.x, y: p2.y }
-      }
-    }
-
-    let path = `M ${points[0].x},${points[0].y}`
-
-    for (let i = 0; i < points.length - 1; i++) {
-      const p0 = points[Math.max(0, i - 1)]
-      const p1 = points[i]
-      const p2 = points[i + 1]
-      const p3 = points[Math.min(points.length - 1, i + 2)]
-
-      const bezier = catmullRom2Bezier(p0, p1, p2, p3)
-      path += ` C ${bezier.cp1.x},${bezier.cp1.y} ${bezier.cp2.x},${bezier.cp2.y} ${bezier.end.x},${bezier.end.y}`
-    }
-
-    return path
+    return pathD
   }, [trackConfig, windowSize])
 
   // 氣泡效果
@@ -1427,7 +1403,7 @@ export default function LotteryMachineLivePage() {
               />
             </>
           )}
-          <div className="chamber" style={{ height: `${trackConfig.chamberHeight}px` }}>
+          <div className="chamber" style={{ height: `${trackConfig.chamberHeight}px` }} ref={chamberContainerRef}>
             <div className="chamber-glass"></div>
 
             <div className="photos-container" ref={photosContainerRef}>
@@ -1789,7 +1765,7 @@ export default function LotteryMachineLivePage() {
           width: 100%;
           height: clamp(160px, 18vh, 280px);
           background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
-          border-radius: clamp(14px, 1.4vw, 24px) 0 clamp(8px, 0.8vw, 14px) clamp(8px, 0.8vw, 14px);
+          border-radius: clamp(14px, 1.4vw, 24px) clamp(14px, 1.4vw, 24px) clamp(8px, 0.8vw, 14px) clamp(8px, 0.8vw, 14px);
           overflow: hidden;
           box-shadow: 0 0 clamp(35px, 3.5vw, 60px) rgba(102,126,234,0.35), inset 0 0 clamp(55px, 5.5vw, 90px) rgba(0,0,0,0.5);
           border: clamp(2px, 0.2vw, 3px) solid rgba(255,255,255,0.2);
