@@ -50,13 +50,14 @@ export async function POST(request: NextRequest) {
     const supabase = createSupabaseAdmin()
     const body = await request.json()
 
-    const { trackConfig, physics, chamberStyle, platformStyle } = body
+    const { trackConfig, physics, chamberStyle, platformStyle, platform_surface_style } = body
 
     console.log('💾 儲存彩球機設定...')
     console.log('  - trackConfig:', trackConfig)
     console.log('  - physics:', physics)
     console.log('  - chamberStyle:', chamberStyle)
     console.log('  - platformStyle:', platformStyle)
+    console.log('  - platform_surface_style:', platform_surface_style)
 
     // 準備更新的欄位
     const updateFields: any = {
@@ -77,6 +78,10 @@ export async function POST(request: NextRequest) {
 
     if (platformStyle !== undefined) {
       updateFields.platform_style = platformStyle
+    }
+
+    if (platform_surface_style !== undefined) {
+      updateFields.platform_surface_style = platform_surface_style
     }
 
     // 使用 upsert 確保沒有資料時會新增
