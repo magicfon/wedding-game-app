@@ -1800,7 +1800,7 @@ export default function LotteryMachineLivePage() {
         .track-path {
           fill: none;
           stroke: url(#trackGradient);
-          stroke-width: 32;
+          stroke-width: ${trackConfig.trackWidth}px;
           stroke-linecap: round;
           stroke-linejoin: round;
           filter: drop-shadow(0 2px 8px rgba(100,150,255,0.4));
