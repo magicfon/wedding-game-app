@@ -155,7 +155,7 @@ export async function POST(request: NextRequest) {
         winner_avatar_url: winnerAvatarUrl,
         photo_count: photoCount,
         winner_photo_id: winnerPhoto.id,
-        winner_photo_url: winnerPhoto.thumbnail_medium_url || winnerPhoto.image_url,
+        winner_photo_url: winnerPhoto.image_url,  // 使用原始圖片 URL
         admin_id: admin_id || 'system',
         admin_name: admin_name || '系統管理員',
         participants_count: photos.length,
@@ -214,11 +214,12 @@ export async function POST(request: NextRequest) {
 
           console.log('📨 準備發送 LINE 訊息給:', winnerLineId)
 
-          const winnerPhotoUrl = winnerPhoto.thumbnail_medium_url || winnerPhoto.image_url
+          const winnerPhotoUrl = winnerPhoto.image_url  // 使用原始圖片 URL，避免 Vercel 優化連結
 
           if (winnerPhotoUrl) {
             try {
               console.log('🖼️ 嘗試發送 Flex Message...')
+              console.log('📸 照片 URL:', winnerPhotoUrl)
               // 發送 Flex Message 包含照片
               await client.pushMessage(winnerLineId, {
                 type: 'flex',
