@@ -938,10 +938,22 @@ export default function LotteryMachineLivePage() {
     const screenWidth = window.innerWidth
     const screenHeight = window.innerHeight
 
-    // 計算位置：確保不超出螢幕左方，高度切齊螢幕底部
-    const left = Math.max(10, rect.left + rect.width / 2) // 左邊界至少距離螢幕左邊 10px
+    // 計算照片寬度（使用 CSS 中的 clamp 值）
+    const photoWidth = Math.min(450, Math.max(280, screenWidth * 0.3))
+
+    // 計算初始位置（照片中心點）
+    const initialLeft = rect.left + rect.width / 2
     const top = rect.bottom + 10
     const maxHeight = screenHeight - top - 10 // 高度切齊螢幕底部，留 10px 邊距
+
+    // 計算照片左邊界（考慮 transform: translateX(-50%)）
+    const photoLeftEdge = initialLeft - photoWidth / 2
+
+    // 如果照片會超出左邊界，就向右移動
+    let left = initialLeft
+    if (photoLeftEdge < 10) {
+      left = photoWidth / 2 + 10 // 確保照片左邊界距離螢幕左邊至少 10px
+    }
 
     setFloatingPhotoPosition({ x: left, y: top, maxHeight })
     setHiddenWinnerPhotos(prev => {
