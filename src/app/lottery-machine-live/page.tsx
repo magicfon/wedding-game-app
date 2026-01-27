@@ -619,9 +619,9 @@ export default function LotteryMachineLivePage() {
         setWinners(prev => [...prev, { photo: winnerPhoto, order: prev.length + 1 }])
         setLotteryState(prev => ({ ...prev, is_drawing: false }))
 
-        // 動畫完成後發送 LINE 通知
+        // 動畫完成後發送 LINE 通知（如果啟用）
         try {
-          await fetch('/api/lottery-machine/notify-winner', {
+          const notifyResponse = await fetch('/api/lottery-machine/notify-winner', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -629,7 +629,15 @@ export default function LotteryMachineLivePage() {
               winnerPhotoUrl: data.winner_photo.url
             })
           })
-          console.log('✅ LINE 通知已發送')
+          const notifyData = await notifyResponse.json()
+          
+          if (notifyData.skipped) {
+            console.log('⏭️ 中獎通知已關閉，跳過發送')
+          } else if (notifyData.success) {
+            console.log('✅ LINE 通知已發送')
+          } else {
+            console.warn('⚠️ LINE 通知發送失敗:', notifyData.error)
+          }
         } catch (notifyError) {
           console.error('❌ 發送 LINE 通知失敗:', notifyError)
           // 不影響抽獎結果，只記錄錯誤
