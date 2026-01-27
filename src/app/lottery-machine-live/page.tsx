@@ -84,6 +84,7 @@ export default function LotteryMachineLivePage() {
   const [dragPosition, setDragPosition] = useState<{ x: number; y: number } | null>(null)
   const [isMounted, setIsMounted] = useState(false)
   const [mainContentRect, setMainContentRect] = useState<DOMRect | null>(null)
+  const [hiddenWinnerPhotos, setHiddenWinnerPhotos] = useState<Set<number>>(new Set())
 
   // 元素拖曳狀態
   const [elementDragState, setElementDragState] = useState<{
@@ -724,9 +725,13 @@ export default function LotteryMachineLivePage() {
 
           const winnerEl = document.createElement('div')
           winnerEl.className = 'platform-winner'
+          winnerEl.dataset.winnerId = `${winners.length + 1}`
           winnerEl.innerHTML = `
             <div class="platform-winner-photo" style="width: ${ballSize}px; height: ${ballSize}px;">
               <img src="${winner.avatar_url}" alt="${winner.display_name}">
+            </div>
+            <div class="platform-winner-image-container">
+              <img class="platform-winner-image" src="${winner.image_url}" alt="${winner.display_name}">
             </div>
             <div class="platform-winner-rank">#${winners.length + 1}</div>
           `
@@ -925,19 +930,35 @@ export default function LotteryMachineLivePage() {
     }
   }
 
-  const addToPlatform = (winner: Winner) => {
-    const platformSlots = platformSlotsRef.current
-    if (!platformSlots) return
+  // 處理中獎照片點擊隱藏
+  const handleWinnerPhotoClick = (winnerId: number) => {
+    setHiddenWinnerPhotos(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(winnerId)) {
+        newSet.delete(winnerId)
+      } else {
+        newSet.add(winnerId)
+      }
+      return newSet
+    })
+  }
 
-    const winnerEl = document.createElement('div')
-    winnerEl.className = 'platform-winner'
-    winnerEl.innerHTML = `
-      <div class="platform-winner-photo">
-        <img src="${winner.photo.avatar_url}" alt="${winner.photo.display_name}">
-      </div>
-      <div class="platform-winner-rank">#${winner.order}</div>
-    `
-    platformSlots.appendChild(winnerEl)
+  // 處理中獎照片滑鼠移入
+  const handleWinnerPhotoMouseEnter = (winnerId: number) => {
+    setHiddenWinnerPhotos(prev => {
+      const newSet = new Set(prev)
+      newSet.delete(winnerId)
+      return newSet
+    })
+  }
+
+  // 處理中獎照片滑鼠移出
+  const handleWinnerPhotoMouseLeave = (winnerId: number) => {
+    setHiddenWinnerPhotos(prev => {
+      const newSet = new Set(prev)
+      newSet.add(winnerId)
+      return newSet
+    })
   }
 
   // 拖曳處理
@@ -1497,6 +1518,18 @@ export default function LotteryMachineLivePage() {
         <div
           className={`winners-platform ${isEditorMode ? 'edit-mode-active' : ''}`}
           style={platformStyle}
+          onMouseLeave={(e) => {
+            // 處理滑鼠離開整個平台時隱藏所有照片
+            if (!isEditorMode) {
+              const winnerElements = e.currentTarget.querySelectorAll('.platform-winner')
+              winnerElements.forEach(el => {
+                const winnerId = parseInt((el as HTMLElement).dataset.winnerId || '0')
+                if (winnerId > 0) {
+                  handleWinnerPhotoMouseLeave(winnerId)
+                }
+              })
+            }
+          }}
         >
           {/* 移動手柄 */}
           {isEditorMode && (
@@ -1544,6 +1577,24 @@ export default function LotteryMachineLivePage() {
           )}
           <div className="platform-surface" style={platformSurfaceStyle}>
             <div className="platform-slots" ref={platformSlotsRef}>
+              {winners.map((winner) => (
+                <div
+                  key={winner.order}
+                  className="platform-winner"
+                  data-winner-id={winner.order}
+                  onClick={() => handleWinnerPhotoClick(winner.order)}
+                  onMouseEnter={() => handleWinnerPhotoMouseEnter(winner.order)}
+                  onMouseLeave={() => handleWinnerPhotoMouseLeave(winner.order)}
+                >
+                  <div className="platform-winner-photo">
+                    <img src={winner.photo.avatar_url} alt={winner.photo.display_name} />
+                  </div>
+                  <div className={`platform-winner-image-container ${hiddenWinnerPhotos.has(winner.order) ? 'hidden' : ''}`}>
+                    <img className="platform-winner-image" src={winner.photo.image_url} alt={winner.photo.display_name} />
+                  </div>
+                  <div className="platform-winner-rank">#{winner.order}</div>
+                </div>
+              ))}
             </div>
           </div>
           <div className="platform-base"></div>
@@ -1655,6 +1706,7 @@ export default function LotteryMachineLivePage() {
         <button
           onClick={() => {
             setWinners([])
+            setHiddenWinnerPhotos(new Set())
             // 清空 platform 上的所有照片
             if (platformSlotsRef.current) {
               platformSlotsRef.current.innerHTML = ''
@@ -1778,6 +1830,37 @@ export default function LotteryMachineLivePage() {
         }
 
         .platform-winner-photo img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
+        .platform-winner-image-container {
+          position: absolute;
+          top: 100%;
+          left: 50%;
+          transform: translateX(-50%);
+          margin-top: clamp(4px, 0.4vw, 8px);
+          width: clamp(80px, 10vw, 160px);
+          height: clamp(80px, 10vw, 160px);
+          border-radius: clamp(6px, 0.6vw, 10px);
+          overflow: hidden;
+          background: rgba(0, 0, 0, 0.8);
+          border: clamp(2px, 0.2vw, 3px) solid rgba(255, 215, 0, 0.5);
+          box-shadow: 0 clamp(4px, 0.4vw, 8px) clamp(16px, 1.6vw, 30px) rgba(0, 0, 0, 0.5);
+          z-index: 100;
+          opacity: 1;
+          transition: opacity 0.3s ease, transform 0.3s ease;
+          pointer-events: auto;
+        }
+
+        .platform-winner-image-container.hidden {
+          opacity: 0;
+          transform: translateX(-50%) translateY(-10px);
+          pointer-events: none;
+        }
+
+        .platform-winner-image {
           width: 100%;
           height: 100%;
           object-fit: cover;
