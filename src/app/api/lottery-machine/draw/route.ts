@@ -64,18 +64,35 @@ export async function POST(request: NextRequest) {
 
     console.log(`📸 共有 ${photos.length} 張公開照片`)
 
-    // 3. 排除已經中獎過的照片
+    // 3. 排除已經中獎過的照片和用戶
     const { data: previousWinners, error: winnersError } = await supabase
       .from('lottery_history')
-      .select('winner_photo_id')
+      .select('winner_photo_id, winner_line_id')
     
+    if (winnersError) {
+      console.error('❌ 獲取中獎記錄失敗:', winnersError)
+      return NextResponse.json({
+        error: '獲取中獎記錄失敗',
+        details: winnersError.message
+      }, { status: 500 })
+    }
+
+    // 排除已經中獎過的照片ID
     const previousWinnerPhotoIds = new Set(
       previousWinners?.map(w => w.winner_photo_id).filter(Boolean) || []
     )
 
-    const availablePhotos = photos.filter(photo => !previousWinnerPhotoIds.has(photo.id))
+    // 排除已經中獎過的用戶ID
+    const previousWinnerLineIds = new Set(
+      previousWinners?.map(w => w.winner_line_id).filter(Boolean) || []
+    )
 
-    console.log(`📸 排除已中獎照片後，剩餘 ${availablePhotos.length} 張可抽獎照片`)
+    const availablePhotos = photos.filter(photo => 
+      !previousWinnerPhotoIds.has(photo.id) && 
+      !previousWinnerLineIds.has(photo.user_id)
+    )
+
+    console.log(`📸 排除已中獎照片和用戶後，剩餘 ${availablePhotos.length} 張可抽獎照片`)
 
     if (availablePhotos.length === 0) {
       return NextResponse.json({
