@@ -86,7 +86,7 @@ export default function LotteryMachineLivePage() {
   const [mainContentRect, setMainContentRect] = useState<DOMRect | null>(null)
   const [hiddenWinnerPhotos, setHiddenWinnerPhotos] = useState<Set<number>>(new Set())
   const [hoveredWinner, setHoveredWinner] = useState<number | null>(null)
-  const [floatingPhotoPosition, setFloatingPhotoPosition] = useState<{ x: number; y: number } | null>(null)
+  const [floatingPhotoPosition, setFloatingPhotoPosition] = useState<{ x: number; y: number; maxHeight?: number } | null>(null)
 
   // 元素拖曳狀態
   const [elementDragState, setElementDragState] = useState<{
@@ -935,7 +935,15 @@ export default function LotteryMachineLivePage() {
   // 處理中獎照片滑鼠移入
   const handleWinnerPhotoMouseEnter = (winnerId: number, e: React.MouseEvent) => {
     const rect = e.currentTarget.getBoundingClientRect()
-    setFloatingPhotoPosition({ x: rect.left + rect.width / 2, y: rect.bottom + 10 })
+    const screenWidth = window.innerWidth
+    const screenHeight = window.innerHeight
+
+    // 計算位置：確保不超出螢幕左方，高度切齊螢幕底部
+    const left = Math.max(10, rect.left + rect.width / 2) // 左邊界至少距離螢幕左邊 10px
+    const top = rect.bottom + 10
+    const maxHeight = screenHeight - top - 10 // 高度切齊螢幕底部，留 10px 邊距
+
+    setFloatingPhotoPosition({ x: left, y: top, maxHeight })
     setHiddenWinnerPhotos(prev => {
       const newSet = new Set(prev)
       newSet.delete(winnerId)
@@ -1675,7 +1683,8 @@ export default function LotteryMachineLivePage() {
           className="floating-winner-photo"
           style={{
             left: `${floatingPhotoPosition.x}px`,
-            top: `${floatingPhotoPosition.y}px`
+            top: `${floatingPhotoPosition.y}px`,
+            maxHeight: floatingPhotoPosition.maxHeight ? `${floatingPhotoPosition.maxHeight}px` : undefined
           }}
         >
           {winners.find(w => w.order === hoveredWinner) && (
