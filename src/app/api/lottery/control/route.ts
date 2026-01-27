@@ -117,6 +117,24 @@ export async function POST(request: NextRequest) {
       }, { status: 500 })
     }
 
+    // 同時更新 lottery_machine_state 表（如果存在）
+    if (typeof notify_winner_enabled === 'boolean') {
+      try {
+        const { error: machineStateError } = await supabase
+          .from('lottery_machine_state')
+          .update({ notify_winner_enabled })
+          .eq('id', 1)
+        
+        if (machineStateError) {
+          console.warn('⚠️ 更新 lottery_machine_state 失敗:', machineStateError)
+        } else {
+          console.log('✅ lottery_machine_state 中的 notify_winner_enabled 已同步更新')
+        }
+      } catch (e) {
+        console.warn('⚠️ 同步 lottery_machine_state 時發生錯誤:', e)
+      }
+    }
+
     console.log('✅ 抽獎設定已更新')
 
     let message = '設定已更新'
