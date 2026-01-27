@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServer } from '@/lib/supabase-server'
+import { Client } from '@line/bot-sdk'
 
 // 執行彩球機抽獎
 export async function POST(request: NextRequest) {
@@ -180,6 +181,138 @@ export async function POST(request: NextRequest) {
         error: '記錄抽獎結果失敗',
         details: '無法記錄中獎者'
       }, { status: 500 })
+    }
+
+    // 8.5 發送 LINE 通知給中獎者
+    try {
+      // 檢查是否啟用中獎通知
+      const { data: lotteryMachineState } = await supabase
+        .from('lottery_machine_state')
+        .select('notify_winner_enabled')
+        .single()
+
+      const notifyEnabled = lotteryMachineState?.notify_winner_enabled !== false
+      console.log('📱 中獎通知設定:', { notifyEnabled })
+
+      if (notifyEnabled && winnerLineId) {
+        if (process.env.LINE_CHANNEL_ACCESS_TOKEN && process.env.LINE_CHANNEL_SECRET) {
+          const client = new Client({
+            channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN,
+            channelSecret: process.env.LINE_CHANNEL_SECRET,
+          })
+
+          const now = new Date()
+          const timeString = now.toLocaleString('zh-TW', {
+            timeZone: 'Asia/Taipei',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+          })
+
+          console.log('📨 準備發送 LINE 訊息給:', winnerLineId)
+
+          const winnerPhotoUrl = winnerPhoto.thumbnail_medium_url || winnerPhoto.image_url
+
+          if (winnerPhotoUrl) {
+            try {
+              console.log('🖼️ 嘗試發送 Flex Message...')
+              // 發送 Flex Message 包含照片
+              await client.pushMessage(winnerLineId, {
+                type: 'flex',
+                altText: '🎉 恭喜您中獎！',
+                contents: {
+                  type: 'bubble',
+                  hero: {
+                    type: 'image',
+                    url: winnerPhotoUrl,
+                    size: 'full',
+                    aspectRatio: '20:13',
+                    aspectMode: 'cover',
+                    action: {
+                      type: 'uri',
+                      label: '查看照片',
+                      uri: winnerPhotoUrl
+                    }
+                  },
+                  body: {
+                    type: 'box',
+                    layout: 'vertical',
+                    contents: [
+                      {
+                        type: 'text',
+                        text: '🎉 恭喜您中獎！',
+                        weight: 'bold',
+                        size: 'xl',
+                        align: 'center',
+                        color: '#d32f2f'
+                      },
+                      {
+                        type: 'text',
+                        text: '您在照片抽獎活動中被選中！',
+                        margin: 'md',
+                        align: 'center',
+                        wrap: true
+                      },
+                      {
+                        type: 'separator',
+                        margin: 'lg'
+                      },
+                      {
+                        type: 'box',
+                        layout: 'vertical',
+                        margin: 'lg',
+                        contents: [
+                          {
+                            type: 'text',
+                            text: '中獎時間',
+                            size: 'xs',
+                            color: '#aaaaaa',
+                            align: 'center'
+                          },
+                          {
+                            type: 'text',
+                            text: timeString,
+                            size: 'sm',
+                            color: '#666666',
+                            align: 'center',
+                            margin: 'xs'
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              })
+              console.log('✅ Flex Message 發送成功')
+            } catch (flexError) {
+              console.error('❌ Flex Message 發送失敗，嘗試降級為純文字:', flexError)
+              // 降級發送純文字
+              await client.pushMessage(winnerLineId, {
+                type: 'text',
+                text: `🎉 恭喜您中獎！\n\n您在照片抽獎活動中被選中！\n\n中獎時間：${timeString}\n\n照片連結：${winnerPhotoUrl}`
+              })
+            }
+          } else {
+            // 降級發送純文字
+            await client.pushMessage(winnerLineId, {
+              type: 'text',
+              text: `🎉 恭喜您中獎！\n\n您在照片抽獎活動中被選中！\n\n中獎時間：${timeString}`
+            })
+          }
+
+          console.log('✅ LINE 通知發送成功')
+        } else {
+          console.log('⚠️ 未設定 LINE Token，跳過通知')
+        }
+      } else {
+        console.log('⏭️ 中獎通知已關閉，跳過發送')
+      }
+    } catch (notifyError) {
+      console.error('❌ 發送 LINE 通知時發生錯誤:', notifyError)
+      // 不影響抽獎結果，只記錄錯誤
     }
 
     // 9. 更新抽獎狀態（使用中獎記錄的 ID）
