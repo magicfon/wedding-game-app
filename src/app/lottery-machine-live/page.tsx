@@ -85,6 +85,8 @@ export default function LotteryMachineLivePage() {
   const [isMounted, setIsMounted] = useState(false)
   const [mainContentRect, setMainContentRect] = useState<DOMRect | null>(null)
   const [hiddenWinnerPhotos, setHiddenWinnerPhotos] = useState<Set<number>>(new Set())
+  const [hoveredWinner, setHoveredWinner] = useState<number | null>(null)
+  const [floatingPhotoPosition, setFloatingPhotoPosition] = useState<{ x: number; y: number } | null>(null)
 
   // 元素拖曳狀態
   const [elementDragState, setElementDragState] = useState<{
@@ -931,29 +933,36 @@ export default function LotteryMachineLivePage() {
   }
 
   // 處理中獎照片點擊隱藏
-  const handleWinnerPhotoClick = (winnerId: number) => {
+  const handleWinnerPhotoClick = (winnerId: number, e: React.MouseEvent) => {
+    e.stopPropagation()
     setHiddenWinnerPhotos(prev => {
       const newSet = new Set(prev)
       if (newSet.has(winnerId)) {
         newSet.delete(winnerId)
+        setHoveredWinner(winnerId)
       } else {
         newSet.add(winnerId)
+        setHoveredWinner(null)
       }
       return newSet
     })
   }
 
   // 處理中獎照片滑鼠移入
-  const handleWinnerPhotoMouseEnter = (winnerId: number) => {
+  const handleWinnerPhotoMouseEnter = (winnerId: number, e: React.MouseEvent) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    setFloatingPhotoPosition({ x: rect.left + rect.width / 2, y: rect.bottom + 10 })
     setHiddenWinnerPhotos(prev => {
       const newSet = new Set(prev)
       newSet.delete(winnerId)
       return newSet
     })
+    setHoveredWinner(winnerId)
   }
 
   // 處理中獎照片滑鼠移出
   const handleWinnerPhotoMouseLeave = (winnerId: number) => {
+    setHoveredWinner(null)
     setHiddenWinnerPhotos(prev => {
       const newSet = new Set(prev)
       newSet.add(winnerId)
@@ -1518,18 +1527,6 @@ export default function LotteryMachineLivePage() {
         <div
           className={`winners-platform ${isEditorMode ? 'edit-mode-active' : ''}`}
           style={platformStyle}
-          onMouseLeave={(e) => {
-            // 處理滑鼠離開整個平台時隱藏所有照片
-            if (!isEditorMode) {
-              const winnerElements = e.currentTarget.querySelectorAll('.platform-winner')
-              winnerElements.forEach(el => {
-                const winnerId = parseInt((el as HTMLElement).dataset.winnerId || '0')
-                if (winnerId > 0) {
-                  handleWinnerPhotoMouseLeave(winnerId)
-                }
-              })
-            }
-          }}
         >
           {/* 移動手柄 */}
           {isEditorMode && (
@@ -1582,15 +1579,12 @@ export default function LotteryMachineLivePage() {
                   key={winner.order}
                   className="platform-winner"
                   data-winner-id={winner.order}
-                  onClick={() => handleWinnerPhotoClick(winner.order)}
-                  onMouseEnter={() => handleWinnerPhotoMouseEnter(winner.order)}
+                  onClick={(e) => handleWinnerPhotoClick(winner.order, e)}
+                  onMouseEnter={(e) => handleWinnerPhotoMouseEnter(winner.order, e)}
                   onMouseLeave={() => handleWinnerPhotoMouseLeave(winner.order)}
                 >
                   <div className="platform-winner-photo">
                     <img src={winner.photo.avatar_url} alt={winner.photo.display_name} />
-                  </div>
-                  <div className={`platform-winner-image-container ${hiddenWinnerPhotos.has(winner.order) ? 'hidden' : ''}`}>
-                    <img className="platform-winner-image" src={winner.photo.image_url} alt={winner.photo.display_name} />
                   </div>
                   <div className="platform-winner-rank">#{winner.order}</div>
                 </div>
@@ -1690,6 +1684,24 @@ export default function LotteryMachineLivePage() {
           </div>
         </div>
       </div>
+
+      {/* 浮動中獎照片 */}
+      {hoveredWinner !== null && floatingPhotoPosition && (
+        <div
+          className="floating-winner-photo"
+          style={{
+            left: `${floatingPhotoPosition.x}px`,
+            top: `${floatingPhotoPosition.y}px`
+          }}
+        >
+          {winners.find(w => w.order === hoveredWinner) && (
+            <img
+              src={winners.find(w => w.order === hoveredWinner)!.photo.image_url}
+              alt={winners.find(w => w.order === hoveredWinner)!.photo.display_name}
+            />
+          )}
+        </div>
+      )}
 
       {/* 控制面板 */}
       <div className="control-panel">
@@ -1835,35 +1847,36 @@ export default function LotteryMachineLivePage() {
           object-fit: cover;
         }
 
-        .platform-winner-image-container {
-          position: absolute;
-          top: 100%;
-          left: 50%;
-          transform: translateX(-50%);
-          margin-top: clamp(4px, 0.4vw, 8px);
-          width: clamp(80px, 10vw, 160px);
-          height: clamp(80px, 10vw, 160px);
-          border-radius: clamp(6px, 0.6vw, 10px);
+        .floating-winner-photo {
+          position: fixed;
+          width: clamp(120px, 15vw, 200px);
+          height: clamp(120px, 15vw, 200px);
+          border-radius: clamp(8px, 0.8vw, 12px);
           overflow: hidden;
-          background: rgba(0, 0, 0, 0.8);
-          border: clamp(2px, 0.2vw, 3px) solid rgba(255, 215, 0, 0.5);
-          box-shadow: 0 clamp(4px, 0.4vw, 8px) clamp(16px, 1.6vw, 30px) rgba(0, 0, 0, 0.5);
-          z-index: 100;
-          opacity: 1;
-          transition: opacity 0.3s ease, transform 0.3s ease;
-          pointer-events: auto;
-        }
-
-        .platform-winner-image-container.hidden {
-          opacity: 0;
-          transform: translateX(-50%) translateY(-10px);
+          background: rgba(0, 0, 0, 0.9);
+          border: clamp(3px, 0.3vw, 4px) solid rgba(255, 215, 0, 0.6);
+          box-shadow: 0 clamp(8px, 0.8vw, 16px) clamp(24px, 2.4vw, 40px) rgba(0, 0, 0, 0.6);
+          z-index: 1000;
+          transform: translateX(-50%);
+          animation: fadeIn 0.2s ease-out;
           pointer-events: none;
         }
 
-        .platform-winner-image {
+        .floating-winner-photo img {
           width: 100%;
           height: 100%;
           object-fit: cover;
+        }
+
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateX(-50%) translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+          }
         }
 
         .platform-winner-rank {
