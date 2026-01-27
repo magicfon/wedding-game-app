@@ -458,6 +458,7 @@ export default function LotteryMachineLivePage() {
 
     const photoElements = container.querySelectorAll('.photo-item')
     const chamberRect = chamberContainer.getBoundingClientRect()
+    const containerRect = container.getBoundingClientRect() // 獲取 photos-container 的實際尺寸
     if (photoElements.length === 0) return
 
     // 初始化照片位置到腔體內
@@ -467,14 +468,14 @@ export default function LotteryMachineLivePage() {
       const currentLeft = parseFloat(el.style.left || '0')
       const currentTop = parseFloat(el.style.top || '0')
 
-      // 確保照片在腔體範圍內
-      let x = Math.min(Math.max(0, currentLeft), chamberRect.width - photoSize)
-      let y = Math.min(Math.max(0, currentTop), chamberRect.height - photoSize)
+      // 確保照片在 photos-container 範圍內（使用 containerRect）
+      let x = Math.min(Math.max(0, currentLeft), containerRect.width - photoSize)
+      let y = Math.min(Math.max(0, currentTop), containerRect.height - photoSize)
 
       // 如果照片在腔體外，重新定位到中心
-      if (x < 0 || x > chamberRect.width - photoSize || y < 0 || y > chamberRect.height - photoSize) {
-        x = (chamberRect.width - photoSize) / 2 + (Math.random() - 0.5) * 50
-        y = (chamberRect.height - photoSize) / 2 + (Math.random() - 0.5) * 50
+      if (x < 0 || x > containerRect.width - photoSize || y < 0 || y > containerRect.height - photoSize) {
+        x = (containerRect.width - photoSize) / 2 + (Math.random() - 0.5) * 50
+        y = (containerRect.height - photoSize) / 2 + (Math.random() - 0.5) * 50
       }
 
       el.style.left = `${x}px`
@@ -500,12 +501,12 @@ export default function LotteryMachineLivePage() {
         // 重力
         let newVy = vy + physics.gravity
 
-        // 氣流力
-        const bottomFactor = y / chamberRect.height
+        // 氣流力 - 使用 containerRect 計算
+        const bottomFactor = y / containerRect.height
         newVy -= physics.airForce * (0.5 + bottomFactor * 1.5)
 
-        // 側向氣流力
-        const horizontalFactor = x / chamberRect.width
+        // 側向氣流力 - 使用 containerRect 計算
+        const horizontalFactor = x / containerRect.width
         const newVx = vx + (Math.random() - 0.5) * physics.lateralAirForce * 2 + (Math.random() - 0.5) * physics.lateralAirForce
 
         // 摩擦力
@@ -537,9 +538,9 @@ export default function LotteryMachineLivePage() {
         let newX = x + clampedVx
         let newY = y + clampedVy
 
-        // 邊界碰撞
-        const containerWidth = chamberRect.width
-        const containerHeight = chamberRect.height
+        // 邊界碰撞 - 使用 photos-container 的實際尺寸
+        const containerWidth = containerRect.width
+        const containerHeight = containerRect.height
 
         if (newX < 0) {
           newX = 0
