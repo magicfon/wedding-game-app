@@ -87,6 +87,7 @@ export default function LotteryMachineLivePage() {
   const [hiddenWinnerPhotos, setHiddenWinnerPhotos] = useState<Set<number>>(new Set())
   const [hoveredWinner, setHoveredWinner] = useState<number | null>(null)
   const [floatingPhotoPosition, setFloatingPhotoPosition] = useState<{ x: number; y: number; maxHeight?: number } | null>(null)
+  const [toastMessage, setToastMessage] = useState<{ type: 'error' | 'success', message: string } | null>(null)
 
   // 元素拖曳狀態
   const [elementDragState, setElementDragState] = useState<{
@@ -645,13 +646,19 @@ export default function LotteryMachineLivePage() {
       } else {
         // 失敗時重置狀態
         setLotteryState(prev => ({ ...prev, is_drawing: false }))
-        setError(data.error || '抽獎失敗')
+        // 顯示提示訊息而不是切換整個畫面
+        setToastMessage({ type: 'error', message: data.error || '抽獎失敗' })
+        // 3秒後自動隱藏提示
+        setTimeout(() => setToastMessage(null), 3000)
       }
     } catch (err) {
       // 錯誤時重置狀態
       setLotteryState(prev => ({ ...prev, is_drawing: false }))
       console.error('抽獎失敗:', err)
-      setError('抽獎失敗')
+      // 顯示提示訊息而不是切換整個畫面
+      setToastMessage({ type: 'error', message: '抽獎失敗' })
+      // 3秒後自動隱藏提示
+      setTimeout(() => setToastMessage(null), 3000)
     }
   }
 
@@ -1738,6 +1745,16 @@ export default function LotteryMachineLivePage() {
       {/* 彩紙效果容器 */}
       <div className="confetti-container"></div>
 
+      {/* 提示訊息覆蓋層 */}
+      {toastMessage && (
+        <div className="toast-overlay">
+          <div className={`toast-message ${toastMessage.type}`}>
+            {toastMessage.type === 'error' && '⚠️ '}
+            {toastMessage.message}
+          </div>
+        </div>
+      )}
+
       <style jsx>{`
         .lottery-machine-live-page {
           width: 100vw;
@@ -2513,6 +2530,66 @@ export default function LotteryMachineLivePage() {
         .move-handle:hover {
           transform: translateX(-50%) scale(1.1);
           box-shadow: 0 0 clamp(10px, 1vw, 18px) rgba(102, 126, 234, 0.8);
+        }
+
+        /* 提示訊息覆蓋層 */
+        .toast-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          pointer-events: none;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 2000;
+        }
+
+        .toast-message {
+          background: rgba(0, 0, 0, 0.85);
+          backdrop-filter: blur(10px);
+          color: white;
+          padding: clamp(16px, 2vw, 24px) clamp(24px, 3vw, 36px);
+          border-radius: clamp(12px, 1.2vw, 16px);
+          font-size: clamp(1rem, 1.2vw, 1.3rem);
+          font-weight: 600;
+          box-shadow: 0 clamp(8px, 1vw, 16px) clamp(32px, 3vw, 48px) rgba(0, 0, 0, 0.6);
+          animation: toastSlideIn 0.3s ease-out, toastFadeOut 0.3s ease-in 2.7s forwards;
+          max-width: clamp(300px, 40vw, 600px);
+          text-align: center;
+        }
+
+        .toast-message.error {
+          border: clamp(2px, 0.2vw, 3px) solid rgba(244, 67, 54, 0.6);
+          box-shadow: 0 clamp(8px, 1vw, 16px) clamp(32px, 3vw, 48px) rgba(244, 67, 54, 0.4);
+        }
+
+        .toast-message.success {
+          border: clamp(2px, 0.2vw, 3px) solid rgba(76, 175, 80, 0.6);
+          box-shadow: 0 clamp(8px, 1vw, 16px) clamp(32px, 3vw, 48px) rgba(76, 175, 80, 0.4);
+        }
+
+        @keyframes toastSlideIn {
+          from {
+            opacity: 0;
+            transform: translateY(-20px) scale(0.95);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+
+        @keyframes toastFadeOut {
+          from {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+          to {
+            opacity: 0;
+            transform: translateY(-20px) scale(0.95);
+          }
         }
       `}</style>
 
