@@ -1523,7 +1523,6 @@ export default function LotteryMachineLivePage() {
           )}
           <div className="platform-surface" style={platformSurfaceStyle}>
             <div className="platform-slots" ref={platformSlotsRef}>
-              {winners.length === 0 && <span className="placeholder">等待得獎者...</span>}
             </div>
           </div>
           <div className="platform-base"></div>
@@ -1710,11 +1709,13 @@ export default function LotteryMachineLivePage() {
           flex-wrap: nowrap;
           min-height: clamp(40px, 4vh, 65px);
           overflow-x: auto;
+          /* 隱藏 scrollbar */
+          scrollbar-width: none; /* Firefox */
+          -ms-overflow-style: none; /* IE and Edge */
         }
 
-        .platform-slots .placeholder {
-          color: rgba(255,255,255,0.7);
-          font-size: clamp(0.6rem, 0.8vw, 0.8rem);
+        .platform-slots::-webkit-scrollbar {
+          display: none; /* Chrome, Safari, Opera */
         }
 
         .platform-base {
