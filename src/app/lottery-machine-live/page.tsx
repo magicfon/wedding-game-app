@@ -148,8 +148,8 @@ export default function LotteryMachineLivePage() {
       ...prev,
       ballDiameter: ballSize,
       chamberHeight: chamberHeight,
-      chamberWidth: chamberWidth,
-      trackWidth: trackWidth
+      chamberWidth: chamberWidth
+      // 不更新 trackWidth，讓用戶手動設置的值保持不變
     }))
 
     console.log('📏 響應式配置更新:', {
@@ -400,7 +400,9 @@ export default function LotteryMachineLivePage() {
             chamberHeight: savedConfig.chamberHeight || prev.chamberHeight,
             platformSurfaceHeight: savedConfig.platformSurfaceHeight,
             // 如果有儲存的彩球直徑，也一併載入
-            ballDiameter: savedConfig.ballDiameter || prev.ballDiameter
+            ballDiameter: savedConfig.ballDiameter || prev.ballDiameter,
+            // 如果有儲存的軌道寬度，也一併載入（否則根據彩球直徑計算）
+            trackWidth: savedConfig.trackWidth || (savedConfig.ballDiameter ? Math.round(savedConfig.ballDiameter * 0.76) : prev.trackWidth)
           }))
 
           // 如果有儲存的 platformSurfaceHeight，應用它
