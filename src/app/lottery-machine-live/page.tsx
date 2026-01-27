@@ -585,6 +585,9 @@ export default function LotteryMachineLivePage() {
   const drawWinner = async () => {
     if (lotteryState.is_drawing || avatarBalls.length === 0) return
 
+    // 立即更新狀態，顯示載入中（提供即時反饋）
+    setLotteryState(prev => ({ ...prev, is_drawing: true }))
+
     try {
       const response = await fetch('/api/lottery-machine/draw', {
         method: 'POST',
@@ -597,8 +600,6 @@ export default function LotteryMachineLivePage() {
       const data = await response.json()
 
       if (data.success) {
-        setLotteryState(prev => ({ ...prev, is_drawing: true }))
-
         // 構建完整的 Photo 物件用於動畫
         const winnerPhoto: Photo = {
           id: data.winner_photo.id,
@@ -615,9 +616,13 @@ export default function LotteryMachineLivePage() {
         setWinners(prev => [...prev, { photo: winnerPhoto, order: prev.length + 1 }])
         setLotteryState(prev => ({ ...prev, is_drawing: false }))
       } else {
+        // 失敗時重置狀態
+        setLotteryState(prev => ({ ...prev, is_drawing: false }))
         setError(data.error || '抽獎失敗')
       }
     } catch (err) {
+      // 錯誤時重置狀態
+      setLotteryState(prev => ({ ...prev, is_drawing: false }))
       console.error('抽獎失敗:', err)
       setError('抽獎失敗')
     }
@@ -1624,9 +1629,11 @@ export default function LotteryMachineLivePage() {
         <button
           onClick={drawWinner}
           disabled={lotteryState.is_drawing || avatarBalls.length === 0}
-          className="btn btn-draw"
+          className={`btn btn-draw ${lotteryState.is_drawing ? 'loading' : ''}`}
         >
-          <span className="btn-text">🎲 抽出得獎者</span>
+          <span className="btn-text">
+            {lotteryState.is_drawing ? '🎲 抽獎中...' : '🎲 抽出得獎者'}
+          </span>
           <span className="btn-glow"></span>
         </button>
         <button
@@ -2204,6 +2211,20 @@ export default function LotteryMachineLivePage() {
         .btn-draw:disabled {
           opacity: 0.6;
           cursor: not-allowed;
+        }
+
+        .btn-draw.loading {
+          opacity: 0.8;
+          cursor: wait;
+        }
+
+        .btn-draw.loading .btn-text {
+          animation: pulseText 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulseText {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.6; }
         }
 
         .btn-glow {
