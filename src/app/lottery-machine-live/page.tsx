@@ -726,30 +726,6 @@ export default function LotteryMachineLivePage() {
         // 播放彩紙效果
         triggerConfetti()
 
-        // 將中獎者添加到平台
-        const platformSlots = platformSlotsRef.current
-        if (platformSlots) {
-          const platformSurface = platformSlots.parentElement?.querySelector('.platform-surface') as HTMLElement
-          const platformHeight = platformSurface?.clientHeight || 60
-          const ballSize = Math.max(20, Math.round(platformHeight * 0.9))
-
-          const winnerEl = document.createElement('div')
-          winnerEl.className = 'platform-winner'
-          winnerEl.dataset.winnerId = `${winners.length + 1}`
-          winnerEl.innerHTML = `
-            <div class="platform-winner-photo" style="width: ${ballSize}px; height: ${ballSize}px;">
-              <img src="${winner.avatar_url}" alt="${winner.display_name}">
-            </div>
-            <div class="platform-winner-image-container">
-              <img class="platform-winner-image" src="${winner.image_url}" alt="${winner.display_name}">
-            </div>
-            <div class="platform-winner-rank">#${winners.length + 1}</div>
-          `
-          platformSlots.appendChild(winnerEl)
-        } else {
-          console.error('❌ platformSlots 不存在')
-        }
-
         // 移除動畫元素
         setTimeout(() => {
           travelingPhoto.remove()
