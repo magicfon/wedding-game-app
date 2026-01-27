@@ -28,14 +28,31 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Lottery record not found' }, { status: 404 })
         }
 
-        // 檢查是否啟用中獎通知
-        const { data: lotteryMachineState, error: stateError } = await supabase
+        // 檢查是否啟用中獎通知（同時檢查兩個表）
+        const { data: lotteryMachineState, error: machineStateError } = await supabase
             .from('lottery_machine_state')
             .select('notify_winner_enabled')
             .single()
 
-        const notifyEnabled = lotteryMachineState?.notify_winner_enabled === true
-        console.log('📱 中獎通知設定:', { notifyEnabled, stateError: stateError?.message, rawValue: lotteryMachineState?.notify_winner_enabled })
+        const { data: lotteryState, error: stateError } = await supabase
+            .from('lottery_state')
+            .select('notify_winner_enabled')
+            .single()
+
+        // 只有兩個表都明確設定為 true 時才發送通知
+        const machineEnabled = lotteryMachineState?.notify_winner_enabled === true
+        const stateEnabled = lotteryState?.notify_winner_enabled === true
+        const notifyEnabled = machineEnabled && stateEnabled
+
+        console.log('📱 中獎通知設定:', {
+            notifyEnabled,
+            machineEnabled,
+            stateEnabled,
+            machineStateError: machineStateError?.message,
+            stateError: stateError?.message,
+            machineRawValue: lotteryMachineState?.notify_winner_enabled,
+            stateRawValue: lotteryState?.notify_winner_enabled
+        })
 
         if (!notifyEnabled) {
             console.log('⏭️ 中獎通知已關閉，跳過發送')
