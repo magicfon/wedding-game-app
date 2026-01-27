@@ -1833,9 +1833,9 @@ export default function LotteryMachineLivePage() {
 
         .floating-winner-photo {
           position: fixed;
-          width: clamp(120px, 15vw, 200px);
-          height: clamp(120px, 15vw, 200px);
-          border-radius: clamp(8px, 0.8vw, 12px);
+          width: clamp(280px, 30vw, 450px);
+          max-height: clamp(350px, 40vh, 500px);
+          border-radius: clamp(12px, 1.2vw, 16px);
           overflow: hidden;
           background: rgba(0, 0, 0, 0.9);
           border: clamp(3px, 0.3vw, 4px) solid rgba(255, 215, 0, 0.6);
@@ -1844,12 +1844,16 @@ export default function LotteryMachineLivePage() {
           transform: translateX(-50%);
           animation: fadeIn 0.2s ease-out;
           pointer-events: none;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
 
         .floating-winner-photo img {
           width: 100%;
-          height: 100%;
-          object-fit: cover;
+          height: auto;
+          max-height: 100%;
+          object-fit: contain;
         }
 
         @keyframes fadeIn {
