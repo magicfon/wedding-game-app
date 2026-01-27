@@ -1731,10 +1731,8 @@ export default function LotteryMachineLivePage() {
           onClick={() => {
             setWinners([])
             setHiddenWinnerPhotos(new Set())
-            // 清空 platform 上的所有照片
-            if (platformSlotsRef.current) {
-              platformSlotsRef.current.innerHTML = ''
-            }
+            setHoveredWinner(null)
+            setFloatingPhotoPosition(null)
           }}
           className="btn btn-reset"
         >
