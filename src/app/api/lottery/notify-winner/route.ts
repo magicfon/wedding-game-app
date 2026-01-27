@@ -28,14 +28,14 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Lottery record not found' }, { status: 404 })
         }
 
-        // 檢查是否啟用中獎通知（如果欄位不存在或查詢失敗，預設為啟用）
+        // 檢查是否啟用中獎通知（只有明確設定為 true 時才發送通知）
         const { data: lotteryState, error: stateError } = await supabase
             .from('lottery_state')
             .select('notify_winner_enabled')
             .single()
 
-        // 只有明確設定為 false 時才跳過通知
-        const notifyEnabled = lotteryState?.notify_winner_enabled !== false
+        // 只有明確設定為 true 時才發送通知
+        const notifyEnabled = lotteryState?.notify_winner_enabled === true
         console.log('📱 中獎通知設定:', { notifyEnabled, stateError: stateError?.message, rawValue: lotteryState?.notify_winner_enabled })
 
         if (!notifyEnabled) {

@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
             .select('notify_winner_enabled')
             .single()
 
-        const notifyEnabled = lotteryMachineState?.notify_winner_enabled !== false
+        const notifyEnabled = lotteryMachineState?.notify_winner_enabled === true
         console.log('📱 中獎通知設定:', { notifyEnabled, stateError: stateError?.message, rawValue: lotteryMachineState?.notify_winner_enabled })
 
         if (!notifyEnabled) {
