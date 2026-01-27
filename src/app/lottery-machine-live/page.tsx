@@ -1653,7 +1653,13 @@ export default function LotteryMachineLivePage() {
           <span className="btn-glow"></span>
         </button>
         <button
-          onClick={() => setWinners([])}
+          onClick={() => {
+            setWinners([])
+            // 清空 platform 上的所有照片
+            if (platformSlotsRef.current) {
+              platformSlotsRef.current.innerHTML = ''
+            }
+          }}
           className="btn btn-reset"
         >
           <span className="btn-text">🔄 重置</span>
