@@ -615,6 +615,22 @@ export default function LotteryMachineLivePage() {
         // 將中獎者添加到得獎者列表
         setWinners(prev => [...prev, { photo: winnerPhoto, order: prev.length + 1 }])
         setLotteryState(prev => ({ ...prev, is_drawing: false }))
+
+        // 動畫完成後發送 LINE 通知
+        try {
+          await fetch('/api/lottery-machine/notify-winner', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              lotteryId: data.lottery_id,
+              winnerPhotoUrl: data.winner_photo.url
+            })
+          })
+          console.log('✅ LINE 通知已發送')
+        } catch (notifyError) {
+          console.error('❌ 發送 LINE 通知失敗:', notifyError)
+          // 不影響抽獎結果，只記錄錯誤
+        }
       } else {
         // 失敗時重置狀態
         setLotteryState(prev => ({ ...prev, is_drawing: false }))
