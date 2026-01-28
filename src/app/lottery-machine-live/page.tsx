@@ -198,7 +198,7 @@ export default function LotteryMachineLivePage() {
   useEffect(() => {
     fetchPhotos()
     loadTrackConfig()
-    loadLotteryHistory()
+    loadLotteryHistory(false) // 不從歷史記錄載入，避免重複顯示
   }, [])
 
   // 照片載入後啟動彈跳動畫
@@ -392,12 +392,12 @@ export default function LotteryMachineLivePage() {
     }
   }
 
-  const loadLotteryHistory = async () => {
+  const loadLotteryHistory = async (loadFromHistory: boolean = false) => {
     try {
       const response = await fetch('/api/lottery-machine/history')
       const data = await response.json()
 
-      if (data.success && data.history) {
+      if (data.success && data.history && loadFromHistory) {
         // 將歷史記錄轉換為 Winner 格式
         const historyWinners: Winner[] = data.history.map((record: any, index: number) => ({
           photo: {
