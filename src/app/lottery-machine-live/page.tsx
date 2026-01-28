@@ -198,6 +198,7 @@ export default function LotteryMachineLivePage() {
   useEffect(() => {
     fetchPhotos()
     loadTrackConfig()
+    loadLotteryHistory()
   }, [])
 
   // 照片載入後啟動彈跳動畫
@@ -388,6 +389,34 @@ export default function LotteryMachineLivePage() {
       console.error('載入照片失敗:', err)
       setError('載入照片失敗')
       setLoading(false)
+    }
+  }
+
+  const loadLotteryHistory = async () => {
+    try {
+      const response = await fetch('/api/lottery-machine/history')
+      const data = await response.json()
+
+      if (data.success && data.history) {
+        // 將歷史記錄轉換為 Winner 格式
+        const historyWinners: Winner[] = data.history.map((record: any, index: number) => ({
+          photo: {
+            id: record.winner_photo_id || 0,
+            image_url: record.winner_photo_url || '',
+            user_id: record.winner_line_id || '',
+            display_name: record.winner_display_name || '',
+            avatar_url: record.winner_avatar_url || ''
+          },
+          order: index + 1
+        }))
+
+        // 設置 winners 狀態
+        setWinners(historyWinners)
+        console.log(`✅ 已載入 ${historyWinners.length} 筆歷史記錄`)
+      }
+    } catch (err) {
+      console.error('載入歷史記錄失敗:', err)
+      // 不影響頁面正常運作
     }
   }
 
