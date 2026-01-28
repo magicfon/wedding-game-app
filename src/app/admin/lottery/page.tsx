@@ -21,11 +21,30 @@ import {
   Trophy,
   Bell,
   BellOff,
-  Box
+  Box,
+  Settings,
+  Save
 } from 'lucide-react'
 
 // 動畫模式類型和資訊
 type AnimationMode = 'fast_shuffle' | 'waterfall' | 'tournament' | 'lottery_machine'
+
+// 彩票機設定介面
+interface TrackConfig {
+  chamberWidth: number
+  chamberHeight: number
+  ballDiameter: number
+  startPoint: { x: number; y: number }
+  endPoint: { x: number; y: number }
+  nodes: Array<{ id: number; x: number; y: number }>
+}
+
+interface PhysicsConfig {
+  gravity: number
+  airForce: number
+  lateralAirForce: number
+  maxVelocity: number
+}
 
 const ANIMATION_MODES: { mode: AnimationMode; name: string; icon: React.ReactNode; description: string }[] = [
   { mode: 'fast_shuffle', name: '快速切換', icon: <Shuffle className="w-6 h-6" />, description: '單張照片快速隨機切換' },
@@ -87,6 +106,30 @@ export default function LotteryManagePage() {
   const [animationMode, setAnimationMode] = useState<AnimationMode>('fast_shuffle')
   const [updatingMode, setUpdatingMode] = useState(false)
 
+  // 彩票機相關狀態
+  const [trackConfig, setTrackConfig] = useState<TrackConfig>({
+    chamberWidth: 480,
+    chamberHeight: 220,
+    ballDiameter: 42,
+    startPoint: { x: 50, y: 75 },
+    endPoint: { x: 15, y: 8 },
+    nodes: [
+      { id: 1, x: 95, y: 75 },
+      { id: 2, x: 95, y: 55 },
+      { id: 3, x: 5, y: 55 },
+      { id: 4, x: 5, y: 25 },
+      { id: 5, x: 25, y: 25 }
+    ]
+  })
+  const [physics, setPhysics] = useState<PhysicsConfig>({
+    gravity: 0.35,
+    airForce: 0.8,
+    lateralAirForce: 0.2,
+    maxVelocity: 15
+  })
+  const [showLotteryMachineSettings, setShowLotteryMachineSettings] = useState(false)
+  const [savingLotteryMachineConfig, setSavingLotteryMachineConfig] = useState(false)
+
   const { isLoggedIn, isAdmin, profile, loading: liffLoading, adminLoading } = useLiff()
   const router = useRouter()
 
@@ -109,7 +152,8 @@ export default function LotteryManagePage() {
     await Promise.all([
       fetchEligibleUsers(),
       fetchLotteryState(),
-      fetchLotteryHistory()
+      fetchLotteryHistory(),
+      fetchLotteryMachineConfig()
     ])
     setLoading(false)
   }
@@ -161,6 +205,24 @@ export default function LotteryManagePage() {
     } catch (error) {
       console.error('獲取抽獎歷史失敗:', error)
       showMessage('error', '獲取抽獎歷史失敗')
+    }
+  }
+
+  const fetchLotteryMachineConfig = async () => {
+    try {
+      const response = await fetch('/api/lottery-machine/config')
+      const data = await response.json()
+
+      if (data.success && data.config) {
+        if (data.config.trackConfig) {
+          setTrackConfig(data.config.trackConfig)
+        }
+        if (data.config.physics) {
+          setPhysics(data.config.physics)
+        }
+      }
+    } catch (error) {
+      console.error('載入彩票機設定失敗:', error)
     }
   }
 
@@ -383,6 +445,69 @@ export default function LotteryManagePage() {
     }
   }
 
+  // 彩票機相關函數
+  const handleSaveLotteryMachineConfig = async () => {
+    setSavingLotteryMachineConfig(true)
+    try {
+      const response = await fetch('/api/lottery-machine/config', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          trackConfig,
+          physics,
+          admin_id: profile?.userId
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        showMessage('success', '彩票機設定已儲存')
+      } else {
+        showMessage('error', data.error || '儲存設定失敗')
+      }
+    } catch (error) {
+      console.error('儲存設定失敗:', error)
+      showMessage('error', '儲存設定失敗')
+    } finally {
+      setSavingLotteryMachineConfig(false)
+    }
+  }
+
+  const addNode = () => {
+    const newId = trackConfig.nodes.length + 1
+    const lastNode = trackConfig.nodes[trackConfig.nodes.length - 1] || trackConfig.startPoint
+    setTrackConfig(prev => ({
+      ...prev,
+      nodes: [
+        ...prev.nodes,
+        {
+          id: newId,
+          x: Math.min(95, lastNode.x + 10),
+          y: Math.max(5, lastNode.y - 10)
+        }
+      ]
+    }))
+  }
+
+  const removeNode = (index: number) => {
+    setTrackConfig(prev => ({
+      ...prev,
+      nodes: prev.nodes.filter((_, i) => i !== index).map((n, i) => ({ ...n, id: i + 1 }))
+    }))
+  }
+
+  const updateNode = (index: number, field: 'x' | 'y', value: number) => {
+    setTrackConfig(prev => ({
+      ...prev,
+      nodes: prev.nodes.map((n, i) =>
+        i === index ? { ...n, [field]: value } : n
+      )
+    }))
+  }
+
   const showMessage = (type: 'success' | 'error', text: string) => {
     setMessage({ type, text })
     setTimeout(() => setMessage(null), 5000)
@@ -438,7 +563,7 @@ export default function LotteryManagePage() {
             </div>
 
             <button
-              onClick={() => window.open('/lottery-live', '_blank')}
+              onClick={() => window.open(animationMode === 'lottery_machine' ? '/lottery-machine-live' : '/lottery-live', '_blank')}
               className="flex items-center space-x-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
             >
               <ExternalLink className="w-4 h-4" />
@@ -688,6 +813,274 @@ export default function LotteryManagePage() {
                 </button>
               </div>
             </div>
+          </div>
+
+          {/* 彩票機設定 */}
+          <div className="mt-6 border-t pt-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-3">
+                <Settings className="w-6 h-6 text-purple-500" />
+                <h3 className="text-lg font-semibold text-gray-800">🎰 彩票機設定</h3>
+              </div>
+              <button
+                onClick={() => setShowLotteryMachineSettings(!showLotteryMachineSettings)}
+                className="flex items-center space-x-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
+              >
+                <ExternalLink className="w-4 h-4" />
+                <span>開啟大螢幕</span>
+              </button>
+            </div>
+
+            <button
+              onClick={() => setShowLotteryMachineSettings(!showLotteryMachineSettings)}
+              className="w-full flex items-center justify-between px-4 py-3 bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 rounded-lg transition-colors"
+            >
+              <div className="flex items-center space-x-3">
+                <Box className="w-5 h-5 text-purple-600" />
+                <span className="font-medium text-gray-800">彩票機設定</span>
+              </div>
+              <svg
+                className={`w-5 h-5 text-gray-600 transition-transform ${showLotteryMachineSettings ? 'rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {showLotteryMachineSettings && (
+              <div className="mt-4 space-y-6">
+                {/* 彩球與物理設定 */}
+                <div>
+                  <h4 className="text-md font-semibold text-gray-800 mb-3 flex items-center">
+                    <Settings className="w-4 h-4 mr-2 text-purple-500" />
+                    彩球與物理
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        彩球直徑
+                      </label>
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="range"
+                          min="25"
+                          max="80"
+                          value={trackConfig.ballDiameter}
+                          onChange={(e) => setTrackConfig(prev => ({ ...prev, ballDiameter: parseInt(e.target.value) }))}
+                          className="flex-1"
+                        />
+                        <span className="text-sm text-gray-600 w-12">{trackConfig.ballDiameter}px</span>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        重力
+                      </label>
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="range"
+                          min="0.1"
+                          max="1.0"
+                          step="0.05"
+                          value={physics.gravity}
+                          onChange={(e) => setPhysics(prev => ({ ...prev, gravity: parseFloat(e.target.value) }))}
+                          className="flex-1"
+                        />
+                        <span className="text-sm text-gray-600 w-12">{physics.gravity}</span>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        氣流力
+                      </label>
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="range"
+                          min="0.2"
+                          max="2.0"
+                          step="0.1"
+                          value={physics.airForce}
+                          onChange={(e) => setPhysics(prev => ({ ...prev, airForce: parseFloat(e.target.value) }))}
+                          className="flex-1"
+                        />
+                        <span className="text-sm text-gray-600 w-12">{physics.airForce}</span>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        側向氣流力
+                      </label>
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="range"
+                          min="0"
+                          max="1.0"
+                          step="0.05"
+                          value={physics.lateralAirForce}
+                          onChange={(e) => setPhysics(prev => ({ ...prev, lateralAirForce: parseFloat(e.target.value) }))}
+                          className="flex-1"
+                        />
+                        <span className="text-sm text-gray-600 w-12">{physics.lateralAirForce}</span>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        最大速度
+                      </label>
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="range"
+                          min="5"
+                          max="30"
+                          step="1"
+                          value={physics.maxVelocity}
+                          onChange={(e) => setPhysics(prev => ({ ...prev, maxVelocity: parseInt(e.target.value) }))}
+                          className="flex-1"
+                        />
+                        <span className="text-sm text-gray-600 w-12">{physics.maxVelocity}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 軌道設定 */}
+                <div>
+                  <h4 className="text-md font-semibold text-gray-800 mb-3">📍 軌道設定</h4>
+                  <div className="bg-white rounded-lg shadow p-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          起點 (漏斗)
+                        </label>
+                        <div className="flex items-center space-x-2">
+                          <span>X:</span>
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={trackConfig.startPoint.x}
+                            onChange={(e) => setTrackConfig(prev => ({ ...prev, startPoint: { ...prev.startPoint, x: parseInt(e.target.value) || 0 } }))}
+                            className="w-20 px-2 py-1 border border-gray-300 rounded"
+                          />
+                          <span>%</span>
+                          <span>Y:</span>
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={trackConfig.startPoint.y}
+                            onChange={(e) => setTrackConfig(prev => ({ ...prev, startPoint: { ...prev.startPoint, y: parseInt(e.target.value) || 0 } }))}
+                            className="w-20 px-2 py-1 border-gray-300 rounded"
+                          />
+                          <span>%</span>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          終點 (平台)
+                        </label>
+                        <div className="flex items-center space-x-2">
+                          <span>X:</span>
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={trackConfig.endPoint.x}
+                            onChange={(e) => setTrackConfig(prev => ({ ...prev, endPoint: { ...prev.endPoint, x: parseInt(e.target.value) || 0 } }))}
+                            className="w-20 px-2 py-1 border-gray-300 rounded"
+                          />
+                          <span>%</span>
+                          <span>Y:</span>
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={trackConfig.endPoint.y}
+                            onChange={(e) => setTrackConfig(prev => ({ ...prev, endPoint: { ...prev.endPoint, y: parseInt(e.target.value) || 0 } }))}
+                            className="w-20 px-2 py-1 border-gray-300 rounded"
+                          />
+                          <span>%</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 軌道節點編輯器 */}
+                <div>
+                  <h4 className="text-md font-semibold text-gray-800 mb-3">🔗 軌道節點</h4>
+                  <div className="bg-white rounded-lg shadow p-4">
+                    <div className="mb-4 p-4 bg-gray-50 rounded-lg">
+                      <div className="text-sm text-gray-600 mb-4">
+                        起點 → {trackConfig.nodes.map(n => n.id).join(' → ')} → 終點
+                      </div>
+                    </div>
+                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                      {trackConfig.nodes.map((node, index) => (
+                        <div key={node.id} className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg">
+                          <span className="bg-purple-500 text-white px-2 py-1 rounded font-semibold w-8 text-center">
+                            {node.id}
+                          </span>
+                          <span>X:</span>
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={node.x}
+                            onChange={(e) => updateNode(index, 'x', parseInt(e.target.value) || 0)}
+                            className="w-20 px-2 py-1 border border-gray-300 rounded"
+                          />
+                          <span>%</span>
+                          <span>Y:</span>
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={node.y}
+                            onChange={(e) => updateNode(index, 'y', parseInt(e.target.value) || 0)}
+                            className="w-20 px-2 py-1 border border-gray-300 rounded"
+                          />
+                          <span>%</span>
+                          <button
+                            onClick={() => removeNode(index)}
+                            className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded transition-colors text-sm"
+                          >
+                            刪除
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    <button
+                      onClick={addNode}
+                      className="w-full py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors font-semibold mt-4"
+                    >
+                      ➕ 新增節點
+                    </button>
+                  </div>
+                </div>
+
+                {/* 操作按鈕 */}
+                <div className="flex gap-4">
+                  <button
+                    onClick={handleSaveLotteryMachineConfig}
+                    disabled={savingLotteryMachineConfig}
+                    className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg transition-all duration-200 font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                  >
+                    <Save className="w-5 h-5 mr-2" />
+                    {savingLotteryMachineConfig ? '儲存中...' : '儲存設定'}
+                  </button>
+                  <button
+                    onClick={fetchLotteryMachineConfig}
+                    className="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors font-semibold"
+                  >
+                    <RefreshCw className="w-5 h-5 mr-2" />
+                    重新載入
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
