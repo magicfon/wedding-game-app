@@ -1764,10 +1764,17 @@ export default function LotteryMachineLivePage() {
         </button>
         <button
           onClick={() => {
-            setWinners([])
+            // 重新從 history 載入已中獎的用戶
+            loadLotteryHistory(true)
             setHiddenWinnerPhotos(new Set())
             setHoveredWinner(null)
             setFloatingPhotoPosition(null)
+            // 重新啟動動畫
+            setTimeout(() => {
+              if (chamberRef.current && photosContainerRef.current) {
+                startBounceAnimation()
+              }
+            }, 100)
           }}
           className="btn btn-reset"
         >
