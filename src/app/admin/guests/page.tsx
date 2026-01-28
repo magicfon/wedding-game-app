@@ -14,6 +14,7 @@ import {
     Smartphone,
     Users,
     Upload,
+    Download,
     FileText,
     AlertCircle,
     BarChart3,
@@ -582,6 +583,56 @@ export default function GuestManagementPage() {
         }
     }
 
+    // CSV 匯出
+    const handleExportCSV = () => {
+        if (guests.length === 0) {
+            alert('沒有資料可以匯出')
+            return
+        }
+
+        // CSV 標題
+        const headers = ['姓名', '桌次', '大人', '小孩', '素食大人', '總人數', '備註']
+
+        // CSV 資料行
+        const rows = guests.map(guest => [
+            guest.guest_name,
+            guest.table_number,
+            guest.adults || 0,
+            guest.children || 0,
+            guest.vegetarian || 0,
+            guest.total_guests || 0,
+            guest.notes || ''
+        ])
+
+        // 組合成 CSV 字串
+        const csvContent = [
+            headers.join(','),
+            ...rows.map(row => row.map(cell => {
+                // 處理包含逗號或換行的欄位，用雙引號包住
+                const cellStr = String(cell)
+                if (cellStr.includes(',') || cellStr.includes('\n') || cellStr.includes('"')) {
+                    return `"${cellStr.replace(/"/g, '""')}"`
+                }
+                return cellStr
+            }).join(','))
+        ].join('\n')
+
+        // 添加 BOM 讓 Excel 正確識別 UTF-8
+        const BOM = '\uFEFF'
+        const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' })
+        const url = URL.createObjectURL(blob)
+
+        // 建立下載連結並觸發下載
+        const link = document.createElement('a')
+        link.href = url
+        const timestamp = new Date().toISOString().slice(0, 10)
+        link.download = `賓客名單備份_${timestamp}.csv`
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        URL.revokeObjectURL(url)
+    }
+
     // 篩選資料
     const filteredUsers = users.filter(user =>
         user.display_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -674,6 +725,13 @@ export default function GuestManagementPage() {
                                 >
                                     <Upload className="w-4 h-4" />
                                     匯入 CSV
+                                </button>
+                                <button
+                                    onClick={handleExportCSV}
+                                    className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition-colors"
+                                >
+                                    <Download className="w-4 h-4" />
+                                    匯出 CSV
                                 </button>
                                 <button
                                     onClick={() => setShowAddModal(true)}
