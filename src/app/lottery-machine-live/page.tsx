@@ -198,7 +198,7 @@ export default function LotteryMachineLivePage() {
   useEffect(() => {
     fetchPhotos()
     loadTrackConfig()
-    loadLotteryHistory(false) // 不從歷史記錄載入，避免重複顯示
+    loadLotteryHistory(true) // 從歷史記錄載入已中獎的用戶，過濾掉已中獎的彩球
   }, [])
 
   // 照片載入後啟動彈跳動畫
