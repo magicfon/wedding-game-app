@@ -276,7 +276,7 @@ export default function LotteryMachineLivePage() {
   const availableBalls = useMemo(() => {
     const winnerUserIds = new Set(winners.map(w => w.photo.user_id))
     return avatarBalls.filter(ball => !winnerUserIds.has(ball.user_id))
-  }, [avatarBalls, winners])
+  }, [avatarBalls, winners.length, winners.map(w => w.photo.user_id).join(',')])
 
   // Realtime 連接管理
   const eventSourceRef = useRef<EventSource | null>(null)
