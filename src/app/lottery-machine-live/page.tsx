@@ -50,6 +50,7 @@ export default function LotteryMachineLivePage() {
   const [photos, setPhotos] = useState<Photo[]>([])
   const [avatarBalls, setAvatarBalls] = useState<Photo[]>([])
   const [winners, setWinners] = useState<Winner[]>([])
+  const [excludedUserIds, setExcludedUserIds] = useState<Set<string>>(new Set())
   const [lotteryState, setLotteryState] = useState<LotteryMachineState>({
     is_lottery_active: false,
     is_drawing: false,
@@ -198,7 +199,7 @@ export default function LotteryMachineLivePage() {
   useEffect(() => {
     fetchPhotos()
     loadTrackConfig()
-    loadLotteryHistory(true) // 從歷史記錄載入已中獎的用戶，過濾掉已中獎的彩球
+    loadLotteryHistory(false) // 不載入 winners（清空 winner platform），但載入 excludedUserIds 來過濾 chamber 中的彩球
   }, [])
 
   // 照片載入後啟動彈跳動畫
@@ -274,9 +275,8 @@ export default function LotteryMachineLivePage() {
 
   // 計算未中獎的彩球（過濾掉已經中獎過的用戶）
   const availableBalls = useMemo(() => {
-    const winnerUserIds = new Set(winners.map(w => w.photo.user_id))
-    return avatarBalls.filter(ball => !winnerUserIds.has(ball.user_id))
-  }, [avatarBalls, winners.length, winners.map(w => w.photo.user_id).join(',')])
+    return avatarBalls.filter(ball => !excludedUserIds.has(ball.user_id))
+  }, [avatarBalls, excludedUserIds])
 
   // Realtime 連接管理
   const eventSourceRef = useRef<EventSource | null>(null)
@@ -392,27 +392,32 @@ export default function LotteryMachineLivePage() {
     }
   }
 
-  const loadLotteryHistory = async (loadFromHistory: boolean = false) => {
+  const loadLotteryHistory = async (loadWinners: boolean = false) => {
     try {
       const response = await fetch('/api/lottery-machine/history')
       const data = await response.json()
 
-      if (data.success && data.history && loadFromHistory) {
-        // 將歷史記錄轉換為 Winner 格式
-        const historyWinners: Winner[] = data.history.map((record: any, index: number) => ({
-          photo: {
-            id: record.winner_photo_id || 0,
-            image_url: record.winner_photo_url || '',
-            user_id: record.winner_line_id || '',
-            display_name: record.winner_display_name || '',
-            avatar_url: record.winner_avatar_url || ''
-          },
-          order: index + 1
-        }))
+      if (data.success && data.history) {
+        // 總是載入已中獎的 user_id 用於過濾 chamber 中的彩球
+        const excludedIds = new Set<string>(data.history.map((record: any) => record.winner_line_id))
+        setExcludedUserIds(excludedIds)
+        console.log(`✅ 已載入 ${excludedIds.size} 個已中獎的 user_id`)
 
-        // 設置 winners 狀態
-        setWinners(historyWinners)
-        console.log(`✅ 已載入 ${historyWinners.length} 筆歷史記錄`)
+        // 只有在需要時才載入 winners 用於顯示在 winner platform
+        if (loadWinners) {
+          const historyWinners: Winner[] = data.history.map((record: any, index: number) => ({
+            photo: {
+              id: record.winner_photo_id || 0,
+              image_url: record.winner_photo_url || '',
+              user_id: record.winner_line_id || '',
+              display_name: record.winner_display_name || '',
+              avatar_url: record.winner_avatar_url || ''
+            },
+            order: index + 1
+          }))
+          setWinners(historyWinners)
+          console.log(`✅ 已載入 ${historyWinners.length} 筆歷史記錄到 winner platform`)
+        }
       }
     } catch (err) {
       console.error('載入歷史記錄失敗:', err)
@@ -651,8 +656,10 @@ export default function LotteryMachineLivePage() {
         // 動畫效果 - 傳入完整的 Photo 物件
         await animateWinnerSelection(winnerPhoto)
 
-        // 將中獎者添加到得獎者列表
+        // 將中獎者添加到得獎者列表（當前回合）
         setWinners(prev => [...prev, { photo: winnerPhoto, order: prev.length + 1 }])
+        // 將中獎者的 user_id 添加到 excludedUserIds（用於過濾 chamber 中的彩球）
+        setExcludedUserIds(prev => new Set(prev).add(winnerPhoto.user_id))
         setLotteryState(prev => ({ ...prev, is_drawing: false }))
 
         // 動畫完成後發送 LINE 通知（如果啟用）
@@ -1764,8 +1771,10 @@ export default function LotteryMachineLivePage() {
         </button>
         <button
           onClick={() => {
-            // 重新從 history 載入已中獎的用戶
-            loadLotteryHistory(true)
+            // 清空 winner platform（當前回合的中獎者）
+            setWinners([])
+            // 重新從 history 載入已中獎的 user_id 來過濾 chamber 中的彩球
+            loadLotteryHistory(false)
             setHiddenWinnerPhotos(new Set())
             setHoveredWinner(null)
             setFloatingPhotoPosition(null)
