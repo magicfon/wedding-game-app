@@ -271,6 +271,12 @@ export default function LotteryMachineLivePage() {
     }
   }, [winners.length]) // 當 winners 變化時重新設置
 
+  // 計算未中獎的彩球（過濾掉已經中獎過的用戶）
+  const availableBalls = useMemo(() => {
+    const winnerUserIds = new Set(winners.map(w => w.photo.user_id))
+    return avatarBalls.filter(ball => !winnerUserIds.has(ball.user_id))
+  }, [avatarBalls, winners])
+
   // Realtime 連接管理
   const eventSourceRef = useRef<EventSource | null>(null)
 
@@ -587,7 +593,7 @@ export default function LotteryMachineLivePage() {
   }
 
   const drawWinner = async () => {
-    if (lotteryState.is_drawing || avatarBalls.length === 0) return
+    if (lotteryState.is_drawing || availableBalls.length === 0) return
 
     // 立即更新狀態，顯示載入中（提供即時反饋）
     setLotteryState(prev => ({ ...prev, is_drawing: true }))
@@ -1659,7 +1665,7 @@ export default function LotteryMachineLivePage() {
             <div className="chamber-glass"></div>
 
             <div className="photos-container" ref={photosContainerRef}>
-              {avatarBalls.map(ball => (
+              {availableBalls.map(ball => (
                 <div
                   key={ball.id}
                   className="photo-item"
@@ -1719,7 +1725,7 @@ export default function LotteryMachineLivePage() {
       <div className="control-panel">
         <button
           onClick={drawWinner}
-          disabled={lotteryState.is_drawing || avatarBalls.length === 0}
+          disabled={lotteryState.is_drawing || availableBalls.length === 0}
           className={`btn btn-draw ${lotteryState.is_drawing ? 'loading' : ''}`}
         >
           <span className="btn-text">
