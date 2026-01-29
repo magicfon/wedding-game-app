@@ -157,8 +157,8 @@ export default function MenuPage() {
                 <li
                   key={index}
                   className={`py-2 border-b border-amber-100/60 last:border-0 transition-all duration-300 hover:bg-amber-50/50 rounded-lg ${dish.highlight
-                      ? 'text-amber-800 font-semibold text-lg'
-                      : 'text-gray-700'
+                    ? 'text-amber-800 font-semibold text-lg'
+                    : 'text-gray-700'
                     }`}
                 >
                   {dish.name}
@@ -168,21 +168,11 @@ export default function MenuPage() {
           </div>
         </div>
 
-        {/* 價格與備注 */}
+        {/* 備注 */}
         <div className="relative bg-gradient-to-br from-amber-100/80 to-orange-100/60 rounded-3xl shadow-xl p-6 border border-amber-200 overflow-hidden">
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=\"60\" height=\"60\" viewBox=\"0 0 60 60\" xmlns=\"http://www.w3.org/2000/svg\"%3E%3Cg fill=\"none\" fill-rule=\"evenodd\"%3E%3Cg fill=\"%23d97706\" fill-opacity=\"0.05\"%3E%3Cpath d=\"M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-50" />
-
+          <div className="absolute inset-0 bg-gradient-to-br from-amber-200/20 via-transparent to-orange-200/20" />
           <div className="relative z-10">
-            <div className="text-center mb-4">
-              <span className="inline-block px-6 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold rounded-full shadow-lg transform hover:scale-105 transition-transform duration-300">
-                MENU
-              </span>
-            </div>
-
-            <div className="text-center text-amber-800 space-y-2">
-              <p className="text-lg font-semibold">
-                每桌 NT$23,999+10%，10位
-              </p>
+            <div className="text-center text-amber-800">
               <p className="text-sm text-amber-700/80">
                 配合季節變化，本公司保有菜單內容更改權益
               </p>
