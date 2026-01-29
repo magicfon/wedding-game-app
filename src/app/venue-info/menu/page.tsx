@@ -109,29 +109,28 @@ export default function MenuPage() {
         </div>
 
         {/* 喜慶八圍碟 */}
-        <div className="relative bg-gradient-to-br from-white to-amber-50/30 rounded-3xl shadow-xl p-8 mb-6 border border-amber-100 overflow-hidden group hover:shadow-2xl transition-all duration-500">
+        <div className="relative bg-gradient-to-br from-white to-amber-50/30 rounded-3xl shadow-xl p-6 mb-6 border border-amber-100 overflow-hidden group hover:shadow-2xl transition-all duration-500">
           <div className="absolute inset-0 bg-gradient-to-br from-amber-100/0 to-amber-100/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
           <div className="relative z-10">
-            <div className="text-center mb-6">
-              <h3 className="inline-block text-xl font-bold text-amber-800 relative">
+            <div className="text-center mb-4">
+              <h3 className="inline-block text-lg font-bold text-amber-800 relative">
                 喜慶八圍碟
                 <span className="absolute -bottom-2 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-amber-400 to-transparent" />
               </h3>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-1">
               {appetizers.map((item, index) => (
                 <div
                   key={index}
-                  className="flex justify-center gap-8 text-gray-700 group/item"
-                  style={{ animationDelay: `${index * 100}ms` }}
+                  className="flex flex-col sm:flex-row justify-center items-center text-gray-700 text-sm leading-relaxed"
                 >
-                  <span className="text-center min-w-[140px] py-1 hover:text-amber-700 transition-colors duration-300">
+                  <span className="text-center hover:text-amber-700 transition-colors duration-300">
                     {item.left}
                   </span>
-                  <span className="text-amber-300">•</span>
-                  <span className="text-center min-w-[140px] py-1 hover:text-amber-700 transition-colors duration-300">
+                  <span className="text-amber-300 mx-2 hidden sm:inline">•</span>
+                  <span className="text-center hover:text-amber-700 transition-colors duration-300">
                     {item.right}
                   </span>
                 </div>
@@ -141,24 +140,24 @@ export default function MenuPage() {
         </div>
 
         {/* 主菜 */}
-        <div className="relative bg-gradient-to-br from-white to-amber-50/30 rounded-3xl shadow-xl p-8 mb-6 border border-amber-100 overflow-hidden group hover:shadow-2xl transition-all duration-500">
+        <div className="relative bg-gradient-to-br from-white to-amber-50/30 rounded-3xl shadow-xl p-6 mb-6 border border-amber-100 overflow-hidden group hover:shadow-2xl transition-all duration-500">
           <div className="absolute inset-0 bg-gradient-to-br from-amber-100/0 to-amber-100/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
           <div className="relative z-10">
-            <div className="text-center mb-6">
-              <h3 className="inline-block text-xl font-bold text-amber-800 relative">
+            <div className="text-center mb-4">
+              <h3 className="inline-block text-lg font-bold text-amber-800 relative">
                 主菜
                 <span className="absolute -bottom-2 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-amber-400 to-transparent" />
               </h3>
             </div>
 
-            <ul className="space-y-3 text-center">
+            <ul className="space-y-2 text-center">
               {mainCourses.map((dish, index) => (
                 <li
                   key={index}
-                  className={`py-2 border-b border-amber-100/60 last:border-0 transition-all duration-300 hover:bg-amber-50/50 rounded-lg ${dish.highlight
-                    ? 'text-amber-800 font-semibold text-lg'
-                    : 'text-gray-700'
+                  className={`py-1.5 border-b border-amber-100/60 last:border-0 transition-all duration-300 hover:bg-amber-50/50 rounded-lg text-sm ${dish.highlight
+                      ? 'text-amber-800 font-semibold'
+                      : 'text-gray-700'
                     }`}
                 >
                   {dish.name}
@@ -181,22 +180,22 @@ export default function MenuPage() {
         </div>
 
         {/* 飲食注意事項 */}
-        <div className="mt-8 relative bg-white/70 backdrop-blur-sm rounded-3xl p-6 border border-amber-100 shadow-lg">
-          <h3 className="font-semibold text-amber-800 mb-4 flex items-center gap-2">
-            <span className="text-2xl">💡</span>
+        <div className="mt-6 relative bg-white/70 backdrop-blur-sm rounded-3xl p-5 border border-amber-100 shadow-lg">
+          <h3 className="font-semibold text-amber-800 mb-3 flex items-center gap-2 text-sm">
+            <span className="text-xl">💡</span>
             <span>飲食注意事項</span>
           </h3>
-          <ul className="text-sm text-amber-700/90 space-y-3">
+          <ul className="text-xs text-amber-700/90 space-y-2">
             <li className="flex items-start gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-1.5 flex-shrink-0" />
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-1 flex-shrink-0" />
               <span>如有食物過敏，請提前告知服務人員</span>
             </li>
             <li className="flex items-start gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-1.5 flex-shrink-0" />
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-1 flex-shrink-0" />
               <span>可提供素食選擇，請預先告知</span>
             </li>
             <li className="flex items-start gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-1.5 flex-shrink-0" />
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-1 flex-shrink-0" />
               <span>配合季節變化，本公司保有菜單內容更改權益</span>
             </li>
           </ul>
