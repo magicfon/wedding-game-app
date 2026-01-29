@@ -100,10 +100,10 @@ export default function MenuPage() {
               <span className="text-3xl font-serif tracking-wider text-amber-700">萊特薇庭</span>
             </div>
             <p className="text-amber-600/80 text-sm tracking-widest uppercase mb-6">Light Wedding</p>
-            <div className="flex items-center justify-center gap-4 mb-4">
-              <span className="w-16 h-px bg-gradient-to-r from-transparent to-amber-300" />
-              <h2 className="text-2xl font-bold text-amber-800 tracking-widest">婚宴桌席菜單</h2>
-              <span className="w-16 h-px bg-gradient-to-l from-transparent to-amber-300" />
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <span className="w-8 sm:w-16 h-px bg-gradient-to-r from-transparent to-amber-300" />
+              <h2 className="text-lg sm:text-2xl font-bold text-amber-800 tracking-wide sm:tracking-widest whitespace-nowrap">婚宴桌席菜單</h2>
+              <span className="w-8 sm:w-16 h-px bg-gradient-to-l from-transparent to-amber-300" />
             </div>
           </div>
         </div>
@@ -124,12 +124,11 @@ export default function MenuPage() {
               {appetizers.map((item, index) => (
                 <div
                   key={index}
-                  className="flex flex-col sm:flex-row justify-center items-center text-gray-700 text-sm leading-relaxed"
+                  className="grid grid-cols-2 gap-2 text-gray-700 text-xs sm:text-sm"
                 >
                   <span className="text-center hover:text-amber-700 transition-colors duration-300">
                     {item.left}
                   </span>
-                  <span className="text-amber-300 mx-2 hidden sm:inline">•</span>
                   <span className="text-center hover:text-amber-700 transition-colors duration-300">
                     {item.right}
                   </span>
@@ -156,8 +155,8 @@ export default function MenuPage() {
                 <li
                   key={index}
                   className={`py-1.5 border-b border-amber-100/60 last:border-0 transition-all duration-300 hover:bg-amber-50/50 rounded-lg text-sm ${dish.highlight
-                      ? 'text-amber-800 font-semibold'
-                      : 'text-gray-700'
+                    ? 'text-amber-800 font-semibold'
+                    : 'text-gray-700'
                     }`}
                 >
                   {dish.name}
