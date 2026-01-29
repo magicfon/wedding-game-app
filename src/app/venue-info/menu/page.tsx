@@ -120,11 +120,11 @@ export default function MenuPage() {
               </h3>
             </div>
 
-            <div className="space-y-1">
+            <div className="space-y-3">
               {appetizers.map((item, index) => (
                 <div
                   key={index}
-                  className="grid grid-cols-2 gap-2 text-gray-700 text-xs sm:text-sm"
+                  className="grid grid-cols-2 gap-4 text-gray-700 text-sm"
                 >
                   <span className="text-center hover:text-amber-700 transition-colors duration-300">
                     {item.left}
@@ -150,11 +150,11 @@ export default function MenuPage() {
               </h3>
             </div>
 
-            <ul className="space-y-2 text-center">
+            <ul className="space-y-3 text-center">
               {mainCourses.map((dish, index) => (
                 <li
                   key={index}
-                  className={`py-1.5 border-b border-amber-100/60 last:border-0 transition-all duration-300 hover:bg-amber-50/50 rounded-lg text-sm ${dish.highlight
+                  className={`py-2 border-b border-amber-100/60 last:border-0 transition-all duration-300 hover:bg-amber-50/50 rounded-lg text-base ${dish.highlight
                     ? 'text-amber-800 font-semibold'
                     : 'text-gray-700'
                     }`}
