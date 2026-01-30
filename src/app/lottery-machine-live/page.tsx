@@ -2,6 +2,9 @@
 
 import { useState, useEffect, useRef, useMemo, useCallback, useLayoutEffect } from 'react'
 import { Gift } from 'lucide-react'
+import { SoundToggle } from '@/components/SoundToggle'
+import { useSoundEffects } from '@/hooks/useSoundEffects'
+import { useBackgroundMusic } from '@/hooks/useBackgroundMusic'
 
 interface Photo {
   id: number
@@ -89,6 +92,31 @@ export default function LotteryMachineLivePage() {
   const [hoveredWinner, setHoveredWinner] = useState<number | null>(null)
   const [floatingPhotoPosition, setFloatingPhotoPosition] = useState<{ x: number; y: number; maxHeight?: number } | null>(null)
   const [toastMessage, setToastMessage] = useState<{ type: 'error' | 'success', message: string } | null>(null)
+
+  // 音效控制
+  const { isSoundEnabled, toggleSound } = useSoundEffects()
+  const { tryPlay } = useBackgroundMusic({
+    url: '/sounds/lottery_background.mp3',
+    enabled: isSoundEnabled,
+    volume: 0.2
+  })
+
+  // 處理用戶交互以啟用音效
+  useEffect(() => {
+    const handleInteraction = () => {
+      tryPlay()
+      window.removeEventListener('click', handleInteraction)
+      window.removeEventListener('keydown', handleInteraction)
+    }
+
+    window.addEventListener('click', handleInteraction)
+    window.addEventListener('keydown', handleInteraction)
+
+    return () => {
+      window.removeEventListener('click', handleInteraction)
+      window.removeEventListener('keydown', handleInteraction)
+    }
+  }, [tryPlay])
 
   // 元素拖曳狀態
   const [elementDragState, setElementDragState] = useState<{
@@ -1371,6 +1399,10 @@ export default function LotteryMachineLivePage() {
 
       {/* 編輯器控制按鈕 */}
       <div className="editor-controls">
+        {/* 音效開關 */}
+        <div className="sound-toggle-wrapper">
+          <SoundToggle isEnabled={isSoundEnabled} onToggle={toggleSound} />
+        </div>
         <button
           onClick={() => setIsEditorMode(!isEditorMode)}
           className={`editor-btn ${isEditorMode ? 'active' : ''}`}
@@ -2017,6 +2049,12 @@ export default function LotteryMachineLivePage() {
           display: flex;
           gap: 8px;
           z-index: 1000;
+          align-items: center;
+        }
+
+        .sound-toggle-wrapper {
+          display: flex;
+          align-items: center;
         }
 
         .editor-btn {
