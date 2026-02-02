@@ -402,11 +402,11 @@ export async function POST(request: Request) {
         if (gameStateForReset && 'display_phase' in gameStateForReset) {
           resetUpdateData.display_phase = 'question';
         }
-
+        // 使用 upsert 確保即使記錄不存在也能創建
+        resetUpdateData.id = 1;
         result = await supabase
           .from('game_state')
-          .update(resetUpdateData)
-          .eq('id', 1);
+          .upsert(resetUpdateData);
 
         actionDetails = {
           reset_complete: true,
