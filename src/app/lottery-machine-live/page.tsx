@@ -701,7 +701,7 @@ export default function LotteryMachineLivePage() {
             })
           })
           const notifyData = await notifyResponse.json()
-          
+
           if (notifyData.skipped) {
             console.log('⏭️ 中獎通知已關閉，跳過發送')
           } else if (notifyData.success) {
@@ -1393,7 +1393,7 @@ export default function LotteryMachineLivePage() {
   }
 
   return (
-    <div className="lottery-machine-live-page">
+    <div className="lottery-machine-live-page" data-lottery-live="true">
       {/* 標題 */}
       <div className="title">🎰 幸運抽獎機 🎰</div>
 
