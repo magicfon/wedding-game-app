@@ -225,14 +225,21 @@ export default function AdminDashboard() {
                 </button>
               ) : (gameState?.is_waiting_for_players === true || (gameState?.is_waiting_for_players === undefined && !gameState?.current_question_id)) ? (
                 // 等待階段：顯示開始出題按鈕（嚴格檢查避免狀態不明時意外觸發）
-                <button
-                  onClick={() => controlGame('start_first_question')}
-                  disabled={gameLoading}
-                  className="w-full flex items-center justify-center space-x-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white px-4 py-4 rounded-lg transition-colors text-base font-medium"
-                >
-                  <Play className="w-5 h-5" />
-                  <span>開始出題</span>
-                </button>
+                <>
+                  {gameError && (
+                    <div className="p-3 bg-red-50 border border-red-200 rounded-lg mb-2">
+                      <p className="text-sm text-red-600">{gameError}</p>
+                    </div>
+                  )}
+                  <button
+                    onClick={() => controlGame('start_first_question')}
+                    disabled={gameLoading}
+                    className="w-full flex items-center justify-center space-x-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white px-4 py-4 rounded-lg transition-colors text-base font-medium"
+                  >
+                    <Play className="w-5 h-5" />
+                    <span>開始出題</span>
+                  </button>
+                </>
               ) : (
                 // 答題階段：顯示傳統控制按鈕
                 <>
