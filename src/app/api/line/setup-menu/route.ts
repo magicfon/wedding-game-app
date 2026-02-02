@@ -67,14 +67,14 @@ export async function POST() {
           bounds: { x: 833, y: 843, width: 834, height: 843 },
           action: { 
             type: "uri" as const, 
-            uri: `https://liff.line.me/${liffId}/leaderboard`
+            uri: `https://liff.line.me/${liffId}/lottery-machine-live`
           }
         },
         {
           bounds: { x: 1667, y: 843, width: 833, height: 843 },
           action: { 
             type: "uri" as const, 
-            uri: `https://liff.line.me/${liffId}/score-history`
+            uri: `https://liff.line.me/${liffId}/leaderboard`
           }
         }
       ]
