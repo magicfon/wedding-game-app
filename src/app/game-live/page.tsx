@@ -1161,7 +1161,7 @@ function WaitingStage({ gameState }: { gameState: any }) {
           <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl p-4 flex flex-col items-center">
             <QrCode className="w-10 h-10 text-white mb-3" />
             <h3 className="text-xl font-bold text-black mb-4">掃描加入遊戲</h3>
-            <div className="w-56 h-56 bg-white rounded-2xl flex items-center justify-center shadow-xl">
+            <div className="w-72 h-72 bg-white rounded-2xl flex items-center justify-center shadow-xl">
               <img
                 src="/line2dcode.png"
                 alt="QR Code"
