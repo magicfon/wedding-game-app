@@ -1597,6 +1597,9 @@ export default function LotteryMachineLivePage() {
                 <span className="node-label">{node.id}</span>
                 <button
                   className="node-delete"
+                  onMouseDown={(e) => {
+                    e.stopPropagation()
+                  }}
                   onClick={(e) => {
                     e.stopPropagation()
                     removeNode(index)
