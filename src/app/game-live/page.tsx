@@ -158,12 +158,25 @@ export default function GameLivePage() {
   // 監聽 display_phase 變化，如果是 rankings 則重新獲取數據
   useEffect(() => {
     if (gameState?.display_phase) {
-      setDisplayPhase(gameState.display_phase)
+      const serverPhase = gameState.display_phase;
 
-      if (gameState.display_phase === 'rankings') {
+      if (serverPhase === 'rankings') {
+        setDisplayPhase('rankings')
         console.log('切換到排行榜階段')
         console.log('completed:', gameState.completed_questions, 'total:', gameState.total_questions)
         fetchScoreRankings()
+      } else if (serverPhase === 'question') {
+        // 如果伺服器是 'question'，但本地已經是 'options'（時間到自動切換），則不重置回去
+        // 除非題目改變（由另一個 useEffect 處理）
+        setDisplayPhase(prev => {
+          if (prev === 'options') {
+            return prev;
+          }
+          return 'question';
+        });
+      } else {
+        // 其他情況（如 server 支持 options 階段）直接同步
+        setDisplayPhase(serverPhase);
       }
     }
   }, [gameState?.display_phase, gameState?.completed_questions, gameState?.total_questions])

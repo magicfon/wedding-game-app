@@ -223,8 +223,8 @@ export default function AdminDashboard() {
                   <PlayCircle className="w-5 h-5" />
                   <span>遊戲開始</span>
                 </button>
-              ) : (gameState?.is_waiting_for_players === true || (gameState?.is_waiting_for_players === undefined && !gameState?.current_question_id)) ? (
-                // 等待階段：顯示開始出題按鈕（嚴格檢查避免狀態不明時意外觸發）
+              ) : !gameState?.current_question_id ? (
+                // 等待階段：遊戲已開始但尚無當前題目，顯示開始出題按鈕
                 <>
                   {gameError && (
                     <div className="p-3 bg-red-50 border border-red-200 rounded-lg mb-2">
@@ -241,7 +241,7 @@ export default function AdminDashboard() {
                   </button>
                 </>
               ) : (
-                // 答題階段：顯示傳統控制按鈕
+                // 答題階段：有當前題目，顯示傳統控制按鈕
                 <>
                   <div className="grid grid-cols-2 gap-3">
                     {isPaused ? (

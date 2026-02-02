@@ -116,12 +116,19 @@ export async function POST(request: Request) {
         const questionUpdateData: any = {
           current_question_id: firstQuestion.id,
           question_start_time: new Date().toISOString(),
+          is_paused: false,  // 確保遊戲不是暫停狀態
           updated_at: new Date().toISOString()
         };
 
-        // 如果有新欄位，則設定
+        // 如果有這些欄位，也設定它們
         if (gameStateForQuestion && 'is_waiting_for_players' in gameStateForQuestion) {
           questionUpdateData.is_waiting_for_players = false;
+        }
+        if (gameStateForQuestion && 'display_phase' in gameStateForQuestion) {
+          questionUpdateData.display_phase = 'question';
+        }
+        if (gameStateForQuestion && 'completed_questions' in gameStateForQuestion) {
+          questionUpdateData.completed_questions = 0;
         }
 
         result = await supabase
