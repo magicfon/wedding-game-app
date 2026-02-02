@@ -1034,7 +1034,6 @@ export default function GameLivePage() {
 function WaitingStage({ gameState }: { gameState: any }) {
   const [joinedPlayers, setJoinedPlayers] = useState<any[]>([])
   const [playerCount, setPlayerCount] = useState(0)
-  const [qrCodeDataURL, setQrCodeDataURL] = useState<string | null>(null)
   const supabase = createSupabaseBrowser()
 
   // 獲取目前在快問快答頁面的玩家
@@ -1075,25 +1074,8 @@ function WaitingStage({ gameState }: { gameState: any }) {
     }
   }, [supabase])
 
-  // 生成 QR code
-  const generateQRCode = useCallback(async () => {
-    try {
-      const response = await fetch('/api/qr-code?url=' + encodeURIComponent(`${window.location.origin}/quiz`))
-      const data = await response.json()
-      console.log('QR Code API response:', data) // 添加調試日誌
-      if (data.success && (data.qrCodeDataURL || data.qrCode)) {
-        setQrCodeDataURL(data.qrCodeDataURL || data.qrCode)
-      } else {
-        console.error('QR Code generation failed:', data)
-      }
-    } catch (error) {
-      console.error('Error generating QR code:', error)
-    }
-  }, [])
-
   useEffect(() => {
     fetchJoinedPlayers()
-    generateQRCode()
 
     const interval = setInterval(fetchJoinedPlayers, 5000) // 每5秒更新一次
 
@@ -1112,7 +1094,7 @@ function WaitingStage({ gameState }: { gameState: any }) {
       clearInterval(interval)
       playersSubscription.unsubscribe()
     }
-  }, [fetchJoinedPlayers, generateQRCode, supabase])
+  }, [fetchJoinedPlayers, supabase])
 
   return (
     <div className="h-screen flex items-center justify-center p-4 overflow-hidden">
@@ -1180,18 +1162,11 @@ function WaitingStage({ gameState }: { gameState: any }) {
             <QrCode className="w-10 h-10 text-white mb-3" />
             <h3 className="text-xl font-bold text-black mb-4">掃描加入遊戲</h3>
             <div className="w-56 h-56 bg-white rounded-2xl flex items-center justify-center shadow-xl">
-              {qrCodeDataURL ? (
-                <img
-                  src={qrCodeDataURL}
-                  alt="QR Code"
-                  className="w-full h-full rounded-2xl object-contain p-3"
-                />
-              ) : (
-                <div className="text-center text-black">
-                  <QrCode className="w-16 h-16 mx-auto mb-2 text-gray-600" />
-                  <p className="text-sm font-semibold text-black">QR Code 載入中...</p>
-                </div>
-              )}
+              <img
+                src="/line2dcode.png"
+                alt="QR Code"
+                className="w-full h-full rounded-2xl object-contain p-3"
+              />
             </div>
             <p className="text-black text-base opacity-80 mt-3">
               使用 LINE 掃描 QR Code<br />
