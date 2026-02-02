@@ -223,7 +223,11 @@ export default function AdminDashboard() {
                   <PlayCircle className="w-5 h-5" />
                   <span>遊戲開始</span>
                 </button>
-              ) : (gameState?.is_waiting_for_players !== undefined ? gameState.is_waiting_for_players : !gameState?.current_question_id) ? (
+              ) : (
+                // 嚴格檢查等待階段：必須明確是等待玩家階段，避免狀態不明時意外觸發
+                gameState?.is_waiting_for_players === true ||
+                (gameState?.is_waiting_for_players === undefined && !gameState?.current_question_id)
+              ) ? (
                 // 等待階段：顯示開始出題按鈕
                 <button
                   onClick={() => controlGame('start_first_question')}
