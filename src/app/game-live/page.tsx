@@ -47,6 +47,7 @@ export default function GameLivePage() {
   // 音效播放狀態追蹤（防止重複播放）
   const correctAnswerPlayedRef = useRef<number | null>(null)
   const leaderboardPlayedRef = useRef<number | null>(null)
+  const timeUpPlayedRef = useRef<number | null>(null)
   const countdownPlayingRef = useRef<boolean>(false)
 
   // 從 localStorage 初始化狀態，以防組件重新載入
@@ -196,15 +197,20 @@ export default function GameLivePage() {
     }
   }, [displayPhase, timeLeft, currentQuestion, playSound, stopSound])
 
-  // 當題目切換時，重置倒數音效狀態
+  // 當題目切換時，重置所有音效狀態
   useEffect(() => {
     countdownPlayingRef.current = false
+    timeUpPlayedRef.current = null
   }, [currentQuestion?.id])
 
-  // 時間結束音效
+  // 時間結束音效（使用 ref 防止重複播放）
   useEffect(() => {
     if (displayPhase === 'options' && timeLeft <= 0 && currentQuestion) {
-      playSound('TIME_UP')
+      // 檢查是否已經為這道題播放過 TIME_UP 音效
+      if (timeUpPlayedRef.current !== currentQuestion.id) {
+        timeUpPlayedRef.current = currentQuestion.id
+        playSound('TIME_UP')
+      }
     }
   }, [displayPhase, timeLeft, currentQuestion, playSound])
 

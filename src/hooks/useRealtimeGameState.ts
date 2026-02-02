@@ -30,6 +30,8 @@ export function useRealtimeGameState() {
   const lastQuestionIdRef = useRef<number | null>(null)
   // 追蹤是否已初始化
   const initializedRef = useRef(false)
+  // 追蹤當前遊戲狀態，用於在 callback 中檢查（避免 closure 問題）
+  const gameStateRef = useRef<GameState | null>(null)
 
   const supabase = createSupabaseBrowser()
 
@@ -62,7 +64,17 @@ export function useRealtimeGameState() {
   }, [supabase])
 
   // 完整獲取：初始化時使用
-  const fetchGameState = useCallback(async () => {
+  const fetchGameState = useCallback(async (forceRefetch = false) => {
+    // 如果遊戲正在進行中且有當前題目，跳過輪詢
+    // 這避免了輪詢覆蓋 realtime 的正確狀態
+    if (!forceRefetch &&
+      gameStateRef.current?.is_game_active &&
+      gameStateRef.current?.current_question_id &&
+      !gameStateRef.current?.is_paused) {
+      console.log('🔄 輪詢跳過：遊戲進行中，信任 Realtime')
+      return
+    }
+
     try {
       setError(null)
 
@@ -75,6 +87,7 @@ export function useRealtimeGameState() {
 
       const gameData = data.gameState
       setGameState(gameData)
+      gameStateRef.current = gameData
 
       // 設定當前題目（API 回傳中已包含題目資訊）
       if (gameData?.questions) {
@@ -143,6 +156,9 @@ export function useRealtimeGameState() {
 
       return { ...prev, ...newData }
     })
+
+    // 同步更新 ref
+    gameStateRef.current = { ...gameStateRef.current, ...newData } as GameState
   }, [fetchGameState, fetchQuestionOnly])
 
   // 計算剩餘時間（精確到毫秒）
@@ -179,7 +195,7 @@ export function useRealtimeGameState() {
     // 只在首次載入時獲取完整狀態
     if (!initializedRef.current) {
       initializedRef.current = true
-      fetchGameState()
+      fetchGameState(true) // 強制獲取初始狀態
     }
 
     // 備用輪詢機制：每 5 秒同步一次，確保不會錯過狀態更新
@@ -190,7 +206,7 @@ export function useRealtimeGameState() {
       }
       pollIntervalRef.current = setInterval(() => {
         console.log('🔄 備用輪詢：同步遊戲狀態')
-        fetchGameState()
+        fetchGameState(false) // 不強制獲取，讓函數內部判斷
       }, 5000)
     }
 

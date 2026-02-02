@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createSupabaseBrowser } from '@/lib/supabase'
 import { useLiff } from '@/hooks/useLiff'
@@ -69,13 +69,20 @@ export default function QuizPage() {
 
 
 
-  // 當遊戲狀態或題目改變時重置答題狀態
+  // 追蹤上一次的題目 ID，避免不必要的重置
+  const lastQuestionIdRef = useRef<number | null>(null)
+
+  // 當題目真正改變時重置答題狀態
   useEffect(() => {
     if (gameState && currentQuestion) {
-      setHasAnswered(false)
-      setSelectedAnswer(null)
-      // 計算初始時間
-      setTimeLeft(calculateTimeLeft())
+      // 只在題目 ID 真正改變時才重置
+      if (lastQuestionIdRef.current !== currentQuestion.id) {
+        lastQuestionIdRef.current = currentQuestion.id
+        setHasAnswered(false)
+        setSelectedAnswer(null)
+        // 計算初始時間
+        setTimeLeft(calculateTimeLeft())
+      }
     }
   }, [gameState?.current_question_id, currentQuestion?.id, calculateTimeLeft])
 
