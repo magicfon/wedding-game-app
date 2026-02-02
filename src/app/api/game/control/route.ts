@@ -393,10 +393,8 @@ export async function POST(request: Request) {
           resetUpdateData.is_game_active = false;
         }
 
-        // 如果有新欄位，則設定
+        // 如果有新欄位，則設定（只有在欄位存在時才設定）
         if (gameStateForReset && 'is_waiting_for_players' in gameStateForReset) {
-          resetUpdateData.is_waiting_for_players = true;
-        } else {
           resetUpdateData.is_waiting_for_players = true;
         }
         if (gameStateForReset && 'qr_code_url' in gameStateForReset) {
@@ -404,19 +402,13 @@ export async function POST(request: Request) {
         }
         if (gameStateForReset && 'total_questions' in gameStateForReset) {
           resetUpdateData.total_questions = 0;
-        } else {
-          resetUpdateData.total_questions = 0;
         }
         // 重置已完成題目數為 0
         if (gameStateForReset && 'completed_questions' in gameStateForReset) {
           resetUpdateData.completed_questions = 0;
-        } else {
-          resetUpdateData.completed_questions = 0;
         }
         // 重置顯示階段
         if (gameStateForReset && 'display_phase' in gameStateForReset) {
-          resetUpdateData.display_phase = 'question';
-        } else {
           resetUpdateData.display_phase = 'question';
         }
         // 使用 upsert 確保即使記錄不存在也能創建
