@@ -103,9 +103,29 @@ export default function GameLivePage() {
     preloadSounds()
   }, [preloadSounds])
 
+  // 追蹤上一題 ID，用於判斷是否為新題目
+  const lastProcessedQuestionIdRef = useRef<number | null>(null)
+  // 追蹤問題階段開始時間，用於在狀態更新時恢復計時器
+  const phaseStartTimeRef = useRef<number>(0)
+  // 追蹤當前顯示階段，用於在 effect 中判斷
+  const phaseRef = useRef(displayPhase)
+
+  // 同步 phaseRef
+  useEffect(() => {
+    phaseRef.current = displayPhase
+  }, [displayPhase])
+
   // 控制顯示階段切換
   useEffect(() => {
     if (!currentQuestion || !gameState?.is_game_active || gameState?.is_paused) {
+      return
+    }
+
+    // 判斷是否為新題目
+    const isNewQuestion = lastProcessedQuestionIdRef.current !== currentQuestion.id
+
+    // 如果不是新題目，且當前已經不是 question 階段，則直接返回（不重置階段，不設計時器）
+    if (!isNewQuestion && phaseRef.current !== 'question') {
       return
     }
 
@@ -114,25 +134,39 @@ export default function GameLivePage() {
       clearTimeout(phaseTimer)
     }
 
-    // 重置為題目階段
-    setDisplayPhase('question')
-
-    // 根據媒體類型設定切換時間
-    // 使用每道題目的 time_limit 作為顯示時間，預設 5 秒
+    // 計算總切換時間
     let switchDelay = (currentQuestion.time_limit || 5) * 1000
-
-    // 如果是影片且有長度資訊，使用影片長度
     if (currentQuestion.media_type === 'video' && currentQuestion.media_duration) {
       switchDelay = currentQuestion.media_duration * 1000
     } else if (currentQuestion.media_type === 'video' && !currentQuestion.media_duration) {
-      // 沒有長度資訊的影片，預設使用題目設定的時間
       switchDelay = (currentQuestion.time_limit || 5) * 1000
+    }
+
+    let remainingTime = switchDelay
+
+    if (isNewQuestion) {
+      // 新題目：重置狀態
+      lastProcessedQuestionIdRef.current = currentQuestion.id
+      phaseStartTimeRef.current = Date.now()
+      setDisplayPhase('question')
+      console.log('🔄 新題目：重置為 question 階段，計時：', switchDelay)
+    } else {
+      // 舊題目（即使狀態更新導致 effect 重跑）：計算剩餘時間
+      const elapsed = Date.now() - phaseStartTimeRef.current
+      remainingTime = Math.max(0, switchDelay - elapsed)
+      console.log('🔄 狀態更新：保持 question 階段，剩餘時間：', remainingTime)
+
+      // 如果時間已經到了，直接切換到 options
+      if (remainingTime <= 0) {
+        setDisplayPhase('options')
+        return
+      }
     }
 
     // 設定切換到選項階段的計時器
     const timer = setTimeout(() => {
       setDisplayPhase('options')
-    }, switchDelay)
+    }, remainingTime)
 
     setPhaseTimer(timer)
 
@@ -142,7 +176,7 @@ export default function GameLivePage() {
         clearTimeout(timer)
       }
     }
-  }, [currentQuestion?.id, currentQuestion?.time_limit, gameState?.is_game_active, gameState?.is_paused])
+  }, [currentQuestion?.id, currentQuestion?.time_limit, currentQuestion?.media_type, currentQuestion?.media_duration, gameState?.is_game_active, gameState?.is_paused])
 
   // 背景音樂現在由 useBackgroundMusic hook 管理，不再需要這段邏輯
 
