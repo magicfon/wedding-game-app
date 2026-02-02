@@ -376,16 +376,27 @@ export async function POST(request: Request) {
           .eq('id', 1)
           .single();
 
+        // 重置資料 - 不改變 is_game_active 狀態
         const resetUpdateData: any = {
-          is_game_active: true,
           is_paused: false,
           current_question_id: null,
           question_start_time: null,
           updated_at: new Date().toISOString()
         };
 
+        // 如果記錄存在，保留原本的 is_game_active 狀態
+        // 如果記錄不存在，預設為 false
+        if (gameStateForReset) {
+          // 記錄存在，不改變 is_game_active
+        } else {
+          // 記錄不存在，設為 false（需要先點「遊戲開始」）
+          resetUpdateData.is_game_active = false;
+        }
+
         // 如果有新欄位，則設定
         if (gameStateForReset && 'is_waiting_for_players' in gameStateForReset) {
+          resetUpdateData.is_waiting_for_players = true;
+        } else {
           resetUpdateData.is_waiting_for_players = true;
         }
         if (gameStateForReset && 'qr_code_url' in gameStateForReset) {
@@ -393,13 +404,19 @@ export async function POST(request: Request) {
         }
         if (gameStateForReset && 'total_questions' in gameStateForReset) {
           resetUpdateData.total_questions = 0;
+        } else {
+          resetUpdateData.total_questions = 0;
         }
         // 重置已完成題目數為 0
         if (gameStateForReset && 'completed_questions' in gameStateForReset) {
           resetUpdateData.completed_questions = 0;
+        } else {
+          resetUpdateData.completed_questions = 0;
         }
         // 重置顯示階段
         if (gameStateForReset && 'display_phase' in gameStateForReset) {
+          resetUpdateData.display_phase = 'question';
+        } else {
           resetUpdateData.display_phase = 'question';
         }
         // 使用 upsert 確保即使記錄不存在也能創建
