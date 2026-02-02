@@ -246,9 +246,10 @@ export default function AdminDashboard() {
         </div>
 
         <div className="space-y-6">
-          {/* 遊戲控制面板 */}
-          <div className="bg-white rounded-lg shadow p-6 mb-8">
-            <div className="flex items-center justify-between mb-6">
+          {/* 遊戲控制面板 - 手機直式螢幕友善設計 */}
+          <div className="bg-white rounded-lg shadow p-4 md:p-6">
+            {/* 遊戲狀態標籤 */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">遊戲控制</h2>
                 <p className="text-sm text-gray-600">控制快問快答遊戲流程</p>
@@ -266,40 +267,6 @@ export default function AdminDashboard() {
                   : '遊戲未開始'
                 }
               </div>
-
-              {/* 開啟遊戲實況按鈕 */}
-              <button
-                onClick={() => {
-                  const width = window.screen.width;
-                  const height = window.screen.height;
-                  window.open(
-                    '/game-live',
-                    'game-live-window',
-                    `width=${width},height=${height},top=0,left=0,fullscreen=yes,menubar=no,toolbar=no,location=no,status=no`
-                  );
-                }}
-                className="flex items-center space-x-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-lg transition-colors shadow-sm"
-              >
-                <Monitor className="w-4 h-4" />
-                <span>開啟遊戲實況</span>
-              </button>
-
-              {/* 照片輪播按鈕 */}
-              <button
-                onClick={() => {
-                  const width = window.screen.width;
-                  const height = window.screen.height;
-                  window.open(
-                    '/photo-slideshow',
-                    'photo-slideshow-window',
-                    `width=${width},height=${height},top=0,left=0,fullscreen=yes,menubar=no,toolbar=no,location=no,status=no`
-                  );
-                }}
-                className="flex items-center space-x-2 px-4 py-2 bg-pink-500 hover:bg-pink-600 text-white text-sm rounded-lg transition-colors shadow-sm"
-              >
-                <Camera className="w-4 h-4" />
-                <span>照片輪播</span>
-              </button>
             </div>
 
             {/* 當前題目資訊 */}
@@ -328,28 +295,28 @@ export default function AdminDashboard() {
             )}
 
             {/* 遊戲狀態資訊 */}
-            <div className="grid grid-cols-3 gap-4 mb-4 text-sm">
+            <div className="grid grid-cols-3 gap-2 mb-4 text-sm">
               <div className="text-center p-2 bg-gray-50 rounded">
                 <div className="font-medium text-gray-900">{gameState?.completed_questions || 0}</div>
-                <div className="text-gray-600">已完成題目</div>
+                <div className="text-gray-600 text-xs">已完成題目</div>
               </div>
               <div className="text-center p-2 bg-gray-50 rounded">
                 <div className="font-medium text-gray-900">{gameState?.total_questions || 0}</div>
-                <div className="text-gray-600">題目總數</div>
+                <div className="text-gray-600 text-xs">題目總數</div>
               </div>
               <div className="text-center p-2 bg-gray-50 rounded">
                 <div className="font-medium text-gray-900">
                   {(gameState?.is_waiting_for_players !== undefined ? gameState.is_waiting_for_players : !gameState?.current_question_id) ? '等待玩家' : gameState?.current_question_id ? '答題中' : '未開始'}
                 </div>
-                <div className="text-gray-600">遊戲階段</div>
+                <div className="text-gray-600 text-xs">遊戲階段</div>
               </div>
             </div>
 
             {/* 設定區域 */}
-            <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+            <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
               <h3 className="text-sm font-medium text-gray-700 mb-3">遊戲參數設定</h3>
-              <div className="flex flex-wrap items-end gap-4">
-                <div>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex-1">
                   <label className="block text-xs text-gray-500 mb-1">全域答題時間 (秒)</label>
                   <div className="flex items-center">
                     <input
@@ -358,18 +325,18 @@ export default function AdminDashboard() {
                       max="300"
                       value={questionTimeLimit}
                       onChange={(e) => setQuestionTimeLimit(parseInt(e.target.value) || 15)}
-                      className="w-20 px-3 py-2 border border-gray-300 rounded-md text-sm text-black focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full sm:w-20 px-3 py-2 border border-gray-300 rounded-md text-sm text-black focus:ring-blue-500 focus:border-blue-500"
                     />
                     <span className="ml-2 text-xs text-gray-500">秒作答時間</span>
                   </div>
                 </div>
 
-                <div>
+                <div className="flex-1">
                   <label className="block text-xs text-gray-500 mb-1">當前題庫</label>
                   <select
                     value={activeQuestionSet}
                     onChange={(e) => setActiveQuestionSet(e.target.value as 'formal' | 'test' | 'backup')}
-                    className="w-32 px-3 py-2 border border-gray-300 rounded-md text-sm text-black focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-md text-sm text-black focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="formal">正式題目</option>
                     <option value="test">測試題目</option>
@@ -380,7 +347,7 @@ export default function AdminDashboard() {
                 <button
                   onClick={handleUpdateSettings}
                   disabled={savingSettings || loading}
-                  className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                  className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors self-end"
                 >
                   {savingSettings ? '儲存中...' : '儲存設定'}
                 </button>
@@ -390,15 +357,15 @@ export default function AdminDashboard() {
               </p>
             </div>
 
-            {/* 控制按鈕 */}
-            <div className="flex flex-wrap gap-3">
+            {/* 控制按鈕 - 手機直式螢幕友善設計 */}
+            <div className="space-y-3 mb-4">
               {!isGameActive ? (
                 <button
                   onClick={() => controlGame('start_game')}
                   disabled={gameLoading}
-                  className="flex items-center space-x-2 bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg transition-colors"
+                  className="w-full flex items-center justify-center space-x-2 bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white px-4 py-4 rounded-lg transition-colors text-base font-medium"
                 >
-                  <PlayCircle className="w-4 h-4" />
+                  <PlayCircle className="w-5 h-5" />
                   <span>遊戲開始</span>
                 </button>
               ) : (gameState?.is_waiting_for_players !== undefined ? gameState.is_waiting_for_players : !gameState?.current_question_id) ? (
@@ -406,110 +373,147 @@ export default function AdminDashboard() {
                 <button
                   onClick={() => controlGame('start_first_question')}
                   disabled={gameLoading}
-                  className="flex items-center space-x-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg transition-colors"
+                  className="w-full flex items-center justify-center space-x-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white px-4 py-4 rounded-lg transition-colors text-base font-medium"
                 >
-                  <Play className="w-4 h-4" />
+                  <Play className="w-5 h-5" />
                   <span>開始出題</span>
                 </button>
               ) : (
                 // 答題階段：顯示傳統控制按鈕
                 <>
-                  {isPaused ? (
-                    <button
-                      onClick={() => controlGame('resume_game')}
-                      disabled={gameLoading}
-                      className="flex items-center space-x-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg transition-colors"
-                    >
-                      <Play className="w-4 h-4" />
-                      <span>繼續遊戲</span>
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => controlGame('pause_game')}
-                      disabled={gameLoading}
-                      className="flex items-center space-x-2 bg-yellow-500 hover:bg-yellow-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg transition-colors"
-                    >
-                      <Pause className="w-4 h-4" />
-                      <span>暫停遊戲</span>
-                    </button>
-                  )}
-                  {/* 排行榜/下一題/遊戲結束按鈕 - 根據時間、顯示階段和題目進度切換 */}
-                  {timeRemaining <= 0 && gameState?.display_phase !== 'rankings' ? (
-                    // 倒數結束且尚未顯示排行榜：顯示「排行榜」按鈕
-                    <button
-                      onClick={() => controlGame('show_rankings')}
-                      disabled={gameLoading}
-                      className="flex items-center space-x-2 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg transition-colors"
-                    >
-                      <Trophy className="w-4 h-4" />
-                      <span>排行榜</span>
-                    </button>
-                  ) : gameState?.display_phase === 'rankings' && gameState?.has_next_question === false ? (
-                    // 已在排行榜階段且沒有下一題：顯示「遊戲結束」按鈕
+                  <div className="grid grid-cols-2 gap-3">
+                    {isPaused ? (
+                      <button
+                        onClick={() => controlGame('resume_game')}
+                        disabled={gameLoading}
+                        className="flex items-center justify-center space-x-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white px-4 py-4 rounded-lg transition-colors text-base font-medium"
+                      >
+                        <Play className="w-5 h-5" />
+                        <span>繼續遊戲</span>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => controlGame('pause_game')}
+                        disabled={gameLoading}
+                        className="flex items-center justify-center space-x-2 bg-yellow-500 hover:bg-yellow-600 disabled:bg-gray-400 text-white px-4 py-4 rounded-lg transition-colors text-base font-medium"
+                      >
+                        <Pause className="w-5 h-5" />
+                        <span>暫停遊戲</span>
+                      </button>
+                    )}
+                    {/* 排行榜/下一題/遊戲結束按鈕 - 根據時間、顯示階段和題目進度切換 */}
+                    {timeRemaining <= 0 && gameState?.display_phase !== 'rankings' ? (
+                      // 倒數結束且尚未顯示排行榜：顯示「排行榜」按鈕
+                      <button
+                        onClick={() => controlGame('show_rankings')}
+                        disabled={gameLoading}
+                        className="flex items-center justify-center space-x-2 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-400 text-white px-4 py-4 rounded-lg transition-colors text-base font-medium"
+                      >
+                        <Trophy className="w-5 h-5" />
+                        <span>排行榜</span>
+                      </button>
+                    ) : gameState?.display_phase === 'rankings' && gameState?.has_next_question === false ? (
+                      // 已在排行榜階段且沒有下一題：顯示「遊戲結束」按鈕
+                      <button
+                        onClick={() => controlGame('end_game')}
+                        disabled={gameLoading}
+                        className="flex items-center justify-center space-x-2 bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white px-4 py-4 rounded-lg transition-colors text-base font-medium"
+                      >
+                        <Square className="w-5 h-5" />
+                        <span>遊戲結束</span>
+                      </button>
+                    ) : (
+                      // 已在排行榜階段或倒數進行中，且還有下一題：顯示「下一題」按鈕
+                      <button
+                        onClick={() => controlGame('next_question')}
+                        disabled={gameLoading}
+                        className="flex items-center justify-center space-x-2 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-400 text-white px-4 py-4 rounded-lg transition-colors text-base font-medium"
+                      >
+                        <SkipForward className="w-5 h-5" />
+                        <span>下一題</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* 通用控制按鈕 */}
+                  {isGameActive && (
                     <button
                       onClick={() => controlGame('end_game')}
                       disabled={gameLoading}
-                      className="flex items-center space-x-2 bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg transition-colors"
+                      className="w-full flex items-center justify-center space-x-2 bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white px-4 py-3 rounded-lg transition-colors text-sm"
                     >
                       <Square className="w-4 h-4" />
-                      <span>遊戲結束</span>
+                      <span>結束遊戲</span>
+                    </button>
+                  )}
+
+                  {/* 排行榜按鈕 - 可以顯示/隱藏排行榜 */}
+                  {gameState?.display_phase === 'rankings' ? (
+                    <button
+                      onClick={() => controlGame('hide_rankings')}
+                      disabled={gameLoading}
+                      className="w-full flex items-center justify-center space-x-2 px-4 py-3 rounded-lg transition-colors bg-blue-500 hover:bg-blue-600 text-white text-sm"
+                    >
+                      <Play className="w-4 h-4" />
+                      <span>返回遊戲</span>
                     </button>
                   ) : (
-                    // 已在排行榜階段或倒數進行中，且還有下一題：顯示「下一題」按鈕
                     <button
-                      onClick={() => controlGame('next_question')}
+                      onClick={() => controlGame('show_rankings')}
                       disabled={gameLoading}
-                      className="flex items-center space-x-2 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg transition-colors"
+                      className="w-full flex items-center justify-center space-x-2 px-4 py-3 rounded-lg transition-colors bg-orange-500 hover:bg-orange-600 text-white text-sm"
                     >
-                      <SkipForward className="w-4 h-4" />
-                      <span>下一題</span>
+                      <Trophy className="w-4 h-4" />
+                      <span>排行榜</span>
                     </button>
                   )}
                 </>
               )}
 
-              {/* 通用控制按鈕 */}
-              {isGameActive && (
-                <button
-                  onClick={() => controlGame('end_game')}
-                  disabled={gameLoading}
-                  className="flex items-center space-x-2 bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg transition-colors"
-                >
-                  <Square className="w-4 h-4" />
-                  <span>結束遊戲</span>
-                </button>
-              )}
-
-              {/* 排行榜按鈕 - 可以顯示/隱藏排行榜 */}
-              {gameState?.display_phase === 'rankings' ? (
-                <button
-                  onClick={() => controlGame('hide_rankings')}
-                  disabled={gameLoading}
-                  className="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors bg-blue-500 hover:bg-blue-600 text-white"
-                >
-                  <Play className="w-4 h-4" />
-                  <span>返回遊戲</span>
-                </button>
-              ) : (
-                <button
-                  onClick={() => controlGame('show_rankings')}
-                  disabled={gameLoading}
-                  className="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors bg-orange-500 hover:bg-orange-600 text-white"
-                >
-                  <Trophy className="w-4 h-4" />
-                  <span>排行榜</span>
-                </button>
-              )}
-
+              {/* 重置遊戲按鈕 */}
               <button
                 onClick={() => controlGame('reset_game')}
                 disabled={gameLoading}
-                className="flex items-center space-x-2 bg-gray-500 hover:bg-gray-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg transition-colors"
+                className="w-full flex items-center justify-center space-x-2 bg-gray-500 hover:bg-gray-600 disabled:bg-gray-400 text-white px-4 py-3 rounded-lg transition-colors text-sm"
               >
                 <RotateCcw className="w-4 h-4" />
                 <span>重置遊戲</span>
               </button>
+            </div>
 
+            {/* 開啟遊戲實況和照片輪播按鈕 */}
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => {
+                  const width = window.screen.width;
+                  const height = window.screen.height;
+                  window.open(
+                    '/game-live',
+                    'game-live-window',
+                    `width=${width},height=${height},top=0,left=0,fullscreen=yes,menubar=no,toolbar=no,location=no,status=no`
+                  );
+                }}
+                className="flex items-center justify-center space-x-2 px-4 py-3 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-lg transition-colors shadow-sm"
+              >
+                <Monitor className="w-4 h-4" />
+                <span>開啟遊戲實況</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  const width = window.screen.width;
+                  const height = window.screen.height;
+                  window.open(
+                    '/photo-slideshow',
+                    'photo-slideshow-window',
+                    `width=${width},height=${height},top=0,left=0,fullscreen=yes,menubar=no,toolbar=no,location=no,status=no`
+                  );
+                }}
+                className="flex items-center justify-center space-x-2 px-4 py-3 bg-pink-500 hover:bg-pink-600 text-white text-sm rounded-lg transition-colors shadow-sm"
+              >
+                <Camera className="w-4 h-4" />
+                <span>照片輪播</span>
+              </button>
             </div>
 
             {gameError && (
