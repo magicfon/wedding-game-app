@@ -59,10 +59,10 @@ export async function POST(request: Request) {
         break;
 
       case 'start_first_question':
-        // 獲取當前遊戲狀態
+        // 獲取當前遊戲狀態（只查詢存在的欄位）
         const { data: currentSettings, error: settingsError } = await supabase
           .from('game_state')
-          .select('active_question_set, is_waiting_for_players, current_question_id, is_game_active')
+          .select('active_question_set, current_question_id, is_game_active')
           .eq('id', 1)
           .single();
 
