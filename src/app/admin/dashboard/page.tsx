@@ -256,16 +256,16 @@ export default function AdminDashboard() {
                         <span>暫停遊戲</span>
                       </button>
                     )}
-                    {/* 排行榜/下一題/遊戲結束按鈕 - 根據時間、顯示階段和題目進度切換 */}
+                    {/* 排行榜/下一題/遊戲結束按鈕 - 嚴格條件控制防止誤觸 */}
+                    {/* 進入排行榜按鈕 - 只有在時間結束後且尚未進入排行榜才能點擊 */}
                     {timeRemaining <= 0 && gameState?.display_phase !== 'rankings' ? (
-                      // 倒數結束且尚未顯示排行榜：顯示「排行榜」按鈕
                       <button
                         onClick={() => controlGame('show_rankings')}
                         disabled={gameLoading}
                         className="flex items-center justify-center space-x-2 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-400 text-white px-4 py-4 rounded-lg transition-colors text-base font-medium"
                       >
                         <Trophy className="w-5 h-5" />
-                        <span>排行榜</span>
+                        <span>進入排行榜</span>
                       </button>
                     ) : gameState?.display_phase === 'rankings' && gameState?.has_next_question === false ? (
                       // 已在排行榜階段且沒有下一題：顯示「遊戲結束」按鈕
@@ -277,12 +277,22 @@ export default function AdminDashboard() {
                         <Square className="w-5 h-5" />
                         <span>遊戲結束</span>
                       </button>
-                    ) : (
-                      // 已在排行榜階段或倒數進行中，且還有下一題：顯示「下一題」按鈕
+                    ) : gameState?.display_phase === 'rankings' ? (
+                      // 已在排行榜階段且還有下一題：顯示「下一題」按鈕
                       <button
                         onClick={() => controlGame('next_question')}
                         disabled={gameLoading}
                         className="flex items-center justify-center space-x-2 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-400 text-white px-4 py-4 rounded-lg transition-colors text-base font-medium"
+                      >
+                        <SkipForward className="w-5 h-5" />
+                        <span>下一題</span>
+                      </button>
+                    ) : (
+                      // 倒數進行中：顯示禁用的「下一題」按鈕（提示需要先進入排行榜）
+                      <button
+                        disabled={true}
+                        className="flex items-center justify-center space-x-2 bg-gray-400 cursor-not-allowed text-white px-4 py-4 rounded-lg transition-colors text-base font-medium"
+                        title="請先等待時間結束並進入排行榜"
                       >
                         <SkipForward className="w-5 h-5" />
                         <span>下一題</span>
