@@ -12,10 +12,6 @@ import {
   Settings,
   Play,
   Trophy,
-  Shield,
-  Home,
-  LogOut,
-  UserCheck,
   Clock,
   Pause,
   SkipForward,
@@ -27,15 +23,9 @@ import {
   Monitor
 } from 'lucide-react'
 
-interface AdminInfo {
-  lineId: string
-  displayName: string
-}
-
 export default function AdminDashboard() {
-  const [adminInfo, setAdminInfo] = useState<AdminInfo | null>(null)
   const [loading, setLoading] = useState(true)
-  const { isLoggedIn, profile, isAdmin, adminInfo: liffAdminInfo, loading: liffLoading, adminLoading } = useLiff()
+  const { isLoggedIn, profile, isAdmin, loading: liffLoading, adminLoading } = useLiff()
   const router = useRouter()
 
   // 遊戲控制 Hook
@@ -101,13 +91,10 @@ export default function AdminDashboard() {
       return
     }
 
-    // 是管理員，設置管理員資料
+    // 是管理員，載入 dashboard
     console.log('User is admin, loading dashboard')
-    if (liffAdminInfo) {
-      setAdminInfo(liffAdminInfo)
-    }
     setLoading(false)
-  }, [liffLoading, adminLoading, isLoggedIn, profile, isAdmin, liffAdminInfo, router])
+  }, [liffLoading, adminLoading, isLoggedIn, profile, isAdmin, router])
 
   useEffect(() => {
     checkAdminStatus()
@@ -201,50 +188,6 @@ export default function AdminDashboard() {
   return (
     <AdminLayout title="管理控制台">
       <div className="max-w-7xl mx-auto">
-        {/* Admin Info Bar */}
-        <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-                <Shield className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">婚禮互動遊戲管理系統</p>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-4">
-              {adminInfo && (
-                <div className="flex items-center space-x-2">
-                  <UserCheck className="w-5 h-5 text-green-500" />
-                  <span className="text-sm text-gray-700">
-                    {adminInfo.displayName || '管理員'}
-                  </span>
-                </div>
-              )}
-
-              <button
-                onClick={() => router.push('/')}
-                className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
-              >
-                <Home className="w-4 h-4" />
-                <span className="text-sm">返回首頁</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  // 簡單跳轉回首頁，不需要清除任何存儲
-                  router.push('/')
-                }}
-                className="flex items-center space-x-2 text-red-600 hover:text-red-700 px-3 py-2 rounded-lg hover:bg-red-50 transition-colors"
-              >
-                <LogOut className="w-4 h-4" />
-                <span className="text-sm">登出</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
         <div className="space-y-6">
           {/* 遊戲控制面板 - 手機直式螢幕友善設計 */}
           <div className="bg-white rounded-lg shadow p-4 md:p-6">
