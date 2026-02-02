@@ -580,14 +580,14 @@ export default function GameLivePage() {
           ? 'bg-gradient-to-b from-purple-900 via-red-900 to-black'
           : ''
           }`}>
-          <div className="flex-1 p-4 flex flex-col">
-            <div className="text-center mb-2 flex-shrink-0">
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-1">
+          <div className="flex-1 p-6 flex flex-col">
+            <div className="text-center mb-4 flex-shrink-0">
+              <h2 className="text-4xl md:text-5xl font-bold text-white mb-2">
                 {gameState?.has_next_question === false && gameState?.is_game_active
                   ? '🎉 最終排行榜 🎉'
                   : '🏆 目前排行榜'}
               </h2>
-              <div className="text-base text-white opacity-80">
+              <div className="text-lg text-white opacity-80">
                 {gameState?.has_next_question === false && gameState?.is_game_active
                   ? '恭喜得獎的賓客!'
                   : '前 10 名玩家'}
@@ -595,15 +595,15 @@ export default function GameLivePage() {
             </div>
 
             {/* 分數排行榜 - 固定高度不滾動 */}
-            <div className="max-w-4xl mx-auto space-y-1 flex-1 w-full">
+            <div className="max-w-4xl mx-auto space-y-2 flex-1 w-full">
               {scoreRankings.map((player, index) => (
                 <div
                   key={player.line_id}
-                  className={`flex items-center space-x-3 bg-white bg-opacity-10 backdrop-blur-md rounded-lg p-2 ${index < 3 ? 'ring-2 ring-yellow-400 ring-opacity-60' : ''
+                  className={`flex items-center space-x-4 bg-white bg-opacity-10 backdrop-blur-md rounded-lg p-4 ${index < 3 ? 'ring-2 ring-yellow-400 ring-opacity-60' : ''
                     }`}
                 >
                   {/* 排名 */}
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg flex-shrink-0 ${index === 0 ? 'bg-yellow-500 text-black' :
+                  <div className={`w-14 h-14 rounded-full flex items-center justify-center font-bold text-2xl flex-shrink-0 ${index === 0 ? 'bg-yellow-500 text-black' :
                     index === 1 ? 'bg-gray-400 text-black' :
                       index === 2 ? 'bg-orange-600 text-black' :
                         'bg-white bg-opacity-20 text-black'
@@ -616,30 +616,30 @@ export default function GameLivePage() {
                     <img
                       src={player.avatar_url}
                       alt={player.display_name}
-                      className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+                      className="w-14 h-14 rounded-full object-cover flex-shrink-0"
                     />
                   ) : (
-                    <div className="w-10 h-10 bg-white bg-opacity-30 rounded-full flex items-center justify-center text-black font-bold text-base flex-shrink-0">
+                    <div className="w-14 h-14 bg-white bg-opacity-30 rounded-full flex items-center justify-center text-black font-bold text-xl flex-shrink-0">
                       {player.display_name?.charAt(0) || '?'}
                     </div>
                   )}
 
                   {/* 玩家資訊 */}
                   <div className="flex-1 min-w-0">
-                    <div className="text-lg font-bold text-black truncate">
+                    <div className="text-2xl font-bold text-black truncate">
                       {player.display_name}
                     </div>
                   </div>
 
                   {/* 分數 */}
-                  <div className="text-xl font-bold text-black flex-shrink-0">
+                  <div className="text-3xl font-bold text-black flex-shrink-0">
                     {player.quiz_score} 分
                   </div>
                 </div>
               ))}
 
               {scoreRankings.length === 0 && (
-                <div className="text-center text-black text-xl opacity-60 py-8">
+                <div className="text-center text-black text-2xl opacity-60 py-8">
                   暫無排行榜資料
                 </div>
               )}
@@ -953,26 +953,26 @@ export default function GameLivePage() {
             </div>
           ) : displayPhase === 'rankings' ? (
             // 排行榜階段 - 顯示分數排行榜
-            <div className="flex-1 p-4 flex flex-col">
-              <div className="text-center mb-2 flex-shrink-0">
-                <h2 className="text-3xl md:text-4xl font-bold text-white mb-1">
+            <div className="flex-1 p-6 flex flex-col">
+              <div className="text-center mb-4 flex-shrink-0">
+                <h2 className="text-4xl md:text-5xl font-bold text-white mb-2">
                   🏆 目前排行榜
                 </h2>
-                <div className="text-base text-white opacity-80">
+                <div className="text-lg text-white opacity-80">
                   前 10 名玩家
                 </div>
               </div>
 
               {/* 分數排行榜 - 固定高度不滾動 */}
-              <div className="max-w-4xl mx-auto space-y-1 flex-1 w-full">
+              <div className="max-w-4xl mx-auto space-y-2 flex-1 w-full">
                 {scoreRankings.map((player, index) => (
                   <div
                     key={player.line_id}
-                    className={`flex items-center space-x-3 bg-white bg-opacity-10 backdrop-blur-md rounded-lg p-2 ${index < 3 ? 'ring-2 ring-yellow-400 ring-opacity-60' : ''
+                    className={`flex items-center space-x-4 bg-white bg-opacity-10 backdrop-blur-md rounded-lg p-4 ${index < 3 ? 'ring-2 ring-yellow-400 ring-opacity-60' : ''
                       }`}
                   >
                     {/* 排名 */}
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg flex-shrink-0 ${index === 0 ? 'bg-yellow-500 text-black' :
+                    <div className={`w-14 h-14 rounded-full flex items-center justify-center font-bold text-2xl flex-shrink-0 ${index === 0 ? 'bg-yellow-500 text-black' :
                       index === 1 ? 'bg-gray-400 text-black' :
                         index === 2 ? 'bg-orange-600 text-black' :
                           'bg-white bg-opacity-20 text-black'
@@ -985,30 +985,30 @@ export default function GameLivePage() {
                       <img
                         src={player.avatar_url}
                         alt={player.display_name}
-                        className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+                        className="w-14 h-14 rounded-full object-cover flex-shrink-0"
                       />
                     ) : (
-                      <div className="w-10 h-10 bg-white bg-opacity-30 rounded-full flex items-center justify-center text-black font-bold text-base flex-shrink-0">
+                      <div className="w-14 h-14 bg-white bg-opacity-30 rounded-full flex items-center justify-center text-black font-bold text-xl flex-shrink-0">
                         {player.display_name?.charAt(0) || '?'}
                       </div>
                     )}
 
                     {/* 玩家資訊 */}
                     <div className="flex-1 min-w-0">
-                      <div className="text-lg font-bold text-black truncate">
+                      <div className="text-2xl font-bold text-black truncate">
                         {player.display_name}
                       </div>
                     </div>
 
                     {/* 分數 */}
-                    <div className="text-xl font-bold text-black flex-shrink-0">
+                    <div className="text-3xl font-bold text-black flex-shrink-0">
                       {player.quiz_score} 分
                     </div>
                   </div>
                 ))}
 
                 {scoreRankings.length === 0 && (
-                  <div className="text-center text-black text-base opacity-60 py-4">
+                  <div className="text-center text-black text-2xl opacity-60 py-8">
                     暫無排行榜資料
                   </div>
                 )}
