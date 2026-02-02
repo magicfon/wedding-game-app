@@ -300,18 +300,6 @@ export default function AdminDashboard() {
                     )}
                   </div>
 
-                  {/* 通用控制按鈕 */}
-                  {isGameActive && (
-                    <button
-                      onClick={() => controlGame('end_game')}
-                      disabled={gameLoading}
-                      className="w-full flex items-center justify-center space-x-2 bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white px-4 py-3 rounded-lg transition-colors text-sm"
-                    >
-                      <Square className="w-4 h-4" />
-                      <span>結束遊戲</span>
-                    </button>
-                  )}
-
                   {/* 排行榜按鈕 - 可以顯示/隱藏排行榜 */}
                   {gameState?.display_phase === 'rankings' ? (
                     <button
@@ -333,6 +321,18 @@ export default function AdminDashboard() {
                     </button>
                   )}
                 </>
+              )}
+
+              {/* 結束遊戲按鈕 - 遊戲進行中時總是顯示 */}
+              {isGameActive && (
+                <button
+                  onClick={() => controlGame('end_game')}
+                  disabled={gameLoading}
+                  className="w-full flex items-center justify-center space-x-2 bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white px-4 py-3 rounded-lg transition-colors text-sm"
+                >
+                  <Square className="w-4 h-4" />
+                  <span>結束遊戲</span>
+                </button>
               )}
 
               {/* 重置遊戲按鈕 */}
