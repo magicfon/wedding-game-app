@@ -16,7 +16,6 @@ import {
   Home,
   LogOut,
   UserCheck,
-  Activity,
   Clock,
   Pause,
   SkipForward,
@@ -36,14 +35,6 @@ interface AdminInfo {
 export default function AdminDashboard() {
   const [adminInfo, setAdminInfo] = useState<AdminInfo | null>(null)
   const [loading, setLoading] = useState(true)
-  const [stats, setStats] = useState({
-    totalUsers: 0,
-    totalQuestions: 0,
-    totalPhotos: 0,
-    gameActive: false,
-    totalAnswers: 0,
-    activeAdmins: 0
-  })
   const { isLoggedIn, profile, isAdmin, adminInfo: liffAdminInfo, loading: liffLoading, adminLoading } = useLiff()
   const router = useRouter()
 
@@ -110,54 +101,13 @@ export default function AdminDashboard() {
       return
     }
 
-    // 是管理員，設置管理員資料並載入統計
+    // 是管理員，設置管理員資料
     console.log('User is admin, loading dashboard')
     if (liffAdminInfo) {
       setAdminInfo(liffAdminInfo)
     }
-    loadStats()
     setLoading(false)
   }, [liffLoading, adminLoading, isLoggedIn, profile, isAdmin, liffAdminInfo, router])
-
-  // 載入統計數據
-  const loadStats = async () => {
-    try {
-      console.log('Loading real stats from API...')
-      const response = await fetch('/api/admin/stats')
-      const data = await response.json()
-
-      if (data.success) {
-        console.log('Stats loaded:', data.stats)
-        setStats(data.stats)
-
-        if (data.errors && data.errors.length > 0) {
-          console.warn('Stats loaded with some errors:', data.errors)
-        }
-      } else {
-        console.error('Failed to load stats:', data.error)
-        // 使用預設值
-        setStats({
-          totalUsers: 0,
-          totalQuestions: 0,
-          totalPhotos: 0,
-          gameActive: false,
-          totalAnswers: 0,
-          activeAdmins: 0
-        })
-      }
-    } catch (error) {
-      console.error('Load stats error:', error)
-      // 使用預設值
-      setStats({
-        totalUsers: 0,
-        totalQuestions: 0,
-        totalPhotos: 0,
-        gameActive: false,
-        totalAnswers: 0,
-        activeAdmins: 0
-      })
-    }
-  }
 
   useEffect(() => {
     checkAdminStatus()
@@ -296,75 +246,6 @@ export default function AdminDashboard() {
         </div>
 
         <div className="space-y-6">
-          {/* 統計卡片 */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">總用戶數</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.totalUsers}</p>
-                </div>
-                <Users className="w-8 h-8 text-blue-500" />
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">題目總數</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.totalQuestions}</p>
-                </div>
-                <HelpCircle className="w-8 h-8 text-green-500" />
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">上傳照片</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.totalPhotos}</p>
-                </div>
-                <Camera className="w-8 h-8 text-pink-500" />
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">答題次數</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.totalAnswers}</p>
-                </div>
-                <Trophy className="w-8 h-8 text-yellow-500" />
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">活躍管理員</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.activeAdmins}</p>
-                </div>
-                <Shield className="w-8 h-8 text-indigo-500" />
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">遊戲狀態</p>
-                  <p className={`text-2xl font-bold ${stats.gameActive ? 'text-green-600' : 'text-red-600'}`}>
-                    {stats.gameActive ? '進行中' : '已暫停'}
-                  </p>
-                </div>
-                {stats.gameActive ? (
-                  <Activity className="w-8 h-8 text-green-500" />
-                ) : (
-                  <Clock className="w-8 h-8 text-gray-500" />
-                )}
-              </div>
-            </div>
-          </div>
-
           {/* 遊戲控制面板 */}
           <div className="bg-white rounded-lg shadow p-6 mb-8">
             <div className="flex items-center justify-between mb-6">
