@@ -212,94 +212,6 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* 當前題目資訊 */}
-            {currentQuestion && (
-              <div className="bg-blue-50 rounded-lg p-4 mb-4">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-medium text-blue-900">當前題目</h3>
-                  <div className="flex items-center space-x-2">
-                    <Clock className="w-4 h-4 text-blue-600" />
-                    <span className="text-sm font-mono text-blue-600">
-                      {timeRemaining}s
-                    </span>
-                  </div>
-                </div>
-                <p className="text-sm text-blue-800 mb-2">{currentQuestion.question_text}</p>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <span>A. {currentQuestion.option_a}</span>
-                  <span>B. {currentQuestion.option_b}</span>
-                  <span>C. {currentQuestion.option_c}</span>
-                  <span>D. {currentQuestion.option_d}</span>
-                </div>
-                <div className="mt-2 text-xs text-blue-600">
-                  正確答案: {currentQuestion.correct_answer} | 分數: {currentQuestion.points}
-                </div>
-              </div>
-            )}
-
-            {/* 遊戲狀態資訊 */}
-            <div className="grid grid-cols-3 gap-2 mb-4 text-sm">
-              <div className="text-center p-2 bg-gray-50 rounded">
-                <div className="font-medium text-gray-900">{gameState?.completed_questions || 0}</div>
-                <div className="text-gray-600 text-xs">已完成題目</div>
-              </div>
-              <div className="text-center p-2 bg-gray-50 rounded">
-                <div className="font-medium text-gray-900">{gameState?.total_questions || 0}</div>
-                <div className="text-gray-600 text-xs">題目總數</div>
-              </div>
-              <div className="text-center p-2 bg-gray-50 rounded">
-                <div className="font-medium text-gray-900">
-                  {(gameState?.is_waiting_for_players !== undefined ? gameState.is_waiting_for_players : !gameState?.current_question_id) ? '等待玩家' : gameState?.current_question_id ? '答題中' : '未開始'}
-                </div>
-                <div className="text-gray-600 text-xs">遊戲階段</div>
-              </div>
-            </div>
-
-            {/* 設定區域 */}
-            <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
-              <h3 className="text-sm font-medium text-gray-700 mb-3">遊戲參數設定</h3>
-              <div className="flex flex-col sm:flex-row gap-3">
-                <div className="flex-1">
-                  <label className="block text-xs text-gray-500 mb-1">全域答題時間 (秒)</label>
-                  <div className="flex items-center">
-                    <input
-                      type="number"
-                      min="5"
-                      max="300"
-                      value={questionTimeLimit}
-                      onChange={(e) => setQuestionTimeLimit(parseInt(e.target.value) || 15)}
-                      className="w-full sm:w-20 px-3 py-2 border border-gray-300 rounded-md text-sm text-black focus:ring-blue-500 focus:border-blue-500"
-                    />
-                    <span className="ml-2 text-xs text-gray-500">秒作答時間</span>
-                  </div>
-                </div>
-
-                <div className="flex-1">
-                  <label className="block text-xs text-gray-500 mb-1">當前題庫</label>
-                  <select
-                    value={activeQuestionSet}
-                    onChange={(e) => setActiveQuestionSet(e.target.value as 'formal' | 'test' | 'backup')}
-                    className="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-md text-sm text-black focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="formal">正式題目</option>
-                    <option value="test">測試題目</option>
-                    <option value="backup">備用題目</option>
-                  </select>
-                </div>
-
-                <button
-                  onClick={handleUpdateSettings}
-                  disabled={savingSettings || loading}
-                  className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors self-end"
-                >
-                  {savingSettings ? '儲存中...' : '儲存設定'}
-                </button>
-              </div>
-              <p className="mt-2 text-xs text-gray-500">
-                「題目顯示時間」使用每道題目的個別設定；「全域答題時間」會加到每題的顯示時間上。總答題時間 = 題目顯示時間 + 全域答題時間
-              </p>
-            </div>
-
             {/* 控制按鈕 - 手機直式螢幕友善設計 */}
             <div className="space-y-3 mb-4">
               {!isGameActive ? (
@@ -422,6 +334,112 @@ export default function AdminDashboard() {
                 <RotateCcw className="w-4 h-4" />
                 <span>重置遊戲</span>
               </button>
+            </div>
+
+            {/* 當前題目資訊 */}
+            {currentQuestion && (
+              <div className="bg-blue-50 rounded-lg p-4 mb-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-medium text-blue-900">當前題目</h3>
+                  <div className="flex items-center space-x-2">
+                    <Clock className="w-4 h-4 text-blue-600" />
+                    <span className="text-sm font-mono text-blue-600">
+                      {timeRemaining}s
+                    </span>
+                  </div>
+                </div>
+                <p className="text-sm text-blue-800 mb-2">{currentQuestion.question_text}</p>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <span>A. {currentQuestion.option_a}</span>
+                  <span>B. {currentQuestion.option_b}</span>
+                  <span>C. {currentQuestion.option_c}</span>
+                  <span>D. {currentQuestion.option_d}</span>
+                </div>
+                <div className="mt-2 text-xs text-blue-600">
+                  正確答案: {currentQuestion.correct_answer} | 分數: {currentQuestion.points}
+                </div>
+              </div>
+            )}
+
+            {/* 遊戲狀態資訊 */}
+            <div className="grid grid-cols-3 gap-2 mb-4 text-sm">
+              <div className="text-center p-2 bg-gray-50 rounded">
+                <div className="font-medium text-gray-900">{gameState?.completed_questions || 0}</div>
+                <div className="text-gray-600 text-xs">已完成題目</div>
+              </div>
+              <div className="text-center p-2 bg-gray-50 rounded">
+                <div className="font-medium text-gray-900">{gameState?.total_questions || 0}</div>
+                <div className="text-gray-600 text-xs">題目總數</div>
+              </div>
+              <div className="text-center p-2 bg-gray-50 rounded">
+                <div className="font-medium text-gray-900">
+                  {(gameState?.is_waiting_for_players !== undefined ? gameState.is_waiting_for_players : !gameState?.current_question_id) ? '等待玩家' : gameState?.current_question_id ? '答題中' : '未開始'}
+                </div>
+                <div className="text-gray-600 text-xs">遊戲階段</div>
+              </div>
+            </div>
+
+            {/* 遊戲狀態資訊 */}
+            <div className="grid grid-cols-3 gap-2 mb-4 text-sm">
+              <div className="text-center p-2 bg-gray-50 rounded">
+                <div className="font-medium text-gray-900">{gameState?.completed_questions || 0}</div>
+                <div className="text-gray-600 text-xs">已完成題目</div>
+              </div>
+              <div className="text-center p-2 bg-gray-50 rounded">
+                <div className="font-medium text-gray-900">{gameState?.total_questions || 0}</div>
+                <div className="text-gray-600 text-xs">題目總數</div>
+              </div>
+              <div className="text-center p-2 bg-gray-50 rounded">
+                <div className="font-medium text-gray-900">
+                  {(gameState?.is_waiting_for_players !== undefined ? gameState.is_waiting_for_players : !gameState?.current_question_id) ? '等待玩家' : gameState?.current_question_id ? '答題中' : '未開始'}
+                </div>
+                <div className="text-gray-600 text-xs">遊戲階段</div>
+              </div>
+            </div>
+
+            {/* 設定區域 */}
+            <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+              <h3 className="text-sm font-medium text-gray-700 mb-3">遊戲參數設定</h3>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex-1">
+                  <label className="block text-xs text-gray-500 mb-1">全域答題時間 (秒)</label>
+                  <div className="flex items-center">
+                    <input
+                      type="number"
+                      min="5"
+                      max="300"
+                      value={questionTimeLimit}
+                      onChange={(e) => setQuestionTimeLimit(parseInt(e.target.value) || 15)}
+                      className="w-full sm:w-20 px-3 py-2 border border-gray-300 rounded-md text-sm text-black focus:ring-blue-500 focus:border-blue-500"
+                    />
+                    <span className="ml-2 text-xs text-gray-500">秒作答時間</span>
+                  </div>
+                </div>
+
+                <div className="flex-1">
+                  <label className="block text-xs text-gray-500 mb-1">當前題庫</label>
+                  <select
+                    value={activeQuestionSet}
+                    onChange={(e) => setActiveQuestionSet(e.target.value as 'formal' | 'test' | 'backup')}
+                    className="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-md text-sm text-black focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="formal">正式題目</option>
+                    <option value="test">測試題目</option>
+                    <option value="backup">備用題目</option>
+                  </select>
+                </div>
+
+                <button
+                  onClick={handleUpdateSettings}
+                  disabled={savingSettings || loading}
+                  className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors self-end"
+                >
+                  {savingSettings ? '儲存中...' : '儲存設定'}
+                </button>
+              </div>
+              <p className="mt-2 text-xs text-gray-500">
+                「題目顯示時間」使用每道題目的個別設定；「全域答題時間」會加到每題的顯示時間上。總答題時間 = 題目顯示時間 + 全域答題時間
+              </p>
             </div>
 
             {/* 開啟遊戲實況和照片輪播按鈕 */}
