@@ -59,28 +59,19 @@ export async function POST(request: Request) {
         break;
 
       case 'start_first_question':
-        // 獲取當前遊戲狀態，驗證是否允許開始第一題
+        // 獲取當前遊戲狀態
         const { data: currentSettings } = await supabase
           .from('game_state')
           .select('active_question_set, is_waiting_for_players, current_question_id, is_game_active')
           .eq('id', 1)
           .single();
 
-        // 驗證遊戲狀態：必須是遊戲進行中、在等待玩家階段、且沒有當前題目
-        if (!currentSettings?.is_game_active) {
-          console.log('⚠️ start_first_question 被拒絕：遊戲未開始');
-          return NextResponse.json({ error: '遊戲尚未開始，請先點擊「遊戲開始」' }, { status: 400 });
-        }
+        console.log('🎮 start_first_question - 當前遊戲狀態:', JSON.stringify(currentSettings, null, 2));
 
-        if (currentSettings.current_question_id) {
+        // 核心防護：如果已經有當前題目，不允許重新開始第一題（防止遊戲進行中跳回第一題）
+        if (currentSettings?.current_question_id) {
           console.log('⚠️ start_first_question 被拒絕：已有當前題目', currentSettings.current_question_id);
-          return NextResponse.json({ error: '遊戲已在進行中，無法重新開始第一題' }, { status: 400 });
-        }
-
-        // 如果有 is_waiting_for_players 欄位，必須確認在等待階段
-        if ('is_waiting_for_players' in currentSettings && !currentSettings.is_waiting_for_players) {
-          console.log('⚠️ start_first_question 被拒絕：不在等待玩家階段');
-          return NextResponse.json({ error: '不在等待玩家階段，無法開始第一題' }, { status: 400 });
+          return NextResponse.json({ error: '遊戲已在進行中，無法重新開始第一題。請使用「下一題」或「重置遊戲」。' }, { status: 400 });
         }
 
         const activeSet = currentSettings?.active_question_set || 'formal';
