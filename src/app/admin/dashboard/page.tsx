@@ -350,7 +350,12 @@ export default function AdminDashboard() {
             {currentQuestion && (
               <div className="bg-blue-50 rounded-lg p-4 mb-4">
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-medium text-blue-900">當前題目</h3>
+                  <h3 className="font-medium text-blue-900">
+                    當前題目
+                    <span className="ml-2 text-sm text-blue-600">
+                      （第 {(gameState?.completed_questions || 0) + 1} 題 / 共 {gameState?.total_questions || 0} 題）
+                    </span>
+                  </h3>
                   <div className="flex items-center space-x-2">
                     <Clock className="w-4 h-4 text-blue-600" />
                     <span className="text-sm font-mono text-blue-600">
