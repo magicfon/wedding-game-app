@@ -375,7 +375,7 @@ export default function GameLivePage() {
         .from('answer_records')
         .select(`
           answer_time,
-          answer,
+          selected_answer,
           users!inner(display_name, avatar_url)
         `)
         .eq('question_id', currentQuestion.id)
@@ -383,7 +383,7 @@ export default function GameLivePage() {
         .limit(10)
 
       if (onlyCorrect) {
-        query = query.eq('answer', currentQuestion.correct_answer)
+        query = query.eq('selected_answer', currentQuestion.correct_answer)
       }
 
       const { data: topAnswers, error } = await query
@@ -394,7 +394,7 @@ export default function GameLivePage() {
         display_name: (record.users as any).display_name,
         avatar_url: (record.users as any).avatar_url,
         answer_time: record.answer_time,
-        is_correct: record.answer === currentQuestion.correct_answer
+        is_correct: record.selected_answer === currentQuestion.correct_answer
       })) || []
 
       setTopPlayers(players)
