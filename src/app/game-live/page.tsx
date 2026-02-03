@@ -121,8 +121,15 @@ export default function GameLivePage() {
               display_name: user.display_name,
               avatar_url: user.avatar_url
             })
+
+            // 預載入圖片檔案 (Image Pre-loading)
+            // 這會強制瀏覽器在背景下載圖片並快取，確保顯示時不會有延遲
+            if (user.avatar_url) {
+              const img = new Image()
+              img.src = user.avatar_url
+            }
           })
-          console.log(`✅ 已預載入 ${data.length} 位用戶資料`)
+          console.log(`✅ 已獲得並開始預載入 ${data.length} 位用戶的資料與圖片`)
         }
       } catch (error) {
         console.error('預載入用戶資料失敗:', error)
