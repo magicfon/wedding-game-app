@@ -145,11 +145,36 @@ export default function GameLivePage() {
   const phaseStartTimeRef = useRef<number>(0)
   // 追蹤當前顯示階段，用於在 effect 中判斷
   const phaseRef = useRef(displayPhase)
+  // 追蹤遊戲是否剛開始（從等待狀態進入第一題）
+  const wasWaitingRef = useRef<boolean>(true)
 
   // 同步 phaseRef
   useEffect(() => {
     phaseRef.current = displayPhase
   }, [displayPhase])
+
+  // 當遊戲從等待狀態進入第一題時，重置所有相關 refs（修復第一題狀態問題）
+  useEffect(() => {
+    const isWaitingForPlayers = gameState?.is_waiting_for_players !== undefined
+      ? gameState.is_waiting_for_players
+      : !gameState?.current_question_id
+
+    // 檢測從等待狀態進入遊戲狀態的轉換
+    if (wasWaitingRef.current && !isWaitingForPlayers && gameState?.current_question_id) {
+      console.log('🎮 遊戲開始，重置所有狀態 refs')
+      // 重置所有追蹤 refs
+      lastProcessedQuestionIdRef.current = null
+      phaseStartTimeRef.current = 0
+      correctAnswerPlayedRef.current = null
+      leaderboardPlayedRef.current = null
+      timeUpPlayedRef.current = null
+      countdownPlayingRef.current = false
+      // 重置顯示階段為 question
+      setDisplayPhase('question')
+    }
+
+    wasWaitingRef.current = isWaitingForPlayers
+  }, [gameState?.is_waiting_for_players, gameState?.current_question_id])
 
   // 控制顯示階段切換
   useEffect(() => {
@@ -309,8 +334,9 @@ export default function GameLivePage() {
   }, [displayPhase, timeLeft, currentQuestion, gameState?.question_start_time, playSound])
 
   // 正確答案音效（使用 ref 防止重複播放）
+  // 加入 question_start_time 檢查，確保遊戲真正開始後才觸發
   useEffect(() => {
-    if (displayPhase === 'options' && timeLeft <= 0 && currentQuestion) {
+    if (displayPhase === 'options' && timeLeft <= 0 && currentQuestion && gameState?.question_start_time) {
       // 檢查是否已經為這道題播放過正確答案音效
       if (correctAnswerPlayedRef.current !== currentQuestion.id) {
         correctAnswerPlayedRef.current = currentQuestion.id
@@ -320,7 +346,7 @@ export default function GameLivePage() {
         }, 500)
       }
     }
-  }, [displayPhase, timeLeft, currentQuestion, playSound])
+  }, [displayPhase, timeLeft, currentQuestion, gameState?.question_start_time, playSound])
 
   // 排行榜音效（使用 ref 防止重複播放）
   useEffect(() => {
