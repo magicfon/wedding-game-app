@@ -1354,6 +1354,11 @@ function WaitingStage({ gameState }: { gameState: any }) {
                 className="w-full h-full rounded-2xl object-contain p-3"
               />
             </div>
+            <img
+              src="/menu2-2.jpg"
+              alt="Menu"
+              className="w-72 h-auto rounded-2xl shadow-xl mt-3"
+            />
             <p className="text-black text-base opacity-80 mt-3">
               使用 LINE 掃描 QR Code<br />
               進入快問快答遊戲
