@@ -1308,31 +1308,31 @@ function WaitingStage({ gameState }: { gameState: any }) {
 
             <div className="flex-1 min-h-0">
               {joinedPlayers.length > 0 ? (
-                <div className="grid grid-cols-5 lg:grid-cols-6 gap-3">
-                  {joinedPlayers.slice(0, 30).map((player, index) => (
-                    <div key={player.line_id} className="flex flex-col items-center bg-white bg-opacity-20 rounded-xl p-3">
+                <div className="grid grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-2">
+                  {joinedPlayers.slice(0, 60).map((player, index) => (
+                    <div key={player.line_id} className="flex flex-col items-center bg-white bg-opacity-20 rounded-lg p-2">
                       {player.avatar_url ? (
                         <img
                           src={player.avatar_url}
                           alt={player.display_name}
-                          className="w-16 h-16 rounded-full object-cover mb-2"
+                          className="w-12 h-12 rounded-full object-cover mb-1"
                         />
                       ) : (
-                        <div className="w-16 h-16 bg-white bg-opacity-30 rounded-full flex items-center justify-center text-black font-bold text-2xl mb-2">
+                        <div className="w-12 h-12 bg-white bg-opacity-30 rounded-full flex items-center justify-center text-black font-bold text-xl mb-1">
                           {player.display_name?.charAt(0) || '?'}
                         </div>
                       )}
-                      <span className="text-sm font-medium text-black text-center truncate w-full">
+                      <span className="text-xs font-medium text-black text-center truncate w-full">
                         {player.display_name}
                       </span>
                     </div>
                   ))}
-                  {joinedPlayers.length > 30 && (
-                    <div className="flex flex-col items-center justify-center bg-white bg-opacity-20 rounded-xl p-3">
-                      <div className="w-16 h-16 bg-white bg-opacity-40 rounded-full flex items-center justify-center text-black font-bold text-xl mb-2">
-                        +{joinedPlayers.length - 30}
+                  {joinedPlayers.length > 60 && (
+                    <div className="flex flex-col items-center justify-center bg-white bg-opacity-20 rounded-lg p-2">
+                      <div className="w-12 h-12 bg-white bg-opacity-40 rounded-full flex items-center justify-center text-black font-bold text-lg mb-1">
+                        +{joinedPlayers.length - 60}
                       </div>
-                      <span className="text-sm font-medium text-black">更多</span>
+                      <span className="text-xs font-medium text-black">更多</span>
                     </div>
                   )}
                 </div>
