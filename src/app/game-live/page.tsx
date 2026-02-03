@@ -908,7 +908,7 @@ export default function GameLivePage() {
               <div className="flex-1 flex flex-col p-8 overflow-hidden">
                 {/* 題目標題（縮小版） */}
                 <div className="text-center mb-8 flex-shrink-0">
-                  <h2 className="text-4xl md:text-6xl font-bold text-white mb-4 px-8 py-4 bg-gradient-to-r from-purple-600/60 via-blue-600/60 to-purple-600/60 backdrop-blur-md rounded-2xl border-4 border-white/40 shadow-[0_0_30px_rgba(255,255,255,0.3)] inline-block">
+                  <h2 className="text-4xl md:text-6xl font-bold text-white mb-4">
                     {currentQuestion.question_text}
                   </h2>
 
