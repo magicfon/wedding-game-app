@@ -103,6 +103,35 @@ export default function GameLivePage() {
     preloadSounds()
   }, [preloadSounds])
 
+  // 用戶資料緩存，避免 N+1 查詢
+  const userCacheRef = useRef<Map<string, { display_name: string; avatar_url: string | null }>>(new Map())
+
+  // 預先載入所有用戶資料到緩存
+  useEffect(() => {
+    const fetchAllUsers = async () => {
+      try {
+        console.log('🔄 開始預載入用戶資料...')
+        const { data } = await supabase
+          .from('users')
+          .select('line_id, display_name, avatar_url')
+
+        if (data) {
+          data.forEach(user => {
+            userCacheRef.current.set(user.line_id, {
+              display_name: user.display_name,
+              avatar_url: user.avatar_url
+            })
+          })
+          console.log(`✅ 已預載入 ${data.length} 位用戶資料`)
+        }
+      } catch (error) {
+        console.error('預載入用戶資料失敗:', error)
+      }
+    }
+
+    fetchAllUsers()
+  }, [supabase])
+
   // 追蹤上一題 ID，用於判斷是否為新題目
   const lastProcessedQuestionIdRef = useRef<number | null>(null)
   // 追蹤問題階段開始時間，用於在狀態更新時恢復計時器
@@ -495,32 +524,48 @@ export default function GameLivePage() {
         : d
     ))
 
-      // 非同步獲取用戶資料來更新頭像顯示（不阻塞 UI 更新）
-      ; (async () => {
-        try {
-          const { data: userData } = await supabase
+    // 使用緩存或獲取用戶資料來更新頭像顯示
+    const updateUserData = async () => {
+      try {
+        let userData = userCacheRef.current.get(userLineId)
+
+        // 如果緩存中沒有，則從資料庫獲取並存入緩存
+        if (!userData) {
+          console.log(`👤 緩存未命中，獲取用戶資料: ${userLineId}`)
+          const { data } = await supabase
             .from('users')
             .select('display_name, avatar_url')
             .eq('line_id', userLineId)
             .single()
 
-          if (userData) {
-            setAnswerDistribution(prev => prev.map(d =>
-              d.answer === answer
-                ? {
-                  ...d,
-                  users: [...d.users, {
-                    display_name: userData.display_name || '未知用戶',
-                    avatar_url: userData.avatar_url
-                  }]
-                }
-                : d
-            ))
+          if (data) {
+            userData = {
+              display_name: data.display_name,
+              avatar_url: data.avatar_url
+            }
+            userCacheRef.current.set(userLineId, userData)
           }
-        } catch (err) {
-          console.error('Error fetching user data:', err)
         }
-      })()
+
+        if (userData) {
+          setAnswerDistribution(prev => prev.map(d =>
+            d.answer === answer
+              ? {
+                ...d,
+                users: [...d.users, {
+                  display_name: userData?.display_name || '未知用戶',
+                  avatar_url: userData?.avatar_url || undefined
+                }]
+              }
+              : d
+          ))
+        }
+      } catch (err) {
+        console.error('Error fetching/updating user data:', err)
+      }
+    }
+
+    updateUserData()
 
     // 僅在需要時更新 top players（延遲執行，優先處理計數更新）
     setTimeout(() => {
