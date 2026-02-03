@@ -1347,19 +1347,19 @@ function WaitingStage({ gameState }: { gameState: any }) {
           <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl p-4 flex flex-col items-center">
             <QrCode className="w-10 h-10 text-white mb-3" />
             <h3 className="text-xl font-bold text-black mb-4">掃描加入遊戲</h3>
-            <div className="w-72 h-72 bg-white rounded-2xl flex items-center justify-center shadow-xl">
+            <div className="w-96 h-96 bg-white rounded-2xl flex items-center justify-center shadow-xl">
               <img
                 src="/line2dcode.png"
                 alt="QR Code"
-                className="w-full h-full rounded-2xl object-contain p-3"
+                className="w-full h-full rounded-2xl object-contain p-4"
               />
             </div>
             <img
               src="/menu2-2.jpg"
               alt="Menu"
-              className="w-72 h-auto rounded-2xl shadow-xl mt-3"
+              className="w-96 h-auto rounded-2xl shadow-xl mt-4"
             />
-            <p className="text-black text-base opacity-80 mt-3">
+            <p className="text-black text-lg opacity-80 mt-4">
               使用 LINE 掃描 QR Code<br />
               進入快問快答遊戲
             </p>
@@ -1367,22 +1367,22 @@ function WaitingStage({ gameState }: { gameState: any }) {
         </div>
 
         {/* 遊戲計分規則 */}
-        <div className="mt-4 bg-white bg-opacity-20 backdrop-blur-md rounded-2xl p-4 flex-shrink-0">
-          <h3 className="text-xl md:text-2xl font-bold text-black mb-3 flex items-center justify-center gap-2">
+        <div className="mt-4 bg-white bg-opacity-20 backdrop-blur-md rounded-2xl p-6 flex-shrink-0">
+          <h3 className="text-2xl md:text-3xl font-bold text-black mb-4 flex items-center justify-center gap-2">
             <span>🎲</span> 遊戲計分規則
           </h3>
-          <div className="grid grid-cols-2 gap-4 text-black">
-            <div className="bg-white bg-opacity-30 rounded-xl p-3 text-center">
-              <div className="text-3xl mb-1">✅</div>
-              <div className="text-lg font-semibold mb-1">答對</div>
-              <div className="text-xl font-bold text-green-600">51~100 分</div>
-              <div className="text-xs opacity-80 mt-1">基礎50分 + 隨機骲1~50分</div>
+          <div className="grid grid-cols-2 gap-6 text-black">
+            <div className="bg-white bg-opacity-30 rounded-xl p-4 text-center">
+              <div className="text-4xl mb-2">✅</div>
+              <div className="text-xl font-semibold mb-2">答對</div>
+              <div className="text-2xl font-bold text-green-600">51~100 分</div>
+              <div className="text-sm opacity-80 mt-2">基礎50分 + 隨機骲1~50分</div>
             </div>
-            <div className="bg-white bg-opacity-30 rounded-xl p-3 text-center">
-              <div className="text-3xl mb-1">🎯</div>
-              <div className="text-lg font-semibold mb-1">答錯參與獎</div>
-              <div className="text-xl font-bold text-yellow-600">50 分</div>
-              <div className="text-xs opacity-80 mt-1">鼓勵大家踴躍答題！</div>
+            <div className="bg-white bg-opacity-30 rounded-xl p-4 text-center">
+              <div className="text-4xl mb-2">🎯</div>
+              <div className="text-xl font-semibold mb-2">答錯參與獎</div>
+              <div className="text-2xl font-bold text-yellow-600">50 分</div>
+              <div className="text-sm opacity-80 mt-2">鼓勵大家踴躍答題！</div>
             </div>
           </div>
         </div>
