@@ -1120,14 +1120,7 @@ export default function GameLivePage() {
           <div className="text-center text-white">
             <Users className="w-24 h-24 mx-auto mb-6 opacity-50" />
             <h3 className="text-4xl font-bold mb-4">等待中</h3>
-            <p className="text-xl mb-8">目前沒有進行中的題目</p>
-            <a
-              href="/quiz"
-              className="inline-flex items-center space-x-3 bg-white bg-opacity-20 hover:bg-opacity-30 text-black font-bold py-4 px-8 rounded-2xl transition-all duration-200 backdrop-blur-sm"
-            >
-              <HelpCircle className="w-6 h-6" />
-              <span>參與答題</span>
-            </a>
+            <p className="text-xl">目前沒有進行中的題目</p>
           </div>
         </div>
       )}
