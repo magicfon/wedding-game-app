@@ -398,24 +398,6 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* 遊戲狀態資訊 */}
-            <div className="grid grid-cols-3 gap-2 mb-4 text-sm">
-              <div className="text-center p-2 bg-gray-50 rounded">
-                <div className="font-medium text-gray-900">{gameState?.completed_questions || 0}</div>
-                <div className="text-gray-600 text-xs">已完成題目</div>
-              </div>
-              <div className="text-center p-2 bg-gray-50 rounded">
-                <div className="font-medium text-gray-900">{gameState?.total_questions || 0}</div>
-                <div className="text-gray-600 text-xs">題目總數</div>
-              </div>
-              <div className="text-center p-2 bg-gray-50 rounded">
-                <div className="font-medium text-gray-900">
-                  {(gameState?.is_waiting_for_players !== undefined ? gameState.is_waiting_for_players : !gameState?.current_question_id) ? '等待玩家' : gameState?.current_question_id ? '答題中' : '未開始'}
-                </div>
-                <div className="text-gray-600 text-xs">遊戲階段</div>
-              </div>
-            </div>
-
             {/* 設定區域 */}
             <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
               <h3 className="text-sm font-medium text-gray-700 mb-3">遊戲參數設定</h3>
