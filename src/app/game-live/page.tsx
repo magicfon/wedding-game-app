@@ -908,7 +908,7 @@ export default function GameLivePage() {
               <div className="flex-1 flex flex-col p-8 overflow-hidden">
                 {/* 題目標題（縮小版） */}
                 <div className="text-center mb-8 flex-shrink-0">
-                  <h2 className="text-4xl md:text-6xl font-bold text-white mb-4">
+                  <h2 className="text-4xl md:text-6xl font-bold text-white mb-4 px-8 py-4 bg-gradient-to-r from-purple-600/60 via-blue-600/60 to-purple-600/60 backdrop-blur-md rounded-2xl border-4 border-white/40 shadow-[0_0_30px_rgba(255,255,255,0.3)] inline-block">
                     {currentQuestion.question_text}
                   </h2>
 
@@ -924,8 +924,8 @@ export default function GameLivePage() {
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      <div className="inline-flex items-center space-x-4 bg-green-600 bg-opacity-90 rounded-full px-6 py-3 backdrop-blur-sm border border-green-400 border-opacity-50">
-                        <div className="text-white text-xl font-bold">
+                      <div className="inline-flex items-center space-x-4 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full px-10 py-5 backdrop-blur-sm border-4 border-white shadow-[0_0_40px_rgba(34,197,94,0.8),0_0_80px_rgba(16,185,129,0.5)] animate-pulse">
+                        <div className="text-white text-3xl md:text-4xl font-black drop-shadow-lg">
                           ✅ 正確答案：{currentQuestion.correct_answer}
                         </div>
                       </div>
@@ -973,7 +973,7 @@ export default function GameLivePage() {
                         return (
                           <div
                             key={option.key}
-                            className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${option.color} shadow-lg transform transition-all duration-500 hover:scale-[1.01] flex items-center flex-1 min-h-0 ${timeLeft <= 0 && isCorrect ? 'ring-4 ring-white ring-opacity-80 animate-pulse' : ''
+                            className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${option.color} shadow-lg transform transition-all duration-500 hover:scale-[1.01] flex items-center flex-1 min-h-0 ${timeLeft <= 0 && isCorrect ? 'ring-[6px] ring-green-400 shadow-[0_0_30px_rgba(34,197,94,0.8),0_0_60px_rgba(16,185,129,0.5)] scale-105 animate-pulse' : ''
                               }`}
                           >
                             {/* 答題進度條 */}
@@ -1009,8 +1009,8 @@ export default function GameLivePage() {
 
                               {/* 正確答案標示 */}
                               {timeLeft <= 0 && isCorrect && (
-                                <div className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white text-green-600 rounded-full p-1 shadow-lg">
-                                  <span className="text-lg font-bold">✓</span>
+                                <div className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-green-400 to-emerald-500 text-white rounded-full p-3 shadow-[0_0_20px_rgba(34,197,94,0.8)] animate-bounce">
+                                  <span className="text-2xl font-black">✓</span>
                                 </div>
                               )}
                             </div>
@@ -1057,7 +1057,7 @@ export default function GameLivePage() {
                       return (
                         <div
                           key={option.key}
-                          className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${option.color} shadow-2xl transform transition-all duration-500 hover:scale-105 flex items-center justify-center ${timeLeft <= 0 && isCorrect ? 'ring-8 ring-white ring-opacity-80 animate-pulse' : ''
+                          className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${option.color} shadow-2xl transform transition-all duration-500 hover:scale-105 flex items-center justify-center ${timeLeft <= 0 && isCorrect ? 'ring-[10px] ring-green-400 shadow-[0_0_50px_rgba(34,197,94,0.9),0_0_100px_rgba(16,185,129,0.6)] scale-105 z-10 animate-pulse' : ''
                             }`}
                         >
                           {/* 答題進度條 - 只在倒數結束後顯示 */}
@@ -1132,8 +1132,8 @@ export default function GameLivePage() {
 
                             {/* 正確答案標示 */}
                             {timeLeft <= 0 && isCorrect && (
-                              <div className="absolute -top-3 -right-3 bg-white text-green-600 rounded-full p-3 shadow-lg">
-                                <span className="text-xl">✓</span>
+                              <div className="absolute -top-4 -right-4 bg-gradient-to-r from-green-400 to-emerald-500 text-white rounded-full p-4 shadow-[0_0_30px_rgba(34,197,94,0.9)] animate-bounce">
+                                <span className="text-3xl font-black">✓</span>
                               </div>
                             )}
                           </div>
