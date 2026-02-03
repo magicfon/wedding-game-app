@@ -924,7 +924,7 @@ export default function GameLivePage() {
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      <div className="inline-flex items-center space-x-4 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full px-10 py-5 backdrop-blur-sm border-4 border-white shadow-[0_0_40px_rgba(34,197,94,0.8),0_0_80px_rgba(16,185,129,0.5)] animate-pulse">
+                      <div className="inline-flex items-center space-x-4 bg-gradient-to-r from-fuchsia-600 via-purple-600 to-cyan-500 rounded-full px-10 py-5 backdrop-blur-sm border-4 border-white shadow-[0_0_20px_#ff00ff,0_0_40px_#ff00ff,0_0_60px_#00ffff,0_0_80px_#00ffff] animate-pulse">
                         <div className="text-white text-3xl md:text-4xl font-black drop-shadow-lg">
                           ✅ 正確答案：{currentQuestion.correct_answer}
                         </div>
@@ -973,7 +973,7 @@ export default function GameLivePage() {
                         return (
                           <div
                             key={option.key}
-                            className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${option.color} shadow-lg transform transition-all duration-500 hover:scale-[1.01] flex items-center flex-1 min-h-0 ${timeLeft <= 0 && isCorrect ? 'ring-[6px] ring-green-400 shadow-[0_0_30px_rgba(34,197,94,0.8),0_0_60px_rgba(16,185,129,0.5)] scale-105 animate-pulse' : ''
+                            className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${option.color} shadow-lg transform transition-all duration-500 hover:scale-[1.01] flex items-center flex-1 min-h-0 ${timeLeft <= 0 && isCorrect ? 'ring-[10px] ring-fuchsia-400 shadow-[0_0_20px_#ff00ff,0_0_40px_#ff00ff,0_0_60px_#00ffff,0_0_80px_#00ffff] scale-105 animate-pulse' : ''
                               }`}
                           >
                             {/* 答題進度條 */}
@@ -1009,7 +1009,7 @@ export default function GameLivePage() {
 
                               {/* 正確答案標示 */}
                               {timeLeft <= 0 && isCorrect && (
-                                <div className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-green-400 to-emerald-500 text-white rounded-full p-3 shadow-[0_0_20px_rgba(34,197,94,0.8)] animate-bounce">
+                                <div className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-fuchsia-500 to-cyan-400 text-white rounded-full p-3 shadow-[0_0_15px_#ff00ff,0_0_30px_#00ffff] animate-bounce">
                                   <span className="text-2xl font-black">✓</span>
                                 </div>
                               )}
@@ -1057,7 +1057,7 @@ export default function GameLivePage() {
                       return (
                         <div
                           key={option.key}
-                          className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${option.color} shadow-2xl transform transition-all duration-500 hover:scale-105 flex items-center justify-center ${timeLeft <= 0 && isCorrect ? 'ring-[10px] ring-green-400 shadow-[0_0_50px_rgba(34,197,94,0.9),0_0_100px_rgba(16,185,129,0.6)] scale-105 z-10 animate-pulse' : ''
+                          className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${option.color} shadow-2xl transform transition-all duration-500 hover:scale-105 flex items-center justify-center ${timeLeft <= 0 && isCorrect ? 'ring-[14px] ring-fuchsia-400 shadow-[0_0_30px_#ff00ff,0_0_60px_#ff00ff,0_0_90px_#00ffff,0_0_120px_#00ffff] scale-105 z-10 animate-pulse' : ''
                             }`}
                         >
                           {/* 答題進度條 - 只在倒數結束後顯示 */}
@@ -1132,7 +1132,7 @@ export default function GameLivePage() {
 
                             {/* 正確答案標示 */}
                             {timeLeft <= 0 && isCorrect && (
-                              <div className="absolute -top-4 -right-4 bg-gradient-to-r from-green-400 to-emerald-500 text-white rounded-full p-4 shadow-[0_0_30px_rgba(34,197,94,0.9)] animate-bounce">
+                              <div className="absolute -top-4 -right-4 bg-gradient-to-r from-fuchsia-500 to-cyan-400 text-white rounded-full p-4 shadow-[0_0_20px_#ff00ff,0_0_40px_#00ffff] animate-bounce">
                                 <span className="text-3xl font-black">✓</span>
                               </div>
                             )}
