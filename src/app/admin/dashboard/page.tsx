@@ -224,22 +224,35 @@ export default function AdminDashboard() {
                     <PlayCircle className="w-5 h-5" />
                     <span>遊戲開始</span>
                   </button>
-                  {/* 遊戲停止時顯示排行榜按鈕 */}
-                  <button
-                    onClick={() => controlGame('show_rankings')}
-                    disabled={gameLoading}
-                    className="w-full flex items-center justify-center space-x-2 px-4 py-3 rounded-lg transition-colors bg-orange-500 hover:bg-orange-600 text-white text-sm"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-trophy w-4 h-4" aria-hidden="true">
-                      <path d="M10 14.66v1.626a2 2 0 0 1-.976 1.696A5 5 0 0 0 7 21.978"></path>
-                      <path d="M14 14.66v1.626a2 2 0 0 0 .976 1.696A5 5 0 0 1 17 21.978"></path>
-                      <path d="M18 9h1.5a1 1 0 0 0 0-5H18"></path>
-                      <path d="M4 22h16"></path>
-                      <path d="M6 9a6 6 0 0 0 12 0V3a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1z"></path>
-                      <path d="M6 9H4.5a1 1 0 0 1 0-5H6"></path>
-                    </svg>
-                    <span>排行榜</span>
-                  </button>
+                  {/* 遊戲停止時顯示排行榜或返回等待畫面按鈕 */}
+                  {gameState?.display_phase === 'rankings' ? (
+                    <button
+                      onClick={() => controlGame('hide_rankings')}
+                      disabled={gameLoading}
+                      className="w-full flex items-center justify-center space-x-2 px-4 py-3 rounded-lg transition-colors bg-blue-500 hover:bg-blue-600 text-white text-sm"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-arrow-left w-4 h-4" aria-hidden="true">
+                        <path d="M19 12H5M12 19l-7-7 7-7"></path>
+                      </svg>
+                      <span>返回等待畫面</span>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => controlGame('show_rankings')}
+                      disabled={gameLoading}
+                      className="w-full flex items-center justify-center space-x-2 px-4 py-3 rounded-lg transition-colors bg-orange-500 hover:bg-orange-600 text-white text-sm"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-trophy w-4 h-4" aria-hidden="true">
+                        <path d="M10 14.66v1.626a2 2 0 0 1-.976 1.696A5 5 0 0 0 7 21.978"></path>
+                        <path d="M14 14.66v1.626a2 2 0 0 0 .976 1.696A5 5 0 0 1 17 21.978"></path>
+                        <path d="M18 9h1.5a1 1 0 0 0 0-5H18"></path>
+                        <path d="M4 22h16"></path>
+                        <path d="M6 9a6 6 0 0 0 12 0V3a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1z"></path>
+                        <path d="M6 9H4.5a1 1 0 0 1 0-5H6"></path>
+                      </svg>
+                      <span>排行榜</span>
+                    </button>
+                  )}
                 </>
               ) : !gameState?.current_question_id ? (
                 // 等待階段：遊戲已開始但尚無當前題目，顯示開始出題按鈕

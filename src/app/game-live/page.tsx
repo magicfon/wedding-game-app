@@ -767,7 +767,6 @@ export default function GameLivePage() {
       )}
 
       {/* 優先顯示排行榜 - 不論遊戲處於什麼階段 */}
-      {/* 優先顯示排行榜 - 不論遊戲處於什麼階段 */}
       {gameState?.display_phase === 'rankings' ? (
         <div className={`h-screen flex flex-col overflow-hidden ${gameState?.has_next_question === false && gameState?.is_game_active
           ? 'bg-gradient-to-b from-purple-900 via-red-900 to-black'
@@ -1210,13 +1209,8 @@ export default function GameLivePage() {
           </div>
         )
       ) : (
-        <div className="flex items-center justify-center h-screen">
-          <div className="text-center text-white">
-            <Users className="w-24 h-24 mx-auto mb-6 opacity-50" />
-            <h3 className="text-4xl font-bold mb-4">等待中</h3>
-            <p className="text-xl">目前沒有進行中的題目</p>
-          </div>
-        </div>
+        // 遊戲未開始或遊戲已停止且不在排行榜階段，顯示等待畫面
+        <WaitingStage gameState={gameState} />
       )}
     </div>
   )
