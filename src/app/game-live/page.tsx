@@ -286,16 +286,27 @@ export default function GameLivePage() {
     timeUpPlayedRef.current = null
   }, [currentQuestion?.id])
 
-  // 時間結束音效（使用 ref 防止重複播放）
+  // 當題目變更時，立即初始化時間（修復第一題時間為 0 的問題）
   useEffect(() => {
-    if (displayPhase === 'options' && timeLeft <= 0 && currentQuestion) {
+    if (currentQuestion && gameState?.is_game_active && !gameState?.is_paused && gameState?.question_start_time) {
+      const initialTimeLeft = calculateTimeLeft()
+      setTimeLeft(initialTimeLeft)
+      setDisplayTimeLeft(initialTimeLeft)
+      console.log('🕐 題目變更，初始化時間:', initialTimeLeft, 'ms')
+    }
+  }, [currentQuestion?.id, gameState?.question_start_time])
+
+  // 時間結束音效（使用 ref 防止重複播放）
+  // 加入 question_start_time 檢查，確保遊戲真正開始後才觸發
+  useEffect(() => {
+    if (displayPhase === 'options' && timeLeft <= 0 && currentQuestion && gameState?.question_start_time) {
       // 檢查是否已經為這道題播放過 TIME_UP 音效
       if (timeUpPlayedRef.current !== currentQuestion.id) {
         timeUpPlayedRef.current = currentQuestion.id
         playSound('TIME_UP')
       }
     }
-  }, [displayPhase, timeLeft, currentQuestion, playSound])
+  }, [displayPhase, timeLeft, currentQuestion, gameState?.question_start_time, playSound])
 
   // 正確答案音效（使用 ref 防止重複播放）
   useEffect(() => {
@@ -487,14 +498,29 @@ export default function GameLivePage() {
     }
   }, [currentQuestion, supabase])
 
-  // 初始化數據獲取
+  // 當題目 ID 變更時，重置答題數據並獲取新數據（修復第一題答題人數錯誤的問題）
   useEffect(() => {
     if (currentQuestion) {
-      fetchAnswerDistribution()
-      fetchTopPlayers(showingCorrectOnly)
-      fetchCurrentQuestionAnswerCount()
+      // 先重置數據，避免顯示舊題目的數據
+      setCurrentQuestionAnswerCount(0)
+      setAnswerDistribution(['A', 'B', 'C', 'D'].map(option => ({
+        answer: option,
+        count: 0,
+        users: []
+      })))
+      setTopPlayers([])
+
+      // 延遲一小段時間再獲取，確保資料庫已經準備好
+      const timer = setTimeout(() => {
+        fetchAnswerDistribution()
+        fetchTopPlayers(showingCorrectOnly)
+        fetchCurrentQuestionAnswerCount()
+        console.log('📊 題目變更，獲取新答題數據')
+      }, 100)
+
+      return () => clearTimeout(timer)
     }
-  }, [fetchAnswerDistribution, fetchTopPlayers, calculateTimeLeft])
+  }, [currentQuestion?.id]) // 只依賴題目 ID，避免不必要的重複獲取
 
   // 移除答錯玩家的邏輯
   const removeWrongPlayers = useCallback(() => {
