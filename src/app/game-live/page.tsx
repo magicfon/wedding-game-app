@@ -65,7 +65,7 @@ export default function GameLivePage() {
   const supabase = createSupabaseBrowser()
 
   // 使用統一的即時遊戲狀態
-  const { gameState, currentQuestion, loading, calculateTimeLeft } = useRealtimeGameState()
+  const { gameState, currentQuestion, loading, calculateTimeLeft, prefetchNextQuestion } = useRealtimeGameState()
 
   // 使用音效系統
   const { isSoundEnabled, toggleSound, playSound, stopSound, preloadSounds, isLoaded } = useSoundEffects()
@@ -263,6 +263,8 @@ export default function GameLivePage() {
         console.log('切換到排行榜階段')
         console.log('completed:', gameState.completed_questions, 'total:', gameState.total_questions)
         fetchScoreRankings()
+        // 進入排行榜時，預載下一題
+        prefetchNextQuestion()
       } else if (serverPhase === 'question') {
         // 如果伺服器是 'question'，但本地已經是 'options'（時間到自動切換），則不重置回去
         // 除非題目改變（由另一個 useEffect 處理）
@@ -285,7 +287,10 @@ export default function GameLivePage() {
       // 時間結束，重新獲取最新的答題數據以顯示最終結果
       fetchAnswerDistribution()
       fetchCurrentQuestionAnswerCount()
+      fetchCurrentQuestionAnswerCount()
       console.log('倒數結束：重新獲取答題數據以顯示最終分佈')
+      // 倒數結束時，預載下一題（以防不進入排行榜直接下一題）
+      prefetchNextQuestion()
       // 不再自動跳轉到排行榜，由管理控制台的「排行榜」按鈕手動控制
     }
   }, [displayPhase, timeLeft, currentQuestion])

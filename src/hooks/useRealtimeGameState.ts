@@ -32,6 +32,8 @@ export function useRealtimeGameState() {
   const initializedRef = useRef(false)
   // 追蹤當前遊戲狀態，用於在 callback 中檢查（避免 closure 問題）
   const gameStateRef = useRef<GameState | null>(null)
+  // 緩存預載的下一題，用於實現無縫切換
+  const prefetchedQuestionRef = useRef<Question | null>(null)
 
   const supabase = createSupabaseBrowser()
 
@@ -48,6 +50,15 @@ export function useRealtimeGameState() {
       return
     }
 
+    // 檢查是否有預載的題目匹配
+    if (prefetchedQuestionRef.current && prefetchedQuestionRef.current.id === questionId) {
+      console.log('⚡ 使用預載題目:', prefetchedQuestionRef.current.question_text)
+      setCurrentQuestion(prefetchedQuestionRef.current)
+      lastQuestionIdRef.current = questionId
+      prefetchedQuestionRef.current = null // 使用後清空
+      return
+    }
+
     try {
       const { data, error } = await supabase
         .from('questions')
@@ -60,6 +71,75 @@ export function useRealtimeGameState() {
       lastQuestionIdRef.current = questionId
     } catch (err) {
       console.error('Error fetching question:', err)
+    }
+  }, [supabase])
+
+  // 預載下一題資料（在排行榜或選項階段呼叫）
+  const prefetchNextQuestion = useCallback(async () => {
+    if (!gameStateRef.current?.current_question_id) return
+
+    try {
+      const currentId = gameStateRef.current.current_question_id
+      const activeSet = gameStateRef.current.active_question_set || 'formal'
+
+      console.log('🔄 開始預載下一題...')
+
+      // 先獲取當前題目資訊以得知 display_order
+      const { data: currentQ } = await supabase
+        .from('questions')
+        .select('id, display_order')
+        .eq('id', currentId)
+        .single()
+
+      if (!currentQ) return
+
+      // 尋找下一題（邏輯與 control API 相同）
+      let { data: nextQuestion } = await supabase
+        .from('questions')
+        .select('*')
+        .eq('is_active', true)
+        .eq('category', activeSet)
+        .eq('display_order', currentQ.display_order)
+        .gt('id', currentQ.id)
+        .order('id', { ascending: true })
+        .limit(1)
+        .single()
+
+      if (!nextQuestion) {
+        const { data: nextOrderQuestion } = await supabase
+          .from('questions')
+          .select('*')
+          .eq('is_active', true)
+          .eq('category', activeSet)
+          .gt('display_order', currentQ.display_order)
+          .order('display_order', { ascending: true })
+          .order('id', { ascending: true })
+          .limit(1)
+          .single()
+
+        nextQuestion = nextOrderQuestion
+      }
+
+      if (nextQuestion) {
+        console.log('💾 下一題已預載:', nextQuestion.question_text)
+        prefetchedQuestionRef.current = nextQuestion
+
+        // 如果有媒體，預先載入圖片/影片
+        if (nextQuestion.media_url) {
+          if (nextQuestion.media_type === 'image') {
+            const img = new Image()
+            img.src = nextQuestion.media_url
+            console.log('🖼️ 預載圖片:', nextQuestion.media_url)
+          } else if (nextQuestion.media_type === 'video') {
+            const video = document.createElement('video')
+            video.preload = 'auto'
+            video.src = nextQuestion.media_url
+            console.log('🎬 預載影片:', nextQuestion.media_url)
+          }
+        }
+      }
+    } catch (err) {
+      console.error('預載下一題失敗:', err)
     }
   }, [supabase])
 
@@ -257,6 +337,7 @@ export function useRealtimeGameState() {
     loading,
     error,
     calculateTimeLeft,
-    refetch: fetchGameState
+    refetch: fetchGameState,
+    prefetchNextQuestion
   }
 }
