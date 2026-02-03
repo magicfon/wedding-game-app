@@ -798,16 +798,6 @@ export default function GameLivePage() {
                     )}
                   </div>
                 )}
-
-                {/* 階段指示器 - 改為固定在底部，避免影響版面高度 */}
-                <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-10">
-                  <div className="inline-flex items-center space-x-2 bg-black bg-opacity-40 rounded-full px-6 py-3 backdrop-blur-sm border border-white border-opacity-30">
-                    <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
-                    <span className="text-white text-lg font-medium">
-                      {currentQuestion.media_type === 'video' ? '影片播放中...' : '題目展示中...'}
-                    </span>
-                  </div>
-                </div>
               </div>
             </div>
           ) : displayPhase === 'options' ? (
