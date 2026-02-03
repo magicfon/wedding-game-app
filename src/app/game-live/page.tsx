@@ -305,10 +305,20 @@ export default function GameLivePage() {
     }
   }, [displayPhase, timeLeft, currentQuestion, playSound, stopSound])
 
-  // 當題目切換時，重置所有音效狀態
+  // 當題目切換時，重置所有音效狀態和顯示階段（修復上一題殘留和音效過早播放問題）
   useEffect(() => {
-    countdownPlayingRef.current = false
-    timeUpPlayedRef.current = null
+    if (currentQuestion?.id) {
+      console.log('🔄 題目切換，重置狀態: ID =', currentQuestion.id)
+      // 立即重置顯示階段為 question，避免顯示上一題的選項
+      setDisplayPhase('question')
+      // 重置音效狀態
+      countdownPlayingRef.current = false
+      timeUpPlayedRef.current = null
+      correctAnswerPlayedRef.current = null
+      // 重置時間為一個大值，避免 timeLeft <= 0 條件被觸發
+      setTimeLeft(999999)
+      setDisplayTimeLeft(999999)
+    }
   }, [currentQuestion?.id])
 
   // 當題目變更時，立即初始化時間（修復第一題時間為 0 的問題）
@@ -322,13 +332,20 @@ export default function GameLivePage() {
   }, [currentQuestion?.id, gameState?.question_start_time])
 
   // 時間結束音效（使用 ref 防止重複播放）
-  // 加入 question_start_time 檢查，確保遊戲真正開始後才觸發
+  // 加入 question_start_time 檢查和 displayPhase 檢查，確保遊戲真正開始後才觸發
   useEffect(() => {
-    if (displayPhase === 'options' && timeLeft <= 0 && currentQuestion && gameState?.question_start_time) {
+    // 額外檢查：timeLeft 必須是真正經過倒數而不是初始值
+    // 且 displayPhase 必須是 'options'（不是 'question' 階段）
+    if (displayPhase === 'options' &&
+      timeLeft <= 0 &&
+      timeLeft !== 999999 &&  // 排除初始重置值
+      currentQuestion &&
+      gameState?.question_start_time) {
       // 檢查是否已經為這道題播放過 TIME_UP 音效
       if (timeUpPlayedRef.current !== currentQuestion.id) {
         timeUpPlayedRef.current = currentQuestion.id
         playSound('TIME_UP')
+        console.log('🔔 播放 TIME_UP 音效')
       }
     }
   }, [displayPhase, timeLeft, currentQuestion, gameState?.question_start_time, playSound])
@@ -336,13 +353,18 @@ export default function GameLivePage() {
   // 正確答案音效（使用 ref 防止重複播放）
   // 加入 question_start_time 檢查，確保遊戲真正開始後才觸發
   useEffect(() => {
-    if (displayPhase === 'options' && timeLeft <= 0 && currentQuestion && gameState?.question_start_time) {
+    if (displayPhase === 'options' &&
+      timeLeft <= 0 &&
+      timeLeft !== 999999 &&  // 排除初始重置值
+      currentQuestion &&
+      gameState?.question_start_time) {
       // 檢查是否已經為這道題播放過正確答案音效
       if (correctAnswerPlayedRef.current !== currentQuestion.id) {
         correctAnswerPlayedRef.current = currentQuestion.id
         // 延遲一點時間播放正確答案音效，讓時間結束音效先播放
         setTimeout(() => {
           playSound('CORRECT_ANSWER')
+          console.log('✅ 播放 CORRECT_ANSWER 音效')
         }, 500)
       }
     }
