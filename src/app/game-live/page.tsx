@@ -1283,83 +1283,84 @@ function WaitingStage({ gameState }: { gameState: any }) {
   }, [fetchJoinedPlayers, supabase])
 
   return (
-    <div className="h-screen flex items-center justify-center p-4 overflow-hidden">
-      <div className="w-full max-w-6xl text-center flex flex-col h-full max-h-full">
+    <div className="h-screen w-screen p-6 overflow-hidden">
+      <div className="w-full h-full max-w-[1800px] mx-auto flex flex-col">
         {/* 主標題 */}
-        <div className="mb-4 flex-shrink-0">
-          <h1 className="text-5xl md:text-6xl font-black text-white mb-2">
+        <div className="mb-6 flex-shrink-0">
+          <h1 className="text-6xl md:text-7xl lg:text-8xl font-black text-white mb-3 text-center">
             快問快答
           </h1>
-          <p className="text-xl md:text-2xl text-white opacity-80">
+          <p className="text-2xl md:text-3xl text-white opacity-90 text-center">
             掃描 QR Code 加入遊戲
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch flex-1 min-h-0">
+        {/* 主要內容區域 */}
+        <div className="flex-1 flex gap-8 min-h-0">
           {/* 左側：玩家列表 */}
-          <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl p-4 flex flex-col min-h-0">
-            <div className="flex items-center justify-center space-x-3 mb-4 flex-shrink-0">
-              <Users className="w-8 h-8 text-white" />
-              <h2 className="text-2xl font-bold text-black">
+          <div className="flex-1 bg-white bg-opacity-10 backdrop-blur-md rounded-3xl p-6 flex flex-col min-h-0">
+            <div className="flex items-center justify-center space-x-4 mb-6 flex-shrink-0">
+              <Users className="w-12 h-12 text-white" />
+              <h2 className="text-4xl font-bold text-black">
                 已加入玩家 ({playerCount})
               </h2>
             </div>
 
             <div className="flex-1 min-h-0">
               {joinedPlayers.length > 0 ? (
-                <div className="grid grid-cols-4 gap-2">
-                  {joinedPlayers.slice(0, 16).map((player, index) => (
-                    <div key={player.line_id} className="flex flex-col items-center bg-white bg-opacity-20 rounded-lg p-2">
+                <div className="grid grid-cols-5 lg:grid-cols-6 gap-3">
+                  {joinedPlayers.slice(0, 30).map((player, index) => (
+                    <div key={player.line_id} className="flex flex-col items-center bg-white bg-opacity-20 rounded-xl p-3">
                       {player.avatar_url ? (
                         <img
                           src={player.avatar_url}
                           alt={player.display_name}
-                          className="w-10 h-10 rounded-full object-cover mb-1"
+                          className="w-16 h-16 rounded-full object-cover mb-2"
                         />
                       ) : (
-                        <div className="w-10 h-10 bg-white bg-opacity-30 rounded-full flex items-center justify-center text-black font-bold text-sm mb-1">
+                        <div className="w-16 h-16 bg-white bg-opacity-30 rounded-full flex items-center justify-center text-black font-bold text-2xl mb-2">
                           {player.display_name?.charAt(0) || '?'}
                         </div>
                       )}
-                      <span className="text-xs font-medium text-black text-center truncate w-full">
+                      <span className="text-sm font-medium text-black text-center truncate w-full">
                         {player.display_name}
                       </span>
                     </div>
                   ))}
-                  {joinedPlayers.length > 16 && (
-                    <div className="flex flex-col items-center justify-center bg-white bg-opacity-20 rounded-lg p-2">
-                      <div className="w-10 h-10 bg-white bg-opacity-40 rounded-full flex items-center justify-center text-black font-bold text-sm mb-1">
-                        +{joinedPlayers.length - 16}
+                  {joinedPlayers.length > 30 && (
+                    <div className="flex flex-col items-center justify-center bg-white bg-opacity-20 rounded-xl p-3">
+                      <div className="w-16 h-16 bg-white bg-opacity-40 rounded-full flex items-center justify-center text-black font-bold text-xl mb-2">
+                        +{joinedPlayers.length - 30}
                       </div>
-                      <span className="text-xs font-medium text-black">更多</span>
+                      <span className="text-sm font-medium text-black">更多</span>
                     </div>
                   )}
                 </div>
               ) : (
-                <div className="text-black text-base opacity-60 py-4 text-center">
+                <div className="text-black text-2xl opacity-60 py-8 text-center">
                   等待玩家加入...
                 </div>
               )}
             </div>
           </div>
 
-          {/* 右側：QR Code */}
-          <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl p-4 flex flex-col items-center">
-            <QrCode className="w-10 h-10 text-white mb-3" />
-            <h3 className="text-xl font-bold text-black mb-4">掃描加入遊戲</h3>
-            <div className="w-96 h-96 bg-white rounded-2xl flex items-center justify-center shadow-xl">
+          {/* 右側：QR Code 和選單 */}
+          <div className="w-[500px] bg-white bg-opacity-10 backdrop-blur-md rounded-3xl p-6 flex flex-col items-center">
+            <QrCode className="w-12 h-12 text-white mb-4" />
+            <h3 className="text-2xl font-bold text-black mb-6">掃描加入遊戲</h3>
+            <div className="w-[450px] h-[450px] bg-white rounded-3xl flex items-center justify-center shadow-2xl">
               <img
                 src="/line2dcode.png"
                 alt="QR Code"
-                className="w-full h-full rounded-2xl object-contain p-4"
+                className="w-full h-full rounded-3xl object-contain p-6"
               />
             </div>
             <img
               src="/menu2-2.jpg"
               alt="Menu"
-              className="w-96 h-auto rounded-2xl shadow-xl mt-4"
+              className="w-[450px] h-auto rounded-3xl shadow-2xl mt-6"
             />
-            <p className="text-black text-lg opacity-80 mt-4">
+            <p className="text-black text-xl opacity-90 mt-6 text-center">
               使用 LINE 掃描 QR Code<br />
               進入快問快答遊戲
             </p>
@@ -1367,27 +1368,25 @@ function WaitingStage({ gameState }: { gameState: any }) {
         </div>
 
         {/* 遊戲計分規則 */}
-        <div className="mt-4 bg-white bg-opacity-20 backdrop-blur-md rounded-2xl p-6 flex-shrink-0">
-          <h3 className="text-2xl md:text-3xl font-bold text-black mb-4 flex items-center justify-center gap-2">
+        <div className="mt-6 bg-white bg-opacity-20 backdrop-blur-md rounded-3xl p-8 flex-shrink-0">
+          <h3 className="text-3xl md:text-4xl font-bold text-black mb-6 flex items-center justify-center gap-3">
             <span>🎲</span> 遊戲計分規則
           </h3>
-          <div className="grid grid-cols-2 gap-6 text-black">
-            <div className="bg-white bg-opacity-30 rounded-xl p-4 text-center">
-              <div className="text-4xl mb-2">✅</div>
-              <div className="text-xl font-semibold mb-2">答對</div>
-              <div className="text-2xl font-bold text-green-600">51~100 分</div>
-              <div className="text-sm opacity-80 mt-2">基礎50分 + 隨機骲1~50分</div>
+          <div className="grid grid-cols-2 gap-8 text-black max-w-4xl mx-auto">
+            <div className="bg-white bg-opacity-30 rounded-2xl p-6 text-center">
+              <div className="text-5xl mb-3">✅</div>
+              <div className="text-2xl font-semibold mb-3">答對</div>
+              <div className="text-3xl font-bold text-green-600">51~100 分</div>
+              <div className="text-base opacity-80 mt-3">基礎50分 + 隨機骲1~50分</div>
             </div>
-            <div className="bg-white bg-opacity-30 rounded-xl p-4 text-center">
-              <div className="text-4xl mb-2">🎯</div>
-              <div className="text-xl font-semibold mb-2">答錯參與獎</div>
-              <div className="text-2xl font-bold text-yellow-600">50 分</div>
-              <div className="text-sm opacity-80 mt-2">鼓勵大家踴躍答題！</div>
+            <div className="bg-white bg-opacity-30 rounded-2xl p-6 text-center">
+              <div className="text-5xl mb-3">🎯</div>
+              <div className="text-2xl font-semibold mb-3">答錯參與獎</div>
+              <div className="text-3xl font-bold text-yellow-600">50 分</div>
+              <div className="text-base opacity-80 mt-3">鼓勵大家踴躍答題！</div>
             </div>
           </div>
         </div>
-
-
       </div>
     </div>
   )
