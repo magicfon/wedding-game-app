@@ -1344,22 +1344,17 @@ function WaitingStage({ gameState }: { gameState: any }) {
             </div>
           </div>
 
-          {/* 右側：QR Code 和選單 */}
+          {/* 右側：QR Code */}
           <div className="w-[500px] bg-white bg-opacity-10 backdrop-blur-md rounded-3xl p-6 flex flex-col items-center">
             <QrCode className="w-12 h-12 text-white mb-4" />
             <h3 className="text-2xl font-bold text-black mb-6">掃描加入遊戲</h3>
-            <div className="w-[450px] h-[450px] bg-white rounded-3xl flex items-center justify-center shadow-2xl">
+            <div className="w-full aspect-square bg-white rounded-3xl flex items-center justify-center shadow-2xl p-4">
               <img
                 src="/line2dcode.png"
                 alt="QR Code"
-                className="w-full h-full rounded-3xl object-contain p-6"
+                className="w-full h-full object-contain"
               />
             </div>
-            <img
-              src="/menu2-2.jpg"
-              alt="Menu"
-              className="w-[450px] h-auto rounded-3xl shadow-2xl mt-6"
-            />
             <p className="text-black text-xl opacity-90 mt-6 text-center">
               使用 LINE 掃描 QR Code<br />
               進入快問快答遊戲
@@ -1367,24 +1362,36 @@ function WaitingStage({ gameState }: { gameState: any }) {
           </div>
         </div>
 
-        {/* 遊戲計分規則 */}
-        <div className="mt-6 bg-white bg-opacity-20 backdrop-blur-md rounded-3xl p-8 flex-shrink-0">
-          <h3 className="text-3xl md:text-4xl font-bold text-black mb-6 flex items-center justify-center gap-3">
-            <span>🎲</span> 遊戲計分規則
-          </h3>
-          <div className="grid grid-cols-2 gap-8 text-black max-w-4xl mx-auto">
-            <div className="bg-white bg-opacity-30 rounded-2xl p-6 text-center">
-              <div className="text-5xl mb-3">✅</div>
-              <div className="text-2xl font-semibold mb-3">答對</div>
-              <div className="text-3xl font-bold text-green-600">51~100 分</div>
-              <div className="text-base opacity-80 mt-3">基礎50分 + 隨機骲1~50分</div>
+        {/* 底部區域：遊戲計分規則 + menu2-2 */}
+        <div className="mt-6 flex gap-8 flex-shrink-0">
+          {/* 左側：遊戲計分規則 - 和玩家列表同寬 */}
+          <div className="flex-1 bg-white bg-opacity-20 backdrop-blur-md rounded-3xl p-8">
+            <h3 className="text-3xl md:text-4xl font-bold text-black mb-6 flex items-center justify-center gap-3">
+              <span>🎲</span> 遊戲計分規則
+            </h3>
+            <div className="grid grid-cols-2 gap-8 text-black">
+              <div className="bg-white bg-opacity-30 rounded-2xl p-6 text-center">
+                <div className="text-5xl mb-3">✅</div>
+                <div className="text-2xl font-semibold mb-3">答對</div>
+                <div className="text-3xl font-bold text-green-600">51~100 分</div>
+                <div className="text-base opacity-80 mt-3">基礎50分 + 隨機骲1~50分</div>
+              </div>
+              <div className="bg-white bg-opacity-30 rounded-2xl p-6 text-center">
+                <div className="text-5xl mb-3">🎯</div>
+                <div className="text-2xl font-semibold mb-3">答錯參與獎</div>
+                <div className="text-3xl font-bold text-yellow-600">50 分</div>
+                <div className="text-base opacity-80 mt-3">鼓勵大家踴躍答題！</div>
+              </div>
             </div>
-            <div className="bg-white bg-opacity-30 rounded-2xl p-6 text-center">
-              <div className="text-5xl mb-3">🎯</div>
-              <div className="text-2xl font-semibold mb-3">答錯參與獎</div>
-              <div className="text-3xl font-bold text-yellow-600">50 分</div>
-              <div className="text-base opacity-80 mt-3">鼓勵大家踴躍答題！</div>
-            </div>
+          </div>
+
+          {/* 右側：menu2-2 圖片 */}
+          <div className="w-[500px] bg-white bg-opacity-10 backdrop-blur-md rounded-3xl p-6 flex items-center justify-center">
+            <img
+              src="/menu2-2.jpg"
+              alt="Menu"
+              className="w-full h-auto rounded-3xl shadow-2xl"
+            />
           </div>
         </div>
       </div>
