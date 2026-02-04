@@ -1018,14 +1018,14 @@ export default function GameLivePage() {
                       </div>
                     </div>
                   ) : (
-                    <div className="space-y-4">
+                    <div className="inline-flex items-center space-x-2">
                       <div className="inline-flex items-center space-x-4 bg-gradient-to-r from-fuchsia-600 via-purple-600 to-cyan-500 rounded-full px-6 py-3 backdrop-blur-sm border-4 border-white shadow-[0_0_20px_#ff00ff,0_0_40px_#ff00ff,0_0_60px_#00ffff,0_0_80px_#00ffff] animate-pulse">
                         <div className="text-white text-xl md:text-2xl font-black drop-shadow-lg">
                           ✅ 正確答案：{currentQuestion.correct_answer}
                         </div>
                       </div>
                       <div className="inline-flex items-center space-x-4 bg-black bg-opacity-40 rounded-full px-6 py-3 backdrop-blur-sm border border-white border-opacity-30">
-                        <div className="text-white text-sm">
+                        <div className="text-white text-xl md:text-2xl font-black">
                           總共 {currentQuestionAnswerCount} 人參與答題
                         </div>
                       </div>
