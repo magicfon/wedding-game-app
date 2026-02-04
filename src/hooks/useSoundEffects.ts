@@ -64,7 +64,8 @@ export const useSoundEffects = (): UseSoundEffectsReturn => {
 
           // 設定音效屬性
           audio.preload = 'auto'
-          audio.volume = 0.7 // 設定適當的音量
+          // 倒數音效設為最大音量，其他音效保持 0.7
+          audio.volume = key === 'COUNTDOWN' ? 1.0 : 0.7
 
           // 等待音效載入
           await new Promise((resolve, reject) => {
