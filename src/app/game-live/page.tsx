@@ -1355,10 +1355,6 @@ function WaitingStage({ gameState }: { gameState: any }) {
                 className="w-full h-full object-contain"
               />
             </div>
-            <p className="text-black text-2xl md:text-3xl opacity-90 mt-6 text-center leading-relaxed">
-              使用 LINE 掃描 QR Code<br />
-              進入快問快答遊戲
-            </p>
           </div>
         </div>
 
@@ -1398,3 +1394,4 @@ function WaitingStage({ gameState }: { gameState: any }) {
     </div>
   )
 }
+
