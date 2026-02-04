@@ -9,6 +9,7 @@ interface UseBackgroundMusicProps {
 export const useBackgroundMusic = ({ url, enabled, volume = 0.3 }: UseBackgroundMusicProps) => {
     const audioRef = useRef<HTMLAudioElement | null>(null)
     const [isPlaying, setIsPlaying] = useState(false)
+    const hasInteractedRef = useRef(false)
 
     useEffect(() => {
         // 初始化 Audio 物件
@@ -17,10 +18,50 @@ export const useBackgroundMusic = ({ url, enabled, volume = 0.3 }: UseBackground
         audio.volume = volume
         audioRef.current = audio
 
+        // 頁面載入時立即嘗試播放（如果 enabled）
+        if (enabled) {
+            const playPromise = audio.play()
+            if (playPromise !== undefined) {
+                playPromise
+                    .then(() => {
+                        console.log('🔊 背景音樂已播放（頁面載入時）')
+                        setIsPlaying(true)
+                    })
+                    .catch((error) => {
+                        console.log('🚫 自動播放被阻止，等待用戶交互:', error)
+                        setIsPlaying(false)
+                    })
+            }
+        }
+
+        // 監聽用戶交互事件，在首次交互時嘗試播放音樂
+        const handleInteraction = () => {
+            if (!hasInteractedRef.current && enabled && audioRef.current) {
+                hasInteractedRef.current = true
+                audioRef.current.play()
+                    .then(() => {
+                        console.log('🔊 背景音樂已播放（用戶交互後）')
+                        setIsPlaying(true)
+                    })
+                    .catch((error) => {
+                        console.log('播放失敗:', error)
+                        setIsPlaying(false)
+                    })
+                // 移除事件監聽器
+                window.removeEventListener('click', handleInteraction)
+                window.removeEventListener('keydown', handleInteraction)
+            }
+        }
+
+        window.addEventListener('click', handleInteraction)
+        window.addEventListener('keydown', handleInteraction)
+
         return () => {
             audio.pause()
             audio.src = ''
             audioRef.current = null
+            window.removeEventListener('click', handleInteraction)
+            window.removeEventListener('keydown', handleInteraction)
         }
     }, [url])
 

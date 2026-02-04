@@ -101,11 +101,13 @@ export default function LotteryMachineLivePage() {
     volume: 0.2
   })
 
-  // 處理用戶交互以啟用音效 - 每次交互都重新播放音樂
+  // 處理用戶交互以啟用音效 - 只在首次交互時嘗試播放（瀏覽器自動播放限制）
   useEffect(() => {
     const handleInteraction = () => {
       tryPlay()
-      // 不移除事件監聽器，讓每次交互都重新播放音樂
+      // 移除事件監聽器，只在首次交互時嘗試播放
+      window.removeEventListener('click', handleInteraction)
+      window.removeEventListener('keydown', handleInteraction)
     }
 
     window.addEventListener('click', handleInteraction)
