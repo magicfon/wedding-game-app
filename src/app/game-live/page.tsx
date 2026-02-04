@@ -1098,17 +1098,17 @@ export default function GameLivePage() {
                             {/* 選擇此選項的玩家頭像 - 即時顯示，更大空間 */}
                             <div className="flex-1 flex flex-col justify-start overflow-hidden">
                               {distribution && distribution.users && distribution.users.length > 0 ? (
-                                <div className="grid grid-cols-12 gap-1 justify-items-center content-start">
+                                <div className="flex flex-wrap gap-1 justify-center items-center content-start w-full h-full">
                                   {distribution.users.map((user, userIndex) => (
-                                    <div key={userIndex} className="flex flex-col items-center">
+                                    <div key={userIndex} className="flex flex-col items-center justify-center flex-1 min-w-[40px] max-w-[80px] aspect-square">
                                       {user.avatar_url ? (
                                         <img
                                           src={user.avatar_url}
                                           alt={user.display_name}
-                                          className="w-7 h-7 md:w-9 md:h-9 rounded-full object-cover border-2 border-white"
+                                          className="w-full h-full rounded-full object-cover border-2 border-white"
                                         />
                                       ) : (
-                                        <div className="w-7 h-7 md:w-9 md:h-9 bg-white bg-opacity-30 rounded-full flex items-center justify-center text-black font-bold text-xs md:text-sm border-2 border-white">
+                                        <div className="w-full h-full bg-white bg-opacity-30 rounded-full flex items-center justify-center text-black font-bold text-xs md:text-sm border-2 border-white">
                                           {user.display_name?.charAt(0) || '?'}
                                         </div>
                                       )}
