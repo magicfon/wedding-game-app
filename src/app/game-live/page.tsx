@@ -1089,7 +1089,7 @@ export default function GameLivePage() {
                                 <div className="text-xl md:text-xl font-black text-white mr-3 w-10 text-center flex-shrink-0">
                                   {option.key}
                                 </div>
-                                <div className="text-sm md:text-base font-bold text-white leading-tight flex-1 line-clamp-1">
+                                <div className="text-base md:text-lg font-bold text-white leading-tight flex-1 line-clamp-1">
                                   {option.text}
                                 </div>
                                 {/* 答題統計 - 放在答案右邊 */}
