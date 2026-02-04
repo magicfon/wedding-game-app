@@ -1394,7 +1394,7 @@ export default function LotteryMachineLivePage() {
   return (
     <div className="lottery-machine-live-page" data-lottery-live="true">
       {/* 標題 */}
-      <div className="title">🎰 抽獎機 🎰</div>
+      <div className="title">🎰 彩球機 🎰</div>
 
       {/* 編輯器控制按鈕 */}
       <div className="editor-controls">
