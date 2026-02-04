@@ -241,7 +241,7 @@ export default function QuizPage() {
         <div className="text-center py-16">
           <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md mx-auto">
             <Trophy className="w-16 h-16 text-gray-400 mx-auto mb-6" />
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">遊戲暫未開始</h2>
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">您已加入遊戲，等待遊戲開始</h2>
             <p className="text-gray-600 mb-4">請等待主持人開始遊戲</p>
             <p className="text-sm text-gray-400 mb-4">如果畫面長時間未更新，請點擊下方按鈕</p>
             <button
