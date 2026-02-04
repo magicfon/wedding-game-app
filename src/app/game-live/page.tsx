@@ -1345,17 +1345,17 @@ function WaitingStage({ gameState }: { gameState: any }) {
           </div>
 
           {/* 右側：QR Code */}
-          <div className="w-[500px] bg-white bg-opacity-10 backdrop-blur-md rounded-3xl p-6 flex flex-col items-center">
-            <QrCode className="w-12 h-12 text-white mb-4" />
-            <h3 className="text-2xl font-bold text-black mb-6">掃描加入遊戲</h3>
-            <div className="w-full aspect-square bg-white rounded-3xl flex items-center justify-center shadow-2xl p-4">
+          <div className="w-[500px] bg-white bg-opacity-10 backdrop-blur-md rounded-3xl p-8 flex flex-col items-center">
+            <QrCode className="w-16 h-16 text-white mb-6" />
+            <h3 className="text-3xl md:text-4xl font-bold text-black mb-8">掃描加入遊戲</h3>
+            <div className="w-full aspect-square bg-white rounded-3xl flex items-center justify-center shadow-2xl p-6">
               <img
                 src="/line2dcode.png"
                 alt="QR Code"
                 className="w-full h-full object-contain"
               />
             </div>
-            <p className="text-black text-xl opacity-90 mt-6 text-center">
+            <p className="text-black text-2xl md:text-3xl opacity-90 mt-8 text-center leading-relaxed">
               使用 LINE 掃描 QR Code<br />
               進入快問快答遊戲
             </p>
@@ -1386,7 +1386,7 @@ function WaitingStage({ gameState }: { gameState: any }) {
           </div>
 
           {/* 右側：menu2-2 圖片 */}
-          <div className="w-[500px] bg-white bg-opacity-10 backdrop-blur-md rounded-3xl p-6 flex items-center justify-center">
+          <div className="w-[600px] bg-white bg-opacity-10 backdrop-blur-md rounded-3xl p-8 flex items-center justify-center">
             <img
               src="/menu2-2.jpg"
               alt="Menu"
