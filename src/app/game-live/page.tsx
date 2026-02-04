@@ -1371,16 +1371,16 @@ function WaitingStage({ gameState }: { gameState: any }) {
             </h3>
             <div className="grid grid-cols-2 gap-8 text-black">
               <div className="bg-white bg-opacity-30 rounded-2xl p-6 text-center">
-                <div className="text-5xl mb-3">✅</div>
-                <div className="text-2xl font-semibold mb-3">答對</div>
-                <div className="text-3xl font-bold text-green-600">51~100 分</div>
-                <div className="text-base opacity-80 mt-3">基礎50分 + 隨機骲1~50分</div>
+                <div className="text-5xl mb-3">🎉</div>
+                <div className="text-2xl font-semibold mb-3">參與答題</div>
+                <div className="text-3xl font-bold text-blue-600">50 分基本分</div>
+                <div className="text-base opacity-80 mt-3">只要有參與答題就會有基本分！</div>
               </div>
               <div className="bg-white bg-opacity-30 rounded-2xl p-6 text-center">
-                <div className="text-5xl mb-3">🎯</div>
-                <div className="text-2xl font-semibold mb-3">答錯參與獎</div>
-                <div className="text-3xl font-bold text-yellow-600">50 分</div>
-                <div className="text-base opacity-80 mt-3">鼓勵大家踴躍答題！</div>
+                <div className="text-5xl mb-3">✅</div>
+                <div className="text-2xl font-semibold mb-3">答對獎勵</div>
+                <div className="text-3xl font-bold text-green-600">額外 1~50 分</div>
+                <div className="text-base opacity-80 mt-3">答對會額外隨機獲得 1~50 分不等</div>
               </div>
             </div>
           </div>
