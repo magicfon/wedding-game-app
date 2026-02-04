@@ -1370,36 +1370,14 @@ function WaitingStage({ gameState }: { gameState: any }) {
               </h2>
             </div>
 
-            <div className="flex-1 min-h-0">
+            <div className="flex-1 min-h-0 overflow-hidden">
               {joinedPlayers.length > 0 ? (
-                <div className="grid grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-2">
-                  {joinedPlayers.slice(0, 60).map((player, index) => (
-                    <div key={player.line_id} className="flex flex-col items-center bg-white bg-opacity-20 rounded-lg p-2">
-                      {player.avatar_url ? (
-                        <img
-                          src={player.avatar_url}
-                          alt={player.display_name}
-                          className="w-12 h-12 rounded-full object-cover mb-1"
-                        />
-                      ) : (
-                        <div className="w-12 h-12 bg-white bg-opacity-30 rounded-full flex items-center justify-center text-black font-bold text-xl mb-1">
-                          {player.display_name?.charAt(0) || '?'}
-                        </div>
-                      )}
-                      <span className="text-xs font-medium text-black text-center truncate w-full">
-                        {player.display_name}
-                      </span>
-                    </div>
-                  ))}
-                  {joinedPlayers.length > 60 && (
-                    <div className="flex flex-col items-center justify-center bg-white bg-opacity-20 rounded-lg p-2">
-                      <div className="w-12 h-12 bg-white bg-opacity-40 rounded-full flex items-center justify-center text-black font-bold text-lg mb-1">
-                        +{joinedPlayers.length - 60}
-                      </div>
-                      <span className="text-xs font-medium text-black">更多</span>
-                    </div>
-                  )}
-                </div>
+                <AdaptiveAvatarGrid
+                  users={joinedPlayers.map(p => ({
+                    display_name: p.display_name,
+                    avatar_url: p.avatar_url || undefined
+                  }))}
+                />
               ) : (
                 <div className="text-black text-2xl opacity-60 py-8 text-center">
                   等待玩家加入...
