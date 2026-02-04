@@ -101,21 +101,27 @@ export default function LotteryMachineLivePage() {
     volume: 0.2
   })
 
-  // 處理用戶交互以啟用音效 - 只在首次交互時嘗試播放（瀏覽器自動播放限制）
+  // 處理用戶交互以啟用音效 - 頁面載入時自動播放，同時監聽首次交互以處理瀏覽器限制
   useEffect(() => {
+    // 立即嘗試播放（可能因瀏覽器限制而失敗）
+    tryPlay()
+
     const handleInteraction = () => {
       tryPlay()
       // 移除事件監聽器，只在首次交互時嘗試播放
       window.removeEventListener('click', handleInteraction)
       window.removeEventListener('keydown', handleInteraction)
+      window.removeEventListener('touchstart', handleInteraction)
     }
 
     window.addEventListener('click', handleInteraction)
     window.addEventListener('keydown', handleInteraction)
+    window.addEventListener('touchstart', handleInteraction)
 
     return () => {
       window.removeEventListener('click', handleInteraction)
       window.removeEventListener('keydown', handleInteraction)
+      window.removeEventListener('touchstart', handleInteraction)
     }
   }, [tryPlay])
 
