@@ -533,6 +533,7 @@ export default function GameLivePage() {
         .gte('quiz_score', 0) // 顯示所有用戶，包括0分
         .order('quiz_score', { ascending: false })
         .order('join_time', { ascending: true }) // 同分時以加入時間排序
+        .limit(10) // 只顯示前10名
 
       if (error) throw error
 
@@ -877,7 +878,7 @@ export default function GameLivePage() {
               <div className="text-sm text-white opacity-80">
                 {gameState?.has_next_question === false && gameState?.is_game_active
                   ? '恭喜得獎的賓客!'
-                  : '前 6 名玩家'}
+                  : '前 10 名玩家'}
               </div>
             </div>
 
@@ -1212,12 +1213,12 @@ export default function GameLivePage() {
                     🏆 目前排行榜
                   </h2>
                   <div className="text-lg text-white opacity-80">
-                    全部玩家
+                    前 10 名玩家
                   </div>
                 </div>
 
                 {/* 分數排行榜 - 固定高度不滾動 */}
-                <div className="max-w-4xl mx-auto space-y-2 flex-1 w-full overflow-y-auto">
+                <div className="max-w-4xl mx-auto space-y-2 flex-1 w-full overflow-hidden">
                   {scoreRankings.map((player, index) => (
                     <div
                       key={player.line_id}
