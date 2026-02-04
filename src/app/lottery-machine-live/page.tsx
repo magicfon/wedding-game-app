@@ -2274,6 +2274,8 @@ export default function LotteryMachineLivePage() {
           justify-content: center;
           opacity: 0;
           transition: opacity 0.2s ease;
+          z-index: 10001;
+          pointer-events: auto;
         }
 
         .track-node:hover .node-delete {
