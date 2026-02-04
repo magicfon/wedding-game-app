@@ -1029,6 +1029,11 @@ export default function GameLivePage() {
                           總共 {currentQuestionAnswerCount} 人參與答題
                         </div>
                       </div>
+                      <div className="inline-flex items-center space-x-4 bg-gradient-to-r from-amber-500 to-orange-600 rounded-full px-6 py-3 backdrop-blur-sm border-2 border-white shadow-lg">
+                        <div className="text-white text-xl md:text-2xl font-black">
+                          第 {(gameState?.completed_questions || 0) + 1} 題 / 共 {gameState?.total_questions || 0} 題
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
