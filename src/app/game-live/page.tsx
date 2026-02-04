@@ -1009,12 +1009,19 @@ export default function GameLivePage() {
 
                   {/* 倒數計時或結果顯示 */}
                   {timeLeft > 0 ? (
-                    <div className="inline-flex items-center space-x-4 bg-black bg-opacity-40 rounded-full px-6 py-3 backdrop-blur-sm border border-white border-opacity-30">
-                      <div className="text-white text-sm font-bold">
-                        ⏱️ {Math.ceil(displayTimeLeft / 1000)}秒
+                    <div className="inline-flex items-center space-x-2">
+                      <div className="inline-flex items-center space-x-4 bg-black bg-opacity-40 rounded-full px-6 py-3 backdrop-blur-sm border border-white border-opacity-30">
+                        <div className="text-white text-sm font-bold">
+                          ⏱️ {Math.ceil(displayTimeLeft / 1000)}秒
+                        </div>
+                        <div className="text-white text-sm">
+                          已答題: {currentQuestionAnswerCount} 人
+                        </div>
                       </div>
-                      <div className="text-white text-sm">
-                        已答題: {currentQuestionAnswerCount} 人
+                      <div className="inline-flex items-center space-x-4 bg-black bg-opacity-40 rounded-full px-6 py-3 backdrop-blur-sm border border-white border-opacity-30">
+                        <div className="text-white text-xl md:text-2xl font-black">
+                          第 {(gameState?.completed_questions || 0) + 1} 題 / 共 {gameState?.total_questions || 0} 題
+                        </div>
                       </div>
                     </div>
                   ) : (
