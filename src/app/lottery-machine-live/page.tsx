@@ -1461,7 +1461,7 @@ export default function LotteryMachineLivePage() {
                   }}
                   className="physics-control-slider"
                 />
-                <span className="physics-control-value">{trackConfig.ballDiameter}px</span>
+                <span className="physics-control-value">{Math.round(trackConfig.ballDiameter)}px</span>
               </div>
             </div>
             <div className="physics-control-item">
