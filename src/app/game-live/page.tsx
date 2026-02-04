@@ -533,7 +533,6 @@ export default function GameLivePage() {
         .gte('quiz_score', 0) // 顯示所有用戶，包括0分
         .order('quiz_score', { ascending: false })
         .order('join_time', { ascending: true }) // 同分時以加入時間排序
-        .limit(10) // 只顯示前10名
 
       if (error) throw error
 
@@ -868,7 +867,7 @@ export default function GameLivePage() {
           ? 'bg-gradient-to-b from-purple-900 via-red-900 to-black'
           : ''
           }`}>
-          <div className="flex-1 p-6 flex flex-col">
+          <div className="flex-1 p-6 flex flex-col overflow-hidden">
             <div className="text-center mb-4 flex-shrink-0">
               <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">
                 {gameState?.has_next_question === false && gameState?.is_game_active
@@ -878,12 +877,12 @@ export default function GameLivePage() {
               <div className="text-sm text-white opacity-80">
                 {gameState?.has_next_question === false && gameState?.is_game_active
                   ? '恭喜得獎的賓客!'
-                  : '前 10 名玩家'}
+                  : '前 6 名玩家'}
               </div>
             </div>
 
             {/* 分數排行榜 - 固定高度不滾動 */}
-            <div className="max-w-4xl mx-auto space-y-2 flex-1 w-full">
+            <div className="max-w-4xl mx-auto space-y-2 flex-1 w-full overflow-y-auto">
               {scoreRankings.map((player, index) => (
                 <div
                   key={player.line_id}
@@ -1207,18 +1206,18 @@ export default function GameLivePage() {
               </div>
             ) : displayPhase === 'rankings' ? (
               // 排行榜階段 - 顯示分數排行榜
-              <div className="flex-1 p-6 flex flex-col">
+              <div className="flex-1 p-6 flex flex-col overflow-hidden">
                 <div className="text-center mb-4 flex-shrink-0">
                   <h2 className="text-4xl md:text-5xl font-bold text-white mb-2">
                     🏆 目前排行榜
                   </h2>
                   <div className="text-lg text-white opacity-80">
-                    前 10 名玩家
+                    全部玩家
                   </div>
                 </div>
 
                 {/* 分數排行榜 - 固定高度不滾動 */}
-                <div className="max-w-4xl mx-auto space-y-2 flex-1 w-full">
+                <div className="max-w-4xl mx-auto space-y-2 flex-1 w-full overflow-y-auto">
                   {scoreRankings.map((player, index) => (
                     <div
                       key={player.line_id}
