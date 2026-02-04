@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>頭像預覽 - 模擬 game-live 頁面</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: linear-gradient(to bottom right, #581c87, #1e3a8a, #312e81);
+        }
+
+        .avatar-container {
+            display: flex;
+            flex-wrap: wrap;
+            align-content: flex-start;
+            gap: 4px;
+        }
+
+        .avatar-item {
+            border-radius: 50%;
+            overflow: hidden;
+            border: 2px solid white;
+            flex-shrink: 0;
+        }
+
+        .avatar-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* 正確答案的發光效果 */
+        .correct-answer {
+            box-shadow: 0 0 30px #ff00ff, 0 0 60px #ff00ff, 0 0 90px #00ffff, 0 0 120px #00ffff;
+        }
+    </style>
+</head>
+
+<body class="h-screen w-screen overflow-hidden m-0 p-0">
+    <!-- 模擬 game-live 選項階段的完整佈局 -->
+    <div class="h-screen flex flex-col p-8 overflow-hidden">
+
+        <!-- 題目標題區域（縮小版） -->
+        <div class="text-center mb-8 flex-shrink-0">
+            <h2 class="text-4xl md:text-6xl font-bold text-white mb-4">
+                這是測試題目：新人的蜜月旅行要去哪裡？
+            </h2>
+
+            <!-- 正確答案顯示（模擬時間結束後的狀態） -->
+            <div class="space-y-4">
+                <div
+                    class="inline-flex items-center space-x-4 bg-gradient-to-r from-fuchsia-600 via-purple-600 to-cyan-500 rounded-full px-10 py-5 backdrop-blur-sm border-4 border-white shadow-[0_0_20px_#ff00ff,0_0_40px_#ff00ff,0_0_60px_#00ffff,0_0_80px_#00ffff] animate-pulse">
+                    <div class="text-white text-3xl md:text-4xl font-black drop-shadow-lg">
+                        ✅ 正確答案：A
+                    </div>
+                </div>
+                <div
+                    class="inline-flex items-center space-x-4 bg-black bg-opacity-40 rounded-full px-6 py-3 backdrop-blur-sm border border-white border-opacity-30">
+                    <div class="text-white text-lg">
+                        總共 81 人參與答題
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2x2 選項網格 - 固定等分大小 -->
+        <div class="grid grid-cols-2 grid-rows-2 gap-6 flex-1 min-h-0">
+
+            <!-- A 選項 - 1 個頭像 (正確答案) -->
+            <div
+                class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-red-500 to-red-600 shadow-2xl ring-[14px] ring-fuchsia-400 correct-answer z-10 animate-pulse">
+                <!-- 選項內容 -->
+                <div class="relative z-10 flex flex-col h-full p-4">
+                    <!-- 選項標題區域 -->
+                    <div class="flex items-center flex-shrink-0 mb-3">
+                        <div class="text-3xl md:text-5xl font-black text-white mr-4 w-16 text-center flex-shrink-0">A
+                        </div>
+                        <div class="text-3xl md:text-5xl font-bold text-white leading-tight flex-1">日本東京</div>
+                    </div>
+                    <!-- 答題統計 -->
+                    <div class="mb-2 flex-shrink-0">
+                        <div class="bg-white bg-opacity-20 rounded-full px-3 py-1 inline-block">
+                            <span class="text-black font-bold text-base" id="count-a">1 人 (1%)</span>
+                        </div>
+                    </div>
+                    <!-- 頭像容器 -->
+                    <div class="flex-1 flex flex-col justify-start overflow-hidden">
+                        <div id="avatars-a" class="avatar-container w-full h-full"></div>
+                    </div>
+                    <!-- 正確答案標示 -->
+                    <div
+                        class="absolute -top-4 -right-4 bg-gradient-to-r from-fuchsia-500 to-cyan-400 text-white rounded-full p-4 shadow-[0_0_20px_#ff00ff,0_0_40px_#00ffff] animate-bounce">
+                        <span class="text-3xl font-black">✓</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- B 選項 - 5 個頭像 -->
+            <div
+                class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-2xl transform transition-all duration-500">
+                <div class="relative z-10 flex flex-col h-full p-4">
+                    <div class="flex items-center flex-shrink-0 mb-3">
+                        <div class="text-3xl md:text-5xl font-black text-white mr-4 w-16 text-center flex-shrink-0">B
+                        </div>
+                        <div class="text-3xl md:text-5xl font-bold text-white leading-tight flex-1">法國巴黎</div>
+                    </div>
+                    <div class="mb-2 flex-shrink-0">
+                        <div class="bg-white bg-opacity-20 rounded-full px-3 py-1 inline-block">
+                            <span class="text-black font-bold text-base" id="count-b">5 人 (6%)</span>
+                        </div>
+                    </div>
+                    <div class="flex-1 flex flex-col justify-start overflow-hidden">
+                        <div id="avatars-b" class="avatar-container w-full h-full"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- C 選項 - 25 個頭像 -->
+            <div
+                class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-green-500 to-green-600 shadow-2xl transform transition-all duration-500">
+                <div class="relative z-10 flex flex-col h-full p-4">
+                    <div class="flex items-center flex-shrink-0 mb-3">
+                        <div class="text-3xl md:text-5xl font-black text-white mr-4 w-16 text-center flex-shrink-0">C
+                        </div>
+                        <div class="text-3xl md:text-5xl font-bold text-white leading-tight flex-1">義大利羅馬</div>
+                    </div>
+                    <div class="mb-2 flex-shrink-0">
+                        <div class="bg-white bg-opacity-20 rounded-full px-3 py-1 inline-block">
+                            <span class="text-black font-bold text-base" id="count-c">25 人 (31%)</span>
+                        </div>
+                    </div>
+                    <div class="flex-1 flex flex-col justify-start overflow-hidden">
+                        <div id="avatars-c" class="avatar-container w-full h-full"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- D 選項 - 50 個頭像 -->
+            <div
+                class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-yellow-500 to-yellow-600 shadow-2xl transform transition-all duration-500">
+                <div class="relative z-10 flex flex-col h-full p-4">
+                    <div class="flex items-center flex-shrink-0 mb-3">
+                        <div class="text-3xl md:text-5xl font-black text-white mr-4 w-16 text-center flex-shrink-0">D
+                        </div>
+                        <div class="text-3xl md:text-5xl font-bold text-white leading-tight flex-1">馬爾地夫</div>
+                    </div>
+                    <div class="mb-2 flex-shrink-0">
+                        <div class="bg-white bg-opacity-20 rounded-full px-3 py-1 inline-block">
+                            <span class="text-black font-bold text-base" id="count-d">50 人 (62%)</span>
+                        </div>
+                    </div>
+                    <div class="flex-1 flex flex-col justify-start overflow-hidden">
+                        <div id="avatars-d" class="avatar-container w-full h-full"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 示範用頭像 URL
+        const sampleAvatarUrl = "https://profile.line-scdn.net/0hoBCUVR6aMG1uLCP5f8ROEh58MwdNXWl_FkN_Dll-bV5UGyVrR09_Alt5bV4DSHc4S0x6Al8pZlRiP0cLcHrMWWkcbVxSFXc_Q0N4jA";
+
+        // 測試數據：每個選項的頭像數量
+        const avatarCounts = {
+            a: 1,
+            b: 5,
+            c: 25,
+            d: 50
+        };
+
+        /**
+         * 計算最佳頭像直徑
+         * 使用二分搜尋找到最大的直徑，讓所有頭像都能放入容器中
+         */
+        function calculateOptimalAvatarSize(containerWidth, containerHeight, avatarCount, gap = 4) {
+            if (avatarCount === 0) return containerHeight;
+            if (avatarCount === 1) return Math.min(containerWidth, containerHeight);
+
+            let maxDiameter = Math.min(containerWidth, containerHeight);
+            let minDiameter = 16;
+            let optimalDiameter = minDiameter;
+
+            while (minDiameter <= maxDiameter) {
+                const testDiameter = Math.floor((maxDiameter + minDiameter) / 2);
+                const perRow = Math.floor((containerWidth + gap) / (testDiameter + gap));
+
+                if (perRow === 0) {
+                    maxDiameter = testDiameter - 1;
+                    continue;
+                }
+
+                const rowsNeeded = Math.ceil(avatarCount / perRow);
+                const heightNeeded = rowsNeeded * testDiameter + (rowsNeeded - 1) * gap;
+
+                if (heightNeeded <= containerHeight) {
+                    optimalDiameter = testDiameter;
+                    minDiameter = testDiameter + 1;
+                } else {
+                    maxDiameter = testDiameter - 1;
+                }
+            }
+
+            return optimalDiameter;
+        }
+
+        /**
+         * 渲染頭像到指定容器
+         */
+        function renderAvatars(containerId, count) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            container.innerHTML = '';
+
+            const containerWidth = container.clientWidth;
+            const containerHeight = container.clientHeight;
+
+            const gap = 4;
+            const avatarSize = calculateOptimalAvatarSize(containerWidth, containerHeight, count, gap);
+
+            console.log(`${containerId}: 容器 ${containerWidth}x${containerHeight}, 數量 ${count}, 直徑 ${avatarSize}px`);
+
+            container.style.gap = `${gap}px`;
+
+            for (let i = 0; i < count; i++) {
+                const avatarDiv = document.createElement('div');
+                avatarDiv.className = 'avatar-item';
+                avatarDiv.style.width = `${avatarSize}px`;
+                avatarDiv.style.height = `${avatarSize}px`;
+
+                const img = document.createElement('img');
+                img.src = sampleAvatarUrl;
+                img.alt = `用戶 ${i + 1}`;
+
+                avatarDiv.appendChild(img);
+                container.appendChild(avatarDiv);
+            }
+        }
+
+        function renderAllAvatars() {
+            for (const [key, count] of Object.entries(avatarCounts)) {
+                renderAvatars(`avatars-${key}`, count);
+            }
+        }
+
+        window.addEventListener('load', () => {
+            setTimeout(renderAllAvatars, 100);
+        });
+
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(renderAllAvatars, 100);
+        });
+    </script>
+</body>
+
+</html>

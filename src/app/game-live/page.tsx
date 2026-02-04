@@ -30,6 +30,102 @@ interface ScoreRanking {
   quiz_score: number
 }
 
+/**
+ * 計算最佳頭像直徑
+ * 使用二分搜尋找到最大的直徑，讓所有頭像都能放入容器中
+ */
+function calculateOptimalAvatarSize(
+  containerWidth: number,
+  containerHeight: number,
+  avatarCount: number,
+  gap: number = 4
+): number {
+  if (avatarCount === 0) return containerHeight;
+  if (avatarCount === 1) return Math.min(containerWidth, containerHeight);
+
+  let maxDiameter = Math.min(containerWidth, containerHeight);
+  let minDiameter = 16;
+  let optimalDiameter = minDiameter;
+
+  while (minDiameter <= maxDiameter) {
+    const testDiameter = Math.floor((maxDiameter + minDiameter) / 2);
+    const perRow = Math.floor((containerWidth + gap) / (testDiameter + gap));
+
+    if (perRow === 0) {
+      maxDiameter = testDiameter - 1;
+      continue;
+    }
+
+    const rowsNeeded = Math.ceil(avatarCount / perRow);
+    const heightNeeded = rowsNeeded * testDiameter + (rowsNeeded - 1) * gap;
+
+    if (heightNeeded <= containerHeight) {
+      optimalDiameter = testDiameter;
+      minDiameter = testDiameter + 1;
+    } else {
+      maxDiameter = testDiameter - 1;
+    }
+  }
+
+  return optimalDiameter;
+}
+
+/**
+ * 自適應頭像網格組件
+ */
+function AdaptiveAvatarGrid({ users }: { users: { display_name: string; avatar_url?: string }[] }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [avatarSize, setAvatarSize] = useState<number>(30);
+
+  useEffect(() => {
+    const updateSize = () => {
+      if (containerRef.current) {
+        const { clientWidth, clientHeight } = containerRef.current;
+        const newSize = calculateOptimalAvatarSize(clientWidth, clientHeight, users.length, 4);
+        setAvatarSize(newSize);
+      }
+    };
+
+    updateSize();
+
+    // 監聽 resize
+    const resizeObserver = new ResizeObserver(updateSize);
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current);
+    }
+
+    return () => resizeObserver.disconnect();
+  }, [users.length]);
+
+  return (
+    <div
+      ref={containerRef}
+      className="w-full h-full flex flex-wrap content-start gap-1"
+      style={{ gap: '4px' }}
+    >
+      {users.map((user, idx) => (
+        <div
+          key={idx}
+          className="rounded-full overflow-hidden border-2 border-white flex-shrink-0"
+          style={{ width: avatarSize, height: avatarSize }}
+        >
+          {user.avatar_url ? (
+            <img
+              src={user.avatar_url}
+              alt={user.display_name}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full bg-white bg-opacity-30 flex items-center justify-center text-black font-bold text-xs">
+              {user.display_name?.charAt(0) || '?'}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function GameLivePage() {
 
   const [answerDistribution, setAnswerDistribution] = useState<AnswerDistribution[]>([])
@@ -1042,7 +1138,7 @@ export default function GameLivePage() {
                   </div>
                 ) : (
                   // 無圖片：維持原有的 2x2 網格滿版
-                  <div className="grid grid-cols-2 gap-6 flex-1 min-h-0">
+                  <div className="grid grid-cols-2 grid-rows-2 gap-6 flex-1 min-h-0">
                     {[
                       { key: 'A', text: currentQuestion.option_a, color: 'from-red-500 to-red-600' },
                       { key: 'B', text: currentQuestion.option_b, color: 'from-blue-500 to-blue-600' },
@@ -1095,26 +1191,10 @@ export default function GameLivePage() {
                               </div>
                             )}
 
-                            {/* 選擇此選項的玩家頭像 - 即時顯示，更大空間 */}
+                            {/* 選擇此選項的玩家頭像 - 自適應大小 */}
                             <div className="flex-1 flex flex-col justify-start overflow-hidden">
                               {distribution && distribution.users && distribution.users.length > 0 ? (
-                                <div className="flex flex-wrap gap-1 justify-center items-center content-start w-full h-full">
-                                  {distribution.users.map((user, userIndex) => (
-                                    <div key={userIndex} className="flex flex-col items-center justify-center flex-1 min-w-[40px] max-w-[80px] aspect-square">
-                                      {user.avatar_url ? (
-                                        <img
-                                          src={user.avatar_url}
-                                          alt={user.display_name}
-                                          className="w-full h-full rounded-full object-cover border-2 border-white"
-                                        />
-                                      ) : (
-                                        <div className="w-full h-full bg-white bg-opacity-30 rounded-full flex items-center justify-center text-black font-bold text-xs md:text-sm border-2 border-white">
-                                          {user.display_name?.charAt(0) || '?'}
-                                        </div>
-                                      )}
-                                    </div>
-                                  ))}
-                                </div>
+                                <AdaptiveAvatarGrid users={distribution.users} />
                               ) : (
                                 <div className="text-center text-white opacity-60">
                                   <div className="text-base">暫無人選擇</div>
