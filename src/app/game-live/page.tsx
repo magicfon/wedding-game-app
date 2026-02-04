@@ -952,7 +952,7 @@ export default function GameLivePage() {
               <div className="flex-1 flex items-center justify-center p-8">
                 <div className="w-full max-w-6xl text-center">
                   {/* 題目文字 */}
-                  <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-8 leading-tight">
+                  <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold text-white mb-8 leading-tight">
                     {currentQuestion.question_text}
                   </h1>
 
@@ -1003,7 +1003,7 @@ export default function GameLivePage() {
               <div className="flex-1 flex flex-col p-8 overflow-hidden">
                 {/* 題目標題（縮小版） */}
                 <div className="text-center mb-8 flex-shrink-0">
-                  <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
+                  <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">
                     {currentQuestion.question_text}
                   </h2>
 
@@ -1019,7 +1019,7 @@ export default function GameLivePage() {
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      <div className="inline-flex items-center space-x-4 bg-gradient-to-r from-fuchsia-600 via-purple-600 to-cyan-500 rounded-full px-10 py-5 backdrop-blur-sm border-4 border-white shadow-[0_0_20px_#ff00ff,0_0_40px_#ff00ff,0_0_60px_#00ffff,0_0_80px_#00ffff] animate-pulse">
+                      <div className="inline-flex items-center space-x-4 bg-gradient-to-r from-fuchsia-600 via-purple-600 to-cyan-500 rounded-full px-6 py-3 backdrop-blur-sm border-4 border-white shadow-[0_0_20px_#ff00ff,0_0_40px_#ff00ff,0_0_60px_#00ffff,0_0_80px_#00ffff] animate-pulse">
                         <div className="text-white text-xl md:text-2xl font-black drop-shadow-lg">
                           ✅ 正確答案：{currentQuestion.correct_answer}
                         </div>
@@ -1169,18 +1169,17 @@ export default function GameLivePage() {
                               <div className="text-xl md:text-3xl font-bold text-white leading-tight flex-1">
                                 {option.text}
                               </div>
-                            </div>
-
-                            {/* 答題統計 - 只在倒數結束後顯示 */}
-                            {timeLeft <= 0 && (
-                              <div className="mb-2 flex-shrink-0">
-                                <div className="bg-white bg-opacity-20 rounded-full px-3 py-1 inline-block">
-                                  <span className="text-black font-bold text-sm">
-                                    {distribution?.count || 0} 人 ({percentage}%)
-                                  </span>
+                              {/* 答題統計 - 放在答案右邊 */}
+                              {timeLeft <= 0 && (
+                                <div className="flex-shrink-0 ml-2">
+                                  <div className="bg-white bg-opacity-20 rounded-full px-3 py-1 inline-block">
+                                    <span className="text-black font-bold text-sm">
+                                      {distribution?.count || 0} 人 ({percentage}%)
+                                    </span>
+                                  </div>
                                 </div>
-                              </div>
-                            )}
+                              )}
+                            </div>
 
                             {/* 選擇此選項的玩家頭像 - 自適應大小 */}
                             <div className="flex-1 flex flex-col justify-start overflow-hidden">
