@@ -1403,28 +1403,28 @@ function WaitingStage({ gameState }: { gameState: any }) {
         {/* 底部區域：遊戲計分規則 + menu2-2 */}
         <div className="mt-4 flex gap-6 flex-shrink-0">
           {/* 左側：遊戲計分規則 - 和玩家列表同寬 */}
-          <div className="flex-1 bg-white bg-opacity-20 backdrop-blur-md rounded-2xl p-6">
-            <h3 className="text-2xl md:text-3xl font-bold text-black mb-6 flex items-center justify-center gap-2">
+          <div className="flex-1 bg-white bg-opacity-20 backdrop-blur-md rounded-2xl p-4">
+            <h3 className="text-xl md:text-2xl font-bold text-black mb-4 flex items-center justify-center gap-2">
               <span>🎲</span> 遊戲計分規則
             </h3>
-            <div className="grid grid-cols-2 gap-6 text-black">
-              <div className="bg-white bg-opacity-30 rounded-xl p-6 text-center">
-                <div className="text-4xl mb-3">🎉</div>
-                <div className="text-xl md:text-2xl font-bold mb-3">參與答題</div>
-                <div className="text-2xl md:text-3xl font-black text-blue-600 mb-3">50 分基本分</div>
-                <div className="text-base md:text-lg opacity-90">只要有參與答題就會有基本分！</div>
+            <div className="grid grid-cols-2 gap-4 text-black">
+              <div className="bg-white bg-opacity-30 rounded-xl p-4 text-center">
+                <div className="text-3xl mb-2">🎉</div>
+                <div className="text-lg md:text-xl font-bold mb-2">參與答題</div>
+                <div className="text-xl md:text-2xl font-black text-blue-600 mb-2">50 分基本分</div>
+                <div className="text-sm md:text-base opacity-90">只要有參與答題就會有基本分！</div>
               </div>
-              <div className="bg-white bg-opacity-30 rounded-xl p-6 text-center">
-                <div className="text-4xl mb-3">✅</div>
-                <div className="text-xl md:text-2xl font-bold mb-3">答對獎勵</div>
-                <div className="text-2xl md:text-3xl font-black text-green-600 mb-3">額外 1~50 分</div>
-                <div className="text-base md:text-lg opacity-90">答對會額外隨機獲得 1~50 分不等</div>
+              <div className="bg-white bg-opacity-30 rounded-xl p-4 text-center">
+                <div className="text-3xl mb-2">✅</div>
+                <div className="text-lg md:text-xl font-bold mb-2">答對獎勵</div>
+                <div className="text-xl md:text-2xl font-black text-green-600 mb-2">額外 1~50 分</div>
+                <div className="text-sm md:text-base opacity-90">答對會額外隨機獲得 1~50 分不等</div>
               </div>
             </div>
           </div>
 
           {/* 右側：menu2-2 圖片 */}
-          <div className="w-[420px] bg-white bg-opacity-10 backdrop-blur-md rounded-2xl p-6 flex items-center justify-center">
+          <div className="w-[380px] bg-white bg-opacity-10 backdrop-blur-md rounded-2xl p-4 flex items-center justify-center">
             <img
               src="/menu2-2.jpg"
               alt="Menu"
