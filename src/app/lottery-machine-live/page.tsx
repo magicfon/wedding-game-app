@@ -1885,7 +1885,7 @@ export default function LotteryMachineLivePage() {
           top: 0.5vh;
           left: 5%;
           width: clamp(180px, 15vw, 280px);
-          z-index: 20;
+          z-index: 1000;
         }
 
         .platform-surface {
@@ -2294,7 +2294,7 @@ export default function LotteryMachineLivePage() {
           transform: translateX(-50%);
           width: 55%;
           max-width: clamp(320px, 35vw, 520px);
-          z-index: 10;
+          z-index: 1000;
           display: flex;
           flex-direction: column;
           align-items: center;
