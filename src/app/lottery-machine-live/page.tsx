@@ -2026,7 +2026,7 @@ export default function LotteryMachineLivePage() {
           width: 100%;
           height: 100%;
           pointer-events: none;
-          z-index: 100;
+          z-index: 1000;
         }
 
         .track-svg-container svg {
