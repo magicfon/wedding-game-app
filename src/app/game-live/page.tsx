@@ -1152,7 +1152,7 @@ export default function GameLivePage() {
                       return (
                         <div
                           key={option.key}
-                          className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${option.color} shadow-2xl transform transition-all duration-500 hover:scale-105 flex items-center justify-center ${timeLeft <= 0 && isCorrect ? 'ring-[14px] ring-fuchsia-400 shadow-[0_0_30px_#ff00ff,0_0_60px_#ff00ff,0_0_90px_#00ffff,0_0_120px_#00ffff] scale-105 z-10 animate-pulse' : ''
+                          className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${option.color} shadow-2xl ${timeLeft <= 0 && isCorrect ? 'ring-[14px] ring-fuchsia-400 shadow-[0_0_30px_#ff00ff,0_0_60px_#ff00ff,0_0_90px_#00ffff,0_0_120px_#00ffff] z-10 animate-pulse' : ''
                             }`}
                         >
                           {/* 答題進度條 - 只在倒數結束後顯示 */}
