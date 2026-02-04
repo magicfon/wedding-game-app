@@ -1010,7 +1010,7 @@ export default function GameLivePage() {
                   {/* 倒數計時或結果顯示 */}
                   {timeLeft > 0 ? (
                     <div className="inline-flex items-center space-x-2">
-                      <div className="inline-flex items-center space-x-4 bg-gradient-to-r from-amber-500 to-orange-600 rounded-full px-6 py-3 backdrop-blur-sm border-2 border-white shadow-lg">
+                      <div className="inline-flex items-center space-x-4 bg-black bg-opacity-40 rounded-full px-6 py-3 backdrop-blur-sm border border-white border-opacity-30">
                         <div className="text-white text-xl md:text-2xl font-black">
                           ⏱️ {Math.ceil(displayTimeLeft / 1000)}秒
                         </div>
