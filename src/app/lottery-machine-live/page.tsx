@@ -101,12 +101,11 @@ export default function LotteryMachineLivePage() {
     volume: 0.2
   })
 
-  // 處理用戶交互以啟用音效
+  // 處理用戶交互以啟用音效 - 每次交互都重新播放音樂
   useEffect(() => {
     const handleInteraction = () => {
       tryPlay()
-      window.removeEventListener('click', handleInteraction)
-      window.removeEventListener('keydown', handleInteraction)
+      // 不移除事件監聽器，讓每次交互都重新播放音樂
     }
 
     window.addEventListener('click', handleInteraction)
@@ -1395,7 +1394,7 @@ export default function LotteryMachineLivePage() {
   return (
     <div className="lottery-machine-live-page" data-lottery-live="true">
       {/* 標題 */}
-      <div className="title">🎰 幸運抽獎機 🎰</div>
+      <div className="title">🎰 抽獎機 🎰</div>
 
       {/* 編輯器控制按鈕 */}
       <div className="editor-controls">
