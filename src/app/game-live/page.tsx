@@ -744,6 +744,23 @@ export default function GameLivePage() {
 
   return (
     <div className="min-h-screen h-screen overflow-hidden bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+      {/* 自定義滾動條樣式 */}
+      <style jsx global>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.3);
+          border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: rgba(255, 255, 255, 0.5);
+        }
+      `}</style>
       {/* 音效控制 */}
       <div className="fixed top-4 right-4 z-50">
         <SoundToggle isEnabled={isSoundEnabled} onToggle={toggleSound} />
@@ -1098,29 +1115,24 @@ export default function GameLivePage() {
                             {/* 選擇此選項的玩家頭像 - 即時顯示，更大空間 */}
                             <div className="flex-1 flex flex-col justify-start overflow-hidden">
                               {distribution && distribution.users && distribution.users.length > 0 ? (
-                                <div className="grid grid-cols-5 gap-2 justify-items-center content-start">
-                                  {distribution.users.slice(0, 20).map((user, userIndex) => (
-                                    <div key={userIndex} className="flex flex-col items-center">
-                                      {user.avatar_url ? (
-                                        <img
-                                          src={user.avatar_url}
-                                          alt={user.display_name}
-                                          className="w-10 h-10 md:w-12 md:h-12 rounded-full object-cover border-2 border-white"
-                                        />
-                                      ) : (
-                                        <div className="w-10 h-10 md:w-12 md:h-12 bg-white bg-opacity-30 rounded-full flex items-center justify-center text-black font-bold text-xs md:text-sm border-2 border-white">
-                                          {user.display_name?.charAt(0) || '?'}
-                                        </div>
-                                      )}
-                                    </div>
-                                  ))}
-                                  {distribution.users.length > 20 && (
-                                    <div className="flex flex-col items-center">
-                                      <div className="w-10 h-10 md:w-12 md:h-12 bg-white bg-opacity-50 rounded-full flex items-center justify-center text-black font-bold text-xs md:text-sm border-2 border-white">
-                                        +{distribution.users.length - 20}
+                                <div className="overflow-y-auto custom-scrollbar">
+                                  <div className="grid grid-cols-8 gap-1 justify-items-center content-start">
+                                    {distribution.users.map((user, userIndex) => (
+                                      <div key={userIndex} className="flex flex-col items-center">
+                                        {user.avatar_url ? (
+                                          <img
+                                            src={user.avatar_url}
+                                            alt={user.display_name}
+                                            className="w-8 h-8 md:w-10 md:h-10 rounded-full object-cover border-2 border-white"
+                                          />
+                                        ) : (
+                                          <div className="w-8 h-8 md:w-10 md:h-10 bg-white bg-opacity-30 rounded-full flex items-center justify-center text-black font-bold text-xs md:text-sm border-2 border-white">
+                                            {user.display_name?.charAt(0) || '?'}
+                                          </div>
+                                        )}
                                       </div>
-                                    </div>
-                                  )}
+                                    ))}
+                                  </div>
                                 </div>
                               ) : (
                                 <div className="text-center text-white opacity-60">
