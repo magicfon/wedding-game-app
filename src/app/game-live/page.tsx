@@ -1068,7 +1068,7 @@ export default function GameLivePage() {
                         return (
                           <div
                             key={option.key}
-                            className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${option.color} shadow-lg transform transition-all duration-500 hover:scale-[1.01] flex items-center flex-1 min-h-0 ${timeLeft <= 0 && isCorrect ? 'ring-[10px] ring-fuchsia-400 shadow-[0_0_20px_#ff00ff,0_0_40px_#ff00ff,0_0_60px_#00ffff,0_0_80px_#00ffff] scale-105 animate-pulse' : ''
+                            className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${option.color} shadow-lg flex-1 min-h-0 ${timeLeft <= 0 && isCorrect ? 'ring-[10px] ring-fuchsia-400 shadow-[0_0_20px_#ff00ff,0_0_40px_#ff00ff,0_0_60px_#00ffff,0_0_80px_#00ffff] z-10 animate-pulse' : ''
                               }`}
                           >
                             {/* 答題進度條 */}
@@ -1082,55 +1082,47 @@ export default function GameLivePage() {
                               />
                             )}
 
-                            <div className="relative z-10 flex items-center w-full px-4 py-2 h-full">
-                              {/* 選項標號 */}
-                              <div className="text-2xl md:text-3xl font-black text-white mr-4 w-12 text-center flex-shrink-0">
-                                {option.key}
+                            {/* 選項內容 - 使用與 2x2 網格相同的結構 */}
+                            <div className="relative z-10 flex flex-col h-full p-3">
+                              {/* 選項標題區域 */}
+                              <div className="flex items-center flex-shrink-0 mb-2">
+                                <div className="text-2xl md:text-3xl font-black text-white mr-3 w-10 text-center flex-shrink-0">
+                                  {option.key}
+                                </div>
+                                <div className="text-xl md:text-2xl font-bold text-white leading-tight flex-1 line-clamp-1">
+                                  {option.text}
+                                </div>
                               </div>
 
-                              {/* 選項文字 */}
-                              <div className="text-3xl md:text-4xl font-bold text-white flex-1 mr-4 line-clamp-2 leading-tight">
-                                {option.text}
-                              </div>
-
-                              {/* 答題統計 (倒數結束後顯示) */}
+                              {/* 答題統計 */}
                               {timeLeft <= 0 && (
-                                <div className="flex-shrink-0 bg-white bg-opacity-20 rounded-full px-2 py-1">
-                                  <span className="text-black font-bold text-xs md:text-sm">
-                                    {distribution?.count || 0}人 ({percentage}%)
-                                  </span>
-                                </div>
-                              )}
-
-                              {/* 正確答案標示 */}
-                              {timeLeft <= 0 && isCorrect && (
-                                <div className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-fuchsia-500 to-cyan-400 text-white rounded-full p-3 shadow-[0_0_15px_#ff00ff,0_0_30px_#00ffff] animate-bounce">
-                                  <span className="text-2xl font-black">✓</span>
-                                </div>
-                              )}
-                            </div>
-
-                            {/* 玩家頭像預覽 (僅顯示前幾名) */}
-                            {distribution && distribution.users && distribution.users.length > 0 && (
-                              <div className="absolute bottom-2 left-20 flex -space-x-2 py-1 px-1">
-                                {distribution.users.slice(0, 5).map((user, idx) => (
-                                  <div key={idx} className="relative inline-block h-10 w-10 rounded-full ring-2 ring-white bg-gray-200 z-10">
-                                    {user.avatar_url ? (
-                                      <img src={user.avatar_url} alt="" className="h-full w-full rounded-full object-cover" />
-                                    ) : (
-                                      <div className="h-full w-full flex items-center justify-center text-xs font-bold text-gray-500">
-                                        {user.display_name?.charAt(0)}
-                                      </div>
-                                    )}
+                                <div className="mb-2 flex-shrink-0">
+                                  <div className="bg-white bg-opacity-20 rounded-full px-2 py-0.5 inline-block">
+                                    <span className="text-black font-bold text-sm">
+                                      {distribution?.count || 0} 人 ({percentage}%)
+                                    </span>
                                   </div>
-                                ))}
-                                {distribution.users.length > 5 && (
-                                  <div className="relative inline-block h-10 w-10 rounded-full ring-2 ring-white bg-gray-300 flex items-center justify-center text-xs font-bold text-gray-600 z-0">
-                                    +{distribution.users.length - 5}
+                                </div>
+                              )}
+
+                              {/* 玩家頭像 - 自適應大小 */}
+                              <div className="flex-1 flex flex-col justify-start overflow-hidden">
+                                {distribution && distribution.users && distribution.users.length > 0 ? (
+                                  <AdaptiveAvatarGrid users={distribution.users} />
+                                ) : (
+                                  <div className="text-center text-white opacity-60 text-sm">
+                                    暫無人選擇
                                   </div>
                                 )}
                               </div>
-                            )}
+
+                              {/* 正確答案標示 */}
+                              {timeLeft <= 0 && isCorrect && (
+                                <div className="absolute -top-2 -right-2 bg-gradient-to-r from-fuchsia-500 to-cyan-400 text-white rounded-full p-2 shadow-[0_0_15px_#ff00ff,0_0_30px_#00ffff] animate-bounce">
+                                  <span className="text-xl font-black">✓</span>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         )
                       })}
