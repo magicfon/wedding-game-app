@@ -1366,21 +1366,21 @@ function WaitingStage({ gameState }: { gameState: any }) {
         <div className="mt-6 flex gap-8 flex-shrink-0">
           {/* 左側：遊戲計分規則 - 和玩家列表同寬 */}
           <div className="flex-1 bg-white bg-opacity-20 backdrop-blur-md rounded-3xl p-8">
-            <h3 className="text-3xl md:text-4xl font-bold text-black mb-6 flex items-center justify-center gap-3">
+            <h3 className="text-4xl md:text-5xl font-bold text-black mb-8 flex items-center justify-center gap-3">
               <span>🎲</span> 遊戲計分規則
             </h3>
             <div className="grid grid-cols-2 gap-8 text-black">
-              <div className="bg-white bg-opacity-30 rounded-2xl p-6 text-center">
-                <div className="text-5xl mb-3">🎉</div>
-                <div className="text-2xl font-semibold mb-3">參與答題</div>
-                <div className="text-3xl font-bold text-blue-600">50 分基本分</div>
-                <div className="text-base opacity-80 mt-3">只要有參與答題就會有基本分！</div>
+              <div className="bg-white bg-opacity-30 rounded-2xl p-8 text-center">
+                <div className="text-6xl mb-4">🎉</div>
+                <div className="text-3xl md:text-4xl font-bold mb-4">參與答題</div>
+                <div className="text-4xl md:text-5xl font-black text-blue-600 mb-4">50 分基本分</div>
+                <div className="text-xl md:text-2xl opacity-90">只要有參與答題就會有基本分！</div>
               </div>
-              <div className="bg-white bg-opacity-30 rounded-2xl p-6 text-center">
-                <div className="text-5xl mb-3">✅</div>
-                <div className="text-2xl font-semibold mb-3">答對獎勵</div>
-                <div className="text-3xl font-bold text-green-600">額外 1~50 分</div>
-                <div className="text-base opacity-80 mt-3">答對會額外隨機獲得 1~50 分不等</div>
+              <div className="bg-white bg-opacity-30 rounded-2xl p-8 text-center">
+                <div className="text-6xl mb-4">✅</div>
+                <div className="text-3xl md:text-4xl font-bold mb-4">答對獎勵</div>
+                <div className="text-4xl md:text-5xl font-black text-green-600 mb-4">額外 1~50 分</div>
+                <div className="text-xl md:text-2xl opacity-90">答對會額外隨機獲得 1~50 分不等</div>
               </div>
             </div>
           </div>
