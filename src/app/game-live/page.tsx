@@ -1347,25 +1347,25 @@ function WaitingStage({ gameState }: { gameState: any }) {
   }, [fetchJoinedPlayers, supabase])
 
   return (
-    <div className="h-screen w-screen p-6 overflow-hidden">
-      <div className="w-full h-full max-w-[1800px] mx-auto flex flex-col">
+    <div className="h-screen w-screen p-4 overflow-hidden">
+      <div className="w-full h-full max-w-[1600px] mx-auto flex flex-col">
         {/* 主標題 */}
-        <div className="mb-6 flex-shrink-0">
-          <h1 className="text-6xl md:text-7xl lg:text-8xl font-black text-white mb-3 text-center">
+        <div className="mb-4 flex-shrink-0">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-white mb-2 text-center">
             快問快答
           </h1>
-          <p className="text-2xl md:text-3xl text-white opacity-90 text-center">
+          <p className="text-xl md:text-2xl text-white opacity-90 text-center">
             掃描 QR Code 加入遊戲
           </p>
         </div>
 
         {/* 主要內容區域 */}
-        <div className="flex-1 flex gap-8 min-h-0">
+        <div className="flex-1 flex gap-6 min-h-0">
           {/* 左側：玩家列表 */}
-          <div className="flex-1 bg-white bg-opacity-10 backdrop-blur-md rounded-3xl p-6 flex flex-col min-h-0">
-            <div className="flex items-center justify-center space-x-4 mb-6 flex-shrink-0">
-              <Users className="w-12 h-12 text-white" />
-              <h2 className="text-4xl font-bold text-black">
+          <div className="flex-1 bg-white bg-opacity-10 backdrop-blur-md rounded-2xl p-4 flex flex-col min-h-0">
+            <div className="flex items-center justify-center space-x-3 mb-4 flex-shrink-0">
+              <Users className="w-8 h-8 text-white" />
+              <h2 className="text-2xl font-bold text-black">
                 已加入玩家 ({playerCount})
               </h2>
             </div>
@@ -1379,7 +1379,7 @@ function WaitingStage({ gameState }: { gameState: any }) {
                   }))}
                 />
               ) : (
-                <div className="text-black text-2xl opacity-60 py-8 text-center">
+                <div className="text-black text-xl opacity-60 py-6 text-center">
                   等待玩家加入...
                 </div>
               )}
@@ -1387,10 +1387,10 @@ function WaitingStage({ gameState }: { gameState: any }) {
           </div>
 
           {/* 右側：QR Code */}
-          <div className="w-[500px] bg-white bg-opacity-10 backdrop-blur-md rounded-3xl p-6 flex flex-col items-center">
-            <QrCode className="w-16 h-16 text-white mb-3" />
-            <h3 className="text-3xl md:text-4xl font-bold text-black mb-4">掃描加入遊戲</h3>
-            <div className="w-full aspect-square bg-white rounded-3xl flex items-center justify-center shadow-2xl p-3">
+          <div className="w-[380px] bg-white bg-opacity-10 backdrop-blur-md rounded-2xl p-4 flex flex-col items-center">
+            <QrCode className="w-12 h-12 text-white mb-2" />
+            <h3 className="text-2xl md:text-3xl font-bold text-black mb-3">掃描加入遊戲</h3>
+            <div className="w-full aspect-square bg-white rounded-2xl flex items-center justify-center shadow-2xl p-2">
               <img
                 src="/line2dcode.png"
                 alt="QR Code"
@@ -1401,34 +1401,34 @@ function WaitingStage({ gameState }: { gameState: any }) {
         </div>
 
         {/* 底部區域：遊戲計分規則 + menu2-2 */}
-        <div className="mt-6 flex gap-8 flex-shrink-0">
+        <div className="mt-4 flex gap-6 flex-shrink-0">
           {/* 左側：遊戲計分規則 - 和玩家列表同寬 */}
-          <div className="flex-1 bg-white bg-opacity-20 backdrop-blur-md rounded-3xl p-8">
-            <h3 className="text-4xl md:text-5xl font-bold text-black mb-8 flex items-center justify-center gap-3">
+          <div className="flex-1 bg-white bg-opacity-20 backdrop-blur-md rounded-2xl p-6">
+            <h3 className="text-2xl md:text-3xl font-bold text-black mb-6 flex items-center justify-center gap-2">
               <span>🎲</span> 遊戲計分規則
             </h3>
-            <div className="grid grid-cols-2 gap-8 text-black">
-              <div className="bg-white bg-opacity-30 rounded-2xl p-8 text-center">
-                <div className="text-6xl mb-4">🎉</div>
-                <div className="text-3xl md:text-4xl font-bold mb-4">參與答題</div>
-                <div className="text-4xl md:text-5xl font-black text-blue-600 mb-4">50 分基本分</div>
-                <div className="text-xl md:text-2xl opacity-90">只要有參與答題就會有基本分！</div>
+            <div className="grid grid-cols-2 gap-6 text-black">
+              <div className="bg-white bg-opacity-30 rounded-xl p-6 text-center">
+                <div className="text-4xl mb-3">🎉</div>
+                <div className="text-xl md:text-2xl font-bold mb-3">參與答題</div>
+                <div className="text-2xl md:text-3xl font-black text-blue-600 mb-3">50 分基本分</div>
+                <div className="text-base md:text-lg opacity-90">只要有參與答題就會有基本分！</div>
               </div>
-              <div className="bg-white bg-opacity-30 rounded-2xl p-8 text-center">
-                <div className="text-6xl mb-4">✅</div>
-                <div className="text-3xl md:text-4xl font-bold mb-4">答對獎勵</div>
-                <div className="text-4xl md:text-5xl font-black text-green-600 mb-4">額外 1~50 分</div>
-                <div className="text-xl md:text-2xl opacity-90">答對會額外隨機獲得 1~50 分不等</div>
+              <div className="bg-white bg-opacity-30 rounded-xl p-6 text-center">
+                <div className="text-4xl mb-3">✅</div>
+                <div className="text-xl md:text-2xl font-bold mb-3">答對獎勵</div>
+                <div className="text-2xl md:text-3xl font-black text-green-600 mb-3">額外 1~50 分</div>
+                <div className="text-base md:text-lg opacity-90">答對會額外隨機獲得 1~50 分不等</div>
               </div>
             </div>
           </div>
 
           {/* 右側：menu2-2 圖片 */}
-          <div className="w-[600px] bg-white bg-opacity-10 backdrop-blur-md rounded-3xl p-8 flex items-center justify-center">
+          <div className="w-[420px] bg-white bg-opacity-10 backdrop-blur-md rounded-2xl p-6 flex items-center justify-center">
             <img
               src="/menu2-2.jpg"
               alt="Menu"
-              className="w-full h-auto rounded-3xl shadow-2xl"
+              className="w-full h-auto rounded-2xl shadow-2xl"
             />
           </div>
         </div>
