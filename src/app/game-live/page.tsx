@@ -1084,7 +1084,7 @@ export default function GameLivePage() {
 
                             {/* 選項內容 - 使用與 2x2 網格相同的結構 */}
                             <div className="relative z-10 flex flex-col h-full p-3">
-                              {/* 選項標題區域 */}
+                              {/* 選項標題區域 - 標號 + 答案 + 統計在同一行 */}
                               <div className="flex items-center flex-shrink-0 mb-2">
                                 <div className="text-2xl md:text-3xl font-black text-white mr-3 w-10 text-center flex-shrink-0">
                                   {option.key}
@@ -1092,18 +1092,17 @@ export default function GameLivePage() {
                                 <div className="text-xl md:text-2xl font-bold text-white leading-tight flex-1 line-clamp-1">
                                   {option.text}
                                 </div>
-                              </div>
-
-                              {/* 答題統計 */}
-                              {timeLeft <= 0 && (
-                                <div className="mb-2 flex-shrink-0">
-                                  <div className="bg-white bg-opacity-20 rounded-full px-2 py-0.5 inline-block">
-                                    <span className="text-black font-bold text-sm">
-                                      {distribution?.count || 0} 人 ({percentage}%)
-                                    </span>
+                                {/* 答題統計 - 放在答案右邊 */}
+                                {timeLeft <= 0 && (
+                                  <div className="flex-shrink-0 ml-2">
+                                    <div className="bg-white bg-opacity-20 rounded-full px-2 py-0.5 inline-block">
+                                      <span className="text-black font-bold text-sm">
+                                        {distribution?.count || 0} 人 ({percentage}%)
+                                      </span>
+                                    </div>
                                   </div>
-                                </div>
-                              )}
+                                )}
+                              </div>
 
                               {/* 玩家頭像 - 自適應大小 */}
                               <div className="flex-1 flex flex-col justify-start overflow-hidden">
