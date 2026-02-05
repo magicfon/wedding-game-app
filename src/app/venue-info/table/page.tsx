@@ -188,6 +188,18 @@ export default function TablePage() {
                     </div>
                 )}
 
+                {/* 桌次佈置圖 */}
+                <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">桌次佈置圖</h3>
+                    <div className="rounded-xl overflow-hidden border border-gray-200">
+                        <img
+                            src="/table.jpg"
+                            alt="桌次佈置圖"
+                            className="w-full h-auto"
+                        />
+                    </div>
+                </div>
+
                 {/* 搜尋區域 (總是顯示) */}
                 <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
                     <h3 className="text-lg font-semibold text-gray-900 mb-4">
