@@ -61,6 +61,27 @@ export async function DELETE(request: NextRequest) {
 
     console.log('找到照片數量:', photos.length)
 
+    // 檢查是否有照片存在投票記錄
+    const { data: votedPhotos, error: votesError } = await supabaseAdmin
+      .from('votes')
+      .select('photo_id')
+      .in('photo_id', photoIds)
+
+    if (!votesError && votedPhotos && votedPhotos.length > 0) {
+      // 找出有投票的照片數量
+      const uniqueVotedPhotoIds = [...new Set(votedPhotos.map(v => v.photo_id))]
+      console.log('有投票記錄的照片:', uniqueVotedPhotoIds)
+      return NextResponse.json(
+        {
+          error: `選中的照片中有 ${uniqueVotedPhotoIds.length} 張有投票記錄，無法刪除`,
+          details: '請先使用「重置投票」功能清除所有投票記錄後再刪除照片',
+          hasVotes: true,
+          votedPhotoIds: uniqueVotedPhotoIds
+        },
+        { status: 400 }
+      )
+    }
+
     // 從數據庫批量刪除照片記錄
     const { error: deleteError } = await supabaseAdmin
       .from('photos')
@@ -69,6 +90,17 @@ export async function DELETE(request: NextRequest) {
 
     if (deleteError) {
       console.error('批量刪除照片記錄失敗:', deleteError)
+      // 檢查是否為外鍵約束錯誤
+      if (deleteError.message.includes('violates foreign key constraint')) {
+        return NextResponse.json(
+          {
+            error: '部分照片有關聯的投票記錄，無法刪除',
+            details: '請先使用「重置投票」功能清除所有投票記錄後再刪除照片',
+            hasVotes: true
+          },
+          { status: 400 }
+        )
+      }
       return NextResponse.json(
         { error: '批量刪除失敗', details: deleteError.message },
         { status: 500 }

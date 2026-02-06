@@ -13,23 +13,50 @@ export async function POST(request: NextRequest) {
             .select('id', { count: 'exact' })
 
         const totalVotesBefore = votesBefore?.length || 0
-        console.log('重置前總投票數:', totalVotesBefore)
+        console.log('votes 表重置前總投票數:', totalVotesBefore)
 
-        // 刪除所有投票記錄
+        // 獲取 photo_votes 表的統計
+        const { data: photoVotesBefore } = await supabaseAdmin
+            .from('photo_votes')
+            .select('id', { count: 'exact' })
+
+        const totalPhotoVotesBefore = photoVotesBefore?.length || 0
+        console.log('photo_votes 表重置前總投票數:', totalPhotoVotesBefore)
+
+        // 刪除 votes 表的所有投票記錄
         const { error: deleteVotesError } = await supabaseAdmin
             .from('votes')
             .delete()
             .neq('id', 0) // 這是一個技巧，用來刪除所有記錄
 
         if (deleteVotesError) {
-            console.error('刪除投票記錄失敗:', deleteVotesError)
+            console.error('刪除 votes 投票記錄失敗:', deleteVotesError)
             return NextResponse.json(
-                { error: '刪除投票記錄失敗', details: deleteVotesError.message },
+                { error: '刪除 votes 投票記錄失敗', details: deleteVotesError.message },
                 { status: 500 }
             )
         }
 
-        console.log('投票記錄已全部刪除')
+        console.log('votes 表投票記錄已全部刪除')
+
+        // 刪除 photo_votes 表的所有投票記錄（如果表存在）
+        const { error: deletePhotoVotesError } = await supabaseAdmin
+            .from('photo_votes')
+            .delete()
+            .neq('id', 0)
+
+        if (deletePhotoVotesError) {
+            // 如果是表不存在的錯誤，忽略
+            if (!deletePhotoVotesError.message.includes('does not exist')) {
+                console.error('刪除 photo_votes 投票記錄失敗:', deletePhotoVotesError)
+                return NextResponse.json(
+                    { error: '刪除 photo_votes 投票記錄失敗', details: deletePhotoVotesError.message },
+                    { status: 500 }
+                )
+            }
+        } else {
+            console.log('photo_votes 表投票記錄已全部刪除')
+        }
 
         // 將所有照片的 vote_count 重置為 0
         const { error: resetPhotosError } = await supabaseAdmin
@@ -50,7 +77,9 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
             success: true,
             message: `已成功重置所有投票`,
-            deletedVotes: totalVotesBefore
+            deletedVotes: totalVotesBefore,
+            deletedPhotoVotes: totalPhotoVotesBefore,
+            totalDeleted: totalVotesBefore + totalPhotoVotesBefore
         })
 
     } catch (error) {

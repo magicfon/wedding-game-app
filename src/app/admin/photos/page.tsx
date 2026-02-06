@@ -332,7 +332,7 @@ export default function PhotosManagePage() {
       if (response.ok) {
         // 更新本地狀態，將所有照片的 vote_count 設為 0
         setPhotos(photos.map(photo => ({ ...photo, vote_count: 0 })))
-        alert(`已成功重置所有投票！共刪除 ${data.deletedVotes} 筆投票記錄`)
+        alert(`已成功重置所有投票！共刪除 ${data.totalDeleted || data.deletedVotes} 筆投票記錄`)
       } else {
         alert(`重置投票失敗: ${data.error}`)
       }

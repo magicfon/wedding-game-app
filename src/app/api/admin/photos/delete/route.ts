@@ -4,9 +4,9 @@ import { createSupabaseAdmin } from '@/lib/supabase-admin'
 export async function DELETE(request: NextRequest) {
   try {
     const supabaseAdmin = createSupabaseAdmin()
-    
+
     console.log('=== 刪除照片 API 開始 ===')
-    
+
     // 獲取請求數據
     const { photoId } = await request.json()
 
@@ -36,6 +36,44 @@ export async function DELETE(request: NextRequest) {
 
     console.log('照片 URL:', photo.image_url)
 
+    // 檢查照片是否有投票記錄 (votes 表)
+    const { data: votes, error: votesError } = await supabaseAdmin
+      .from('votes')
+      .select('id')
+      .eq('photo_id', photoId)
+      .limit(1)
+
+    if (!votesError && votes && votes.length > 0) {
+      console.log('照片在 votes 表有投票記錄，無法直接刪除')
+      return NextResponse.json(
+        {
+          error: '此照片有投票記錄，無法刪除',
+          details: '請先使用「重置投票」功能清除所有投票記錄後再刪除照片',
+          hasVotes: true
+        },
+        { status: 400 }
+      )
+    }
+
+    // 檢查 photo_votes 表（如果存在）
+    const { data: photoVotes, error: photoVotesError } = await supabaseAdmin
+      .from('photo_votes')
+      .select('id')
+      .eq('photo_id', photoId)
+      .limit(1)
+
+    if (!photoVotesError && photoVotes && photoVotes.length > 0) {
+      console.log('照片在 photo_votes 表有投票記錄，無法直接刪除')
+      return NextResponse.json(
+        {
+          error: '此照片有投票記錄（photo_votes），無法刪除',
+          details: '請先使用「重置投票」功能清除所有投票記錄後再刪除照片',
+          hasVotes: true
+        },
+        { status: 400 }
+      )
+    }
+
     // 從數據庫刪除照片記錄
     const { error: deleteError } = await supabaseAdmin
       .from('photos')
@@ -44,6 +82,29 @@ export async function DELETE(request: NextRequest) {
 
     if (deleteError) {
       console.error('刪除照片記錄失敗:', deleteError)
+      console.error('錯誤詳情:', JSON.stringify(deleteError))
+
+      // 檢查是否為外鍵約束錯誤
+      if (deleteError.message.includes('violates foreign key constraint')) {
+        // 嘗試辨識是哪個表格的約束
+        let constraintSource = '關聯資料'
+        if (deleteError.message.includes('votes')) {
+          constraintSource = '投票記錄'
+        } else if (deleteError.message.includes('lottery')) {
+          constraintSource = '抽獎歷史記錄'
+        } else if (deleteError.message.includes('photo_votes')) {
+          constraintSource = 'photo_votes 投票記錄'
+        }
+
+        return NextResponse.json(
+          {
+            error: `此照片有${constraintSource}關聯，無法刪除`,
+            details: deleteError.message,
+            hasConstraint: true
+          },
+          { status: 400 }
+        )
+      }
       return NextResponse.json(
         { error: '刪除失敗', details: deleteError.message },
         { status: 500 }
@@ -60,7 +121,7 @@ export async function DELETE(request: NextRequest) {
       if (urlParts.length > 1) {
         const filePath = urlParts[1]
         console.log('嘗試刪除 Storage 文件:', filePath)
-        
+
         const { error: storageError } = await supabaseAdmin
           .storage
           .from('wedding-photos')
