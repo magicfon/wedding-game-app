@@ -237,7 +237,7 @@ export default function PhotosManagePage() {
         setSelectedPhoto(null)
         alert('照片已刪除')
       } else {
-        alert(`刪除失敗: ${data.error}`)
+        alert(`刪除失敗: ${data.error}${data.details ? '\n\n詳情: ' + data.details : ''}`)
       }
     } catch (error) {
       console.error('刪除照片失敗:', error)
