@@ -2,13 +2,32 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseAdmin } from '@/lib/supabase-admin'
 
 export async function DELETE(request: NextRequest) {
+  console.log('=== 批量刪除照片 API 開始 ===')
+
   try {
+    // 檢查環境變數
+    console.log('環境變數檢查:', {
+      hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+      hasServiceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+    })
+
     const supabaseAdmin = createSupabaseAdmin()
-    
-    console.log('=== 批量刪除照片 API 開始 ===')
-    
+    console.log('Supabase Admin 建立成功')
+
     // 獲取請求數據
-    const { photoIds } = await request.json()
+    let body
+    try {
+      body = await request.json()
+      console.log('請求 body:', JSON.stringify(body))
+    } catch (parseError) {
+      console.error('解析請求 body 失敗:', parseError)
+      return NextResponse.json(
+        { error: '無效的請求格式', details: parseError instanceof Error ? parseError.message : String(parseError) },
+        { status: 400 }
+      )
+    }
+
+    const { photoIds } = body
 
     if (!photoIds || !Array.isArray(photoIds) || photoIds.length === 0) {
       return NextResponse.json(
@@ -67,7 +86,7 @@ export async function DELETE(request: NextRequest) {
 
     try {
       const filePaths: string[] = []
-      
+
       // 從 URL 提取文件路徑
       photos.forEach(photo => {
         // URL 格式: https://.../storage/v1/object/public/wedding-photos/xxx.jpg
@@ -79,7 +98,7 @@ export async function DELETE(request: NextRequest) {
 
       if (filePaths.length > 0) {
         console.log('嘗試批量刪除 Storage 文件:', filePaths)
-        
+
         const { error: storageError } = await supabaseAdmin
           .storage
           .from('wedding-photos')

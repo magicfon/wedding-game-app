@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLiff } from '@/hooks/useLiff'
 import AdminLayout from '@/components/AdminLayout'
-import { Eye, EyeOff, Download, Trash2, Image as ImageIcon, Clock, User, Heart, Filter, CheckCircle, XCircle, Loader2, Users, HardDrive, CheckSquare, Square, Video, Play, ArrowDownWideNarrow, ArrowUpDown, Camera } from 'lucide-react'
+import { Eye, EyeOff, Download, Trash2, Image as ImageIcon, Clock, User, Heart, Filter, CheckCircle, XCircle, Loader2, Users, HardDrive, CheckSquare, Square, Video, Play, ArrowDownWideNarrow, ArrowUpDown, Camera, RotateCcw } from 'lucide-react'
 import ResponsiveImage from '@/components/ResponsiveImage'
 import WeddingPhotosTab from '@/components/WeddingPhotosTab'
 import UserVotesTab from '@/components/UserVotesTab'
@@ -59,6 +59,7 @@ export default function PhotosManagePage() {
   const [batchDeleting, setBatchDeleting] = useState(false)
   const [sortByVotes, setSortByVotes] = useState(false)  // 是否依得票數排序
   const [activeTab, setActiveTab] = useState<TabType>('photo-wall')
+  const [resettingVotes, setResettingVotes] = useState(false)
 
   const { isLoggedIn, profile, isAdmin: liffIsAdmin, loading: liffLoading, adminLoading } = useLiff()
 
@@ -311,6 +312,38 @@ export default function PhotosManagePage() {
     document.body.removeChild(link)
   }
 
+  // 重置所有投票
+  const resetAllVotes = async () => {
+    if (!confirm('確定要重置所有投票嗎？\n\n此操作會：\n• 刪除所有投票記錄\n• 將所有照片的得票數歸零\n• 將用戶的投票額度全部返還\n\n此操作無法復原！')) {
+      return
+    }
+
+    setResettingVotes(true)
+
+    try {
+      const response = await fetch('/api/admin/photos/reset-votes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include'
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        // 更新本地狀態，將所有照片的 vote_count 設為 0
+        setPhotos(photos.map(photo => ({ ...photo, vote_count: 0 })))
+        alert(`已成功重置所有投票！共刪除 ${data.deletedVotes} 筆投票記錄`)
+      } else {
+        alert(`重置投票失敗: ${data.error}`)
+      }
+    } catch (error) {
+      console.error('重置投票失敗:', error)
+      alert('重置投票失敗')
+    } finally {
+      setResettingVotes(false)
+    }
+  }
+
   // 獲取照片投票者資訊
   const fetchPhotoVoters = async (photoId: number) => {
     if (!photoId) return
@@ -506,6 +539,19 @@ export default function PhotosManagePage() {
                       <ArrowUpDown className="w-4 h-4" />
                     )}
                     <span>{sortByVotes ? '依票數' : '排序'}</span>
+                  </button>
+                  <button
+                    onClick={resetAllVotes}
+                    disabled={resettingVotes}
+                    className="flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-red-100 text-red-700 hover:bg-red-200 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
+                    title="重置所有投票記錄"
+                  >
+                    {resettingVotes ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <RotateCcw className="w-4 h-4" />
+                    )}
+                    <span>{resettingVotes ? '重置中...' : '重置投票'}</span>
                   </button>
                   <button
                     onClick={() => {
