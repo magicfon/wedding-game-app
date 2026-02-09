@@ -74,6 +74,19 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
+    // 先刪除 photo_thumbnail_migration 表中的相關記錄（如果有）
+    const { error: thumbnailMigrationError } = await supabaseAdmin
+      .from('photo_thumbnail_migration')
+      .delete()
+      .eq('photo_id', photoId)
+
+    if (thumbnailMigrationError) {
+      // 如果表不存在或其他非致命錯誤，只記錄警告
+      console.warn('刪除 photo_thumbnail_migration 記錄時警告:', thumbnailMigrationError)
+    } else {
+      console.log('已刪除 photo_thumbnail_migration 相關記錄')
+    }
+
     // 從數據庫刪除照片記錄
     const { error: deleteError } = await supabaseAdmin
       .from('photos')

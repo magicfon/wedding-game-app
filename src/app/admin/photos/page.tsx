@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLiff } from '@/hooks/useLiff'
 import AdminLayout from '@/components/AdminLayout'
-import { Eye, EyeOff, Download, Trash2, Image as ImageIcon, Clock, User, Heart, Filter, CheckCircle, XCircle, Loader2, Users, HardDrive, CheckSquare, Square, Video, Play, ArrowDownWideNarrow, ArrowUpDown, Camera, RotateCcw } from 'lucide-react'
+import { Eye, EyeOff, Download, Trash2, Image as ImageIcon, Clock, User, Heart, Filter, CheckCircle, XCircle, Loader2, Users, HardDrive, CheckSquare, Square, Video, Play, ArrowDownWideNarrow, ArrowUpDown, Camera, RotateCcw, Archive } from 'lucide-react'
 import ResponsiveImage from '@/components/ResponsiveImage'
 import WeddingPhotosTab from '@/components/WeddingPhotosTab'
 import UserVotesTab from '@/components/UserVotesTab'
@@ -60,6 +60,7 @@ export default function PhotosManagePage() {
   const [sortByVotes, setSortByVotes] = useState(false)  // 是否依得票數排序
   const [activeTab, setActiveTab] = useState<TabType>('photo-wall')
   const [resettingVotes, setResettingVotes] = useState(false)
+  const [downloadingAll, setDownloadingAll] = useState(false)
 
   const { isLoggedIn, profile, isAdmin: liffIsAdmin, loading: liffLoading, adminLoading } = useLiff()
 
@@ -482,6 +483,52 @@ export default function PhotosManagePage() {
                     <p className="text-2xl font-bold text-purple-600">{privateCount}</p>
                   </div>
                 </div>
+              </div>
+
+              {/* 下載全部按鈕 */}
+              <div className="bg-white rounded-xl shadow-md p-6">
+                <button
+                  onClick={async () => {
+                    setDownloadingAll(true)
+                    try {
+                      const response = await fetch('/api/admin/photos/download-all')
+                      if (response.ok) {
+                        const blob = await response.blob()
+                        const url = window.URL.createObjectURL(blob)
+                        const a = document.createElement('a')
+                        a.href = url
+                        a.download = `wedding-photos-${new Date().toISOString().split('T')[0]}.zip`
+                        document.body.appendChild(a)
+                        a.click()
+                        window.URL.revokeObjectURL(url)
+                        document.body.removeChild(a)
+                      } else {
+                        const data = await response.json()
+                        alert(`下載失敗: ${data.error}`)
+                      }
+                    } catch (error) {
+                      console.error('下載失敗:', error)
+                      alert('下載失敗')
+                    } finally {
+                      setDownloadingAll(false)
+                    }
+                  }}
+                  disabled={downloadingAll || photos.length === 0}
+                  className="w-full h-full flex flex-col items-center justify-center space-y-2 py-4 rounded-lg bg-gradient-to-r from-pink-500 to-purple-500 text-white hover:from-pink-600 hover:to-purple-600 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed transition-all"
+                >
+                  {downloadingAll ? (
+                    <>
+                      <Loader2 className="w-8 h-8 animate-spin" />
+                      <span className="font-medium">打包下載中...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Archive className="w-8 h-8" />
+                      <span className="font-medium">下載全部照片</span>
+                      <span className="text-xs opacity-80">含祝福語紀錄</span>
+                    </>
+                  )}
+                </button>
               </div>
 
             </div>
