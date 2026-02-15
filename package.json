@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "export-offline": "npx tsx scripts/export-offline.ts"
   },
   "dependencies": {
     "@line/bot-sdk": "^10.2.0",
