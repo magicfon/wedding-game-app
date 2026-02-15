@@ -1,4 +1,218 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
+
+export async function GET(request: NextRequest) {
+  const isStream = request.nextUrl.searchParams.get('stream') === '1'
+
+  if (isStream) {
+    // ---- 串流模式：SSE 進度 + ZIP 二進位 ----
+    const encoder = new TextEncoder()
+    const stream = new ReadableStream({
+      async start(controller) {
+        function sendProgress(step: string, percent: number) {
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ step, percent })}\n\n`))
+        }
+
+        try {
+          // 1. 抓取資料
+          sendProgress('正在連接資料庫...', 5)
+          const data = await fetchAllData()
+          sendProgress(`已抓取 ${data.users.length} 位用戶、${data.photos.length} 張照片`, 15)
+
+          // 2. 下載賓客照片
+          const totalDownloads = data.photos.length + data.weddingPhotos.length
+          let downloaded = 0
+
+          sendProgress(`正在下載賓客照片 (0/${data.photos.length})...`, 20)
+          const archive = archiver('zip', { zlib: { level: 5 } })
+          const passthrough = new PassThrough()
+          archive.pipe(passthrough)
+
+          for (let i = 0; i < data.photos.length; i++) {
+            const photo = data.photos[i]
+            const ext = photo.media_type === 'video' ? 'mp4' : 'jpg'
+            const filename = `photo_${String(i + 1).padStart(3, '0')}.${ext}`
+            photo._localFile = `photos/${filename}`
+            try {
+              const response = await fetch(photo.image_url)
+              if (response.ok) {
+                const buffer = await response.arrayBuffer()
+                archive.append(Buffer.from(buffer), { name: `photos/${filename}` })
+              }
+            } catch { /* skip */ }
+            downloaded++
+            if (i % 5 === 0 || i === data.photos.length - 1) {
+              const pct = 20 + Math.round((downloaded / Math.max(totalDownloads, 1)) * 55)
+              sendProgress(`正在下載賓客照片 (${i + 1}/${data.photos.length})...`, pct)
+            }
+          }
+
+          // 3. 下載婚紗照
+          sendProgress(`正在下載婚紗照 (0/${data.weddingPhotos.length})...`, 55)
+          for (let i = 0; i < data.weddingPhotos.length; i++) {
+            const wp = data.weddingPhotos[i]
+            const filename = `wedding_${String(i + 1).padStart(3, '0')}.jpg`
+            wp._localFile = `wedding-photos/${filename}`
+            try {
+              const response = await fetch(wp.url)
+              if (response.ok) {
+                const buffer = await response.arrayBuffer()
+                archive.append(Buffer.from(buffer), { name: `wedding-photos/${filename}` })
+              }
+            } catch { /* skip */ }
+            downloaded++
+            if (i % 5 === 0 || i === data.weddingPhotos.length - 1) {
+              const pct = 20 + Math.round((downloaded / Math.max(totalDownloads, 1)) * 55)
+              sendProgress(`正在下載婚紗照 (${i + 1}/${data.weddingPhotos.length})...`, pct)
+            }
+          }
+
+          // 4. 生成 HTML 頁面
+          sendProgress('正在生成 HTML 頁面...', 80)
+          const pages = [
+            { file: 'index.html', content: generateIndexPage(data) },
+            { file: 'photo-wall.html', content: generatePhotoWallPage(data) },
+            { file: 'wedding-photos.html', content: generateWeddingPhotosPage(data) },
+            { file: 'photo-slideshow.html', content: generateSlideshowPage(data) },
+            { file: 'quiz-results.html', content: generateQuizResultsPage(data) },
+            { file: 'rankings.html', content: generateRankingsPage(data) },
+            { file: 'vote-records.html', content: generateVoteRecordsPage(data) },
+          ]
+          for (const page of pages) {
+            archive.append(page.content, { name: page.file })
+          }
+
+          // 5. 加入 data.json
+          archive.append(JSON.stringify({
+            exportedAt: new Date().toISOString(),
+            users: data.users,
+            photos: data.photos.map((p: any) => { const { _localFile, ...rest } = p; return rest }),
+            questions: data.questions,
+            answerRecords: data.answerRecords,
+            gameState: data.gameState,
+            lotteryHistory: data.lotteryHistory,
+            photoVotes: data.photoVotes,
+            weddingVotes: data.weddingVotes,
+            weddingPhotos: data.weddingPhotos.map((w: any) => { const { _localFile, ...rest } = w; return rest }),
+          }, null, 2), { name: 'data.json' })
+
+          sendProgress('正在打包 ZIP...', 90)
+
+          // 6. Finalize archive 並收集所有 chunks
+          const zipChunks: Buffer[] = []
+          passthrough.on('data', (chunk: Buffer) => zipChunks.push(chunk))
+
+          await new Promise<void>((resolve, reject) => {
+            passthrough.on('end', resolve)
+            passthrough.on('error', reject)
+            archive.finalize()
+          })
+
+          // 7. 發送 ZIP 二進位
+          sendProgress('正在傳送檔案...', 95)
+          controller.enqueue(encoder.encode('\n---ZIP_START---\n'))
+          const fullZip = Buffer.concat(zipChunks)
+          controller.enqueue(new Uint8Array(fullZip))
+
+          controller.close()
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : '未知錯誤'
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: msg })}\n\n`))
+          controller.close()
+        }
+      }
+    })
+
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
+    })
+  }
+
+  // ---- 直接下載模式（原行為）----
+  try {
+    console.log('[export-offline] Starting offline HTML export...')
+    const data = await fetchAllData()
+
+    const archive = archiver('zip', { zlib: { level: 5 } })
+    const passthrough = new PassThrough()
+    archive.pipe(passthrough)
+
+    for (let i = 0; i < data.photos.length; i++) {
+      const photo = data.photos[i]
+      const ext = photo.media_type === 'video' ? 'mp4' : 'jpg'
+      const filename = `photo_${String(i + 1).padStart(3, '0')}.${ext}`
+      photo._localFile = `photos/${filename}`
+      try {
+        const response = await fetch(photo.image_url)
+        if (response.ok) {
+          const buffer = await response.arrayBuffer()
+          archive.append(Buffer.from(buffer), { name: `photos/${filename}` })
+        }
+      } catch { /* skip */ }
+    }
+
+    for (let i = 0; i < data.weddingPhotos.length; i++) {
+      const wp = data.weddingPhotos[i]
+      const filename = `wedding_${String(i + 1).padStart(3, '0')}.jpg`
+      wp._localFile = `wedding-photos/${filename}`
+      try {
+        const response = await fetch(wp.url)
+        if (response.ok) {
+          const buffer = await response.arrayBuffer()
+          archive.append(Buffer.from(buffer), { name: `wedding-photos/${filename}` })
+        }
+      } catch { /* skip */ }
+    }
+
+    const pages = [
+      { file: 'index.html', content: generateIndexPage(data) },
+      { file: 'photo-wall.html', content: generatePhotoWallPage(data) },
+      { file: 'wedding-photos.html', content: generateWeddingPhotosPage(data) },
+      { file: 'photo-slideshow.html', content: generateSlideshowPage(data) },
+      { file: 'quiz-results.html', content: generateQuizResultsPage(data) },
+      { file: 'rankings.html', content: generateRankingsPage(data) },
+      { file: 'vote-records.html', content: generateVoteRecordsPage(data) },
+    ]
+    for (const page of pages) {
+      archive.append(page.content, { name: page.file })
+    }
+
+    archive.append(JSON.stringify({
+      exportedAt: new Date().toISOString(),
+      users: data.users,
+      photos: data.photos.map((p: any) => { const { _localFile, ...rest } = p; return rest }),
+      questions: data.questions,
+      answerRecords: data.answerRecords,
+      gameState: data.gameState,
+      lotteryHistory: data.lotteryHistory,
+      photoVotes: data.photoVotes,
+      weddingVotes: data.weddingVotes,
+      weddingPhotos: data.weddingPhotos.map((w: any) => { const { _localFile, ...rest } = w; return rest }),
+    }, null, 2), { name: 'data.json' })
+
+    archive.finalize()
+
+    const timestamp = new Date().toISOString().split('T')[0]
+    return new NextResponse(passthrough as unknown as ReadableStream, {
+      headers: {
+        'Content-Type': 'application/zip',
+        'Content-Disposition': `attachment; filename="wedding-game-offline-${timestamp}.zip"`,
+      },
+    })
+  } catch (error) {
+    console.error('[export-offline] Export error:', error)
+    return NextResponse.json(
+      { error: '匯出失敗', details: error instanceof Error ? error.message : '未知錯誤' },
+      { status: 500 }
+    )
+  }
+}
+
+export const maxDuration = 300 // 5 分鐘超時
+
 import { createClient } from '@supabase/supabase-js'
 import archiver from 'archiver'
 import { PassThrough } from 'stream'
@@ -770,106 +984,3 @@ function generateVoteRecordsPage(data: any): string {
   `)
 }
 
-// ============================================================
-// API Route Handler
-// ============================================================
-
-export async function GET() {
-  try {
-    console.log('[export-offline] Starting offline HTML export...')
-
-    // 1. 抓取所有資料
-    const data = await fetchAllData()
-
-    // 2. 建立 ZIP
-    const archive = archiver('zip', { zlib: { level: 5 } })
-    const passthrough = new PassThrough()
-    archive.pipe(passthrough)
-
-    // 3. 下載並加入賓客照片
-    console.log(`[export-offline] Downloading ${data.photos.length} guest photos...`)
-    for (let i = 0; i < data.photos.length; i++) {
-      const photo = data.photos[i]
-      const ext = photo.media_type === 'video' ? 'mp4' : 'jpg'
-      const filename = `photo_${String(i + 1).padStart(3, '0')}.${ext}`
-      photo._localFile = `photos/${filename}`
-      try {
-        const response = await fetch(photo.image_url)
-        if (response.ok) {
-          const buffer = await response.arrayBuffer()
-          archive.append(Buffer.from(buffer), { name: `photos/${filename}` })
-        }
-      } catch (err) {
-        console.warn(`[export-offline] Failed to download photo ${photo.id}:`, err)
-      }
-    }
-
-    // 4. 下載並加入婚紗照
-    console.log(`[export-offline] Downloading ${data.weddingPhotos.length} wedding photos...`)
-    for (let i = 0; i < data.weddingPhotos.length; i++) {
-      const wp = data.weddingPhotos[i]
-      const filename = `wedding_${String(i + 1).padStart(3, '0')}.jpg`
-      wp._localFile = `wedding-photos/${filename}`
-      try {
-        const response = await fetch(wp.url)
-        if (response.ok) {
-          const buffer = await response.arrayBuffer()
-          archive.append(Buffer.from(buffer), { name: `wedding-photos/${filename}` })
-        }
-      } catch (err) {
-        console.warn(`[export-offline] Failed to download wedding photo ${wp.id}:`, err)
-      }
-    }
-
-    // 5. 生成 HTML 頁面並加入 ZIP
-    console.log('[export-offline] Generating HTML pages...')
-    const pages = [
-      { file: 'index.html', content: generateIndexPage(data) },
-      { file: 'photo-wall.html', content: generatePhotoWallPage(data) },
-      { file: 'wedding-photos.html', content: generateWeddingPhotosPage(data) },
-      { file: 'photo-slideshow.html', content: generateSlideshowPage(data) },
-      { file: 'quiz-results.html', content: generateQuizResultsPage(data) },
-      { file: 'rankings.html', content: generateRankingsPage(data) },
-      { file: 'vote-records.html', content: generateVoteRecordsPage(data) },
-    ]
-
-    for (const page of pages) {
-      archive.append(page.content, { name: page.file })
-    }
-
-    // 6. 加入原始資料 JSON
-    archive.append(JSON.stringify({
-      exportedAt: new Date().toISOString(),
-      users: data.users,
-      photos: data.photos.map((p: any) => { const { _localFile, ...rest } = p; return rest }),
-      questions: data.questions,
-      answerRecords: data.answerRecords,
-      gameState: data.gameState,
-      lotteryHistory: data.lotteryHistory,
-      photoVotes: data.photoVotes,
-      weddingVotes: data.weddingVotes,
-      weddingPhotos: data.weddingPhotos.map((w: any) => { const { _localFile, ...rest } = w; return rest }),
-    }, null, 2), { name: 'data.json' })
-
-    // 7. Finalize
-    archive.finalize()
-
-    const timestamp = new Date().toISOString().split('T')[0]
-    console.log('[export-offline] Export complete!')
-
-    return new NextResponse(passthrough as unknown as ReadableStream, {
-      headers: {
-        'Content-Type': 'application/zip',
-        'Content-Disposition': `attachment; filename="wedding-game-offline-${timestamp}.zip"`,
-      },
-    })
-  } catch (error) {
-    console.error('[export-offline] Export error:', error)
-    return NextResponse.json(
-      { error: '匯出失敗', details: error instanceof Error ? error.message : '未知錯誤' },
-      { status: 500 }
-    )
-  }
-}
-
-export const maxDuration = 300 // 5 分鐘超時
