@@ -118,17 +118,46 @@ function genQuizResults(d: any) {
             const c = oc[o.k]; const p = total > 0 ? Math.round((c / total) * 100) : 0; const ic = o.k === q.correct_answer
             return `<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:10px;margin-bottom:6px;background:${ic ? '#d1fae5' : '#f9fafb'};border:2px solid ${ic ? '#10b981' : '#e5e7eb'};"><span style="font-weight:700;color:${ic ? '#059669' : '#6b7280'};min-width:24px;">${o.k}</span><span style="flex:1;">${esc(o.t || '')}</span><span style="font-size:0.85rem;color:#999;">${c}人 (${p}%)</span>${ic ? '<span style="color:#10b981;">✓</span>' : ''}</div>`
         }).join('')
-        return `<div class="card" style="padding:20px;margin-bottom:20px;"><div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:14px;"><h3 style="font-size:1.1rem;flex:1;">${esc(q.question_text || '')}</h3><span class="badge ${rate >= 50 ? 'badge-green' : 'badge-pink'}">${rate}% 正確率</span></div>${oh}<div style="margin-top:10px;font-size:0.85rem;color:#999;">${total} 人作答 · 分數 ${q.points || q.base_score || 10} 分 · 時限 ${q.time_limit || 30} 秒</div></div>`
+
+        // 每位賓客的個別答案
+        const individualRows = records.map((r: any) => {
+            const userName = r.user?.display_name || '未知用戶'
+            const answer = r.selected_answer || '?'
+            const isCorrect = r.is_correct
+            const time = new Date(r.created_at).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })
+            const answerTime = r.answer_time ? `${(r.answer_time / 1000).toFixed(1)}秒` : ''
+            return `<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid #f3f4f6;">
+              <div style="width:28px;height:28px;border-radius:50%;background:${isCorrect ? '#d1fae5' : '#fef2f2'};display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:${isCorrect ? '#059669' : '#dc2626'};">${answer}</div>
+              <div style="flex:1;font-weight:500;">${esc(userName)}</div>
+              ${answerTime ? `<span style="font-size:0.8rem;color:#999;">⏱ ${answerTime}</span>` : ''}
+              <span style="font-size:0.8rem;font-weight:600;color:${isCorrect ? '#059669' : '#dc2626'};">${isCorrect ? '✓ 正確' : '✗ 錯誤'}</span>
+              <div style="font-size:0.75rem;color:#999;min-width:80px;text-align:right;">${time}</div>
+            </div>`
+        }).join('')
+
+        const individualSection = records.length > 0
+            ? `<div style="margin-top:14px;border-top:2px solid #f3f4f6;padding-top:12px;"><div style="font-size:0.9rem;font-weight:600;color:#4b5563;margin-bottom:8px;">📝 每位賓客的答案 (${records.length}人)</div>${individualRows}</div>`
+            : ''
+
+        return `<div class="card" style="padding:20px;margin-bottom:20px;"><div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:14px;"><h3 style="font-size:1.1rem;flex:1;">${esc(q.question_text || '')}</h3><span class="badge ${rate >= 50 ? 'badge-green' : 'badge-pink'}">${rate}% 正確率</span></div>${oh}<div style="margin-top:10px;font-size:0.85rem;color:#999;">${total} 人作答 · 分數 ${q.points || q.base_score || 10} 分 · 時限 ${q.time_limit || 30} 秒</div>${individualSection}</div>`
     }).join('\n')
     return wrap('問答紀錄', 'quiz-results.html', `<div class="header"><h1>❓ 問答紀錄</h1><p>所有題目的答題統計</p><div class="stats"><div class="stat"><div class="stat-value">${d.questions.length}</div><div class="stat-label">道題目</div></div><div class="stat"><div class="stat-value">${d.answerRecords.length}</div><div class="stat-label">筆答題記錄</div></div></div></div>${cards}`)
 }
 
+function getScore(u: any) {
+    if (u.total_score) return u.total_score
+    return (u.quiz_score || 0) + (u.vote_score || 0) + (u.upload_score || 0) + (u.bonus_score || 0)
+}
+
 function genRankings(d: any) {
-    const sorted = [...d.users].sort((a: any, b: any) => (b.total_score || 0) - (a.total_score || 0))
+    const sorted = [...d.users].sort((a: any, b: any) => getScore(b) - getScore(a))
     const rows = sorted.map((u: any, i: number) => {
         const r = i + 1; const m = r === 1 ? '🥇' : r === 2 ? '🥈' : r === 3 ? '🥉' : `${r}`
         const bg = r <= 3 ? 'background:linear-gradient(135deg,#fdf2f8,#faf5ff);' : ''
-        return `<div class="card" style="padding:14px 20px;margin-bottom:10px;display:flex;align-items:center;gap:14px;${bg}"><div style="font-size:1.4rem;min-width:36px;text-align:center;font-weight:700;">${m}</div><div class="avatar" style="background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:0.8rem;">👤</div><div style="flex:1;"><div style="font-weight:600;">${esc(u.display_name || '匿名')}</div></div><div style="text-align:right;"><div style="font-size:1.3rem;font-weight:700;color:#ec4899;">${u.total_score || 0}</div><div style="font-size:0.75rem;color:#999;">分</div></div></div>`
+        const score = getScore(u)
+        const quizScore = u.quiz_score || 0
+        const voteScore = u.vote_score || 0
+        return `<div class="card" style="padding:14px 20px;margin-bottom:10px;display:flex;align-items:center;gap:14px;${bg}"><div style="font-size:1.4rem;min-width:36px;text-align:center;font-weight:700;">${m}</div><div class="avatar" style="background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:0.8rem;">👤</div><div style="flex:1;"><div style="font-weight:600;">${esc(u.display_name || '匿名')}</div><div style="font-size:0.75rem;color:#999;">答題 ${quizScore} · 投票 ${voteScore}</div></div><div style="text-align:right;"><div style="font-size:1.3rem;font-weight:700;color:#ec4899;">${score}</div><div style="font-size:0.75rem;color:#999;">分</div></div></div>`
     }).join('\n')
     let lottery = ''
     if (d.lotteryHistory.length > 0) {
@@ -138,7 +167,8 @@ function genRankings(d: any) {
         }).join('\n')
         lottery = `<h2 style="font-size:1.3rem;margin:30px 0 16px;">🎰 抽獎記錄</h2>${lr}`
     }
-    return wrap('排行榜', 'rankings.html', `<div class="header"><h1>🏆 排行榜</h1><p>賓客分數排名</p><div class="stats"><div class="stat"><div class="stat-value">${d.users.length}</div><div class="stat-label">位賓客</div></div><div class="stat"><div class="stat-value">${sorted[0]?.total_score || 0}</div><div class="stat-label">最高分</div></div></div></div>${rows}${lottery}`)
+    const topScore = sorted.length > 0 ? getScore(sorted[0]) : 0
+    return wrap('排行榜', 'rankings.html', `<div class="header"><h1>🏆 排行榜</h1><p>賓客分數排名</p><div class="stats"><div class="stat"><div class="stat-value">${d.users.length}</div><div class="stat-label">位賓客</div></div><div class="stat"><div class="stat-value">${topScore}</div><div class="stat-label">最高分</div></div></div></div>${rows}${lottery}`)
 }
 
 function genVoteRecords(d: any) {
@@ -253,14 +283,16 @@ export default function ExportPage() {
                 }
             }
 
-            // 3. 下載婚紗照
+            // 3. 下載婚紗照（透過 proxy 繞過 CORS）
             setStep(`正在下載婚紗照 (0/${data.weddingPhotos.length})...`)
             for (let i = 0; i < data.weddingPhotos.length; i++) {
                 const wp = data.weddingPhotos[i]
                 const filename = `wedding_${String(i + 1).padStart(3, '0')}.jpg`
                 wp._localFile = `wedding-photos/${filename}`
 
-                const buf = await fetchBlob(wp.url)
+                // 使用 proxy 繞過 Google Drive CORS 限制
+                const proxyUrl = `/api/admin/export-proxy?url=${encodeURIComponent(wp.url)}`
+                const buf = await fetchBlob(proxyUrl)
                 if (buf) zip.file(`wedding-photos/${filename}`, buf)
 
                 downloaded++
